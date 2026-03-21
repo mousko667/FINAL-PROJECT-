@@ -1,0 +1,280 @@
+# ============================================================
+#  OCT Invoice System — Spring Boot Configuration
+#  File: src/main/resources/application.yml
+# ============================================================
+
+# ── Shared base config (all profiles) ───────────────────────
+spring:
+  application:
+    name: oct-invoice-system
+
+  # JPA / Hibernate
+  jpa:
+    hibernate:
+      ddl-auto: validate           # Flyway manages schema — Hibernate only validates
+    show-sql: false
+    open-in-view: false            # Prevent lazy-loading issues in controllers
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        default_schema: public
+        jdbc:
+          time_zone: UTC
+
+  # Flyway — automatic migrations on startup
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+    validate-on-migrate: true
+
+  # File upload limits
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 15MB
+
+  # Jackson
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+    default-property-inclusion: non_null
+    time-zone: UTC
+
+  # i18n
+  messages:
+    basename: i18n/messages
+    encoding: UTF-8
+    use-code-as-default-message: false
+
+  # Async (for notification listeners)
+  task:
+    execution:
+      pool:
+        core-size: 5
+        max-size: 20
+        queue-capacity: 100
+      thread-name-prefix: oct-async-
+    scheduling:
+      pool:
+        size: 3
+
+# ── Server ──────────────────────────────────────────────────
+server:
+  port: 8080
+  error:
+    include-message: never         # Never expose stack traces in responses
+    include-stacktrace: never
+    include-exception: false
+
+# ── JWT ──────────────────────────────────────────────────────
+jwt:
+  secret: ${JWT_SECRET}
+  expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000}
+
+# ── Encryption ───────────────────────────────────────────────
+encryption:
+  key: ${ENCRYPTION_KEY}
+
+# ── MinIO ────────────────────────────────────────────────────
+minio:
+  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+  access-key: ${MINIO_ACCESS_KEY:MinIO}
+  secret-key: ${MINIO_SECRET_KEY:dany1234}
+  bucket: ${MINIO_BUCKET:oct-invoices}
+  presigned-url-expiry-minutes: 15
+
+# ── Actuator (health checks) ─────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: OCT Invoice System
+    version: 1.0.0
+    description: Système de Gestion des Factures Fournisseurs
+
+# ── OpenAPI / Swagger ────────────────────────────────────────
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+    display-request-duration: true
+  show-actuator: false
+
+# ── Logging (base) ───────────────────────────────────────────
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  level:
+    root: WARN
+    com.oct.invoicesystem: INFO
+    org.springframework.security: WARN
+    org.flywaydb: INFO
+
+---
+# ============================================================
+#  DEV Profile
+#  Usage: SPRING_PROFILES_ACTIVE=dev  (default for local dev)
+# ============================================================
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:oct_invoice_dev}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:dany}
+    hikari:
+      pool-name: OCT-HikariPool-Dev
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+
+  jpa:
+    show-sql: true
+
+  # Use MailHog in dev — no real emails sent
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAILHOG_SMTP_PORT:1025}
+    username:
+    password:
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+minio:
+  endpoint: http://localhost:9000
+
+logging:
+  level:
+    com.oct.invoicesystem: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+---
+# ============================================================
+#  TEST Profile
+#  Usage: @ActiveProfiles("test") in integration tests
+#  Uses Testcontainers for real PostgreSQL
+# ============================================================
+spring:
+  config:
+    activate:
+      on-profile: test
+
+  datasource:
+    url: jdbc:tc:postgresql:18:///oct_invoice_test?TC_REUSABLE=true
+    username: postgres
+    password: dany
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    hikari:
+      pool-name: OCT-HikariPool-Test
+      maximum-pool-size: 5
+
+  flyway:
+    enabled: true
+    clean-on-validation-error: true  # allow clean slate in tests
+
+  mail:
+    host: localhost
+    port: 1025
+    username:
+    password:
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+minio:
+  endpoint: http://localhost:9000      # use real MinIO or mock in tests
+
+logging:
+  level:
+    com.oct.invoicesystem: DEBUG
+    org.flywaydb: DEBUG
+
+---
+# ============================================================
+#  PROD Profile
+#  Usage: SPRING_PROFILES_ACTIVE=prod (set in docker-compose)
+#  All secrets come from environment variables — nothing hardcoded
+# ============================================================
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    hikari:
+      pool-name: OCT-HikariPool-Prod
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    show-sql: false
+
+  # Real Gmail SMTP in prod
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+server:
+  error:
+    include-message: never
+    include-stacktrace: never
+
+logging:
+  level:
+    root: WARN
+    com.oct.invoicesystem: INFO
+  file:
+    name: /var/log/oct-invoice/app.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 30

@@ -1,0 +1,158 @@
+# ============================================================
+#  OCT Invoice System — Docker Compose
+#  Usage:
+#    Start all services:   docker-compose up -d
+#    Backend + DB only:    docker-compose up -d postgres minio mailhog
+#    View logs:            docker-compose logs -f backend
+#    Stop all:             docker-compose down
+#    Full reset (data too):docker-compose down -v
+# ============================================================
+
+services:
+
+  # ── PostgreSQL 18 ─────────────────────────────────────────
+  postgres:
+    image: postgres:18-alpine
+    container_name: oct_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-oct_invoice_dev}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-dany}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-oct_invoice_dev}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - oct_network
+
+  # ── MinIO (Object Storage) ────────────────────────────────
+  minio:
+    image: minio/minio:latest
+    container_name: oct_minio
+    restart: unless-stopped
+    command: server /data --console-address ":${MINIO_CONSOLE_PORT:-9001}"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-MinIO}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-dany1234}
+    ports:
+      - "9000:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    networks:
+      - oct_network
+
+  # ── MinIO bucket init (runs once, creates the bucket) ─────
+  minio_init:
+    image: minio/mc:latest
+    container_name: oct_minio_init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 ${MINIO_ACCESS_KEY:-MinIO} ${MINIO_SECRET_KEY:-dany};
+      mc mb --ignore-existing local/${MINIO_BUCKET:-oct-invoices};
+      mc anonymous set none local/${MINIO_BUCKET:-oct-invoices};
+      echo 'MinIO bucket ready.';
+      "
+    networks:
+      - oct_network
+
+  # ── MailHog (dev email catcher) ───────────────────────────
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: oct_mailhog
+    restart: unless-stopped
+    ports:
+      - "${MAILHOG_SMTP_PORT:-1025}:1025"
+      - "${MAILHOG_UI_PORT:-8025}:8025"
+    networks:
+      - oct_network
+
+  # ── Spring Boot Backend ───────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: oct_backend
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-oct_invoice_dev}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-dany}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-MinIO}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-dany}
+      MINIO_BUCKET: ${MINIO_BUCKET:-oct-invoices}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-86400000}
+      JWT_REFRESH_EXPIRATION_MS: ${JWT_REFRESH_EXPIRATION_MS:-604800000}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      MAIL_HOST: ${MAIL_HOST:-mailhog}
+      MAIL_PORT: ${MAIL_PORT:-1025}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-noreply@oct.local}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-OCT Invoice System}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio_init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - oct_network
+
+  # ── React Frontend ────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: oct_frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080/api/v1}
+      VITE_WS_URL: ${VITE_WS_URL:-http://localhost:8080/ws}
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - oct_network
+
+networks:
+  oct_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  minio_data:
+    driver: local
