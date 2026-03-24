@@ -180,7 +180,7 @@ logging:
 # ============================================================
 #  TEST Profile
 #  Usage: @ActiveProfiles("test") in integration tests
-#  Uses Testcontainers for real PostgreSQL
+#  Uses local docker-compose PostgreSQL
 # ============================================================
 spring:
   config:
@@ -188,13 +188,9 @@ spring:
       on-profile: test
 
   datasource:
-    url: jdbc:tc:postgresql:18:///oct_invoice_test?TC_REUSABLE=true
+    url: jdbc:postgresql://localhost:5432/oct_invoice_dev
     username: postgres
     password: dany
-    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
-    hikari:
-      pool-name: OCT-HikariPool-Test
-      maximum-pool-size: 5
 
   flyway:
     enabled: true
@@ -212,8 +208,19 @@ spring:
           starttls:
             enable: false
 
+jwt:
+  secret: dGVzdFNlY3JldEtleUZvckpXVFRlc3RpbmdPbmx5MTIzNDU2Nzg5MA==
+  expiration-ms: 86400000
+  refresh-expiration-ms: 604800000
+
+encryption:
+  key: TestEncryptionKey1234567890ABCDEF
+
 minio:
-  endpoint: http://localhost:9000      # use real MinIO or mock in tests
+  endpoint: http://localhost:9000
+  access-key: MinIO
+  secret-key: dany
+  bucket: oct-invoices
 
 logging:
   level:

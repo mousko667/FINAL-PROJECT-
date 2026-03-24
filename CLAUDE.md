@@ -27,6 +27,18 @@ Before touching any file, read these documents in order:
 6. `docs/CONVENTIONS.md` — code style, naming, patterns
 7. `docs/TASKS.md` — current phase and next task
 8. `docs/TESTING.md` — what tests are required for every feature
+## CRITICAL — No autonomous planning
+
+The development plan already exists in full in `docs/TASKS.md`.
+
+- Do NOT create your own implementation plan
+- Do NOT reorder, rename, or reinterpret tasks  
+- Do NOT add tasks that don't exist in docs/TASKS.md
+- Do NOT skip tasks because they seem "already done"
+- Execute tasks EXACTLY as written, in the order they appear
+- If a task is ambiguous, check docs/WORKFLOW.md and docs/ARCHITECTURE.md
+  before making any assumption — never invent a solution
+- If genuinely blocked, STOP and report the blocker — do not work around it
 
 ---
 
