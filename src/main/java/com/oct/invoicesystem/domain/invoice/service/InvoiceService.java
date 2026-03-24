@@ -11,6 +11,7 @@ import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 import com.oct.invoicesystem.shared.exception.ValidationException;
 import com.oct.invoicesystem.shared.exception.WorkflowException;
 import com.oct.invoicesystem.shared.response.PagedResponse;
+import com.oct.invoicesystem.shared.util.ReferenceNumberGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -34,6 +35,7 @@ public class InvoiceService {
     private final InvoiceRepository invoiceRepository;
     private final DepartmentRepository departmentRepository;
     private final UserRepository userRepository;
+    private final ReferenceNumberGenerator referenceNumberGenerator;
 
     /**
      * Creates an invoice draft in BROUILLON status.
@@ -46,6 +48,7 @@ public class InvoiceService {
     public Invoice createInvoice(Invoice invoice, UUID actorId) {
         ensureAssistantComptable(actorId);
         invoice.setId(null);
+        invoice.setReferenceNumber(referenceNumberGenerator.nextReferenceNumber());
         invoice.setStatus(InvoiceStatus.BROUILLON);
         invoice.setDeletedAt(null);
         return invoiceRepository.save(invoice);
