@@ -75,7 +75,7 @@
 - [x] **P2-14** Write unit tests: `InvoiceServiceTest` (create, update, soft-delete, ownership)
 - [x] **P2-15** Write unit tests: `InvoiceValidationServiceTest` (all 10 rules, happy + edge cases)
 - [x] **P2-16** Write unit tests: `InvoiceDocumentServiceTest` (MIME rejection, checksum, size limit)
-- [ ] **P2-17** Write integration tests: `InvoiceControllerTest` (all endpoints, ASSISTANT_COMPTABLE + ADMIN roles)
+- [x] **P2-17** Write integration tests: `InvoiceControllerTest` (all endpoints, ASSISTANT_COMPTABLE + ADMIN roles)
 - [ ] **P2-18** Write integration tests: `InvoiceDocumentControllerTest`
 
 **Phase 2 Exit Criteria:** Accounting assistant can create a draft invoice with line items, attach a PDF, and list their invoices. All tests pass.
