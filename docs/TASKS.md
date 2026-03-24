@@ -62,7 +62,7 @@
 - [x] **P2-01** Create Flyway migrations: `V4__create_invoices.sql`, `V5__create_invoice_items.sql`, `V6__create_invoice_documents.sql`
 - [x] **P2-02** Implement `Invoice`, `InvoiceItem`, `InvoiceDocument` entities
 - [x] **P2-03** Implement `InvoiceStatus` enum (all 9 statuses FR/EN)
-- [ ] **P2-04** Implement `InvoiceRepository` with paginated queries + filter support
+- [x] **P2-04** Implement `InvoiceRepository` with paginated queries + filter support
 - [ ] **P2-05** Implement `InvoiceService` (create, update, soft-delete, list, get-by-id)
 - [ ] **P2-06** Implement `InvoiceValidationService` (all 10 business rules from `docs/WORKFLOW.md §8`)
 - [ ] **P2-07** Implement `ReferenceNumberGenerator` — format `FAC-{YYYY}-{NNNNN}` with DB sequence
