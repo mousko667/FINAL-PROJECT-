@@ -13,6 +13,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -86,9 +88,10 @@ public class Invoice {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     @Builder.Default
-    private String status = "BROUILLON";
+    private InvoiceStatus status = InvoiceStatus.BROUILLON;
 
     @Version
     @Column(nullable = false)
@@ -120,7 +123,7 @@ public class Invoice {
             currency = "XAF";
         }
         if (status == null) {
-            status = "BROUILLON";
+            status = InvoiceStatus.BROUILLON;
         }
         if (version == null) {
             version = 0;
