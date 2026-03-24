@@ -67,7 +67,7 @@
 - [x] **P2-06** Implement `InvoiceValidationService` (all 10 business rules from `docs/WORKFLOW.md §8`)
 - [x] **P2-07** Implement `ReferenceNumberGenerator` — format `FAC-{YYYY}-{NNNNN}` with DB sequence
 - [x] **P2-08** Implement `InvoiceController` (CRUD endpoints)
-- [ ] **P2-09** Implement `MinioStorageService` (upload, download pre-signed URL, delete)
+- [x] **P2-09** Implement `MinioStorageService` (upload, download pre-signed URL, delete)
 - [ ] **P2-10** Implement `InvoiceDocumentService` (validate MIME via Tika, compute SHA-256, store in MinIO)
 - [ ] **P2-11** Implement `InvoiceDocumentController` (upload, list, download)
 - [ ] **P2-12** Implement `InvoiceMapper`, `InvoiceItemMapper` (MapStruct)
