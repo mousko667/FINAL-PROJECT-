@@ -70,7 +70,7 @@
 - [x] **P2-09** Implement `MinioStorageService` (upload, download pre-signed URL, delete)
 - [x] **P2-10** Implement `InvoiceDocumentService` (validate MIME via Tika, compute SHA-256, store in MinIO)
 - [x] **P2-11** Implement `InvoiceDocumentController` (upload, list, download)
-- [ ] **P2-12** Implement `InvoiceMapper`, `InvoiceItemMapper` (MapStruct)
+- [x] **P2-12** Implement `InvoiceMapper`, `InvoiceItemMapper` (MapStruct)
 - [ ] **P2-13** Add all invoice-related i18n keys
 - [ ] **P2-14** Write unit tests: `InvoiceServiceTest` (create, update, soft-delete, ownership)
 - [ ] **P2-15** Write unit tests: `InvoiceValidationServiceTest` (all 10 rules, happy + edge cases)
