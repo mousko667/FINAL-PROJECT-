@@ -63,7 +63,7 @@
 - [x] **P2-02** Implement `Invoice`, `InvoiceItem`, `InvoiceDocument` entities
 - [x] **P2-03** Implement `InvoiceStatus` enum (all 9 statuses FR/EN)
 - [x] **P2-04** Implement `InvoiceRepository` with paginated queries + filter support
-- [ ] **P2-05** Implement `InvoiceService` (create, update, soft-delete, list, get-by-id)
+- [x] **P2-05** Implement `InvoiceService` (create, update, soft-delete, list, get-by-id)
 - [ ] **P2-06** Implement `InvoiceValidationService` (all 10 business rules from `docs/WORKFLOW.md §8`)
 - [ ] **P2-07** Implement `ReferenceNumberGenerator` — format `FAC-{YYYY}-{NNNNN}` with DB sequence
 - [ ] **P2-08** Implement `InvoiceController` (CRUD endpoints)
