@@ -39,18 +39,18 @@
 ## Phase 1 — User & Department Management
 *Goal: Admins can manage users and departments*
 
-- [ ] **P1-01** Implement `UserController` (CRUD + role assignment) — Admin only
-- [ ] **P1-02** Implement `UserService` with BCrypt password hashing
-- [ ] **P1-03** Implement `UserRepository` with `findByEmail`, `findByUsername`
-- [ ] **P1-04** Implement `UserDTO`, `UserCreateRequest`, `UserUpdateRequest`
-- [ ] **P1-05** Implement `UserMapper` (MapStruct)
-- [ ] **P1-06** Implement `DepartmentController` (list, get, update approval config) — Admin only
-- [ ] **P1-07** Implement `DepartmentService` + `DepartmentRepository`
-- [ ] **P1-08** Add i18n keys for user and department management
-- [ ] **P1-09** Write unit tests: `UserServiceTest` (create, update, assign role, deactivate)
-- [ ] **P1-10** Write unit tests: `DepartmentServiceTest`
-- [ ] **P1-11** Write integration tests: `UserControllerTest` (all endpoints, all roles)
-- [ ] **P1-12** Write integration tests: `DepartmentControllerTest`
+- [x] **P1-01** Implement `UserController` (CRUD + role assignment) — Admin only
+- [x] **P1-02** Implement `UserService` with BCrypt password hashing
+- [x] **P1-03** Implement `UserRepository` with `findByEmail`, `findByUsername`
+- [x] **P1-04** Implement `UserDTO`, `UserCreateRequest`, `UserUpdateRequest`
+- [x] **P1-05** Implement `UserMapper` (MapStruct)
+- [x] **P1-06** Implement `DepartmentController` (list, get, update approval config) — Admin only
+- [x] **P1-07** Implement `DepartmentService` + `DepartmentRepository`
+- [x] **P1-08** Add i18n keys for user and department management
+- [x] **P1-09** Write unit tests: `UserServiceTest` (create, update, assign role, deactivate)
+- [x] **P1-10** Write unit tests: `DepartmentServiceTest`
+- [x] **P1-11** Write integration tests: `UserControllerTest` (all endpoints, all roles)
+- [x] **P1-12** Write integration tests: `DepartmentControllerTest`
 
 **Phase 1 Exit Criteria:** Admin can create users and assign roles via API. All tests pass.
 
