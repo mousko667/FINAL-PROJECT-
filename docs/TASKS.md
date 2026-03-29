@@ -91,14 +91,14 @@
 - [x] **P3-04** Implement `InvoiceEvent` enum (SUBMIT, ASSIGN_REVIEWER, VALIDATE_N1, VALIDATE_N2, BON_A_PAYER, RECORD_PAYMENT, REJECT, RESUBMIT, ARCHIVE)
 - [x] **P3-05** Implement `StateMachineConfig` — define all states + transitions from `docs/WORKFLOW.md §3`
 - [x] **P3-06** Implement department-aware transition guard (1-level vs 2-level based on `Department.requires_n2`)
-- [ ] **P3-07** Implement `InvoiceStateMachineService` (send event, persist state, write status history)
-- [ ] **P3-08** Implement `InvoiceStateChangeListener` (writes to `invoice_status_history` on every transition)
-- [ ] **P3-09** Implement `ApprovalService` (create step, record decision, check completeness, deadline tracking)
-- [ ] **P3-10** Implement `ApprovalController` (assign-reviewer, validate-n1, validate-n2, bon-a-payer, reject endpoints)
-- [ ] **P3-11** Implement `InvoiceController` additions: submit, resubmit endpoints
-- [ ] **P3-12** Implement all transition guards (role check, rejection reason min length, document required)
-- [ ] **P3-13** Add all workflow-related i18n keys (FR + EN for every state and action)
-- [ ] **P3-14** Write unit tests: `InvoiceStateMachineServiceTest` (every valid transition + every invalid transition)
+- [x] **P3-07** Implement `InvoiceStateMachineService` (send event, persist state, write status history)
+- [x] **P3-08** Implement `InvoiceStateChangeListener` (writes to `invoice_status_history` on every transition)
+- [x] **P3-09** Implement `ApprovalService` (create step, record decision, check completeness, deadline tracking)
+- [x] **P3-10** Implement `ApprovalController` (assign-reviewer, validate-n1, validate-n2, bon-a-payer, reject endpoints)
+- [x] **P3-11** Implement `InvoiceController` additions: submit, resubmit endpoints
+- [x] **P3-12** Implement all transition guards (role check, rejection reason min length, document required)
+- [x] **P3-13** Add all workflow-related i18n keys (FR + EN for every state and action)
+- [x] **P3-14** Write unit tests: `InvoiceStateMachineServiceTest` (every valid transition + every invalid transition)
 - [ ] **P3-15** Write unit tests: `ApprovalServiceTest` (assign, validate, reject, deadline check)
 - [ ] **P3-16** Write integration tests: `ApprovalControllerTest` — full lifecycle for SINGLE-level dept
 - [ ] **P3-17** Write integration tests: `ApprovalControllerTest` — full lifecycle for TWO-level dept (INFO)

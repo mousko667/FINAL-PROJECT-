@@ -7,6 +7,8 @@ import com.oct.invoicesystem.domain.invoice.dto.InvoiceUpdateRequest;
 import com.oct.invoicesystem.domain.invoice.model.Invoice;
 import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
 import com.oct.invoicesystem.domain.invoice.service.InvoiceService;
+import com.oct.invoicesystem.domain.invoice.service.InvoiceStateMachineService;
+import com.oct.invoicesystem.domain.invoice.statemachine.InvoiceEvent;
 import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.domain.user.repository.UserRepository;
 import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
@@ -43,6 +45,7 @@ import java.util.UUID;
 public class InvoiceController {
 
     private final InvoiceService invoiceService;
+    private final InvoiceStateMachineService invoiceStateMachineService;
     private final UserRepository userRepository;
 
     @GetMapping
@@ -100,6 +103,22 @@ public class InvoiceController {
         UUID actorId = getActorId(authentication);
         invoiceService.softDeleteInvoice(id, actorId);
         return ResponseEntity.ok(ApiResponse.success(null, "Invoice deleted successfully"));
+    }
+
+    @PostMapping("/{id}/submit")
+    @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
+    @Operation(summary = "Submit invoice", description = "Submits a draft invoice for approval")
+    public ResponseEntity<ApiResponse<Void>> submitInvoice(@PathVariable UUID id) {
+        invoiceStateMachineService.sendEvent(id, InvoiceEvent.SUBMIT, null);
+        return ResponseEntity.ok(ApiResponse.success(null, "action.submit.success"));
+    }
+
+    @PostMapping("/{id}/resubmit")
+    @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
+    @Operation(summary = "Resubmit invoice", description = "Resubmits a rejected invoice for approval")
+    public ResponseEntity<ApiResponse<Void>> resubmitInvoice(@PathVariable UUID id) {
+        invoiceStateMachineService.sendEvent(id, InvoiceEvent.RESUBMIT, null);
+        return ResponseEntity.ok(ApiResponse.success(null, "action.resubmit.success"));
     }
 
     private UUID getActorId(Authentication authentication) {

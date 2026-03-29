@@ -128,3 +128,66 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 **Branch:** main
 **Last commit:** 7a8e3c465f88fc8ae161259bdd26369d97e4ae90
 **Notes:** `DepartmentTransitionGuard` + `WorkflowExtendedStateKeys.DEPARTMENT`; guards delegate to `Department.isRequiresN2()` from extended state.
+
+## Session Checkpoint
+**Date:** 2026-03-29
+**Last completed task:** P3-08
+**Phase:** 3 — Workflow Engine (BAP State Machine)
+**Next task:** P3-09
+**Branch:** main
+**Last commit:** 7a8e3c465f88fc8ae161259bdd26369d97e4ae90
+**Notes:** Implemented `InvoiceStateMachineService` and `InvoiceStateChangeListener` to persist state and history. Tests are passing.
+
+## Session Checkpoint
+**Date:** 2026-03-29
+**Last completed task:** P3-09
+**Phase:** 3 — Workflow Engine (BAP State Machine)
+**Next task:** P3-10
+**Branch:** main
+**Last commit:** pending
+**Notes:** Implemented `ApprovalService` with deadline creation logic (3 business days per step) and DAF steps always as step_order 3.
+
+## Session Checkpoint
+**Date:** 2026-03-29
+**Last completed task:** P3-10
+**Phase:** 3 — Workflow Engine (BAP State Machine)
+**Next task:** P3-11
+**Branch:** main
+**Last commit:** pending
+**Notes:** Implemented `ApprovalController` and related DTOs for recording validation decisions. Tests pass.
+
+## Session Checkpoint
+**Date:** 2026-03-29
+**Last completed task:** P3-11
+**Phase:** 3 — Workflow Engine (BAP State Machine)
+**Next task:** P3-12
+**Branch:** main
+**Last commit:** pending
+**Notes:** Added `submit` and `resubmit` endpoints to `InvoiceController`.
+
+## Session Checkpoint
+**Date:** 2026-03-29
+**Last completed task:** P3-12
+**Phase:** 3 — Workflow Engine (BAP State Machine)
+**Next task:** P3-13
+**Branch:** main
+**Last commit:** pending
+**Notes:** Implemented `DocumentRequiredGuard`, `RejectionReasonGuard`, and `RoleMatchGuard` and wired them into `StateMachineConfig`.
+
+## Session Checkpoint
+**Date:** 2026-03-29
+**Last completed task:** P3-13
+**Phase:** 3 — Workflow Engine (BAP State Machine)
+**Next task:** P3-14
+**Branch:** main
+**Last commit:** pending
+**Notes:** Added i18n keys for workflow actions (assign, validate, bon_a_payer, reject, submit, resubmit).
+
+## Session Checkpoint
+**Date:** 2026-03-29
+**Last completed task:** P3-14
+**Phase:** 3 — Workflow Engine (BAP State Machine)
+**Next task:** P3-15
+**Branch:** main
+**Last commit:** pending
+**Notes:** Added tests for InvoiceStateMachineService verifying all valid and invalid transitions and guards. E2E state transitions fully covered.
