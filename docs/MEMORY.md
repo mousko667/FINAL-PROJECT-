@@ -110,3 +110,12 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 **Branch:** main
 **Last commit:** 01006e4233908ca740cd070bdddfdb0995da1951
 **Notes:** `InvoiceEvent` enum in `domain.invoice.statemachine` (all events from WORKFLOW §3).
+
+## Session Checkpoint
+**Date:** 2026-03-29
+**Last completed task:** P3-05
+**Phase:** 3 — Workflow Engine (BAP State Machine)
+**Next task:** P3-06
+**Branch:** main
+**Last commit:** 6e527ca895506ea470cefc18b4f2f528d7f91300
+**Notes:** `StateMachineConfig` + `@EnableStateMachineFactory("invoiceStateMachineFactory")`; N1 routing uses extended state key `department` (`Department.requiresN2`).

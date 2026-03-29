@@ -89,7 +89,7 @@
 - [x] **P3-02** Implement `ApprovalStep` entity
 - [x] **P3-03** Implement `InvoiceStatusHistory` entity
 - [x] **P3-04** Implement `InvoiceEvent` enum (SUBMIT, ASSIGN_REVIEWER, VALIDATE_N1, VALIDATE_N2, BON_A_PAYER, RECORD_PAYMENT, REJECT, RESUBMIT, ARCHIVE)
-- [ ] **P3-05** Implement `StateMachineConfig` — define all states + transitions from `docs/WORKFLOW.md §3`
+- [x] **P3-05** Implement `StateMachineConfig` — define all states + transitions from `docs/WORKFLOW.md §3`
 - [ ] **P3-06** Implement department-aware transition guard (1-level vs 2-level based on `Department.requires_n2`)
 - [ ] **P3-07** Implement `InvoiceStateMachineService` (send event, persist state, write status history)
 - [ ] **P3-08** Implement `InvoiceStateChangeListener` (writes to `invoice_status_history` on every transition)
