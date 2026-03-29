@@ -112,7 +112,7 @@
 ## Phase 4 — Notifications
 *Goal: Internal email + in-app notifications on every workflow event*
 
-- [ ] **P4-01** Create Flyway migration `V9__create_notifications.sql`
+- [x] **P4-01** Create Flyway migration `V9__create_notifications.sql`
 - [ ] **P4-02** Implement `Notification` entity + `NotificationRepository`
 - [ ] **P4-03** Define domain events: `InvoiceSubmittedEvent`, `InvoiceValidatedEvent`, `InvoiceRejectedEvent`, `BonAPayerEvent`, `ApprovalDeadlineEvent`
 - [ ] **P4-04** Implement `EmailNotificationListener` (`@Async @EventListener`) — sends via `EmailService`
