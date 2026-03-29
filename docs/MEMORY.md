@@ -83,3 +83,12 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 **Branch:** main
 **Last commit:** b8227ccc2e88bfe4da802bcc6b4df52969a32aab
 **Notes:** Added Flyway V7 (`approval_steps`) and V8 (`invoice_status_history`) per `docs/DATABASE.md`; indexes included on same migrations.
+
+## Session Checkpoint
+**Date:** 2026-03-29
+**Last completed task:** P3-02
+**Phase:** 3 — Workflow Engine (BAP State Machine)
+**Next task:** P3-03
+**Branch:** main
+**Last commit:** 90587c28a9c35799e3d57c2097e6b0af692f9233
+**Notes:** `ApprovalStep` + `ApprovalStepStatus` under `domain.workflow.model`; unique constraint on `(invoice_id, step_order)`.
