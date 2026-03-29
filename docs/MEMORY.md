@@ -68,3 +68,9 @@
 ## Notes from Previous Sessions
 
 *(Append session notes here)*
+
+---
+
+## Session checkpoints
+
+After each completed task, append a `## Session Checkpoint` block here **before** committing that task (see `CLAUDE.md` §9). When resuming work, read the **most recent** checkpoint first.

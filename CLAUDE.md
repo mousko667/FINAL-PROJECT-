@@ -174,7 +174,29 @@ A feature is complete when:
 
 ---
 
-## 9. Git Discipline
+## 9. Session Continuity
+
+After every completed task, append a session checkpoint
+to `docs/MEMORY.md` in this exact format:
+
+```
+## Session Checkpoint
+**Date:** {date}
+**Last completed task:** P{X}-{XX}
+**Phase:** {phase number and name}
+**Next task:** P{X}-{XX}
+**Branch:** main
+**Last commit:** {commit hash}
+**Notes:** {any blockers, decisions, or context needed to resume}
+```
+
+This checkpoint must be written BEFORE committing the task.
+Any new AI agent starting a session must read this checkpoint
+first to know exactly where to resume.
+
+---
+
+## 10. Git Discipline
 
 After completing each task AND verifying tests pass:
 
