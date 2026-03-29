@@ -12,4 +12,5 @@ import java.util.UUID;
 public interface ApprovalStepRepository extends JpaRepository<ApprovalStep, UUID> {
     Optional<ApprovalStep> findByInvoiceIdAndStepOrder(UUID invoiceId, Integer stepOrder);
     List<ApprovalStep> findByInvoiceIdOrderByStepOrderAsc(UUID invoiceId);
+    long countByInvoiceId(UUID invoiceId);
 }

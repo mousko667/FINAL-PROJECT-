@@ -200,3 +200,11 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 **Branch:** main
 **Last commit:** pending
 **Notes:** Added ApprovalServiceTest covering assignReviewer, validateN1, validateN2, bonAPayer, reject, and deadline computation with their respective role checks.
+
+## Session Checkpoint
+**Date:** 2026-03-29
+**Last completed task:** P3-19
+**Phase:** 3 — Workflow Engine (BAP State Machine)
+**Next task:** P4-01
+**Branch:** main
+**Notes:** Completed integration testing for the ApprovalController (P3-16 to P3-19). Handled proper MockMvc setup with @EntityGraph for UserRoles to avoid LazyInitializationException, matched State Machine context variables, and moved explicit role checks to ApprovalServiceImpl to ensure API endpoints cleanly return 403 Forbidden instead of 400 Bad Request on workflow role enforcement. Phase 3 is fully ✅. Ready for Phase 4 (Notifications).

@@ -64,6 +64,7 @@ public class ApprovalServiceImpl implements ApprovalService {
         if (invoice.getStatus() != InvoiceStatus.EN_VALIDATION_N1) {
             throw new WorkflowException("Invoice is not in N1 validation state");
         }
+        checkRole(currentUser, invoice.getDepartment().getN1Role());
         
         createOrUpdateStep(invoice, 1, currentUser, "Validation N1 - " + invoice.getDepartment().getCode(), comment, null, ApprovalStepStatus.APPROVED);
         invoiceStateMachineService.sendEvent(invoiceId, InvoiceEvent.VALIDATE_N1, Map.of("comment", comment != null ? comment : ""));
@@ -78,6 +79,7 @@ public class ApprovalServiceImpl implements ApprovalService {
         if (invoice.getStatus() != InvoiceStatus.EN_VALIDATION_N2) {
             throw new WorkflowException("Invoice is not in N2 validation state");
         }
+        checkRole(currentUser, invoice.getDepartment().getN2Role());
 
         createOrUpdateStep(invoice, 2, currentUser, "Validation N2 - " + invoice.getDepartment().getCode(), comment, null, ApprovalStepStatus.APPROVED);
         invoiceStateMachineService.sendEvent(invoiceId, InvoiceEvent.VALIDATE_N2, Map.of("comment", comment != null ? comment : ""));
@@ -92,6 +94,7 @@ public class ApprovalServiceImpl implements ApprovalService {
         if (invoice.getStatus() != InvoiceStatus.VALIDE) {
             throw new WorkflowException("Invoice is not ready for DAF approval (status must be VALIDE)");
         }
+        checkRole(currentUser, "ROLE_DAF");
         
         // P3-09: DAF step is always step_order 3 regardless of department
         createOrUpdateStep(invoice, 3, currentUser, "Bon à Payer", comment, null, ApprovalStepStatus.APPROVED);
@@ -106,18 +109,23 @@ public class ApprovalServiceImpl implements ApprovalService {
 
         int stepOrder;
         String stepName;
+        String requiredRole;
         if (invoice.getStatus() == InvoiceStatus.EN_VALIDATION_N1) {
             stepOrder = 1;
             stepName = "Validation N1 - " + invoice.getDepartment().getCode();
+            requiredRole = invoice.getDepartment().getN1Role();
         } else if (invoice.getStatus() == InvoiceStatus.EN_VALIDATION_N2) {
             stepOrder = 2;
             stepName = "Validation N2 - " + invoice.getDepartment().getCode();
+            requiredRole = invoice.getDepartment().getN2Role();
         } else if (invoice.getStatus() == InvoiceStatus.VALIDE) {
             stepOrder = 3;
             stepName = "Bon à Payer";
+            requiredRole = "ROLE_DAF";
         } else {
             throw new WorkflowException("Cannot reject invoice in state " + invoice.getStatus());
         }
+        checkRole(currentUser, requiredRole);
 
         createOrUpdateStep(invoice, stepOrder, currentUser, stepName, null, rejectionReason, ApprovalStepStatus.REJECTED);
         invoiceStateMachineService.sendEvent(invoiceId, InvoiceEvent.REJECT, Map.of("rejectionReason", rejectionReason != null ? rejectionReason : ""));
