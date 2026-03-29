@@ -99,7 +99,7 @@
 - [x] **P3-12** Implement all transition guards (role check, rejection reason min length, document required)
 - [x] **P3-13** Add all workflow-related i18n keys (FR + EN for every state and action)
 - [x] **P3-14** Write unit tests: `InvoiceStateMachineServiceTest` (every valid transition + every invalid transition)
-- [ ] **P3-15** Write unit tests: `ApprovalServiceTest` (assign, validate, reject, deadline check)
+- [x] **P3-15** Write unit tests: `ApprovalServiceTest` (assign, validate, reject, deadline check)
 - [ ] **P3-16** Write integration tests: `ApprovalControllerTest` — full lifecycle for SINGLE-level dept
 - [ ] **P3-17** Write integration tests: `ApprovalControllerTest` — full lifecycle for TWO-level dept (INFO)
 - [ ] **P3-18** Write integration tests: reject + resubmit flow

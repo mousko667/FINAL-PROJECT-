@@ -191,3 +191,12 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 **Branch:** main
 **Last commit:** pending
 **Notes:** Added tests for InvoiceStateMachineService verifying all valid and invalid transitions and guards. E2E state transitions fully covered.
+
+## Session Checkpoint
+**Date:** 2026-03-29
+**Last completed task:** P3-15
+**Phase:** 3 — Workflow Engine (BAP State Machine)
+**Next task:** P3-16
+**Branch:** main
+**Last commit:** pending
+**Notes:** Added ApprovalServiceTest covering assignReviewer, validateN1, validateN2, bonAPayer, reject, and deadline computation with their respective role checks.
