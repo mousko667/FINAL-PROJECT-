@@ -119,3 +119,12 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 **Branch:** main
 **Last commit:** 6e527ca895506ea470cefc18b4f2f528d7f91300
 **Notes:** `StateMachineConfig` + `@EnableStateMachineFactory("invoiceStateMachineFactory")`; N1 routing uses extended state key `department` (`Department.requiresN2`).
+
+## Session Checkpoint
+**Date:** 2026-03-29
+**Last completed task:** P3-06
+**Phase:** 3 — Workflow Engine (BAP State Machine)
+**Next task:** P3-07
+**Branch:** main
+**Last commit:** 7a8e3c465f88fc8ae161259bdd26369d97e4ae90
+**Notes:** `DepartmentTransitionGuard` + `WorkflowExtendedStateKeys.DEPARTMENT`; guards delegate to `Department.isRequiresN2()` from extended state.

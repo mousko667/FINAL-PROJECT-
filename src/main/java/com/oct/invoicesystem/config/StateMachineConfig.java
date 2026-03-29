@@ -1,10 +1,10 @@
 package com.oct.invoicesystem.config;
 
-import com.oct.invoicesystem.domain.department.model.Department;
 import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
 import com.oct.invoicesystem.domain.invoice.statemachine.InvoiceEvent;
+import com.oct.invoicesystem.domain.workflow.guard.DepartmentTransitionGuard;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.config.EnableStateMachineFactory;
 import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter;
 import org.springframework.statemachine.config.builders.StateMachineConfigurationConfigurer;
@@ -15,14 +15,15 @@ import java.util.EnumSet;
 
 /**
  * Invoice BAP state model and transitions ({@code docs/WORKFLOW.md} §3).
- * Department-aware branching for {@link InvoiceEvent#VALIDATE_N1} is implemented in {@link #departmentRequiresN2(StateContext)}
- * / {@link #departmentIsSingleLevel(StateContext)} — requires {@value #EXT_KEY_DEPARTMENT} in extended state.
+ * N1 routing uses {@link DepartmentTransitionGuard} and {@code Department} in extended state
+ * ({@link com.oct.invoicesystem.domain.invoice.statemachine.WorkflowExtendedStateKeys#DEPARTMENT}).
  */
 @Configuration
 @EnableStateMachineFactory(name = "invoiceStateMachineFactory")
+@RequiredArgsConstructor
 public class StateMachineConfig extends EnumStateMachineConfigurerAdapter<InvoiceStatus, InvoiceEvent> {
 
-    public static final String EXT_KEY_DEPARTMENT = "department";
+    private final DepartmentTransitionGuard departmentTransitionGuard;
 
     @Override
     public void configure(StateMachineConfigurationConfigurer<InvoiceStatus, InvoiceEvent> config) throws Exception {
@@ -54,13 +55,13 @@ public class StateMachineConfig extends EnumStateMachineConfigurerAdapter<Invoic
                 .source(InvoiceStatus.EN_VALIDATION_N1)
                 .target(InvoiceStatus.EN_VALIDATION_N2)
                 .event(InvoiceEvent.VALIDATE_N1)
-                .guard(StateMachineConfig::departmentRequiresN2)
+                .guard(departmentTransitionGuard::requiresN2)
                 .and()
                 .withExternal()
                 .source(InvoiceStatus.EN_VALIDATION_N1)
                 .target(InvoiceStatus.VALIDE)
                 .event(InvoiceEvent.VALIDATE_N1)
-                .guard(StateMachineConfig::departmentIsSingleLevel)
+                .guard(departmentTransitionGuard::isSingleLevel)
                 .and()
                 .withExternal()
                 .source(InvoiceStatus.EN_VALIDATION_N2)
@@ -101,15 +102,5 @@ public class StateMachineConfig extends EnumStateMachineConfigurerAdapter<Invoic
                 .source(InvoiceStatus.REJETE)
                 .target(InvoiceStatus.SOUMIS)
                 .event(InvoiceEvent.RESUBMIT);
-    }
-
-    private static boolean departmentRequiresN2(StateContext<InvoiceStatus, InvoiceEvent> ctx) {
-        Object d = ctx.getExtendedState().getVariables().get(EXT_KEY_DEPARTMENT);
-        return d instanceof Department dept && dept.isRequiresN2();
-    }
-
-    private static boolean departmentIsSingleLevel(StateContext<InvoiceStatus, InvoiceEvent> ctx) {
-        Object d = ctx.getExtendedState().getVariables().get(EXT_KEY_DEPARTMENT);
-        return d instanceof Department dept && !dept.isRequiresN2();
     }
 }
