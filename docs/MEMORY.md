@@ -216,3 +216,11 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 **Next task:** P4-02
 **Branch:** main
 **Notes:** Created V9__create_notifications.sql Flyway migration script mapping to the DATABASE.md specification. Validated via `mvnw test`.
+
+## Session Checkpoint
+**Date:** 2026-03-29
+**Last completed task:** P4-02
+**Phase:** 4 — Notifications
+**Next task:** P4-03
+**Branch:** main
+**Notes:** Implemented `Notification` entity, `NotificationType` enum, and `NotificationRepository`. Validated via `mvnw test` to ensure successful context initialization.

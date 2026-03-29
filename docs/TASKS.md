@@ -113,7 +113,7 @@
 *Goal: Internal email + in-app notifications on every workflow event*
 
 - [x] **P4-01** Create Flyway migration `V9__create_notifications.sql`
-- [ ] **P4-02** Implement `Notification` entity + `NotificationRepository`
+- [x] **P4-02** Implement `Notification` entity + `NotificationRepository`
 - [ ] **P4-03** Define domain events: `InvoiceSubmittedEvent`, `InvoiceValidatedEvent`, `InvoiceRejectedEvent`, `BonAPayerEvent`, `ApprovalDeadlineEvent`
 - [ ] **P4-04** Implement `EmailNotificationListener` (`@Async @EventListener`) — sends via `EmailService`
 - [ ] **P4-05** Implement `EmailService` with Thymeleaf templates (FR + EN)
