@@ -74,3 +74,12 @@
 ## Session checkpoints
 
 After each completed task, append a `## Session Checkpoint` block here **before** committing that task (see `CLAUDE.md` §9). When resuming work, read the **most recent** checkpoint first.
+
+## Session Checkpoint
+**Date:** 2026-03-29
+**Last completed task:** P3-01
+**Phase:** 3 — Workflow Engine (BAP State Machine)
+**Next task:** P3-02
+**Branch:** main
+**Last commit:** b8227ccc2e88bfe4da802bcc6b4df52969a32aab
+**Notes:** Added Flyway V7 (`approval_steps`) and V8 (`invoice_status_history`) per `docs/DATABASE.md`; indexes included on same migrations.

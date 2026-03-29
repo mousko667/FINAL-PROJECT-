@@ -85,7 +85,7 @@
 ## Phase 3 — Workflow Engine (BAP State Machine)
 *Goal: Full invoice lifecycle through all approval stages*
 
-- [ ] **P3-01** Create Flyway migrations: `V7__create_approval_steps.sql`, `V8__create_invoice_status_history.sql`
+- [x] **P3-01** Create Flyway migrations: `V7__create_approval_steps.sql`, `V8__create_invoice_status_history.sql`
 - [ ] **P3-02** Implement `ApprovalStep` entity
 - [ ] **P3-03** Implement `InvoiceStatusHistory` entity
 - [ ] **P3-04** Implement `InvoiceEvent` enum (SUBMIT, ASSIGN_REVIEWER, VALIDATE_N1, VALIDATE_N2, BON_A_PAYER, RECORD_PAYMENT, REJECT, RESUBMIT, ARCHIVE)
