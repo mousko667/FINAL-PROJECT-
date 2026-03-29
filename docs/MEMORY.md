@@ -92,3 +92,12 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 **Branch:** main
 **Last commit:** 90587c28a9c35799e3d57c2097e6b0af692f9233
 **Notes:** `ApprovalStep` + `ApprovalStepStatus` under `domain.workflow.model`; unique constraint on `(invoice_id, step_order)`.
+
+## Session Checkpoint
+**Date:** 2026-03-29
+**Last completed task:** P3-03
+**Phase:** 3 — Workflow Engine (BAP State Machine)
+**Next task:** P3-04
+**Branch:** main
+**Last commit:** 32a942a4c47d2aa8682513e9d65f156f41166a49
+**Notes:** `InvoiceStatusHistory` entity maps `from_status` / `to_status` as strings (aligns with `InvoiceStatus` enum names in DB).
