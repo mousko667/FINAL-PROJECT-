@@ -224,3 +224,11 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 **Next task:** P4-03
 **Branch:** main
 **Notes:** Implemented `Notification` entity, `NotificationType` enum, and `NotificationRepository`. Validated via `mvnw test` to ensure successful context initialization.
+
+## Session Checkpoint
+**Date:** 2026-03-29
+**Last completed task:** P4-03
+**Phase:** 4 — Notifications
+**Next task:** P4-04
+**Branch:** main
+**Notes:** Definded domain events for workflow notification triggers (`InvoiceSubmittedEvent`, `InvoiceValidatedEvent`, `InvoiceRejectedEvent`, `BonAPayerEvent`, `ApprovalDeadlineEvent`). Tests passed successfully.
