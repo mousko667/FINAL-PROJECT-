@@ -169,15 +169,6 @@ spring:
 minio:
   endpoint: http://localhost:9000
 
-# Dev-only secrets — local runs without .env; do not use in prod
-jwt:
-  secret: b2N0aW52b2ljZXN5c3RlbXNlY3JldGtleWZvcmp3dHRva2VuZ2VuZXJhdGlvbjIwMjY=
-  expiration-ms: 86400000
-  refresh-expiration-ms: 604800000
-
-encryption:
-  key: "OCTInvoice2026SecretKey!@#$%^&*"
-
 logging:
   level:
     com.oct.invoicesystem: DEBUG
