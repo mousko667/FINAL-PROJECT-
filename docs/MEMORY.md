@@ -101,3 +101,12 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 **Branch:** main
 **Last commit:** 32a942a4c47d2aa8682513e9d65f156f41166a49
 **Notes:** `InvoiceStatusHistory` entity maps `from_status` / `to_status` as strings (aligns with `InvoiceStatus` enum names in DB).
+
+## Session Checkpoint
+**Date:** 2026-03-29
+**Last completed task:** P3-04
+**Phase:** 3 — Workflow Engine (BAP State Machine)
+**Next task:** P3-05
+**Branch:** main
+**Last commit:** 01006e4233908ca740cd070bdddfdb0995da1951
+**Notes:** `InvoiceEvent` enum in `domain.invoice.statemachine` (all events from WORKFLOW §3).
