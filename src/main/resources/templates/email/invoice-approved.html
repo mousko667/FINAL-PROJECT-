@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Facture Approuvée — Bon À Payer / Invoice Approved — BAP Issued</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 32px auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+        .header { background: #1a6b3c; padding: 24px; text-align: center; }
+        .header h1 { color: #ffffff; font-size: 20px; margin: 0; }
+        .body { padding: 32px; color: #333; }
+        .body p { line-height: 1.6; }
+        .invoice-box { background: #f0faf4; border-left: 4px solid #1a6b3c; padding: 16px 20px; border-radius: 4px; margin: 20px 0; }
+        .invoice-box p { margin: 6px 0; }
+        .label { font-weight: bold; color: #1a6b3c; }
+        .badge { display: inline-block; background: #1a6b3c; color: #fff; border-radius: 20px; padding: 4px 14px; font-size: 13px; font-weight: bold; margin-bottom: 12px; }
+        .btn { display: inline-block; margin-top: 24px; padding: 12px 28px; background: #1a6b3c; color: #fff; text-decoration: none; border-radius: 6px; font-weight: bold; }
+        .divider { border: none; border-top: 1px solid #e0e0e0; margin: 24px 0; }
+        .footer { background: #f9f9f9; padding: 16px 32px; font-size: 12px; color: #888; text-align: center; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>OCT — Bon À Payer accordé / BAP Issued</h1>
+    </div>
+    <div class="body">
+        <!-- FR -->
+        <p>Bonjour,</p>
+        <span class="badge">✓ BON À PAYER</span>
+        <p>Votre facture a reçu le <strong>Bon À Payer (BAP)</strong>. Elle est maintenant prête pour le traitement du paiement.</p>
+        <div class="invoice-box">
+            <p><span class="label">Référence :</span> <span th:text="${reference}">FAC-2026-00001</span></p>
+            <p><span class="label">Fournisseur :</span> <span th:text="${supplierName}">Fournisseur SA</span></p>
+            <p><span class="label">Montant :</span> <span th:text="${amount}">0 XAF</span></p>
+        </div>
+        <a th:href="${frontendUrl}" class="btn">Voir les détails →</a>
+
+        <hr class="divider"/>
+
+        <!-- EN -->
+        <p>Hello,</p>
+        <span class="badge">✓ BON À PAYER</span>
+        <p>Your invoice has received the <strong>Bon À Payer (BAP)</strong> approval and is now ready for payment processing.</p>
+        <div class="invoice-box">
+            <p><span class="label">Reference:</span> <span th:text="${reference}">FAC-2026-00001</span></p>
+            <p><span class="label">Supplier:</span> <span th:text="${supplierName}">Supplier Inc.</span></p>
+            <p><span class="label">Amount:</span> <span th:text="${amount}">0 XAF</span></p>
+        </div>
+        <a th:href="${frontendUrl}" class="btn">View details →</a>
+    </div>
+    <div class="footer">
+        OCT — Owendo Container Terminal · Ce message est à usage interne uniquement / For internal use only.
+    </div>
+</div>
+</body>
+</html>

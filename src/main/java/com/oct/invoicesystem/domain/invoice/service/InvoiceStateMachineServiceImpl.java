@@ -6,11 +6,16 @@ import com.oct.invoicesystem.domain.invoice.repository.InvoiceRepository;
 import com.oct.invoicesystem.domain.invoice.statemachine.InvoiceEvent;
 import com.oct.invoicesystem.domain.invoice.statemachine.InvoiceStateChangeListener;
 import com.oct.invoicesystem.domain.invoice.statemachine.WorkflowExtendedStateKeys;
+import com.oct.invoicesystem.domain.notification.event.BonAPayerEvent;
+import com.oct.invoicesystem.domain.notification.event.InvoiceRejectedEvent;
+import com.oct.invoicesystem.domain.notification.event.InvoiceSubmittedEvent;
+import com.oct.invoicesystem.domain.notification.event.InvoiceValidatedEvent;
 import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 import com.oct.invoicesystem.shared.exception.WorkflowException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.security.core.Authentication;
@@ -32,6 +37,7 @@ public class InvoiceStateMachineServiceImpl implements InvoiceStateMachineServic
     private final InvoiceRepository invoiceRepository;
     private final StateMachineFactory<InvoiceStatus, InvoiceEvent> stateMachineFactory;
     private final InvoiceStateChangeListener invoiceStateChangeListener;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -59,7 +65,7 @@ public class InvoiceStateMachineServiceImpl implements InvoiceStateMachineServic
                 .build();
         InvoiceStatus originalStatus = invoice.getStatus();
         boolean accepted = sm.sendEvent(message);
-        
+
         Exception error = (Exception) sm.getExtendedState().getVariables().get("STATE_MACHINE_ERROR");
         if (error != null) {
             if (error instanceof RuntimeException) {
@@ -71,6 +77,37 @@ public class InvoiceStateMachineServiceImpl implements InvoiceStateMachineServic
         boolean stateChanged = sm.getState() != null && sm.getState().getId() != originalStatus;
         if (!accepted || !stateChanged) {
             throw new WorkflowException("Transition denied for event " + event + " from state " + originalStatus);
+        }
+
+        // Publish domain notification events after successful state transition
+        publishNotificationEvent(event, invoiceId, variables);
+    }
+
+    /**
+     * Publish the appropriate notification domain event after a successful workflow transition.
+     */
+    private void publishNotificationEvent(InvoiceEvent event, UUID invoiceId, Map<String, Object> variables) {
+        try {
+            switch (event) {
+                case SUBMIT, RESUBMIT ->
+                        eventPublisher.publishEvent(new InvoiceSubmittedEvent(this, invoiceId));
+                case VALIDATE_N1 ->
+                        eventPublisher.publishEvent(new InvoiceValidatedEvent(this, invoiceId, "N1"));
+                case VALIDATE_N2 ->
+                        eventPublisher.publishEvent(new InvoiceValidatedEvent(this, invoiceId, "N2"));
+                case BON_A_PAYER ->
+                        eventPublisher.publishEvent(new BonAPayerEvent(this, invoiceId));
+                case REJECT -> {
+                    String reason = variables != null
+                            ? (String) variables.getOrDefault("rejectionReason", "")
+                            : "";
+                    eventPublisher.publishEvent(new InvoiceRejectedEvent(this, invoiceId, reason));
+                }
+                default -> { /* ASSIGN_REVIEWER, RECORD_PAYMENT, ARCHIVE — no notification needed here */ }
+            }
+        } catch (Exception e) {
+            log.error("Failed to publish notification event for invoice {}: {}", invoiceId, e.getMessage());
+            // Intentionally not re-throwing — notification failure must never roll back the workflow transaction
         }
     }
 

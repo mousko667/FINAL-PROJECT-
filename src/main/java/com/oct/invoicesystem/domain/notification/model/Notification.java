@@ -22,7 +22,7 @@ import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -68,9 +68,9 @@ public class Notification {
     private boolean isRead = false;
 
     @Column(name = "read_at")
-    private ZonedDateTime readAt;
+    private Instant readAt;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
-    private ZonedDateTime createdAt;
+    private Instant createdAt;
 }

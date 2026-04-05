@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Facture Rejetée / Invoice Rejected</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 32px auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+        .header { background: #a01c1c; padding: 24px; text-align: center; }
+        .header h1 { color: #ffffff; font-size: 20px; margin: 0; }
+        .body { padding: 32px; color: #333; }
+        .body p { line-height: 1.6; }
+        .invoice-box { background: #fdf0f0; border-left: 4px solid #a01c1c; padding: 16px 20px; border-radius: 4px; margin: 20px 0; }
+        .invoice-box p { margin: 6px 0; }
+        .label { font-weight: bold; color: #a01c1c; }
+        .reason-box { background: #fff8e1; border-left: 4px solid #f0ad00; padding: 16px 20px; border-radius: 4px; margin: 20px 0; }
+        .btn { display: inline-block; margin-top: 24px; padding: 12px 28px; background: #a01c1c; color: #fff; text-decoration: none; border-radius: 6px; font-weight: bold; }
+        .divider { border: none; border-top: 1px solid #e0e0e0; margin: 24px 0; }
+        .footer { background: #f9f9f9; padding: 16px 32px; font-size: 12px; color: #888; text-align: center; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>OCT — Facture Rejetée / Invoice Rejected</h1>
+    </div>
+    <div class="body">
+        <!-- FR -->
+        <p>Bonjour,</p>
+        <p>Votre facture a été <strong>rejetée</strong> par le service approuvant. Veuillez corriger les informations et resoumettre la facture.</p>
+        <div class="invoice-box">
+            <p><span class="label">Référence :</span> <span th:text="${reference}">FAC-2026-00001</span></p>
+            <p><span class="label">Fournisseur :</span> <span th:text="${supplierName}">Fournisseur SA</span></p>
+            <p><span class="label">Montant :</span> <span th:text="${amount}">0 XAF</span></p>
+        </div>
+        <div class="reason-box">
+            <p><span class="label">Motif du rejet :</span></p>
+            <p th:text="${reason}">Informations manquantes.</p>
+        </div>
+        <a th:href="${frontendUrl}" class="btn">Corriger et resoumettre →</a>
+
+        <hr class="divider"/>
+
+        <!-- EN -->
+        <p>Hello,</p>
+        <p>Your invoice has been <strong>rejected</strong> by the approving department. Please correct the information and resubmit.</p>
+        <div class="invoice-box">
+            <p><span class="label">Reference:</span> <span th:text="${reference}">FAC-2026-00001</span></p>
+            <p><span class="label">Supplier:</span> <span th:text="${supplierName}">Supplier Inc.</span></p>
+            <p><span class="label">Amount:</span> <span th:text="${amount}">0 XAF</span></p>
+        </div>
+        <div class="reason-box">
+            <p><span class="label">Rejection reason:</span></p>
+            <p th:text="${reason}">Missing information.</p>
+        </div>
+        <a th:href="${frontendUrl}" class="btn">Correct and resubmit →</a>
+    </div>
+    <div class="footer">
+        OCT — Owendo Container Terminal · Ce message est à usage interne uniquement / For internal use only.
+    </div>
+</div>
+</body>
+</html>

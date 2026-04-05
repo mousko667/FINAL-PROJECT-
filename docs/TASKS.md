@@ -115,16 +115,16 @@
 - [x] **P4-01** Create Flyway migration `V9__create_notifications.sql`
 - [x] **P4-02** Implement `Notification` entity + `NotificationRepository`
 - [x] **P4-03** Define domain events: `InvoiceSubmittedEvent`, `InvoiceValidatedEvent`, `InvoiceRejectedEvent`, `BonAPayerEvent`, `ApprovalDeadlineEvent`
-- [ ] **P4-04** Implement `EmailNotificationListener` (`@Async @EventListener`) — sends via `EmailService`
-- [ ] **P4-05** Implement `EmailService` with Thymeleaf templates (FR + EN)
-- [ ] **P4-06** Create email templates: `invoice-submitted.html`, `invoice-rejected.html`, `invoice-approved.html`, `deadline-reminder.html`
-- [ ] **P4-07** Implement `PersistNotificationListener` (`@Async @EventListener`) — saves to DB
-- [ ] **P4-08** Configure `WebSocketConfig` (STOMP over SockJS, user-specific topics)
-- [ ] **P4-09** Implement `WebSocketNotificationListener` (`@Async @EventListener`)
-- [ ] **P4-10** Implement `NotificationController` (list, mark-read, mark-all-read)
-- [ ] **P4-11** Implement `@Scheduled` deadline reminder job (runs daily, checks overdue approval steps)
-- [ ] **P4-12** Write unit tests: all listener tests with mock `EmailService` and `SimpMessagingTemplate`
-- [ ] **P4-13** Write integration tests: event publishing verified end-to-end
+- [x] **P4-04** Implement `EmailNotificationListener` (`@Async @EventListener`) — sends via `EmailService`
+- [x] **P4-05** Implement `EmailService` with Thymeleaf templates (FR + EN)
+- [x] **P4-06** Create email templates: `invoice-submitted.html`, `invoice-rejected.html`, `invoice-approved.html`, `deadline-reminder.html`
+- [x] **P4-07** Implement `PersistNotificationListener` (`@Async @EventListener`) — saves to DB
+- [x] **P4-08** Configure `WebSocketConfig` (STOMP over SockJS, user-specific topics)
+- [x] **P4-09** Implement `WebSocketNotificationListener` (`@Async @EventListener`)
+- [x] **P4-10** Implement `NotificationController` (list, mark-read, mark-all-read)
+- [x] **P4-11** Implement `@Scheduled` deadline reminder job (runs daily, checks overdue approval steps)
+- [x] **P4-12** Write unit tests: all listener tests with mock `EmailService` and `SimpMessagingTemplate`
+- [x] **P4-13** Write integration tests: event publishing verified end-to-end
 
 **Phase 4 Exit Criteria:** Submitting an invoice triggers an in-app notification AND an email to the N1 approvers. Notifications persisted in DB. WebSocket delivers real-time alerts.
 

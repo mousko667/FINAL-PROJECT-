@@ -187,6 +187,12 @@ spring:
     activate:
       on-profile: test
 
+  task:
+    execution:
+      pool:
+        core-size: 1
+      thread-name-prefix: test-async-
+
   datasource:
     url: jdbc:postgresql://localhost:5432/oct_invoice_dev
     username: postgres

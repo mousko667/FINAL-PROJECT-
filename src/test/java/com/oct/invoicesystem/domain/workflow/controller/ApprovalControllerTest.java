@@ -56,6 +56,7 @@ class ApprovalControllerTest {
     @Autowired private ApprovalStepRepository approvalStepRepository;
     @Autowired private InvoiceStatusHistoryRepository invoiceStatusHistoryRepository;
     @Autowired private InvoiceStateMachineService invoiceStateMachineService;
+    @Autowired private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     // --- Shared users and departments created per test class load ---
     private User assistant;
@@ -84,7 +85,8 @@ class ApprovalControllerTest {
     }
 
     @AfterEach
-    void tearDown() {
+    void tearDown() throws InterruptedException {
+        Thread.sleep(300); // Wait for any async notification listeners to finish before cleaning DB
         cleanDb();
     }
 
@@ -291,6 +293,7 @@ class ApprovalControllerTest {
     }
 
     private void cleanDb() {
+        jdbcTemplate.execute("DELETE FROM notifications");
         approvalStepRepository.deleteAll();
         invoiceStatusHistoryRepository.deleteAll();
         invoiceDocumentRepository.deleteAll();

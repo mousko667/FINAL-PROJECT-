@@ -196,7 +196,47 @@ first to know exactly where to resume.
 
 ---
 
-## 10. Git Discipline
+## 10. Blocker Protocol
+
+When stuck on any task, follow this exact protocol:
+
+STOP immediately. Do not:
+- Run diagnostic commands repeatedly
+- Try multiple fixes in a loop
+- Execute Start-Sleep or polling commands
+- Attempt more than 2 fix attempts on the same error
+
+Instead, report the blocker in this exact format:
+
+---
+BLOCKER REPORT
+Current task: P{X}-{XX} — {task name from docs/TASKS.md}
+Phase: {phase number and name}
+Last successful task: P{X}-{XX}
+Last commit: {hash}
+
+What I was doing:
+{one sentence describing the action that failed}
+
+Exact error:
+{paste the exact error message — nothing more}
+
+What I tried:
+1. {fix attempt 1 — one sentence}
+2. {fix attempt 2 — one sentence}
+
+What I need:
+{one sentence describing what decision or information is needed}
+---
+
+Then STOP and wait for instructions.
+Never run more than 2 fix attempts before issuing a blocker report.
+Never run commands just to gather diagnostic information —
+read existing log files instead.
+
+---
+
+## 11. Git Discipline
 
 After completing each task AND verifying tests pass:
 

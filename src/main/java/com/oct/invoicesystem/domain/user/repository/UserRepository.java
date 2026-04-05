@@ -2,6 +2,7 @@ package com.oct.invoicesystem.domain.user.repository;
 
 import com.oct.invoicesystem.domain.user.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.EntityGraph;
 
@@ -13,7 +14,10 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @EntityGraph(attributePaths = {"userRoles", "userRoles.role"})
     Optional<User> findByUsername(String username);
     Optional<User> findByEmail(String email);
-    
+
+    @Query("SELECT u FROM User u JOIN u.userRoles ur WHERE ur.role.name = :roleName AND u.isActive = true")
+    java.util.List<User> findActiveUsersByRoleName(String roleName);
+
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
 }
