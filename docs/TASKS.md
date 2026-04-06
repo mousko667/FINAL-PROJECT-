@@ -149,7 +149,7 @@
 
 - [x] **P6-01** Create Flyway migration `V11__create_audit_logs.sql`
 - [x] **P6-02** Implement `AuditLog` entity + `AuditRepository`
-- [ ] **P6-03** Implement `AuditService` (append-only log writes)
+- [x] **P6-03** Implement `AuditService` (append-only log writes)
 - [ ] **P6-04** Implement `AuditController` (paginated log, filter by user/entity/action)
 - [ ] **P6-05** Implement `ReportService` (KPI queries: avg processing time, volume by status, rejection rate, overdue count, top suppliers)
 - [ ] **P6-06** Implement Excel export (Apache POI — filtered invoice list)
