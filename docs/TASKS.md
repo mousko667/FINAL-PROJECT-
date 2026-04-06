@@ -133,12 +133,12 @@
 ## Phase 5 — Payment & Archiving
 *Goal: Record payments and archive completed invoices*
 
-- [ ] **P5-01** Create Flyway migration `V10__create_payments.sql`
-- [ ] **P5-02** Implement `Payment` entity + `PaymentRepository`
-- [ ] **P5-03** Implement `PaymentService` (record payment, trigger PAYE→ARCHIVE)
-- [ ] **P5-04** Implement `PaymentController` (record, get, list)
-- [ ] **P5-05** Write unit tests: `PaymentServiceTest`
-- [ ] **P5-06** Write integration tests: `PaymentControllerTest`
+- [x] **P5-01** Create Flyway migration `V10__create_payments.sql`
+- [x] **P5-02** Implement `Payment` entity + `PaymentRepository`
+- [x] **P5-03** Implement `PaymentService` (record payment, trigger PAYE→ARCHIVE)
+- [x] **P5-04** Implement `PaymentController` (record, get, list)
+- [x] **P5-05** Write unit tests: `PaymentServiceTest`
+- [x] **P5-06** Write integration tests: `PaymentControllerTest`
 
 **Phase 5 Exit Criteria:** A BON_A_PAYER invoice can be paid and automatically archives.
 
@@ -147,8 +147,8 @@
 ## Phase 6 — Audit & Reporting
 *Goal: Full audit trail and management reports*
 
-- [ ] **P6-01** Create Flyway migration `V11__create_audit_logs.sql`
-- [ ] **P6-02** Implement `AuditLog` entity + `AuditRepository`
+- [x] **P6-01** Create Flyway migration `V11__create_audit_logs.sql`
+- [x] **P6-02** Implement `AuditLog` entity + `AuditRepository`
 - [ ] **P6-03** Implement `AuditService` (append-only log writes)
 - [ ] **P6-04** Implement `AuditController` (paginated log, filter by user/entity/action)
 - [ ] **P6-05** Implement `ReportService` (KPI queries: avg processing time, volume by status, rejection rate, overdue count, top suppliers)
