@@ -1,0 +1,144 @@
+// English translations
+{
+  "app": {
+    "name": "OCT Invoice System",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "close": "Close",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "noData": "No data available",
+    "all": "All"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "username": "Username",
+    "password": "Password",
+    "loginButton": "Sign In",
+    "loginError": "Invalid credentials",
+    "sessionExpired": "Your session has expired. Please log in again."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "invoices": "Invoices",
+    "reports": "Reports",
+    "admin": "Administration",
+    "users": "Users",
+    "departments": "Departments",
+    "auditLog": "Audit Log",
+    "notifications": "Notifications"
+  },
+  "invoice": {
+    "title": "Invoices",
+    "new": "New Invoice",
+    "reference": "Reference",
+    "supplier": "Supplier",
+    "amount": "Amount",
+    "currency": "Currency",
+    "issueDate": "Issue Date",
+    "dueDate": "Due Date",
+    "department": "Department",
+    "description": "Description",
+    "status": "Status",
+    "actions": "Actions",
+    "details": "Invoice Details",
+    "timeline": "Status History",
+    "documents": "Documents",
+    "lineItems": "Line Items",
+    "submit": "Submit",
+    "validate": "Validate",
+    "reject": "Reject",
+    "approve": "Approve (BAP)",
+    "markPaid": "Mark as Paid",
+    "archive": "Archive",
+    "rejectReason": "Rejection reason",
+    "confirmReject": "Confirm rejection",
+    "statusUpdated": "Status updated successfully"
+  },
+  "status": {
+    "BROUILLON": "Draft",
+    "SOUMIS": "Submitted",
+    "EN_VALIDATION_N1": "Pending N1 Validation",
+    "EN_VALIDATION_N2": "Pending N2 Validation",
+    "VALIDE": "Validated",
+    "BON_A_PAYER": "Approved for Payment",
+    "PAYE": "Paid",
+    "ARCHIVE": "Archived",
+    "REJETE": "Rejected"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "totalInvoices": "Total Invoices",
+    "overdueInvoices": "Overdue Invoices",
+    "avgProcessingTime": "Avg Processing Time",
+    "rejectionRate": "Rejection Rate",
+    "topSuppliers": "Top Suppliers",
+    "invoicesByStatus": "Invoices by Status",
+    "days": "days"
+  },
+  "reports": {
+    "title": "Reports",
+    "exportExcel": "Export to Excel",
+    "exportPdfAudit": "Export Audit PDF",
+    "exportPdfCompliance": "Export Compliance PDF",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "generating": "Generating...",
+    "downloadReady": "Download ready"
+  },
+  "admin": {
+    "users": {
+      "title": "User Management",
+      "create": "Create User",
+      "fullName": "Full Name",
+      "email": "Email",
+      "role": "Role",
+      "department": "Department",
+      "active": "Active"
+    },
+    "departments": {
+      "title": "Department Management",
+      "create": "Create Department",
+      "name": "Name",
+      "code": "Code",
+      "budget": "Budget"
+    },
+    "audit": {
+      "title": "Audit Log",
+      "user": "User",
+      "action": "Action",
+      "entity": "Entity",
+      "date": "Date",
+      "details": "Details"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "noNotifications": "No notifications",
+    "unread": "unread"
+  },
+  "validation": {
+    "required": "This field is required",
+    "minLength": "Minimum {{min}} characters required",
+    "maxLength": "Maximum {{max}} characters allowed",
+    "invalidEmail": "Invalid email",
+    "positiveNumber": "Must be a positive number"
+  },
+  "pagination": {
+    "page": "Page",
+    "of": "of",
+    "previous": "Previous",
+    "next": "Next",
+    "perPage": "Per page"
+  }
+}

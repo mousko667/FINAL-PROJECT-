@@ -1,0 +1,144 @@
+// French translations (default language)
+{
+  "app": {
+    "name": "Système de Facturation OCT",
+    "loading": "Chargement...",
+    "error": "Une erreur est survenue",
+    "retry": "Réessayer",
+    "confirm": "Confirmer",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "view": "Voir",
+    "close": "Fermer",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "export": "Exporter",
+    "noData": "Aucune donnée disponible",
+    "all": "Tous"
+  },
+  "auth": {
+    "login": "Connexion",
+    "logout": "Déconnexion",
+    "username": "Nom d'utilisateur",
+    "password": "Mot de passe",
+    "loginButton": "Se connecter",
+    "loginError": "Identifiants incorrects",
+    "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter."
+  },
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "invoices": "Factures",
+    "reports": "Rapports",
+    "admin": "Administration",
+    "users": "Utilisateurs",
+    "departments": "Départements",
+    "auditLog": "Journal d'audit",
+    "notifications": "Notifications"
+  },
+  "invoice": {
+    "title": "Factures",
+    "new": "Nouvelle facture",
+    "reference": "Référence",
+    "supplier": "Fournisseur",
+    "amount": "Montant",
+    "currency": "Devise",
+    "issueDate": "Date d'émission",
+    "dueDate": "Date d'échéance",
+    "department": "Département",
+    "description": "Description",
+    "status": "Statut",
+    "actions": "Actions",
+    "details": "Détails de la facture",
+    "timeline": "Historique des statuts",
+    "documents": "Documents",
+    "lineItems": "Lignes de facturation",
+    "submit": "Soumettre",
+    "validate": "Valider",
+    "reject": "Rejeter",
+    "approve": "Approuver (BAP)",
+    "markPaid": "Marquer comme payée",
+    "archive": "Archiver",
+    "rejectReason": "Motif du rejet",
+    "confirmReject": "Confirmer le rejet",
+    "statusUpdated": "Statut mis à jour avec succès"
+  },
+  "status": {
+    "BROUILLON": "Brouillon",
+    "SOUMIS": "Soumis",
+    "EN_VALIDATION_N1": "En validation N1",
+    "EN_VALIDATION_N2": "En validation N2",
+    "VALIDE": "Validé",
+    "BON_A_PAYER": "Bon à payer",
+    "PAYE": "Payé",
+    "ARCHIVE": "Archivé",
+    "REJETE": "Rejeté"
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "totalInvoices": "Total des factures",
+    "overdueInvoices": "Factures en retard",
+    "avgProcessingTime": "Temps de traitement moyen",
+    "rejectionRate": "Taux de rejet",
+    "topSuppliers": "Top fournisseurs",
+    "invoicesByStatus": "Factures par statut",
+    "days": "jours"
+  },
+  "reports": {
+    "title": "Rapports",
+    "exportExcel": "Exporter en Excel",
+    "exportPdfAudit": "Exporter l'audit PDF",
+    "exportPdfCompliance": "Exporter la conformité PDF",
+    "startDate": "Date de début",
+    "endDate": "Date de fin",
+    "generating": "Génération en cours...",
+    "downloadReady": "Téléchargement prêt"
+  },
+  "admin": {
+    "users": {
+      "title": "Gestion des utilisateurs",
+      "create": "Créer un utilisateur",
+      "fullName": "Nom complet",
+      "email": "Email",
+      "role": "Rôle",
+      "department": "Département",
+      "active": "Actif"
+    },
+    "departments": {
+      "title": "Gestion des départements",
+      "create": "Créer un département",
+      "name": "Nom",
+      "code": "Code",
+      "budget": "Budget"
+    },
+    "audit": {
+      "title": "Journal d'audit",
+      "user": "Utilisateur",
+      "action": "Action",
+      "entity": "Entité",
+      "date": "Date",
+      "details": "Détails"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Tout marquer comme lu",
+    "noNotifications": "Aucune notification",
+    "unread": "non lu(s)"
+  },
+  "validation": {
+    "required": "Ce champ est obligatoire",
+    "minLength": "Minimum {{min}} caractères requis",
+    "maxLength": "Maximum {{max}} caractères autorisés",
+    "invalidEmail": "Email invalide",
+    "positiveNumber": "Doit être un nombre positif"
+  },
+  "pagination": {
+    "page": "Page",
+    "of": "sur",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "perPage": "Par page"
+  }
+}
