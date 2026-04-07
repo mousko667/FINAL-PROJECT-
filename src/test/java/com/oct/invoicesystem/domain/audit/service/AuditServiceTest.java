@@ -96,26 +96,18 @@ class AuditServiceTest {
     }
 
     @Test
-    void getLogs_ReturnsPage() {
+    void searchLogs_WithNoFilters_ReturnsPage() {
         PageRequest pr = PageRequest.of(0, 10);
-        when(auditLogRepository.findAll(pr)).thenReturn(Page.empty());
-        Page<AuditLogDTO> result = auditService.getLogs(pr);
+        when(auditLogRepository.findAll(any(Specification.class), eq(pr))).thenReturn(Page.empty());
+        Page<AuditLogDTO> result = auditService.searchLogs(null, null, null, null, pr);
         assertNotNull(result);
     }
     
     @Test
-    void getLogsByUser_ReturnsPage() {
+    void searchLogs_WithFilters_ReturnsPage() {
         PageRequest pr = PageRequest.of(0, 10);
         when(auditLogRepository.findAll(any(Specification.class), eq(pr))).thenReturn(Page.empty());
-        Page<AuditLogDTO> result = auditService.getLogsByUser(UUID.randomUUID(), pr);
-        assertNotNull(result);
-    }
-    
-    @Test
-    void getLogsByEntity_ReturnsPage() {
-        PageRequest pr = PageRequest.of(0, 10);
-        when(auditLogRepository.findAll(any(Specification.class), eq(pr))).thenReturn(Page.empty());
-        Page<AuditLogDTO> result = auditService.getLogsByEntity("INVOICE", "123", pr);
+        Page<AuditLogDTO> result = auditService.searchLogs(UUID.randomUUID(), "INVOICE", "123", "CREATE", pr);
         assertNotNull(result);
     }
 }

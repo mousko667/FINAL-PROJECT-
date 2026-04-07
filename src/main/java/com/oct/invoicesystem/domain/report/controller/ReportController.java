@@ -1,0 +1,87 @@
+package com.oct.invoicesystem.domain.report.controller;
+
+import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
+import com.oct.invoicesystem.domain.report.dto.DashboardKpiDTO;
+import com.oct.invoicesystem.domain.report.service.ReportService;
+import com.oct.invoicesystem.shared.response.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.io.ByteArrayInputStream;
+import java.time.LocalDate;
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/v1/reports")
+@RequiredArgsConstructor
+@Tag(name = "Report Management", description = "Endpoints for KPI dashboard and document exports")
+@SecurityRequirement(name = "bearerAuth")
+public class ReportController {
+
+    private final ReportService reportService;
+
+    @GetMapping("/kpis")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DAF')")
+    @Operation(summary = "Get Dashboard KPIs", description = "Retrieves real-time KPIs for the dashboard")
+    public ApiResponse<DashboardKpiDTO> getKpis() {
+        return ApiResponse.success(reportService.getDashboardKpis());
+    }
+
+    @GetMapping("/export/excel")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DAF')")
+    @Operation(summary = "Export Invoices to Excel", description = "Generates and downloads an Excel file of filtered invoices")
+    public ResponseEntity<Resource> exportExcel(
+            @RequestParam(required = false) InvoiceStatus status,
+            @RequestParam(required = false) UUID departmentId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(required = false) String reference) {
+
+        ByteArrayInputStream stream = reportService.exportInvoicesToExcel(status, departmentId, fromDate, toDate, reference);
+        InputStreamResource file = new InputStreamResource(stream);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=invoices_report.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(file);
+    }
+
+    @GetMapping("/export/pdf/audit/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DAF')")
+    @Operation(summary = "Export Invoice Audit to PDF", description = "Generates and downloads a detailed audit trail for a specific invoice")
+    public ResponseEntity<Resource> exportAuditPdf(@PathVariable UUID id) {
+        ByteArrayInputStream stream = reportService.generateInvoiceAuditPdf(id);
+        InputStreamResource file = new InputStreamResource(stream);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=invoice_audit_" + id + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(file);
+    }
+
+    @GetMapping("/export/pdf/compliance")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DAF')")
+    @Operation(summary = "Export Compliance Report to PDF", description = "Generates and downloads a compliance summary for a date range")
+    public ResponseEntity<Resource> exportCompliancePdf(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+
+        ByteArrayInputStream stream = reportService.generateCompliancePdf(startDate, endDate);
+        InputStreamResource file = new InputStreamResource(stream);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=compliance_report.pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(file);
+    }
+}

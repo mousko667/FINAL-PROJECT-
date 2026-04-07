@@ -87,24 +87,22 @@ public class AuditServiceImpl implements AuditService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<AuditLogDTO> getLogs(Pageable pageable) {
-        return auditLogRepository.findAll(pageable).map(this::toDTO);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<AuditLogDTO> getLogsByUser(UUID userId, Pageable pageable) {
-        Specification<AuditLog> spec = (root, query, cb) -> cb.equal(root.get("user").get("id"), userId);
-        return auditLogRepository.findAll(spec, pageable).map(this::toDTO);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<AuditLogDTO> getLogsByEntity(String entityType, String entityId, Pageable pageable) {
-        Specification<AuditLog> spec = (root, query, cb) -> cb.and(
-                cb.equal(root.get("entityType"), entityType),
-                cb.equal(root.get("entityId"), entityId)
-        );
+    public Page<AuditLogDTO> searchLogs(UUID userId, String entityType, String entityId, String action, Pageable pageable) {
+        Specification<AuditLog> spec = Specification.where(null);
+        
+        if (userId != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("user").get("id"), userId));
+        }
+        if (entityType != null && !entityType.isBlank()) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("entityType"), entityType));
+        }
+        if (entityId != null && !entityId.isBlank()) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("entityId"), entityId));
+        }
+        if (action != null && !action.isBlank()) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("action"), action));
+        }
+        
         return auditLogRepository.findAll(spec, pageable).map(this::toDTO);
     }
 

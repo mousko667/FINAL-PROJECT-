@@ -245,3 +245,21 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 **Branch:** main
 **Last commit:** e9555dbbed339ef3c1f0d15acef0d1e9d0a0fee4
 **Notes:** Flyway migration V11 created.
+
+## Session Checkpoint
+**Date:** 2026-04-06
+**Last completed task:** P6-02
+**Phase:** 6 — Audit & Reporting
+**Next task:** P6-03
+**Branch:** main
+**Last commit:** c973504
+**Notes:** Implemented AuditLog entity and repository. JSONB mapped to String via @JdbcTypeCode(SqlTypes.JSON).
+
+## Session Checkpoint
+**Date:** 2026-04-06
+**Last completed task:** P6-04
+**Phase:** 6 — Audit & Reporting
+**Next task:** P6-05
+**Branch:** main
+**Last commit:** Pending
+**Notes:** Implemented AuditController with unified search for logs.

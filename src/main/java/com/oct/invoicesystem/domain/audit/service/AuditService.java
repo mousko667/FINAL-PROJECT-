@@ -16,9 +16,6 @@ public interface AuditService {
     /**
      * Read-only fetch for controllers.
      */
-    Page<AuditLogDTO> getLogs(Pageable pageable);
-
-    // Optional filtered ones
-    Page<AuditLogDTO> getLogsByUser(UUID userId, Pageable pageable);
-    Page<AuditLogDTO> getLogsByEntity(String entityType, String entityId, Pageable pageable);
+    // Unified search for controllers
+    Page<AuditLogDTO> searchLogs(UUID userId, String entityType, String entityId, String action, Pageable pageable);
 }

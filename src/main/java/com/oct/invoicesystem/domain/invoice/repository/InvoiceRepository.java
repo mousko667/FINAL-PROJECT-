@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -38,4 +39,13 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
             @Param("reference") String reference,
             Pageable pageable
     );
+
+    @Query("SELECT COUNT(i) FROM Invoice i WHERE i.deletedAt IS NULL AND i.dueDate < :today AND i.status NOT IN ('PAYE', 'ARCHIVE')")
+    long countOverdueInvoices(@Param("today") LocalDate today);
+
+    @Query("SELECT i.supplierName, SUM(i.amount) FROM Invoice i WHERE i.deletedAt IS NULL GROUP BY i.supplierName ORDER BY SUM(i.amount) DESC")
+    Page<Object[]> findTopSuppliersByAmount(Pageable pageable);
+
+    @Query("SELECT i.status, COUNT(i) FROM Invoice i WHERE i.deletedAt IS NULL GROUP BY i.status")
+    List<Object[]> countInvoicesByStatus();
 }
