@@ -1,0 +1,55 @@
+import { useMutation } from '@tanstack/react-query'
+import { useAppDispatch } from '@/store/hooks'
+import { setCredentials, logout } from '@/store/slices/authSlice'
+import apiClient from '@/services/apiClient'
+import { useNavigate } from 'react-router-dom'
+import type { AuthUser } from '@/store/slices/authSlice'
+
+interface LoginRequest {
+  username: string
+  password: string
+}
+
+interface LoginResponse {
+  data: {
+    accessToken: string
+    refreshToken: string
+    user: AuthUser & { roles: string[] }
+  }
+}
+
+/**
+ * useAuth — provides login and logout mutations with Redux side effects.
+ */
+export function useAuth() {
+  const dispatch = useAppDispatch()
+  const navigate = useNavigate()
+
+  const loginMutation = useMutation({
+    mutationFn: (credentials: LoginRequest) =>
+      apiClient.post<LoginResponse>('/auth/login', credentials),
+    onSuccess: (response) => {
+      const { accessToken, refreshToken, user } = response.data.data
+      dispatch(
+        setCredentials({
+          user: { ...user, roles: user.roles as AuthUser['roles'] },
+          accessToken,
+          refreshToken,
+        })
+      )
+      navigate('/dashboard')
+    },
+  })
+
+  const logoutAction = () => {
+    dispatch(logout())
+    navigate('/login')
+  }
+
+  return {
+    login: loginMutation.mutate,
+    isLoggingIn: loginMutation.isPending,
+    loginError: loginMutation.isError,
+    logout: logoutAction,
+  }
+}

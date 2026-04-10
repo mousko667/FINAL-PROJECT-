@@ -263,3 +263,15 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 **Branch:** main
 **Last commit:** Pending
 **Notes:** Implemented AuditController with unified search for logs.
+
+---
+
+### Session Checkpoint: Phase 7 — Frontend (React) [Completed]
+- **Status:** All P7-01 to P7-21 tasks DONE
+- **Stack:** Vite + TypeScript + TailwindCSS + shadcn/ui in /frontend
+- **Infra:** Axios (JWT + 401 refresh), React Query, Redux Toolkit (auth + notification slices), React Router, i18next (FR default), STOMP WebSocket hook
+- **Pages:** LoginPage, DashboardPage (KPIs+Recharts), InvoiceListPage, InvoiceCreatePage (3-step), InvoiceDetailPage, ReportsPage, AdminUsersPage, AdminDepartmentsPage, AdminAuditPage, NotFoundPage
+- **Components:** AppShell, Sidebar (role-aware), Header, NotificationDropdown, StatusBadge, InvoiceTimeline, InvoiceActionPanel (role+status aware), DocumentUploader (drag-and-drop)
+- **Hooks:** useInvoices, useInvoice, useAuth, useWebSocket
+- **Tests:** 27/27 pass — RoleGuard, InvoiceActionPanel, InvoiceTimeline, useInvoices, useAuth
+- **Next Phase:** Phase 8 (as per docs/TASKS.md)

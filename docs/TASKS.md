@@ -167,26 +167,26 @@
 *Goal: Complete working UI for all roles*
 
 - [x] **P7-01** Bootstrap React project (Vite + TypeScript + TailwindCSS + shadcn/ui)
-- [ ] **P7-02** Configure Axios client with JWT interceptor + refresh logic
-- [ ] **P7-03** Configure React Query (`QueryClientProvider`)
-- [ ] **P7-04** Configure Redux Toolkit (auth slice + notification slice)
-- [ ] **P7-05** Configure React Router with nested routes + `ProtectedRoute` + `RoleGuard`
-- [ ] **P7-06** Configure i18n (react-i18next with `fr.json` + `en.json`)
-- [ ] **P7-07** Configure STOMP/WebSocket client hook (`useWebSocket.ts`)
-- [ ] **P7-08** Build `LoginPage` with form validation (React Hook Form + Zod)
-- [ ] **P7-09** Build app shell: sidebar, header, notification bell, language switcher
-- [ ] **P7-10** Build `InvoiceListPage` (table, filters, pagination, status badges)
-- [ ] **P7-11** Build `InvoiceCreatePage` (multi-step form: details â†’ line items â†’ documents)
-- [ ] **P7-12** Build `InvoiceDetailPage` (full view + `InvoiceTimeline` + `InvoiceActionPanel`)
-- [ ] **P7-13** Build `InvoiceActionPanel` (role-aware: shows validate/reject/bon-a-payer based on user role + invoice state)
-- [ ] **P7-14** Build `DocumentUploader` (drag-and-drop, MIME preview, progress bar)
-- [ ] **P7-15** Build `DashboardPage` with role-specific content
-- [ ] **P7-16** Build KPI cards + Recharts charts (donut, bar, line)
-- [ ] **P7-17** Build `NotificationDropdown` + unread badge
-- [ ] **P7-18** Build `ReportsPage` with export panel
-- [ ] **P7-19** Build Admin pages (user management, department config, audit log)
-- [ ] **P7-20** Write component tests (React Testing Library): `InvoiceActionPanel`, `InvoiceTimeline`, `RoleGuard`
-- [ ] **P7-21** Write API hook tests: `useInvoices`, `useAuth`
+- [x] **P7-02** Configure Axios client with JWT interceptor + refresh logic
+- [x] **P7-03** Configure React Query (`QueryClientProvider`)
+- [x] **P7-04** Configure Redux Toolkit (auth slice + notification slice)
+- [x] **P7-05** Configure React Router with nested routes + `ProtectedRoute` + `RoleGuard`
+- [x] **P7-06** Configure i18n (react-i18next with `fr.json` + `en.json`)
+- [x] **P7-07** Configure STOMP/WebSocket client hook (`useWebSocket.ts`)
+- [x] **P7-08** Build `LoginPage` with form validation (React Hook Form + Zod)
+- [x] **P7-09** Build app shell: sidebar, header, notification bell, language switcher
+- [x] **P7-10** Build `InvoiceListPage` (table, filters, pagination, status badges)
+- [x] **P7-11** Build `InvoiceCreatePage` (multi-step form: details â†’ line items â†’ documents)
+- [x] **P7-12** Build `InvoiceDetailPage` (full view + `InvoiceTimeline` + `InvoiceActionPanel`)
+- [x] **P7-13** Build `InvoiceActionPanel` (role-aware: shows validate/reject/bon-a-payer based on user role + invoice state)
+- [x] **P7-14** Build `DocumentUploader` (drag-and-drop, MIME preview, progress bar)
+- [x] **P7-15** Build `DashboardPage` with role-specific content
+- [x] **P7-16** Build KPI cards + Recharts charts (donut, bar, line)
+- [x] **P7-17** Build `NotificationDropdown` + unread badge
+- [x] **P7-18** Build `ReportsPage` with export panel
+- [x] **P7-19** Build Admin pages (user management, department config, audit log)
+- [x] **P7-20** Write component tests (React Testing Library): `InvoiceActionPanel`, `InvoiceTimeline`, `RoleGuard`
+- [x] **P7-21** Write API hook tests: `useInvoices`, `useAuth`
 
 **Phase 7 Exit Criteria:** All user journeys completable in the browser for all roles. FR/EN language switch works. Role guard prevents unauthorized UI actions.
 

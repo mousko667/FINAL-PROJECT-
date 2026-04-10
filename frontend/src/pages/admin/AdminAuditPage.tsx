@@ -1,2 +1,162 @@
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-export default function AdminAuditPage() { const { t } = useTranslation(); return <div>{t('admin.audit.title')}</div> }
+import apiClient from '@/services/apiClient'
+import type { ApiResponse, PagedResponse } from '@/types/invoice'
+import { Loader2, Search, ChevronLeft, ChevronRight } from 'lucide-react'
+
+interface AuditLog {
+  id: string
+  action: string
+  entityType: string
+  entityId: string
+  performedBy?: { username: string }
+  performedAt: string
+  details?: string
+}
+
+interface AuditFilters {
+  username?: string
+  entityType?: string
+  action?: string
+  page: number
+  size: number
+}
+
+export default function AdminAuditPage() {
+  const { t } = useTranslation()
+  const [filters, setFilters] = useState<AuditFilters>({ page: 0, size: 20 })
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['audit-logs', filters],
+    queryFn: async () => {
+      const { data } = await apiClient.get<ApiResponse<PagedResponse<AuditLog>>>(
+        '/audit-logs',
+        { params: filters }
+      )
+      return data.data
+    },
+  })
+
+  const logs = data?.content ?? []
+  const totalPages = data?.totalPages ?? 0
+  const currentPage = filters.page
+
+  const handleFilter = (key: keyof AuditFilters, value: string) =>
+    setFilters((prev) => ({ ...prev, [key]: value || undefined, page: 0 }))
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-gray-900">{t('admin.audit.title')}</h1>
+
+      {/* Filters */}
+      <div className="bg-white rounded-xl border p-4 flex flex-wrap gap-3">
+        <div className="flex items-center gap-2 border rounded-lg px-3 py-2 text-sm flex-1 min-w-[180px]">
+          <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+          <input
+            id="audit-filter-user"
+            className="outline-none w-full bg-transparent"
+            placeholder={t('admin.audit.user')}
+            onChange={(e) => handleFilter('username', e.target.value)}
+          />
+        </div>
+        <input
+          id="audit-filter-entity"
+          className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          placeholder={t('admin.audit.entity')}
+          onChange={(e) => handleFilter('entityType', e.target.value)}
+        />
+        <input
+          id="audit-filter-action"
+          className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          placeholder={t('admin.audit.action')}
+          onChange={(e) => handleFilter('action', e.target.value)}
+        />
+      </div>
+
+      {/* Table */}
+      <div className="bg-white rounded-xl border overflow-hidden">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <>
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.audit.date')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.audit.user')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.audit.action')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.audit.entity')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.audit.details')}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {logs.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="text-center py-16 text-muted-foreground">
+                      {t('app.noData')}
+                    </td>
+                  </tr>
+                ) : (
+                  logs.map((log) => (
+                    <tr key={log.id} id={`audit-row-${log.id}`} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
+                        {new Date(log.performedAt).toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-gray-700">
+                        {log.performedBy?.username ?? '—'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-xs font-mono bg-amber-50 text-amber-700 px-2 py-0.5 rounded border border-amber-100">
+                          {log.action}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {log.entityType}
+                        {log.entityId && (
+                          <span className="ml-1 text-xs text-muted-foreground">#{log.entityId.slice(0, 8)}</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-500 max-w-xs truncate">
+                        {log.details ?? '—'}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
+                <span className="text-sm text-muted-foreground">
+                  {t('pagination.page')} {currentPage + 1} {t('pagination.of')} {totalPages}
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    id="audit-btn-prev"
+                    disabled={currentPage === 0}
+                    onClick={() => setFilters((p) => ({ ...p, page: p.page - 1 }))}
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm border rounded-lg disabled:opacity-40 hover:bg-white transition-colors"
+                  >
+                    <ChevronLeft className="w-4 h-4" /> {t('pagination.previous')}
+                  </button>
+                  <button
+                    id="audit-btn-next"
+                    disabled={currentPage >= totalPages - 1}
+                    onClick={() => setFilters((p) => ({ ...p, page: p.page + 1 }))}
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm border rounded-lg disabled:opacity-40 hover:bg-white transition-colors"
+                  >
+                    {t('pagination.next')} <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
