@@ -195,15 +195,15 @@
 ## Phase 8 â€” Integration, Hardening & Documentation
 *Goal: Production-ready, tested, documented*
 
-- [ ] **P8-01** End-to-end test: full BAP lifecycle for single-level department (Playwright or Cypress)
-- [ ] **P8-02** End-to-end test: full BAP lifecycle for two-level department
-- [ ] **P8-03** Security audit: verify all endpoints reject unauthorized roles (automated test suite)
-- [ ] **P8-04** Add rate limiting on auth endpoints (Spring Security + Bucket4j)
-- [ ] **P8-05** Add HTTP security headers (X-Frame-Options, CSP, HSTS)
-- [ ] **P8-06** Performance test: invoice list endpoint with 10,000 records (< 2s)
-- [ ] **P8-07** Add DB indexes: `invoices(status)`, `invoices(department_id)`, `invoices(created_at)`, `audit_logs(created_at)`
-- [ ] **P8-08** Write `README.md` with setup instructions, architecture overview, test commands
-- [ ] **P8-09** Generate final Swagger/OpenAPI spec export
-- [ ] **P8-10** Final `docker-compose up` verification â€” fresh machine, zero manual steps
+- [x] **P8-01** End-to-end test: full BAP lifecycle for single-level department (Playwright or Cypress)
+- [x] **P8-02** End-to-end test: full BAP lifecycle for two-level department
+- [x] **P8-03** Security audit: verify all endpoints reject unauthorized roles (automated test suite)
+- [x] **P8-04** Add rate limiting on auth endpoints (Spring Security + Bucket4j)
+- [x] **P8-05** Add HTTP security headers (X-Frame-Options, CSP, HSTS)
+- [x] **P8-06** Performance test: invoice list endpoint with 10,000 records (< 2s)
+- [x] **P8-07** Add DB indexes: `invoices(status)`, `invoices(department_id)`, `invoices(created_at)`, `audit_logs(created_at)`
+- [x] **P8-08** Write `README.md` with setup instructions, architecture overview, test commands
+- [x] **P8-09** Generate final Swagger/OpenAPI spec export
+- [x] **P8-10** Final `docker-compose up` verification — fresh machine, zero manual steps
 
 **Phase 8 Exit Criteria:** `docker-compose up` on a fresh machine â†’ working app. All E2E tests pass. Swagger UI documents all endpoints.

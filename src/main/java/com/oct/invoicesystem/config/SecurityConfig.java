@@ -18,6 +18,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.oct.invoicesystem.domain.auth.filter.JwtAuthenticationFilter;
+import com.oct.invoicesystem.config.security.RateLimitingFilter;
+import com.oct.invoicesystem.config.security.HttpSecurityHeadersFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -25,9 +27,15 @@ import com.oct.invoicesystem.domain.auth.filter.JwtAuthenticationFilter;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
+    private final RateLimitingFilter rateLimitingFilter;
+    private final HttpSecurityHeadersFilter httpSecurityHeadersFilter;
 
-    public SecurityConfig(@org.springframework.context.annotation.Lazy JwtAuthenticationFilter jwtAuthFilter) {
+    public SecurityConfig(@org.springframework.context.annotation.Lazy JwtAuthenticationFilter jwtAuthFilter,
+                         RateLimitingFilter rateLimitingFilter,
+                         HttpSecurityHeadersFilter httpSecurityHeadersFilter) {
         this.jwtAuthFilter = jwtAuthFilter;
+        this.rateLimitingFilter = rateLimitingFilter;
+        this.httpSecurityHeadersFilter = httpSecurityHeadersFilter;
     }
 
     
@@ -44,6 +52,8 @@ public class SecurityConfig {
             )
             .exceptionHandling(ex -> ex.authenticationEntryPoint(new org.springframework.security.web.authentication.HttpStatusEntryPoint(org.springframework.http.HttpStatus.UNAUTHORIZED)))
             .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .addFilterBefore(httpSecurityHeadersFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

@@ -14,7 +14,9 @@ interface LoginResponse {
   data: {
     accessToken: string
     refreshToken: string
-    user: AuthUser & { roles: string[] }
+    userId: string
+    username: string
+    roles: string[]
   }
 }
 
@@ -29,10 +31,15 @@ export function useAuth() {
     mutationFn: (credentials: LoginRequest) =>
       apiClient.post<LoginResponse>('/auth/login', credentials),
     onSuccess: (response) => {
-      const { accessToken, refreshToken, user } = response.data.data
+      const { accessToken, refreshToken, userId, username, roles } = response.data.data
       dispatch(
         setCredentials({
-          user: { ...user, roles: user.roles as AuthUser['roles'] },
+          user: {
+            id: userId,
+            username,
+            email: '',
+            roles: roles as AuthUser['roles'],
+          },
           accessToken,
           refreshToken,
         })

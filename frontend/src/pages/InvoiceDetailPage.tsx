@@ -54,7 +54,11 @@ export default function InvoiceDetailPage() {
             <p className="text-sm text-muted-foreground">{invoice.supplierName}</p>
           </div>
         </div>
-        <StatusBadge status={invoice.status} className="text-sm px-3 py-1" />
+        <StatusBadge
+          status={invoice.status}
+          className="text-sm px-3 py-1"
+          data-testid="invoice-status"
+        />
       </div>
 
       <div className="grid grid-cols-3 gap-6">

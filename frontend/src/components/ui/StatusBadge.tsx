@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from 'react'
 import { cn } from '@/lib/utils'
 import type { InvoiceStatus } from '@/types/invoice'
 import { useTranslation } from 'react-i18next'
@@ -14,20 +15,22 @@ const statusStyles: Record<InvoiceStatus, string> = {
   REJETE: 'bg-red-100 text-red-700',
 }
 
-interface StatusBadgeProps {
+interface StatusBadgeProps extends HTMLAttributes<HTMLSpanElement> {
   status: InvoiceStatus
   className?: string
 }
 
-export function StatusBadge({ status, className }: StatusBadgeProps) {
+export function StatusBadge({ status, className, ...props }: StatusBadgeProps) {
   const { t } = useTranslation()
   return (
     <span
+      data-status={status}
       className={cn(
         'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
         statusStyles[status],
         className
       )}
+      {...props}
     >
       {t(`status.${status}`)}
     </span>

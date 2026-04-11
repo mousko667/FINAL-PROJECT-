@@ -20,13 +20,9 @@ interface LoginResponse {
   data: {
     accessToken: string
     refreshToken: string
-    user: {
-      id: string
-      username: string
-      email: string
-      roles: string[]
-      departmentId?: string
-    }
+    userId: string
+    username: string
+    roles: string[]
   }
 }
 
@@ -47,10 +43,15 @@ export default function LoginPage() {
     mutationFn: (data: LoginFormData) =>
       apiClient.post<LoginResponse>('/auth/login', data),
     onSuccess: (response) => {
-      const { accessToken, refreshToken, user } = response.data.data
+      const { accessToken, refreshToken, userId, username, roles } = response.data.data
       dispatch(
         setCredentials({
-          user: { ...user, roles: user.roles as never[] },
+          user: {
+            id: userId,
+            username,
+            email: '',
+            roles,
+          },
           accessToken,
           refreshToken,
         })
