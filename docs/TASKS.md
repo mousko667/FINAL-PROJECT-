@@ -221,7 +221,7 @@
 - [x] **P9-02** Create `V14__update_invoices_supplier_fk.sql` — add nullable
       `supplier_id` FK to invoices; migrate existing flat text data into new
       suppliers rows; keep flat fields nullable for backward compatibility
-- [ ] **P9-03** Implement `Supplier` entity + `SupplierStatus` enum
+- [x] **P9-03** Implement `Supplier` entity + `SupplierStatus` enum
 - [ ] **P9-04** Implement `SupplierDocument` entity (tax certificates, contracts)
       linked to supplier with MinIO storage
 - [ ] **P9-05** Implement `SupplierRepository` (search by name, tax ID, status)
