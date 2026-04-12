@@ -44,7 +44,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
       
       if (!bucket.tryConsume(1)) {
         log.warn("Rate limit exceeded for IP: {}", clientIp);
-        response.setStatus(HttpServletResponse.SC_TOO_MANY_REQUESTS);
+        response.setStatus(429); // Too Many Requests
         response.setContentType("application/json");
         response.getWriter().write("{\"error\": \"Too many requests. Please try again later.\"}");
         return;

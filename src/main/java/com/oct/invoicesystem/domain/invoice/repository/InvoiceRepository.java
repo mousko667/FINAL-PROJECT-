@@ -29,7 +29,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
               AND (:departmentId IS NULL OR i.department.id = :departmentId)
               AND (:fromDate IS NULL OR i.issueDate >= :fromDate)
               AND (:toDate IS NULL OR i.issueDate <= :toDate)
-              AND (:reference IS NULL OR LOWER(i.referenceNumber) LIKE LOWER(CONCAT('%', :reference, '%')))
+              AND (:reference IS NULL OR LOWER(i.referenceNumber) LIKE LOWER(CONCAT('%', CAST(:reference AS string), '%')))
             """)
     Page<Invoice> findAllWithFilters(
             @Param("status") InvoiceStatus status,
