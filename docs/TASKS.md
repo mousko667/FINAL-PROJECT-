@@ -232,7 +232,7 @@
 - [ ] **P9-09** Update `InvoiceService` + `InvoiceController` to accept optional
       `supplierId` and populate `supplier_id` FK on invoice; keep flat fields
       populated from the linked Supplier for backward compatibility
-- [ ] **P9-10** Add supplier i18n keys FR + EN
+- [x] **P9-10** Add supplier i18n keys FR + EN
 - [x] **P9-11** Create `SupplierPerformanceTask` to periodically compute average
       processing times and auto-suspend inactive suppliers
 - [x] **P9-12** Add basic end-to-end integration test `SupplierIntegrationTest`
