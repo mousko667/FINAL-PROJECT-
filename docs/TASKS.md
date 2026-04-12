@@ -218,7 +218,7 @@
 - [x] **P9-01** Create `V13__create_suppliers.sql` — suppliers table with
       company name, tax ID, bank details (AES-256 encrypted), contact info,
       status (PENDING_VERIFICATION/ACTIVE/SUSPENDED), onboarding date, soft-delete
-- [ ] **P9-02** Create `V14__update_invoices_supplier_fk.sql` — add nullable
+- [x] **P9-02** Create `V14__update_invoices_supplier_fk.sql` — add nullable
       `supplier_id` FK to invoices; migrate existing flat text data into new
       suppliers rows; keep flat fields nullable for backward compatibility
 - [ ] **P9-03** Implement `Supplier` entity + `SupplierStatus` enum

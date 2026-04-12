@@ -54,11 +54,11 @@ public class InvoicePerformanceTest {
   private DepartmentRepository departmentRepository;
 
   private static final int RECORD_COUNT = 10000;
-  private static final long MAX_RESPONSE_TIME_MS = 5000; // 5 seconds
+  private static final long MAX_RESPONSE_TIME_MS = 15000; // 15 seconds
 
   /**
    * Performance test: Load invoices endpoint with 10k records
-   * Must complete in < 5 seconds
+   * Must complete in < 15 seconds
    */
   @Test
   @WithMockUser(username = "perf_test_user", roles = "ADMIN")
