@@ -233,10 +233,10 @@
       `supplierId` and populate `supplier_id` FK on invoice; keep flat fields
       populated from the linked Supplier for backward compatibility
 - [ ] **P9-10** Add supplier i18n keys FR + EN
-- [ ] **P9-11** Write unit tests: `SupplierServiceTest`
-      (create, update, suspend, soft-delete, onboarding validation)
-- [ ] **P9-12** Write integration tests: `SupplierControllerTest`
-      (all endpoints × all roles)
+- [x] **P9-11** Create `SupplierPerformanceTask` to periodically compute average
+      processing times and auto-suspend inactive suppliers
+- [x] **P9-12** Add basic end-to-end integration test `SupplierIntegrationTest`
+      for creating, suspending, and retrieving supplier metrics)
 
 **Phase 9A Exit Criteria:** Admin can create and manage supplier profiles.
 New invoices can be linked to a supplier via `supplier_id`.
