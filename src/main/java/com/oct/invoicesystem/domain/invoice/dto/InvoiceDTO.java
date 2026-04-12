@@ -12,6 +12,7 @@ public record InvoiceDTO(
         String referenceNumber,
         UUID departmentId,
         UUID submittedBy,
+        UUID supplierId,
         String supplierName,
         String supplierEmail,
         String supplierTaxId,

@@ -133,9 +133,15 @@ public class InvoiceController {
         department.setId(request.departmentId());
         User actor = new User();
         actor.setId(actorId);
+        com.oct.invoicesystem.domain.supplier.model.Supplier supplier = null;
+        if (request.supplierId() != null) {
+            supplier = new com.oct.invoicesystem.domain.supplier.model.Supplier();
+            supplier.setId(request.supplierId());
+        }
         return Invoice.builder()
                 .department(department)
                 .submittedBy(actor)
+                .supplier(supplier)
                 .supplierName(request.supplierName())
                 .supplierEmail(request.supplierEmail())
                 .supplierTaxId(request.supplierTaxId())
@@ -153,9 +159,15 @@ public class InvoiceController {
         department.setId(request.departmentId());
         User actor = new User();
         actor.setId(actorId);
+        com.oct.invoicesystem.domain.supplier.model.Supplier supplier = null;
+        if (request.supplierId() != null) {
+            supplier = new com.oct.invoicesystem.domain.supplier.model.Supplier();
+            supplier.setId(request.supplierId());
+        }
         return Invoice.builder()
                 .department(department)
                 .submittedBy(actor)
+                .supplier(supplier)
                 .supplierName(request.supplierName())
                 .supplierEmail(request.supplierEmail())
                 .supplierTaxId(request.supplierTaxId())
@@ -174,6 +186,7 @@ public class InvoiceController {
                 invoice.getReferenceNumber(),
                 invoice.getDepartment() != null ? invoice.getDepartment().getId() : null,
                 invoice.getSubmittedBy() != null ? invoice.getSubmittedBy().getId() : null,
+                invoice.getSupplier() != null ? invoice.getSupplier().getId() : null,
                 invoice.getSupplierName(),
                 invoice.getSupplierEmail(),
                 invoice.getSupplierTaxId(),

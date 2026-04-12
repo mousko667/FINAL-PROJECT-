@@ -5,6 +5,8 @@ import com.oct.invoicesystem.domain.department.repository.DepartmentRepository;
 import com.oct.invoicesystem.domain.invoice.model.Invoice;
 import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
 import com.oct.invoicesystem.domain.invoice.repository.InvoiceRepository;
+import com.oct.invoicesystem.domain.supplier.model.Supplier;
+import com.oct.invoicesystem.domain.supplier.repository.SupplierRepository;
 import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.domain.user.repository.UserRepository;
 import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
@@ -35,6 +37,7 @@ public class InvoiceService {
     private final InvoiceRepository invoiceRepository;
     private final DepartmentRepository departmentRepository;
     private final UserRepository userRepository;
+    private final SupplierRepository supplierRepository;
     private final ReferenceNumberGenerator referenceNumberGenerator;
 
     /**
@@ -47,6 +50,9 @@ public class InvoiceService {
     @Transactional
     public Invoice createInvoice(Invoice invoice, UUID actorId) {
         ensureAssistantComptable(actorId);
+        
+        populateSupplierFields(invoice);
+
         invoice.setId(null);
         invoice.setReferenceNumber(referenceNumberGenerator.nextReferenceNumber());
         invoice.setStatus(InvoiceStatus.BROUILLON);
@@ -72,11 +78,15 @@ public class InvoiceService {
             throw new WorkflowException("Only BROUILLON or REJETE invoices can be updated");
         }
 
-        existing.setDepartment(resolveDepartment(updatedInvoice.getDepartment()));
+        existing.setSupplier(updatedInvoice.getSupplier());
         existing.setSupplierName(updatedInvoice.getSupplierName());
         existing.setSupplierEmail(updatedInvoice.getSupplierEmail());
         existing.setSupplierTaxId(updatedInvoice.getSupplierTaxId());
         existing.setSupplierBankDetails(updatedInvoice.getSupplierBankDetails());
+
+        populateSupplierFields(existing);
+
+        existing.setDepartment(resolveDepartment(updatedInvoice.getDepartment()));
         existing.setAmount(updatedInvoice.getAmount());
         existing.setCurrency(updatedInvoice.getCurrency());
         existing.setIssueDate(updatedInvoice.getIssueDate());
@@ -182,6 +192,24 @@ public class InvoiceService {
                 .anyMatch(ROLE_ASSISTANT_COMPTABLE::equals);
         if (!allowed) {
             throw new ValidationException("Only ASSISTANT_COMPTABLE can create and submit invoices");
+        }
+    }
+
+    private void populateSupplierFields(Invoice invoice) {
+        if (invoice.getSupplier() != null && invoice.getSupplier().getId() != null) {
+            Supplier supplier = supplierRepository.findByIdAndDeletedAtIsNull(invoice.getSupplier().getId())
+                    .orElseThrow(() -> new ValidationException("Supplier not found or deleted"));
+            invoice.setSupplierName(supplier.getCompanyName());
+            invoice.setSupplierEmail(supplier.getContactEmail());
+            invoice.setSupplierTaxId(supplier.getTaxId());
+            invoice.setSupplierBankDetails(supplier.getBankDetails());
+        } else {
+            if (invoice.getSupplierName() == null || invoice.getSupplierName().trim().isEmpty()) {
+                throw new ValidationException("Supplier name is required when no supplier is linked");
+            }
+            if (invoice.getSupplierEmail() == null || invoice.getSupplierEmail().trim().isEmpty()) {
+                throw new ValidationException("Supplier email is required when no supplier is linked");
+            }
         }
     }
 }

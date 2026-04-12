@@ -3,6 +3,7 @@ package com.oct.invoicesystem.domain.invoice.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oct.invoicesystem.domain.department.model.Department;
 import com.oct.invoicesystem.domain.invoice.dto.InvoiceCreateRequest;
+import com.oct.invoicesystem.domain.invoice.dto.InvoiceUpdateRequest;
 import com.oct.invoicesystem.domain.invoice.model.Invoice;
 import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
 import com.oct.invoicesystem.domain.invoice.service.InvoiceService;
@@ -59,7 +60,7 @@ class InvoiceControllerTest {
     void createInvoice_AsAssistant_Returns201() throws Exception {
         UUID departmentId = UUID.randomUUID();
         InvoiceCreateRequest request = new InvoiceCreateRequest(
-                departmentId, "ACME", "invoice@acme.com", "TAX-1", null,
+                departmentId, null, "ACME", "invoice@acme.com", "TAX-1", null,
                 new BigDecimal("1000.00"), "XAF", LocalDate.now(), LocalDate.now().plusDays(30), "Test"
         );
         User user = new User();
@@ -82,7 +83,7 @@ class InvoiceControllerTest {
     @WithMockUser(roles = "ADMIN")
     void createInvoice_AsAdmin_Returns403() throws Exception {
         InvoiceCreateRequest request = new InvoiceCreateRequest(
-                UUID.randomUUID(), "ACME", "invoice@acme.com", null, null,
+                UUID.randomUUID(), null, "ACME", "invoice@acme.com", null, null,
                 new BigDecimal("1000.00"), "XAF", LocalDate.now(), LocalDate.now().plusDays(30), null
         );
         mockMvc.perform(post("/api/v1/invoices")
@@ -115,8 +116,8 @@ class InvoiceControllerTest {
         when(userRepository.findByUsername("assistant")).thenReturn(Optional.of(user));
         when(invoiceService.updateInvoice(any(), any(), any())).thenReturn(sampleInvoice());
 
-        InvoiceCreateRequest request = new InvoiceCreateRequest(
-                UUID.randomUUID(), "ACME", "invoice@acme.com", null, null,
+        InvoiceUpdateRequest request = new InvoiceUpdateRequest(
+                UUID.randomUUID(), null, "ACME", "invoice@acme.com", null, null,
                 new BigDecimal("1000.00"), "XAF", LocalDate.now(), LocalDate.now().plusDays(30), "update"
         );
         mockMvc.perform(put("/api/v1/invoices/{id}", UUID.randomUUID())

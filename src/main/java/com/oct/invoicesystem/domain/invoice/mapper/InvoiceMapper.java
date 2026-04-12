@@ -10,10 +10,12 @@ public interface InvoiceMapper {
 
     @Mapping(target = "departmentId", source = "department.id")
     @Mapping(target = "submittedBy", source = "submittedBy.id")
+    @Mapping(target = "supplierId", source = "supplier.id")
     InvoiceDTO toDto(Invoice entity);
 
     @Mapping(target = "department", ignore = true)
     @Mapping(target = "submittedBy", ignore = true)
+    @Mapping(target = "supplier", ignore = true)
     @Mapping(target = "items", ignore = true)
     @Mapping(target = "documents", ignore = true)
     @Mapping(target = "createdAt", ignore = true)

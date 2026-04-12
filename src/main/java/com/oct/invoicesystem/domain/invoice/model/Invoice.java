@@ -1,6 +1,7 @@
 package com.oct.invoicesystem.domain.invoice.model;
 
 import com.oct.invoicesystem.domain.department.model.Department;
+import com.oct.invoicesystem.domain.supplier.model.Supplier;
 import com.oct.invoicesystem.domain.user.model.User;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -59,6 +60,10 @@ public class Invoice {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "submitted_by", nullable = false)
     private User submittedBy;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "supplier_id")
+    private Supplier supplier;
 
     @Column(name = "supplier_name", nullable = false, length = 255)
     private String supplierName;
