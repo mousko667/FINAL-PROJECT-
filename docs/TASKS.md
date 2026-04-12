@@ -229,7 +229,7 @@
       soft-delete, list, get performance metrics)
 - [x] **P9-07** Implement `SupplierController` (full CRUD + onboard/suspend actions)
 - [x] **P9-08** Implement `SupplierMapper` (MapStruct)
-- [ ] **P9-09** Update `InvoiceService` + `InvoiceController` to accept optional
+- [x] **P9-09** Update `InvoiceService` + `InvoiceController` to accept optional
       `supplierId` and populate `supplier_id` FK on invoice; keep flat fields
       populated from the linked Supplier for backward compatibility
 - [x] **P9-10** Add supplier i18n keys FR + EN
