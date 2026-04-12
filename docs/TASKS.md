@@ -1,4 +1,4 @@
-﻿# TASKS â€” Development Task List
+# TASKS â€” Development Task List
 
 > **How to use this file:**
 > - Work top-to-bottom, phase by phase
@@ -207,3 +207,255 @@
 - [x] **P8-10** Final `docker-compose up` verification — fresh machine, zero manual steps
 
 **Phase 8 Exit Criteria:** `docker-compose up` on a fresh machine â†’ working app. All E2E tests pass. Swagger UI documents all endpoints.
+
+
+
+---
+
+## Phase 9A — Supplier Domain (Module 8 Foundation)
+*Goal: Supplier becomes a first-class entity; invoices link via FK*
+
+- [x] **P9-01** Create `V13__create_suppliers.sql` — suppliers table with
+      company name, tax ID, bank details (AES-256 encrypted), contact info,
+      status (PENDING_VERIFICATION/ACTIVE/SUSPENDED), onboarding date, soft-delete
+- [ ] **P9-02** Create `V14__update_invoices_supplier_fk.sql` — add nullable
+      `supplier_id` FK to invoices; migrate existing flat text data into new
+      suppliers rows; keep flat fields nullable for backward compatibility
+- [ ] **P9-03** Implement `Supplier` entity + `SupplierStatus` enum
+- [ ] **P9-04** Implement `SupplierDocument` entity (tax certificates, contracts)
+      linked to supplier with MinIO storage
+- [ ] **P9-05** Implement `SupplierRepository` (search by name, tax ID, status)
+- [ ] **P9-06** Implement `SupplierService` (create, update, onboard, suspend,
+      soft-delete, list, get performance metrics)
+- [ ] **P9-07** Implement `SupplierController` (full CRUD + onboard/suspend actions)
+- [ ] **P9-08** Implement `SupplierMapper` (MapStruct)
+- [ ] **P9-09** Update `InvoiceService` + `InvoiceController` to accept optional
+      `supplierId` and populate `supplier_id` FK on invoice; keep flat fields
+      populated from the linked Supplier for backward compatibility
+- [ ] **P9-10** Add supplier i18n keys FR + EN
+- [ ] **P9-11** Write unit tests: `SupplierServiceTest`
+      (create, update, suspend, soft-delete, onboarding validation)
+- [ ] **P9-12** Write integration tests: `SupplierControllerTest`
+      (all endpoints × all roles)
+
+**Phase 9A Exit Criteria:** Admin can create and manage supplier profiles.
+New invoices can be linked to a supplier via `supplier_id`.
+All tests pass. `./mvnw test` — 0 failures.
+
+---
+
+## Phase 9B — Supplier Authentication & Portal (Modules 1, 2, 3)
+*Goal: Suppliers can self-register, log in, submit invoices, track status*
+
+- [ ] **P9-13** Create `V15__add_supplier_user_link.sql` — add nullable
+      `supplier_id` FK to `users` table; add `mfa_enabled BOOLEAN DEFAULT FALSE`,
+      `mfa_secret VARCHAR(64)`, `mfa_verified BOOLEAN DEFAULT FALSE`,
+      `failed_login_attempts INT DEFAULT 0`, `locked_until TIMESTAMPTZ` columns
+- [ ] **P9-14** Implement supplier self-registration endpoint
+      `POST /api/v1/auth/register/supplier` with email verification token flow
+      (token stored in DB, expires in 24h)
+- [ ] **P9-15** Implement email verification endpoint
+      `GET /api/v1/auth/verify-email?token={token}` — activates supplier account
+- [ ] **P9-16** Update `AuthService` to issue JWT with `ROLE_SUPPLIER`
+      authority on supplier login; supplier JWT includes `supplierId` claim
+- [ ] **P9-17** Update `SecurityConfig` to permit registration + email
+      verification endpoints publicly
+- [ ] **P9-18** Implement supplier invoice submission
+      `POST /api/v1/supplier/invoices` — suppliers upload their own invoice
+      (maps to same `Invoice` entity, sets `submitted_by` to the supplier user,
+      status starts at `BROUILLON`)
+- [ ] **P9-19** Implement supplier invoice status tracking
+      `GET /api/v1/supplier/invoices` — ROLE_SUPPLIER sees only their own
+- [ ] **P9-20** Implement supplier document upload
+      `POST /api/v1/supplier/documents` — tax certificates, contracts
+- [ ] **P9-21** Implement supplier profile self-management
+      `GET/PUT /api/v1/supplier/profile`
+- [ ] **P9-22** Implement supplier dashboard endpoint
+      `GET /api/v1/supplier/dashboard` — counts by status, last payment date,
+      pending actions
+- [ ] **P9-23** Add i18n keys for supplier portal (FR + EN)
+- [ ] **P9-24** Write integration tests: supplier registration → email verify →
+      login → submit invoice → track status
+
+**Phase 9B Exit Criteria:** Supplier can register, verify email, log in,
+submit an invoice, and track its status. ROLE_SUPPLIER cannot access
+internal staff endpoints. All tests pass.
+
+---
+
+## Phase 9C — MFA / Two-Factor Authentication (Module 14)
+*Goal: TOTP-based MFA mandatory for all finance and admin roles*
+
+- [ ] **P9-25** Add `dev.samstevens.totp:totp:1.7.1` dependency to `pom.xml`
+- [ ] **P9-26** Implement `MfaService` — generate TOTP secret, produce QR code
+      URL (otpauth URI), verify OTP code against stored secret
+- [ ] **P9-27** Implement MFA setup flow:
+      `POST /api/v1/auth/mfa/setup` — returns QR code URL (only once);
+      `POST /api/v1/auth/mfa/confirm` — verifies first OTP, sets `mfa_verified=true`
+- [ ] **P9-28** Update `AuthService` login flow: if user has `mfa_enabled=true`,
+      return `{ mfa_required: true, pre_auth_token: "..." }` instead of full JWT;
+      add `POST /api/v1/auth/mfa/validate` to accept OTP + pre_auth_token,
+      return full JWT on success
+- [ ] **P9-29** Implement login attempt tracking: increment `failed_login_attempts`
+      on each failed OTP; lock account (`locked_until = NOW() + 15min`)
+      after 5 failures; return 423 LOCKED when locked
+- [ ] **P9-30** Enforce MFA mandatory for high-privilege roles: on first login
+      after role assignment, if MFA not set up, return `mfa_setup_required: true`
+      and restrict access to setup endpoints only
+- [ ] **P9-31** Implement admin unlock endpoint
+      `POST /api/v1/users/{id}/unlock` (ROLE_ADMIN only) — resets
+      `failed_login_attempts`, clears `locked_until`
+- [ ] **P9-32** Add MFA-related i18n keys FR + EN
+- [ ] **P9-33** Write unit tests: `MfaServiceTest`
+      (secret generation, QR URL, valid OTP, invalid OTP, expired OTP)
+- [ ] **P9-34** Write integration tests: MFA setup → confirm → login with OTP;
+      5 failed attempts → account locked → admin unlock
+
+**Phase 9C Exit Criteria:** Finance/admin roles cannot access protected endpoints
+without completing MFA. Account lockout works. All tests pass.
+
+---
+
+## Phase 9D — Three-Way Matching (Module 5)
+*Goal: Automatic PO + GRN + Invoice matching with discrepancy flagging*
+
+- [ ] **P9-35** Create `V16__create_purchase_orders.sql` — purchase orders table
+      (PO number, supplier_id FK, total amount, status, created_by, dates)
+      + `purchase_order_items` (line items with quantity, unit price)
+- [ ] **P9-36** Create `V17__create_goods_receipt_notes.sql` — GRN table
+      (GRN number, po_id FK, received_by, receipt_date)
+      + `goods_receipt_items` (item_id FK to PO item, received_quantity)
+- [ ] **P9-37** Create `V18__create_three_way_matching.sql` — matching results
+      table (invoice_id FK, po_id FK, grn_id FK, status MATCHED/PARTIAL/MISMATCH,
+      discrepancy_notes, overridden_by FK, override_reason, created_at)
+      + `matching_config` table (tolerance_percentage, tolerance_amount,
+      require_grn BOOLEAN, updated_by, updated_at)
+- [ ] **P9-38** Implement `PurchaseOrder`, `PurchaseOrderItem`,
+      `GoodsReceiptNote`, `GoodsReceiptItem`, `ThreeWayMatchingResult` entities
+- [ ] **P9-39** Implement `PurchaseOrderService` (create, update, link to supplier,
+      list by supplier, get with items)
+- [ ] **P9-40** Implement `ThreeWayMatchingService`:
+      compare invoice line items vs PO quantities vs GRN received quantities;
+      apply tolerance thresholds from `matching_config`;
+      flag line-level discrepancies; return `MATCHED`, `PARTIAL`, or `MISMATCH`
+- [ ] **P9-41** Integrate matching into `InvoiceStateMachineServiceImpl`:
+      on `SUBMIT` event, if invoice has `purchaseOrderId`, auto-trigger matching;
+      if result is `MISMATCH`, block transition to `SOUMIS` and throw
+      `WorkflowException` with discrepancy detail unless override exists
+- [ ] **P9-42** Implement DAF/Admin override endpoint:
+      `POST /api/v1/invoices/{id}/matching/override` — records override reason,
+      allows invoice to proceed despite MISMATCH
+- [ ] **P9-43** Implement `PurchaseOrderController` (CRUD, ROLE_ADMIN +
+      ROLE_ASSISTANT_COMPTABLE)
+- [ ] **P9-44** Implement `MatchingConfigController` (read/update tolerance,
+      ROLE_ADMIN only)
+- [ ] **P9-45** Add matching i18n keys FR + EN
+- [ ] **P9-46** Write unit tests: `ThreeWayMatchingServiceTest`
+      (perfect match, within tolerance, outside tolerance, missing GRN,
+      override applied)
+- [ ] **P9-47** Write integration tests: PO creation → GRN creation →
+      invoice submission → matching auto-triggered → MISMATCH blocks workflow →
+      override allows progression
+
+**Phase 9D Exit Criteria:** Invoice with PO reference auto-triggers matching
+on submit. MISMATCH blocks workflow without override. All tests pass.
+
+---
+
+## Phase 9E — Payment Tracking Enhancements (Module 7)
+*Goal: Aging analysis, remittance advice, cash flow, payment alerts*
+
+- [ ] **P9-48** Create `V19__create_remittance_advice.sql` — remittance advice
+      table (payment_id FK UNIQUE, pdf_object_key, generated_at, generated_by FK)
+- [ ] **P9-49** Implement aging analysis query in `ReportService`:
+      bucket overdue invoices into 0–30, 31–60, 61–90, 90+ days;
+      expose via `GET /api/v1/reports/aging`
+- [ ] **P9-50** Implement `RemittanceAdviceService` — generate PDF per payment
+      using iText (supplier name, invoice ref, amount, payment date, method,
+      reference number); store in MinIO; record in `remittance_advice` table
+- [ ] **P9-51** Auto-generate remittance advice when payment is recorded
+      (triggered in `PaymentServiceImpl.recordPayment`)
+- [ ] **P9-52** Implement remittance download endpoint:
+      `GET /api/v1/payments/{id}/remittance` — returns pre-signed MinIO URL
+- [ ] **P9-53** Implement cash flow projection endpoint:
+      `GET /api/v1/reports/cash-flow?days=30` — sum of pending invoices
+      due within N days, grouped by week
+- [ ] **P9-54** Implement supplier payment history endpoint:
+      `GET /api/v1/reports/supplier/{supplierId}/payments` (DAF, AUDITEUR, ADMIN)
+- [ ] **P9-55** Extend `DeadlineReminderJob` to also fire payment due date
+      alerts (7 days before `due_date`) to ASSISTANT_COMPTABLE
+- [ ] **P9-56** Add payment enhancement i18n keys FR + EN
+- [ ] **P9-57** Write unit tests: aging bucket calculation, remittance PDF
+      generation (verify PDF not null, contains expected data)
+- [ ] **P9-58** Write integration tests: record payment → remittance auto-generated
+      → download URL returned; aging report returns correct buckets
+
+**Phase 9E Exit Criteria:** Remittance advice auto-generated on payment.
+Aging report groups invoices correctly. Cash flow projection works.
+All tests pass.
+
+---
+
+## Phase 9F — Webhooks / ERP Integration (Module 12)
+*Goal: External systems receive real-time events via signed webhook calls*
+
+- [ ] **P9-59** Create `V20__create_webhooks.sql` — webhooks table
+      (id, name, url, secret_hash VARCHAR(64), events TEXT[] or VARCHAR(500),
+      is_active, created_by FK, created_at, updated_at)
+      + `webhook_deliveries` table (webhook_id FK, event_type, payload TEXT,
+      response_status INT, attempt_count, last_attempted_at,
+      success BOOLEAN, created_at) — append-only
+- [ ] **P9-60** Implement `Webhook`, `WebhookDelivery` entities
+- [ ] **P9-61** Implement `WebhookService`:
+      register/update/delete (logical) webhooks;
+      build signed payload (HMAC-SHA256 with stored secret);
+      deliver via `RestTemplate` with 5s timeout;
+      retry 3× with backoff 5s/25s/125s;
+      log every attempt to `webhook_deliveries`
+- [ ] **P9-62** Publish webhook events by adding `WebhookEventPublisher`
+      as an additional `@Async @EventListener` alongside existing listeners:
+      fire on `InvoiceSubmittedEvent`, `InvoiceValidatedEvent`,
+      `InvoiceRejectedEvent`, `BonAPayerEvent`
+- [ ] **P9-63** Implement `WebhookController`:
+      `GET/POST/DELETE /api/v1/integrations/webhooks` (ROLE_ADMIN only);
+      `GET /api/v1/integrations/webhooks/{id}/deliveries` (delivery log)
+- [ ] **P9-64** Implement integration health endpoint:
+      `GET /api/v1/integrations/status` — lists all active webhooks
+      with last delivery status
+- [ ] **P9-65** Add webhook i18n keys FR + EN
+- [ ] **P9-66** Write unit tests: `WebhookServiceTest`
+      (payload signing, delivery success, delivery failure + retry,
+      max retries exceeded → logged as failed)
+- [ ] **P9-67** Write integration tests: register webhook → trigger invoice
+      event → verify delivery logged; failed endpoint → verify retry count = 3
+
+**Phase 9F Exit Criteria:** Admin can register webhooks. Invoice state changes
+fire signed HTTP POSTs. Failures retry and are logged. All tests pass.
+
+---
+
+## Phase 9G — Dashboard & Reporting Enhancements (Module 2, 11)
+*Goal: Bottleneck detection, budget comparison, supplier performance analytics*
+
+- [ ] **P9-68** Add approval bottleneck detection to `ReportService`:
+      `GET /api/v1/reports/bottlenecks` — average days spent per approval step
+      type (N1, N2, DAF) per department; flag steps exceeding SLA (3 business days)
+- [ ] **P9-69** Add supplier performance report:
+      `GET /api/v1/reports/supplier/{supplierId}/performance` — invoice accuracy
+      rate (% matched on first submission), rejection rate, average payment time
+- [ ] **P9-70** Extend `GET /api/v1/reports/kpis` to include:
+      `overdueByBucket` (0-30/31-60/61-90/90+ count + value),
+      `averageN1ApprovalDays`, `averageN2ApprovalDays`, `averageDafApprovalDays`,
+      `webhookDeliverySuccessRate` (last 7 days)
+- [ ] **P9-71** Add supplier dashboard enhancements (requires Phase 9B):
+      `GET /api/v1/supplier/dashboard` extended with matching status breakdown
+      and next expected payment date
+- [ ] **P9-72** Add i18n keys for new report labels FR + EN
+- [ ] **P9-73** Write unit tests: `ReportServiceTest` extensions
+      (bottleneck calculation, supplier performance metrics, extended KPIs)
+- [ ] **P9-74** Write integration tests: `ReportControllerTest` extensions
+      (bottleneck endpoint, supplier performance endpoint, extended KPI shape)
+
+**Phase 9G Exit Criteria:** KPI dashboard includes bottleneck and aging data.
+Supplier performance reports return correct metrics. All tests pass.
+`./mvnw test` — 0 failures. `git push origin main`.

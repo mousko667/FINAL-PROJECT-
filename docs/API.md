@@ -237,3 +237,247 @@ Message format: { "id": "...", "title": "...", "message": "...", "type": "...", 
 | 413 | FILE_TOO_LARGE | `error.document.file_too_large` |
 | 415 | UNSUPPORTED_MIME | `error.document.unsupported_mime` |
 | 500 | INTERNAL_ERROR | `error.internal` |
+
+
+---
+
+## Supplier Management
+
+| Method | Path | Roles | Description |
+|---|---|---|---|
+| GET | `/suppliers` | All authenticated | List suppliers (paginated, filterable by name, taxId, status) |
+| POST | `/suppliers` | ADMIN | Create supplier profile |
+| GET | `/suppliers/{id}` | All authenticated | Get supplier detail |
+| PUT | `/suppliers/{id}` | ADMIN | Update supplier info |
+| PATCH | `/suppliers/{id}/activate` | ADMIN | Activate supplier (PENDING_VERIFICATION → ACTIVE) |
+| PATCH | `/suppliers/{id}/suspend` | ADMIN | Suspend supplier (ACTIVE → SUSPENDED) |
+| DELETE | `/suppliers/{id}` | ADMIN | Soft delete supplier |
+| POST | `/suppliers/{id}/documents` | ADMIN | Upload supplier document (tax certificate, contract) |
+| GET | `/suppliers/{id}/documents` | ADMIN, DAF, AUDITEUR | List supplier documents |
+
+---
+
+## Supplier Portal (ROLE_SUPPLIER only)
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/supplier/dashboard` | Counts by status, last payment date, pending actions |
+| GET | `/supplier/invoices` | Own invoices only (paginated) |
+| POST | `/supplier/invoices` | Submit new invoice |
+| GET | `/supplier/profile` | Own supplier profile |
+| PUT | `/supplier/profile` | Update own profile |
+| POST | `/supplier/documents` | Upload own tax certificate or contract |
+
+---
+
+## Authentication Additions
+
+| Method | Path | Body | Roles | Description |
+|---|---|---|---|---|
+| POST | `/auth/register/supplier` | `{companyName, taxId, email, password}` | Public | Supplier self-registration |
+| GET | `/auth/verify-email` | `?token=` | Public | Email verification |
+| POST | `/auth/mfa/setup` | — | Authenticated | Generate TOTP secret + QR code URL |
+| POST | `/auth/mfa/confirm` | `{otp}` | Authenticated | Confirm MFA setup with first valid OTP |
+| POST | `/auth/mfa/validate` | `{preAuthToken, otp}` | Public | Complete MFA login, returns full JWT |
+| POST | `/users/{id}/unlock` | — | ADMIN | Reset failed attempts and clear account lock |
+
+### MFA setup response shape
+```json
+{
+  "qrCodeUrl": "otpauth://totp/OCT:username?secret=BASE32SECRET&issuer=OCT",
+  "secret": "BASE32SECRET"
+}
+```
+
+### Login response when MFA required
+```json
+{
+  "mfa_required": true,
+  "pre_auth_token": "eyJ..."
+}
+```
+
+### Login response when MFA setup required
+```json
+{
+  "mfa_setup_required": true
+}
+```
+
+---
+
+## Purchase Orders
+
+| Method | Path | Roles | Description |
+|---|---|---|---|
+| GET | `/purchase-orders` | ADMIN, ASSISTANT_COMPTABLE, DAF, AUDITEUR | List POs (paginated) |
+| POST | `/purchase-orders` | ADMIN, ASSISTANT_COMPTABLE | Create PO with line items |
+| GET | `/purchase-orders/{id}` | All authenticated | PO detail with line items |
+| PUT | `/purchase-orders/{id}` | ADMIN, ASSISTANT_COMPTABLE | Update PO (OPEN status only) |
+
+### PurchaseOrderCreateRequest body
+```json
+{
+  "poNumber": "PO-2026-0041",
+  "supplierId": "uuid",
+  "departmentId": "uuid",
+  "currency": "XAF",
+  "issueDate": "2026-04-01",
+  "expiryDate": "2026-12-31",
+  "items": [
+    {
+      "description": "Serveur Dell PowerEdge",
+      "quantity": 2,
+      "unitPrice": 850000.00
+    }
+  ]
+}
+```
+
+---
+
+## Three-Way Matching
+
+| Method | Path | Roles | Description |
+|---|---|---|---|
+| GET | `/invoices/{id}/matching` | All authenticated | Get matching result for invoice |
+| POST | `/invoices/{id}/matching/override` | DAF, ADMIN | Override MISMATCH with mandatory reason |
+| GET | `/matching-config` | ADMIN | Get current tolerance configuration |
+| PUT | `/matching-config` | ADMIN | Update tolerance thresholds |
+
+### Override body
+```json
+{
+  "reason": "Variance approved by procurement director per memo 2026-04-12"
+}
+```
+
+### MatchingConfig body
+```json
+{
+  "tolerancePercent": 2.00,
+  "toleranceAmount": 5000.00,
+  "requireGrn": true
+}
+```
+
+---
+
+## Webhooks / Integration
+
+| Method | Path | Roles | Description |
+|---|---|---|---|
+| GET | `/integrations/webhooks` | ADMIN | List all webhooks |
+| POST | `/integrations/webhooks` | ADMIN | Register new webhook |
+| DELETE | `/integrations/webhooks/{id}` | ADMIN | Deactivate webhook (soft) |
+| GET | `/integrations/webhooks/{id}/deliveries` | ADMIN | Delivery log (paginated) |
+| GET | `/integrations/status` | ADMIN | All webhook health with last delivery status |
+
+### WebhookCreateRequest body
+```json
+{
+  "name": "SAP Integration",
+  "url": "https://erp.oct.ga/invoices/webhook",
+  "events": ["INVOICE_SUBMITTED", "INVOICE_APPROVED", "INVOICE_REJECTED", "INVOICE_PAID"]
+}
+```
+
+### WebhookCreateResponse (secret shown once only)
+```json
+{
+  "id": "uuid",
+  "name": "SAP Integration",
+  "url": "https://erp.oct.ga/invoices/webhook",
+  "secret": "raw-secret-shown-once",
+  "events": ["INVOICE_SUBMITTED", "INVOICE_APPROVED", "INVOICE_REJECTED", "INVOICE_PAID"],
+  "isActive": true
+}
+```
+
+### Webhook payload delivered to registered URL
+```json
+{
+  "event": "INVOICE_SUBMITTED",
+  "timestamp": "2026-04-13T10:30:00Z",
+  "invoiceId": "uuid",
+  "referenceNumber": "FAC-2026-00041",
+  "supplierId": "uuid",
+  "amount": 450000.00,
+  "currency": "XAF",
+  "status": "SOUMIS"
+}
+```
+
+---
+
+## Payment Enhancements
+
+| Method | Path | Roles | Description |
+|---|---|---|---|
+| GET | `/payments/{id}/remittance` | ASSISTANT_COMPTABLE, DAF, AUDITEUR, ADMIN, ROLE_SUPPLIER (own) | Pre-signed URL for remittance advice PDF |
+| GET | `/reports/aging` | DAF, AUDITEUR, ADMIN | Aging analysis by overdue bucket |
+| GET | `/reports/cash-flow` | DAF, AUDITEUR, ADMIN | Cash flow projection (`?days=30`) |
+| GET | `/reports/supplier/{supplierId}/payments` | DAF, AUDITEUR, ADMIN | Full payment history per supplier |
+| GET | `/reports/supplier/{supplierId}/performance` | DAF, AUDITEUR, ADMIN | Invoice accuracy + rejection rate |
+| GET | `/reports/bottlenecks` | DAF, AUDITEUR, ADMIN | Average approval duration per step type and department |
+
+### Aging response shape
+```json
+{
+  "asOf": "2026-04-13",
+  "buckets": {
+    "0_30":   { "count": 5,  "totalValue": 2500000 },
+    "31_60":  { "count": 3,  "totalValue": 1800000 },
+    "61_90":  { "count": 1,  "totalValue": 450000  },
+    "90_plus":{ "count": 2,  "totalValue": 3200000 }
+  },
+  "currency": "XAF"
+}
+```
+
+### Cash flow response shape
+```json
+{
+  "projectionDays": 30,
+  "currency": "XAF",
+  "weeklyProjection": [
+    { "weekStart": "2026-04-14", "weekEnd": "2026-04-20", "totalDue": 1500000 },
+    { "weekStart": "2026-04-21", "weekEnd": "2026-04-27", "totalDue": 3200000 }
+  ]
+}
+```
+
+### Bottleneck response shape
+```json
+{
+  "steps": [
+    {
+      "departmentCode": "INFO",
+      "stepOrder": 1,
+      "stepType": "N1",
+      "averageDays": 4.2,
+      "slaThresholdDays": 3,
+      "isBottleneck": true,
+      "sampleSize": 14
+    }
+  ]
+}
+```
+
+---
+
+## Standard Error Codes (additions)
+
+| HTTP | Code | Message key |
+|---|---|---|
+| 409 | MATCHING_MISMATCH | `error.matching.mismatch` |
+| 409 | MATCHING_OVERRIDE_REQUIRED | `error.matching.override_required` |
+| 423 | ACCOUNT_LOCKED | `error.auth.account_locked` |
+| 401 | MFA_REQUIRED | `error.auth.mfa_required` |
+| 400 | MFA_SETUP_REQUIRED | `error.auth.mfa_setup_required` |
+| 400 | INVALID_OTP | `error.auth.invalid_otp` |
+| 400 | EMAIL_NOT_VERIFIED | `error.auth.email_not_verified` |
+| 404 | SUPPLIER_NOT_FOUND | `error.supplier.not_found` |
+| 409 | SUPPLIER_INACTIVE | `error.supplier.inactive` |
+| 404 | PURCHASE_ORDER_NOT_FOUND | `error.po.not_found` |
+| 409 | PO_NOT_OPEN | `error.po.not_open` |

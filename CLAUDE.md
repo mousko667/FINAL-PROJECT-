@@ -252,3 +252,41 @@ Rules:
 - NEVER commit .env file (already in .gitignore)
 - Commit message must follow: type(scope): TASK-ID — description
 - Push only at phase completion, not after every task
+
+
+### Phase 9 — Supplier, MFA, Matching & Integration Constraints
+
+#### Supplier Domain
+- **Never** store supplier bank details unencrypted — always AES-256 via `EncryptionUtil`
+- **Never** hard-delete suppliers — soft delete only (`deleted_at`)
+- `Supplier` entity is now the authoritative source for supplier data;
+  flat text fields on `Invoice` (`supplierName`, `supplierEmail`, etc.)
+  remain nullable for backward compatibility but new invoices MUST link via `supplier_id` FK
+- Supplier status lifecycle: `PENDING_VERIFICATION → ACTIVE → SUSPENDED`
+- Only `ROLE_ADMIN` can change supplier status
+- `ROLE_SUPPLIER` users can only see their own invoices and their own profile
+
+#### MFA
+- MFA is **mandatory** for roles: `ROLE_DAF`, `ROLE_ADMIN`,
+  `ROLE_VALIDATEUR_N1_*`, `ROLE_VALIDATEUR_N2_*`
+- Login flow when MFA enabled: first call returns `mfa_required: true` +
+  a short-lived `pre_auth_token` (5 min TTL); second call submits OTP
+  and returns the full JWT
+- **Never** expose the raw TOTP secret in any API response after setup confirmation
+- Lock account after 5 consecutive failed OTP attempts; only `ROLE_ADMIN` can unlock
+
+#### Three-Way Matching
+- Matching is triggered automatically when an invoice with a `purchaseOrderId`
+  is submitted (BROUILLON → SOUMIS)
+- If matching status is `MISMATCH`, invoice cannot proceed past `SOUMIS`
+  without a manual override recorded by `ROLE_DAF` or `ROLE_ADMIN`
+- Tolerance thresholds are stored in DB (`matching_config` table), not hardcoded
+- `ThreeWayMatchingResult` is append-only — no updates, no deletes
+
+#### Webhooks
+- Webhook payloads must be signed with HMAC-SHA256 using the stored secret
+- Delivery failures retry 3 times with exponential backoff (5s, 25s, 125s)
+- Webhook delivery log is append-only — never modify or delete records
+- Only `ROLE_ADMIN` can register, update, or delete webhooks
+- Webhooks fire on events: `INVOICE_SUBMITTED`, `INVOICE_APPROVED`,
+  `INVOICE_REJECTED`, `INVOICE_PAID`

@@ -204,3 +204,40 @@ departments {
 8. Financial records are never hard-deleted — soft delete only
 9. All monetary amounts stored in XAF (Central African Franc) by default
 10. Reference number format: `FAC-{YYYY}-{NNNNN}` — resets each year
+
+## 9. Supplier Onboarding Workflow
+
+**Key rules:**
+- Supplier cannot log in until status is `ACTIVE`
+- Supplier bank details are AES-256 encrypted at rest
+- Only `ROLE_ADMIN` can transition from `PENDING_VERIFICATION → ACTIVE`
+- Suspension is soft — supplier data is never deleted
+
+---
+
+## 10. Supplier Invoice Submission Flow
+
+When a supplier submits their own invoice via the portal:
+- The invoice `submitted_by` is set to the supplier's user account
+- The invoice `supplier_id` is automatically set from the JWT claim
+- The normal BAP workflow (BROUILLON → SOUMIS → ...) applies identically
+- The supplier can only view their own invoices — never other suppliers' data
+
+---
+
+## 11. Three-Way Matching Flow
+
+**Tolerance rules** (stored in `matching_config`, admin-configurable):
+- Default: 2% or 5,000 XAF, whichever is greater
+- If `require_grn = true`, invoice cannot match without a GRN linked to the PO
+- Override is mandatory documented and logged in audit trail
+
+---
+
+## 12. MFA Login Flow
+
+**Business rules:**
+- `pre_auth_token` expires in 5 minutes
+- Full JWT not issued until OTP confirmed
+- Finance roles (DAF, N1, N2, ADMIN) must complete MFA setup
+  before first access to protected resources

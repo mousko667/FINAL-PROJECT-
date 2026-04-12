@@ -1,28 +1,28 @@
 # ============================================================
-#  OCT Invoice System — Simple Frontend Server with Nginx
+#  OCT Invoice System — Frontend Docker Build
 # ============================================================
 
-FROM nginx:alpine
+# Build stage
+FROM node:22-alpine AS build
+WORKDIR /app
 
-# Create a basic redirect to the backend
+# Install dependencies
+COPY package*.json ./
+RUN npm install
+
+# Build the application
+COPY . .
+RUN npm run build
+
+# Runtime stage
+FROM nginx:alpine
 RUN mkdir -p /usr/share/nginx/html
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Create a basic index.html that redirects to login
-RUN cat > /usr/share/nginx/html/index.html <<'EOF'
-<!DOCTYPE html>
-<html>
-<head>
-    <title>OCT Invoice - Redirecting...</title>
-    <meta http-equiv="refresh" content="0;URL=/login" />
-</head>
-<body>
-    <p>Redirecting to login page...</p>
-</body>
-</html>
-EOF
+# Copy built assets
+COPY --from=build /app/dist /usr/share/nginx/html
 
 EXPOSE 80
 

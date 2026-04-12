@@ -234,3 +234,180 @@ CREATE INDEX idx_status_history_invoice    ON invoice_status_history(invoice_id)
 3. `invoice_items.total_price` — always computed as `quantity × unit_price` in the service layer before saving
 4. `approval_steps` — `(invoice_id, step_order)` is UNIQUE — no two steps at the same level for the same invoice
 5. `invoices.version` — managed by Hibernate `@Version`, never set manually
+
+
+---
+
+## New Tables (Phase 9)
+
+### suppliers
+```sql
+id                  UUID PRIMARY KEY DEFAULT gen_random_uuid()
+company_name        VARCHAR(255) NOT NULL
+tax_id              VARCHAR(100) NOT NULL UNIQUE
+contact_email       VARCHAR(255) NOT NULL
+contact_phone       VARCHAR(50)
+bank_details        TEXT                         -- AES-256 encrypted
+address             TEXT
+status              VARCHAR(30) NOT NULL DEFAULT 'PENDING_VERIFICATION'
+                    -- PENDING_VERIFICATION | ACTIVE | SUSPENDED
+onboarded_by        UUID REFERENCES users(id)
+onboarded_at        TIMESTAMPTZ
+created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+deleted_at          TIMESTAMPTZ
+```
+
+### supplier_documents
+```sql
+id                  UUID PRIMARY KEY DEFAULT gen_random_uuid()
+supplier_id         UUID NOT NULL REFERENCES suppliers(id)
+document_type       VARCHAR(50) NOT NULL    -- TAX_CERTIFICATE | CONTRACT | OTHER
+original_filename   VARCHAR(255) NOT NULL
+minio_object_key    VARCHAR(500) NOT NULL UNIQUE
+file_size_bytes     BIGINT NOT NULL
+checksum_sha256     VARCHAR(64) NOT NULL
+uploaded_by         UUID NOT NULL REFERENCES users(id)
+uploaded_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+expires_at          TIMESTAMPTZ
+```
+
+### purchase_orders
+```sql
+id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
+po_number       VARCHAR(50) NOT NULL UNIQUE
+supplier_id     UUID NOT NULL REFERENCES suppliers(id)
+department_id   UUID NOT NULL REFERENCES departments(id)
+total_amount    NUMERIC(15,2) NOT NULL
+currency        VARCHAR(3) NOT NULL DEFAULT 'XAF'
+status          VARCHAR(30) NOT NULL DEFAULT 'OPEN'  -- OPEN | CLOSED | CANCELLED
+created_by      UUID NOT NULL REFERENCES users(id)
+issue_date      DATE NOT NULL
+expiry_date     DATE
+created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+```
+
+### purchase_order_items
+```sql
+id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
+po_id           UUID NOT NULL REFERENCES purchase_orders(id) ON DELETE CASCADE
+line_number     INTEGER NOT NULL
+description     TEXT NOT NULL
+quantity        NUMERIC(10,3) NOT NULL
+unit_price      NUMERIC(15,2) NOT NULL
+total_price     NUMERIC(15,2) NOT NULL
+created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+UNIQUE (po_id, line_number)
+```
+
+### goods_receipt_notes
+```sql
+id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
+grn_number      VARCHAR(50) NOT NULL UNIQUE
+po_id           UUID NOT NULL REFERENCES purchase_orders(id)
+received_by     UUID NOT NULL REFERENCES users(id)
+receipt_date    DATE NOT NULL
+notes           TEXT
+created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+```
+
+### goods_receipt_items
+```sql
+id                  UUID PRIMARY KEY DEFAULT gen_random_uuid()
+grn_id              UUID NOT NULL REFERENCES goods_receipt_notes(id) ON DELETE CASCADE
+po_item_id          UUID NOT NULL REFERENCES purchase_order_items(id)
+received_quantity   NUMERIC(10,3) NOT NULL
+created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+```
+
+### three_way_matching_results
+```sql
+id                  UUID PRIMARY KEY DEFAULT gen_random_uuid()
+invoice_id          UUID NOT NULL REFERENCES invoices(id)
+po_id               UUID REFERENCES purchase_orders(id)
+grn_id              UUID REFERENCES goods_receipt_notes(id)
+status              VARCHAR(20) NOT NULL    -- MATCHED | PARTIAL | MISMATCH | OVERRIDDEN
+discrepancy_notes   TEXT
+overridden_by       UUID REFERENCES users(id)
+override_reason     TEXT
+created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+-- NO updated_at — append-only
+```
+
+### matching_config
+```sql
+id                  UUID PRIMARY KEY DEFAULT gen_random_uuid()
+tolerance_percent   NUMERIC(5,2) NOT NULL DEFAULT 2.00
+tolerance_amount    NUMERIC(15,2) NOT NULL DEFAULT 5000.00
+require_grn         BOOLEAN NOT NULL DEFAULT TRUE
+updated_by          UUID REFERENCES users(id)
+updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+```
+
+### mfa_secrets (added to users via V15 migration)
+```sql
+-- Columns added to users table:
+mfa_enabled             BOOLEAN NOT NULL DEFAULT FALSE
+mfa_secret              VARCHAR(64)          -- TOTP secret, encrypted at rest
+mfa_verified            BOOLEAN NOT NULL DEFAULT FALSE
+failed_login_attempts   INTEGER NOT NULL DEFAULT 0
+locked_until            TIMESTAMPTZ
+supplier_id             UUID REFERENCES suppliers(id)   -- NULL for staff users
+```
+
+### webhooks
+```sql
+id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
+name            VARCHAR(100) NOT NULL
+url             VARCHAR(1000) NOT NULL
+secret_hash     VARCHAR(64) NOT NULL        -- SHA-256 of the raw secret, for signature
+events          VARCHAR(500) NOT NULL       -- comma-separated event names
+is_active       BOOLEAN NOT NULL DEFAULT TRUE
+created_by      UUID NOT NULL REFERENCES users(id)
+created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+```
+
+### webhook_deliveries
+```sql
+id                  UUID PRIMARY KEY DEFAULT gen_random_uuid()
+webhook_id          UUID NOT NULL REFERENCES webhooks(id)
+event_type          VARCHAR(100) NOT NULL
+payload             TEXT NOT NULL
+response_status     INTEGER
+attempt_count       INTEGER NOT NULL DEFAULT 0
+last_attempted_at   TIMESTAMPTZ
+success             BOOLEAN NOT NULL DEFAULT FALSE
+created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+-- NO updated_at — append-only
+```
+
+### remittance_advice
+```sql
+id                  UUID PRIMARY KEY DEFAULT gen_random_uuid()
+payment_id          UUID NOT NULL UNIQUE REFERENCES payments(id)
+pdf_object_key      VARCHAR(500) NOT NULL
+generated_by        UUID NOT NULL REFERENCES users(id)
+generated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+```
+
+---
+
+## Modified Tables (Phase 9)
+
+### invoices (additions)
+```sql
+supplier_id         UUID REFERENCES suppliers(id)       -- nullable, FK to suppliers
+purchase_order_id   UUID REFERENCES purchase_orders(id) -- nullable, for 3-way matching
+matching_status     VARCHAR(20)                          -- MATCHED|PARTIAL|MISMATCH|OVERRIDDEN|NULL
+```
+
+## Migration Order (additions)
+
+## Constraints & Rules (additions)
+6. `three_way_matching_results` — append-only; never UPDATE or DELETE
+7. `webhook_deliveries` — append-only; never UPDATE or DELETE
+8. `supplier.bank_details` — always encrypted via `@Convert(EncryptionAttributeConverter)`
+9. `users.mfa_secret` — always encrypted; never returned in any DTO
+10. `invoices.matching_status` — set by `ThreeWayMatchingService`, never by controller directly

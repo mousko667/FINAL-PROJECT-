@@ -247,3 +247,112 @@ services:
   frontend:    port 3000 — React app (nginx in prod)
   mailhog:     port 8025 — SMTP test server (dev only)
 ```
+
+## 10.New Domain Modules (Phase 9)
+
+domain/
+├── supplier/
+│   └── {controller, service, repository, model, dto, mapper}/
+│       → Supplier.java, SupplierStatus.java, SupplierDocument.java
+│       → SupplierService.java, SupplierController.java, SupplierMapper.java
+│
+├── mfa/
+│   └── service/MfaService.java
+│   └── dto/{MfaSetupResponse.java, MfaValidateRequest.java, MfaConfirmRequest.java}
+│
+├── matching/
+│   └── {controller, service, repository, model, dto}/
+│       → PurchaseOrder.java, PurchaseOrderItem.java
+│       → GoodsReceiptNote.java, GoodsReceiptItem.java
+│       → ThreeWayMatchingResult.java, MatchingConfig.java
+│       → ThreeWayMatchingService.java
+│       → PurchaseOrderController.java, MatchingConfigController.java
+│
+└── integration/
+└── {controller, service, repository, model, dto}/
+→ Webhook.java, WebhookDelivery.java
+→ WebhookService.java, WebhookEventPublisher.java
+→ WebhookController.java
+
+---
+
+## New Role (Phase 9)
+
+ROLE_SUPPLIER
+→ Submit own invoices via /api/v1/supplier/invoices
+→ View own invoice status only
+→ Manage own profile via /api/v1/supplier/profile
+→ Download own remittance advice
+→ Cannot access /api/v1/invoices/** (staff endpoints)
+→ Cannot access any other supplier's data
+→ Cannot perform workflow actions (N1, N2, DAF, assign, reject)
+→ supplierId embedded in JWT claims at login
+
+---
+
+## Security Architecture Addition (MFA)
+
+Request → POST /auth/login
+↓
+Credentials validated
+├── FAIL → increment failed_login_attempts; lock if ≥5 → HTTP 423
+└── PASS
+↓
+mfa_enabled = true AND mfa_verified = true?
+├── NO  → return full JWT (existing flow)
+└── YES → return { mfa_required: true, pre_auth_token (5min TTL) }
+↓
+POST /auth/mfa/validate { preAuthToken, otp }
+↓
+OTP valid?
+├── NO → increment failed_login_attempts; lock if ≥5
+└── YES → return full JWT
+MFA mandatory enforcement:
+If user has ROLE_DAF | ROLE_ADMIN | ROLE_VALIDATEUR_N1_* | ROLE_VALIDATEUR_N2_*
+and mfa_verified = false:
+→ login returns { mfa_setup_required: true }
+→ only /auth/mfa/setup and /auth/mfa/confirm are accessible
+
+
+## Three-Way Matching Integration Point
+
+InvoiceStateMachineServiceImpl.sendEvent(SUBMIT)
+↓
+invoice.purchaseOrderId present?
+├── NO  → skip matching, proceed to SOUMIS normally
+└── YES → ThreeWayMatchingService.match(invoice, po, grn)
+↓
+Result?
+├── MATCHED  → proceed to SOUMIS
+├── PARTIAL  → proceed to SOUMIS with matching_status = PARTIAL
+└── MISMATCH → throw WorkflowException; invoice stays BROUILLON
+↓ [DAF/ADMIN records override]
+→ proceed to SOUMIS with matching_status = OVERRIDDEN
+
+---
+
+## Webhook Architecture
+
+Domain Event Published (InvoiceSubmittedEvent, etc.)
+↓
+WebhookEventPublisher (@Async @EventListener)
+↓
+For each active Webhook subscribed to this event:
+build JSON payload
+sign with HMAC-SHA256(payload, rawSecret)
+POST to webhook.url with X-OCT-Signature header (timeout: 5s)
+├── SUCCESS → log delivery (success=true, response_status, attempt_count=1)
+└── FAIL    → retry with backoff 5s, 25s, 125s (max 3 attempts)
+→ log final delivery (success=false, attempt_count=3)
+→ DO NOT propagate exception (never blocks invoice transaction)
+
+---
+
+## Key Technology Additions (Phase 9)
+
+| Concern | Choice | Rationale |
+|---|---|---|
+| TOTP / MFA | dev.samstevens.totp:totp:1.7.1 | Standard TOTP RFC 6238, Spring-compatible |
+| Webhook delivery | RestTemplate with timeout | Already available, sufficient for outbound calls |
+| Remittance PDF | iText (already in pom.xml) | Same library used for audit PDF exports |
+| Supplier portal isolation | ROLE_SUPPLIER + supplierId JWT claim | JWT claim used server-side; body supplierId ignored for suppliers |
