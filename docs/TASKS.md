@@ -224,7 +224,7 @@
 - [x] **P9-03** Implement `Supplier` entity + `SupplierStatus` enum
 - [x] **P9-04** Implement `SupplierDocument` entity (tax certificates, contracts)
       linked to supplier with MinIO storage
-- [ ] **P9-05** Implement `SupplierRepository` (search by name, tax ID, status)
+- [x] **P9-05** Implement `SupplierRepository` (search by name, tax ID, status)
 - [ ] **P9-06** Implement `SupplierService` (create, update, onboard, suspend,
       soft-delete, list, get performance metrics)
 - [ ] **P9-07** Implement `SupplierController` (full CRUD + onboard/suspend actions)
