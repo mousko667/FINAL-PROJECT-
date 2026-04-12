@@ -225,10 +225,10 @@
 - [x] **P9-04** Implement `SupplierDocument` entity (tax certificates, contracts)
       linked to supplier with MinIO storage
 - [x] **P9-05** Implement `SupplierRepository` (search by name, tax ID, status)
-- [ ] **P9-06** Implement `SupplierService` (create, update, onboard, suspend,
+- [x] **P9-06** Implement `SupplierService` (create, update, onboard, suspend,
       soft-delete, list, get performance metrics)
 - [ ] **P9-07** Implement `SupplierController` (full CRUD + onboard/suspend actions)
-- [ ] **P9-08** Implement `SupplierMapper` (MapStruct)
+- [x] **P9-08** Implement `SupplierMapper` (MapStruct)
 - [ ] **P9-09** Update `InvoiceService` + `InvoiceController` to accept optional
       `supplierId` and populate `supplier_id` FK on invoice; keep flat fields
       populated from the linked Supplier for backward compatibility
