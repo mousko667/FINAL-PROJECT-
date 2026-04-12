@@ -247,7 +247,7 @@ All tests pass. `./mvnw test` — 0 failures.
 ## Phase 9B — Supplier Authentication & Portal (Modules 1, 2, 3)
 *Goal: Suppliers can self-register, log in, submit invoices, track status*
 
-- [ ] **P9-13** Create `V15__add_supplier_user_link.sql` — add nullable
+- [x] **P9-13** Create `V15__add_supplier_user_link.sql` — add nullable
       `supplier_id` FK to `users` table; add `mfa_enabled BOOLEAN DEFAULT FALSE`,
       `mfa_secret VARCHAR(64)`, `mfa_verified BOOLEAN DEFAULT FALSE`,
       `failed_login_attempts INT DEFAULT 0`, `locked_until TIMESTAMPTZ` columns
