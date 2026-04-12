@@ -222,7 +222,7 @@
       `supplier_id` FK to invoices; migrate existing flat text data into new
       suppliers rows; keep flat fields nullable for backward compatibility
 - [x] **P9-03** Implement `Supplier` entity + `SupplierStatus` enum
-- [ ] **P9-04** Implement `SupplierDocument` entity (tax certificates, contracts)
+- [x] **P9-04** Implement `SupplierDocument` entity (tax certificates, contracts)
       linked to supplier with MinIO storage
 - [ ] **P9-05** Implement `SupplierRepository` (search by name, tax ID, status)
 - [ ] **P9-06** Implement `SupplierService` (create, update, onboard, suspend,

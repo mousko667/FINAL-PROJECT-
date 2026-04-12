@@ -85,6 +85,10 @@ public class Supplier {
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
+    @jakarta.persistence.OneToMany(mappedBy = "supplier", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private java.util.List<SupplierDocument> documents = new java.util.ArrayList<>();
+
     @PrePersist
     public void prePersist() {
         if (status == null) {
