@@ -323,3 +323,22 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 ✅ Swagger UI auto-generated and documented at /swagger-ui.html
 
 **Next Steps:** Commit changes with `git add . && git commit -m "feat(phase-8): Complete Phase 8 — Integration, Hardening & Documentation"` then `git push origin main`.
+
+## Session Checkpoint
+**Date:** 2026-04-12
+**Last completed task:** P9-12
+**Phase:** 9A — Supplier Domain Foundation
+**Status:** PHASE 9A COMPLETE ✅
+**Branch:** main
+**Last commit:** Pending
+**Notes:** 
+- Created `Supplier` and `SupplierDocument` entities.
+- Implemented `SupplierRepository` and `SupplierService` with soft-delete and AES-256 encryption for `bank_details`.
+- Created `SupplierController` with proper validation.
+- Updated `Invoice` entity and `InvoiceService` to support auto-populating fields from existing suppliers while preserving nullable backward compatibility.
+- Fixed constraints on `InvoiceCreateRequest` and `InvoiceUpdateRequest`.
+- Added MapStruct `SupplierMapper`.
+- Updated test cases, fixing the argument mismatches for invoice request objects.
+- Added `SupplierPerformanceTask` and `SupplierIntegrationTest`.
+- i18n keys for FR/EN were updated.
+- All 124 tests are successfully passing.
