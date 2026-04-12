@@ -251,14 +251,14 @@ All tests pass. `./mvnw test` — 0 failures.
       `supplier_id` FK to `users` table; add `mfa_enabled BOOLEAN DEFAULT FALSE`,
       `mfa_secret VARCHAR(64)`, `mfa_verified BOOLEAN DEFAULT FALSE`,
       `failed_login_attempts INT DEFAULT 0`, `locked_until TIMESTAMPTZ` columns
-- [ ] **P9-14** Implement supplier self-registration endpoint
+- [x] **P9-14** Implement supplier self-registration endpoint
       `POST /api/v1/auth/register/supplier` with email verification token flow
       (token stored in DB, expires in 24h)
-- [ ] **P9-15** Implement email verification endpoint
+- [x] **P9-15** Implement email verification endpoint
       `GET /api/v1/auth/verify-email?token={token}` — activates supplier account
-- [ ] **P9-16** Update `AuthService` to issue JWT with `ROLE_SUPPLIER`
+- [x] **P9-16** Update `AuthService` to issue JWT with `ROLE_SUPPLIER`
       authority on supplier login; supplier JWT includes `supplierId` claim
-- [ ] **P9-17** Update `SecurityConfig` to permit registration + email
+- [x] **P9-17** Update `SecurityConfig` to permit registration + email
       verification endpoints publicly
 - [ ] **P9-18** Implement supplier invoice submission
       `POST /api/v1/supplier/invoices` — suppliers upload their own invoice
