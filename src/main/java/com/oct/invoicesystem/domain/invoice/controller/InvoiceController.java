@@ -49,6 +49,7 @@ public class InvoiceController {
     private final UserRepository userRepository;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE', 'MANAGER', 'USER')")
     @Operation(summary = "List invoices", description = "Retrieves a paginated and filtered invoice list")
     public ResponseEntity<ApiResponse<PagedResponse<InvoiceDTO>>> listInvoices(
             @RequestParam(required = false) InvoiceStatus status,
@@ -59,7 +60,7 @@ public class InvoiceController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt,desc") String sort) {
-        PagedResponse<Invoice> paged = invoiceService.listInvoices(status, department, from, to, reference, page, size, sort);
+        PagedResponse<Invoice> paged = invoiceService.listInvoices(status, department, from, to, reference, null, page, size, sort);
         List<InvoiceDTO> mapped = paged.getContent().stream().map(this::toDto).toList();
         return ResponseEntity.ok(ApiResponse.success(
                 new PagedResponse<>(mapped, paged.getPage(), paged.getSize(), paged.getTotalElements(), paged.getTotalPages(), paged.isLast())
@@ -67,6 +68,7 @@ public class InvoiceController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE', 'MANAGER', 'USER')")
     @Operation(summary = "Get invoice by ID", description = "Retrieves a single invoice")
     public ResponseEntity<ApiResponse<InvoiceDTO>> getInvoiceById(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(toDto(invoiceService.getById(id))));

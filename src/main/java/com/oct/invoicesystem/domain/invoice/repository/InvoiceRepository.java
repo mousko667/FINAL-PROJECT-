@@ -30,6 +30,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
               AND (:fromDate IS NULL OR i.issueDate >= :fromDate)
               AND (:toDate IS NULL OR i.issueDate <= :toDate)
               AND (:reference IS NULL OR LOWER(i.referenceNumber) LIKE LOWER(CONCAT('%', CAST(:reference AS string), '%')))
+              AND (CAST(:supplierId AS uuid) IS NULL OR (i.supplier IS NOT NULL AND i.supplier.id = :supplierId))
             """)
     Page<Invoice> findAllWithFilters(
             @Param("status") InvoiceStatus status,
@@ -37,6 +38,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,
             @Param("reference") String reference,
+            @Param("supplierId") UUID supplierId,
             Pageable pageable
     );
 
@@ -48,4 +50,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
 
     @Query("SELECT i.status, COUNT(i) FROM Invoice i WHERE i.deletedAt IS NULL GROUP BY i.status")
     List<Object[]> countInvoicesByStatus();
+
+    @Query("SELECT i.status, COUNT(i) FROM Invoice i WHERE i.deletedAt IS NULL AND i.supplier IS NOT NULL AND i.supplier.id = :supplierId GROUP BY i.status")
+    List<Object[]> countInvoicesByStatusForSupplier(@Param("supplierId") UUID supplierId);
 }

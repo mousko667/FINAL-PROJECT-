@@ -125,7 +125,7 @@ public class ReportServiceImpl implements ReportService {
     public ByteArrayInputStream exportInvoicesToExcel(InvoiceStatus status, UUID departmentId, LocalDate fromDate, LocalDate toDate, String reference) {
         log.info("Generating Excel report for invoices");
         List<Invoice> invoices = invoiceRepository.findAllWithFilters(
-                status, departmentId, fromDate, toDate, reference, Pageable.unpaged()).getContent();
+                status, departmentId, fromDate, toDate, reference, null, Pageable.unpaged()).getContent();
 
         Locale locale = LocaleContextHolder.getLocale();
 
@@ -264,7 +264,7 @@ public class ReportServiceImpl implements ReportService {
     public ByteArrayInputStream generateCompliancePdf(LocalDate startDate, LocalDate endDate) {
         log.info("Generating Compliance PDF report from {} to {}", startDate, endDate);
         List<Invoice> invoices = invoiceRepository.findAllWithFilters(
-                null, null, startDate, endDate, null, Pageable.unpaged()).getContent();
+                null, null, startDate, endDate, null, null, Pageable.unpaged()).getContent();
         
         Locale locale = LocaleContextHolder.getLocale();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss").withZone(ZoneId.systemDefault());

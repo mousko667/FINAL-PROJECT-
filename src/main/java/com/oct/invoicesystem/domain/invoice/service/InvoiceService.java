@@ -130,12 +130,6 @@ public class InvoiceService {
      * Lists invoices with optional filters and pagination.
      *
      * @param status optional status
-     * @param departmentId optional department id
-     * @param fromDate optional lower issue date bound
-     * @param toDate optional upper issue date bound
-     * @param reference optional partial reference filter
-     * @param page page index
-     * @param size page size
      * @param sort sort pattern field,direction
      * @return paged invoice data
      */
@@ -146,6 +140,7 @@ public class InvoiceService {
             LocalDate fromDate,
             LocalDate toDate,
             String reference,
+            UUID supplierId,
             int page,
             int size,
             String sort
@@ -162,6 +157,7 @@ public class InvoiceService {
                 fromDate,
                 toDate,
                 reference,
+                supplierId,
                 pageable
         );
         List<Invoice> data = invoices.getContent();
@@ -211,5 +207,33 @@ public class InvoiceService {
                 throw new ValidationException("Supplier email is required when no supplier is linked");
             }
         }
+    }
+
+    @Transactional
+    public Invoice createSupplierInvoice(Invoice invoice, UUID actorId, UUID supplierId) {
+        // Enforce supplier ID override for security
+        Supplier supplier = new Supplier();
+        supplier.setId(supplierId);
+        invoice.setSupplier(supplier);
+        
+        populateSupplierFields(invoice);
+
+        invoice.setId(null);
+        invoice.setReferenceNumber(referenceNumberGenerator.nextReferenceNumber());
+        invoice.setStatus(InvoiceStatus.BROUILLON);
+        invoice.setDeletedAt(null);
+        return invoiceRepository.save(invoice);
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.Map<String, Long> getSupplierInvoiceStatusCounts(UUID supplierId) {
+        java.util.List<Object[]> results = invoiceRepository.countInvoicesByStatusForSupplier(supplierId);
+        java.util.Map<String, Long> map = new java.util.HashMap<>();
+        for (Object[] r : results) {
+            InvoiceStatus s = (InvoiceStatus) r[0];
+            Long count = (Long) r[1];
+            map.put(s.name(), count);
+        }
+        return map;
     }
 }

@@ -90,7 +90,7 @@ class ReportServiceTest {
 
     @Test
     void exportInvoicesToExcel_ReturnsStream() {
-        when(invoiceRepository.findAllWithFilters(any(), any(), any(), any(), any(), any()))
+        when(invoiceRepository.findAllWithFilters(any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(new PageImpl<>(Collections.emptyList()));
         when(messageSource.getMessage(anyString(), any(), any())).thenReturn("Label");
 
@@ -119,7 +119,7 @@ class ReportServiceTest {
 
     @Test
     void generateCompliancePdf_ReturnsStream() {
-        when(invoiceRepository.findAllWithFilters(any(), any(), any(), any(), any(), any()))
+        when(invoiceRepository.findAllWithFilters(any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(new PageImpl<>(Collections.emptyList()));
         when(messageSource.getMessage(anyString(), any(), any())).thenReturn("Label");
 

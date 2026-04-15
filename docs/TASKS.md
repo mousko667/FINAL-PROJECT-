@@ -260,11 +260,11 @@ All tests pass. `./mvnw test` — 0 failures.
       authority on supplier login; supplier JWT includes `supplierId` claim
 - [x] **P9-17** Update `SecurityConfig` to permit registration + email
       verification endpoints publicly
-- [ ] **P9-18** Implement supplier invoice submission
+- [x] **P9-18** Implement supplier invoice submission
       `POST /api/v1/supplier/invoices` — suppliers upload their own invoice
       (maps to same `Invoice` entity, sets `submitted_by` to the supplier user,
       status starts at `BROUILLON`)
-- [ ] **P9-19** Implement supplier invoice status tracking
+- [x] **P9-19** Implement supplier invoice status tracking
       `GET /api/v1/supplier/invoices` — ROLE_SUPPLIER sees only their own
 - [ ] **P9-20** Implement supplier document upload
       `POST /api/v1/supplier/documents` — tax certificates, contracts

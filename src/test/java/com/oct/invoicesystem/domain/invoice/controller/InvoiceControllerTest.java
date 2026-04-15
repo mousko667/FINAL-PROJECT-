@@ -96,7 +96,7 @@ class InvoiceControllerTest {
     @WithMockUser(roles = "ADMIN")
     void listInvoices_AsAdmin_Returns200() throws Exception {
         PagedResponse<Invoice> response = new PagedResponse<>(List.of(sampleInvoice()), 0, 20, 1, 1, true);
-        when(invoiceService.listInvoices(any(), any(), any(), any(), any(), anyInt(), anyInt(), anyString()))
+        when(invoiceService.listInvoices(any(), any(), any(), any(), any(), any(), anyInt(), anyInt(), anyString()))
                 .thenReturn(response);
 
         mockMvc.perform(get("/api/v1/invoices"))
