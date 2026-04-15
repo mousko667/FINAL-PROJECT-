@@ -10,6 +10,7 @@ import com.oct.invoicesystem.domain.supplier.repository.SupplierRepository;
 import com.oct.invoicesystem.domain.user.model.Role;
 import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.domain.user.model.UserRole;
+import com.oct.invoicesystem.domain.user.model.UserRoleId;
 import com.oct.invoicesystem.domain.user.repository.RoleRepository;
 import com.oct.invoicesystem.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -97,14 +98,14 @@ public class AuthService {
     @Transactional
     public void registerSupplier(SupplierRegistrationRequest request) {
         if (userRepository.existsByEmail(request.email()) || userRepository.existsByUsername(request.email())) {
-            throw new RuntimeException("Email already exists");
+            throw new com.oct.invoicesystem.shared.exception.ValidationException("Email already exists");
         }
         if (supplierRepository.existsByTaxIdAndDeletedAtIsNull(request.taxId())) {
-            throw new RuntimeException("Tax ID already exists");
+            throw new com.oct.invoicesystem.shared.exception.ValidationException("Tax ID already exists");
         }
 
         Role supplierRole = roleRepository.findByName("ROLE_SUPPLIER")
-                .orElseThrow(() -> new RuntimeException("ROLE_SUPPLIER not found."));
+                .orElseThrow(() -> new com.oct.invoicesystem.shared.exception.ResourceNotFoundException("ROLE_SUPPLIER not found."));
 
         Supplier supplier = new Supplier();
         supplier.setCompanyName(request.companyName());
@@ -128,9 +129,12 @@ public class AuthService {
                 .emailVerificationTokenExpiry(Instant.now().plus(24, ChronoUnit.HOURS))
                 .build();
 
+        user = userRepository.save(user); // Save to generate ID
+
         UserRole userRole = new UserRole();
         userRole.setUser(user);
         userRole.setRole(supplierRole);
+        userRole.setId(new UserRoleId(user.getId(), supplierRole.getId()));
         user.getUserRoles().add(userRole);
 
         userRepository.save(user);
@@ -139,10 +143,10 @@ public class AuthService {
     @Transactional
     public void verifyEmail(String token) {
         User user = userRepository.findByEmailVerificationToken(token)
-                .orElseThrow(() -> new RuntimeException("Invalid verification token"));
+                .orElseThrow(() -> new com.oct.invoicesystem.shared.exception.ValidationException("Invalid verification token"));
 
         if (user.getEmailVerificationTokenExpiry().isBefore(Instant.now())) {
-            throw new RuntimeException("Verification token has expired");
+            throw new com.oct.invoicesystem.shared.exception.ValidationException("Verification token has expired");
         }
 
         user.setActive(true);

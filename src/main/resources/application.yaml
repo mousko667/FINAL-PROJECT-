@@ -226,7 +226,7 @@ encryption:
 minio:
   endpoint: http://localhost:9000
   access-key: MinIO
-  secret-key: dany
+  secret-key: dany1234
   bucket: oct-invoices
 
 logging:

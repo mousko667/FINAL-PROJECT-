@@ -29,7 +29,14 @@ import com.oct.invoicesystem.domain.supplier.repository.SupplierRepository;
 import com.oct.invoicesystem.shared.exception.ValidationException;
 import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 
+import com.oct.invoicesystem.domain.supplier.model.SupplierDocumentType;
+import com.oct.invoicesystem.domain.supplier.model.SupplierDocument;
+import com.oct.invoicesystem.domain.supplier.repository.SupplierDocumentRepository;
+import com.oct.invoicesystem.domain.storage.service.MinioStorageService;
+
+import java.security.MessageDigest;
 import java.time.LocalDate;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -47,6 +54,9 @@ public class SupplierPortalController {
     private final SupplierService supplierService;
     private final UserRepository userRepository;
     private final SupplierRepository supplierRepository;
+    private final SupplierDocumentRepository supplierDocumentRepository;
+    private final MinioStorageService minioStorageService;
+    private final org.springframework.context.MessageSource messageSource;
 
     private UUID getSupplierId(Authentication authentication) {
         String username = authentication.getName();
@@ -68,7 +78,8 @@ public class SupplierPortalController {
     @Operation(summary = "Submit new invoice", description = "Allows supplier to submit an invoice")
     public ResponseEntity<ApiResponse<InvoiceDTO>> submitInvoice(
             @Valid @RequestBody InvoiceCreateRequest request,
-            Authentication authentication) {
+            Authentication authentication,
+            java.util.Locale locale) {
         User user = getUser(authentication);
         UUID supplierId = getSupplierId(authentication);
 
@@ -82,7 +93,7 @@ public class SupplierPortalController {
         Invoice created = invoiceService.createSupplierInvoice(invoicePayload, user.getId(), supplierId);
         
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(toDto(created), "Invoice submitted successfully"));
+                .body(ApiResponse.success(toDto(created), messageSource.getMessage("supplier.invoice.submitted", null, locale)));
     }
 
     @GetMapping("/invoices")
@@ -118,10 +129,11 @@ public class SupplierPortalController {
     @Operation(summary = "Update supplier profile", description = "Updates the supplier's own profile")
     public ResponseEntity<ApiResponse<SupplierResponse>> updateProfile(
             @Valid @RequestBody SupplierUpdateRequest request,
-            Authentication authentication) {
+            Authentication authentication,
+            java.util.Locale locale) {
         UUID supplierId = getSupplierId(authentication);
         SupplierResponse response = supplierService.updateSupplier(supplierId, request);
-        return ResponseEntity.ok(ApiResponse.success(response, "Profile updated successfully"));
+        return ResponseEntity.ok(ApiResponse.success(response, messageSource.getMessage("supplier.profile.updated", null, locale)));
     }
 
     @GetMapping("/dashboard")
@@ -134,6 +146,66 @@ public class SupplierPortalController {
         stats.put("statusCounts", statusCounts);
         
         return ResponseEntity.ok(ApiResponse.success(stats));
+    }
+
+    @PostMapping(value = "/documents", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload supplier document", description = "Uploads a tax certificate or contract for the supplier")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> uploadDocument(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("documentType") SupplierDocumentType documentType,
+            Authentication authentication,
+            java.util.Locale locale) {
+        User user = getUser(authentication);
+        UUID supplierId = getSupplierId(authentication);
+
+        try {
+            byte[] bytes = file.getBytes();
+            String checksum = HexFormat.of().formatHex(
+                    MessageDigest.getInstance("SHA-256").digest(bytes));
+
+            String objectKey = "supplier-docs/" + supplierId + "/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
+            minioStorageService.upload(objectKey, bytes, file.getContentType());
+
+            Supplier supplier = new Supplier();
+            supplier.setId(supplierId);
+
+            SupplierDocument doc = SupplierDocument.builder()
+                    .supplier(supplier)
+                    .documentType(documentType)
+                    .originalFilename(file.getOriginalFilename())
+                    .minioObjectKey(objectKey)
+                    .fileSizeBytes(file.getSize())
+                    .checksumSha256(checksum)
+                    .uploadedBy(user)
+                    .build();
+            supplierDocumentRepository.save(doc);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("id", doc.getId());
+            result.put("filename", doc.getOriginalFilename());
+            result.put("documentType", documentType);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.success(result, messageSource.getMessage("supplier.document.uploaded", null, locale)));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to upload document: " + e.getMessage(), e);
+        }
+    }
+
+    @GetMapping("/documents")
+    @Operation(summary = "List supplier documents", description = "Lists all documents uploaded by this supplier")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> listDocuments(Authentication authentication) {
+        UUID supplierId = getSupplierId(authentication);
+        List<SupplierDocument> docs = supplierDocumentRepository.findBySupplierId(supplierId);
+        List<Map<String, Object>> result = docs.stream().map(d -> {
+            Map<String, Object> m = new HashMap<>();
+            m.put("id", d.getId());
+            m.put("filename", d.getOriginalFilename());
+            m.put("documentType", d.getDocumentType());
+            m.put("uploadedAt", d.getUploadedAt());
+            m.put("fileSizeBytes", d.getFileSizeBytes());
+            return m;
+        }).toList();
+        return ResponseEntity.ok(ApiResponse.success(result));
     }
 
     private Invoice toInvoice(InvoiceCreateRequest request, UUID actorId, UUID supplierId) {

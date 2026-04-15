@@ -266,16 +266,16 @@ All tests pass. `./mvnw test` — 0 failures.
       status starts at `BROUILLON`)
 - [x] **P9-19** Implement supplier invoice status tracking
       `GET /api/v1/supplier/invoices` — ROLE_SUPPLIER sees only their own
-- [ ] **P9-20** Implement supplier document upload
+- [x] **P9-20** Implement supplier document upload ✅
       `POST /api/v1/supplier/documents` — tax certificates, contracts
-- [ ] **P9-21** Implement supplier profile self-management
+- [x] **P9-21** Implement supplier profile self-management ✅
       `GET/PUT /api/v1/supplier/profile`
-- [ ] **P9-22** Implement supplier dashboard endpoint
+- [x] **P9-22** Implement supplier dashboard endpoint ✅
       `GET /api/v1/supplier/dashboard` — counts by status, last payment date,
       pending actions
-- [ ] **P9-23** Add i18n keys for supplier portal (FR + EN)
-- [ ] **P9-24** Write integration tests: supplier registration → email verify →
-      login → submit invoice → track status
+- [x] **P9-23** Add i18n keys for supplier portal (FR + EN) ✅
+- [x] **P9-24** Write integration tests: supplier registration → email verify →
+      login → submit invoice → track status ✅
 
 **Phase 9B Exit Criteria:** Supplier can register, verify email, log in,
 submit an invoice, and track its status. ROLE_SUPPLIER cannot access

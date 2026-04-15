@@ -342,3 +342,12 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 - Added `SupplierPerformanceTask` and `SupplierIntegrationTest`.
 - i18n keys for FR/EN were updated.
 - All 124 tests are successfully passing.
+
+## Session Checkpoint
+**Date:** 2026-04-15
+**Last completed task:** P9-24
+**Phase:** 9B — Supplier Authentication & Portal
+**Next task:** P9-25
+**Branch:** main
+**Last commit:** Pending
+**Notes:** Completed Phase 9B. Supplier registration, email verification, login (with supplierId claim), invoice submission, and status tracking are fully functional and tested. Added i18n keys and removed hardcoded strings in AuthController and SupplierPortalController. Mocked MinioStorageService in integration tests to ensure CI/local test stability. Security boundaries (staff vs supplier) verified.
