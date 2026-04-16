@@ -4,6 +4,9 @@ import com.oct.invoicesystem.domain.auth.dto.LoginRequest;
 import com.oct.invoicesystem.domain.auth.dto.LoginResponse;
 import com.oct.invoicesystem.domain.auth.dto.RefreshTokenRequest;
 import com.oct.invoicesystem.domain.auth.dto.SupplierRegistrationRequest;
+import com.oct.invoicesystem.domain.mfa.dto.MfaConfirmRequest;
+import com.oct.invoicesystem.domain.mfa.dto.MfaSetupResponse;
+import com.oct.invoicesystem.domain.mfa.service.MfaService;
 import com.oct.invoicesystem.domain.supplier.model.Supplier;
 import com.oct.invoicesystem.domain.supplier.model.SupplierStatus;
 import com.oct.invoicesystem.domain.supplier.repository.SupplierRepository;
@@ -17,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +42,7 @@ public class AuthService {
     private final SupplierRepository supplierRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final MfaService mfaService;
 
     public LoginResponse login(LoginRequest request) {
         authenticationManager.authenticate(
@@ -153,5 +158,44 @@ public class AuthService {
         user.setEmailVerificationToken(null);
         user.setEmailVerificationTokenExpiry(null);
         userRepository.save(user);
+    }
+
+    @Transactional
+    public MfaSetupResponse setupMfa(UserDetails currentUser) {
+        User user = findUserByUsername(currentUser.getUsername());
+        if (user.isMfaEnabled() && user.isMfaVerified()) {
+            throw new com.oct.invoicesystem.shared.exception.ValidationException("MFA is already configured");
+        }
+
+        String secret = mfaService.generateSecret();
+        user.setMfaSecret(secret);
+        user.setMfaVerified(false);
+        user.setMfaEnabled(false);
+        userRepository.save(user);
+
+        return new MfaSetupResponse(
+                mfaService.generateQrCodeUrl(user.getUsername(), secret),
+                secret
+        );
+    }
+
+    @Transactional
+    public void confirmMfa(MfaConfirmRequest request, UserDetails currentUser) {
+        User user = findUserByUsername(currentUser.getUsername());
+        if (user.getMfaSecret() == null || user.getMfaSecret().isBlank()) {
+            throw new com.oct.invoicesystem.shared.exception.ValidationException("MFA setup has not been started");
+        }
+        if (!mfaService.verifyOtp(user.getMfaSecret(), request.getOtp())) {
+            throw new com.oct.invoicesystem.shared.exception.ValidationException("Invalid OTP");
+        }
+
+        user.setMfaEnabled(true);
+        user.setMfaVerified(true);
+        userRepository.save(user);
+    }
+
+    private User findUserByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
     }
 }

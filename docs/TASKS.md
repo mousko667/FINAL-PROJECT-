@@ -289,7 +289,7 @@ internal staff endpoints. All tests pass.
 - [x] **P9-25** Add `dev.samstevens.totp:totp:1.7.1` dependency to `pom.xml`
 - [x] **P9-26** Implement `MfaService` — generate TOTP secret, produce QR code
       URL (otpauth URI), verify OTP code against stored secret
-- [ ] **P9-27** Implement MFA setup flow:
+- [x] **P9-27** Implement MFA setup flow:
       `POST /api/v1/auth/mfa/setup` — returns QR code URL (only once);
       `POST /api/v1/auth/mfa/confirm` — verifies first OTP, sets `mfa_verified=true`
 - [ ] **P9-28** Update `AuthService` login flow: if user has `mfa_enabled=true`,

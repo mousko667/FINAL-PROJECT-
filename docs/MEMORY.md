@@ -369,3 +369,12 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 **Branch:** main
 **Last commit:** 8ef4eb1d1a9b9cdf8fcdf962d68c6ba643057bed
 **Notes:** Added `domain.mfa.service.MfaService` with TOTP secret generation, otpauth URI generation, and OTP verification using `dev.samstevens.totp`. `User.mfaSecret` is now encrypted at rest via `EncryptionAttributeConverter`, which keeps the upcoming MFA setup flow aligned with the DB storage rule.
+
+## Session Checkpoint
+**Date:** 2026-04-16
+**Last completed task:** P9-27
+**Phase:** 9C â€” MFA / Two-Factor Authentication (Module 14)
+**Next task:** P9-28
+**Branch:** main
+**Last commit:** 3c77227da57d5f7579be32efffaf221025bb79c4
+**Notes:** Added authenticated MFA setup and confirmation endpoints under `/api/v1/auth/mfa/*`, plus DTOs for the setup response and OTP confirmation request. `setup` stores a fresh secret and returns the otpauth URI + secret once; `confirm` validates the first OTP before setting both `mfa_enabled=true` and `mfa_verified=true`. Security rules now permit only the public auth endpoints explicitly instead of blanket-permitting all `/auth/**` routes.
