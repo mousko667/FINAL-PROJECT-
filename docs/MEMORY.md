@@ -378,3 +378,12 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 **Branch:** main
 **Last commit:** 3c77227da57d5f7579be32efffaf221025bb79c4
 **Notes:** Added authenticated MFA setup and confirmation endpoints under `/api/v1/auth/mfa/*`, plus DTOs for the setup response and OTP confirmation request. `setup` stores a fresh secret and returns the otpauth URI + secret once; `confirm` validates the first OTP before setting both `mfa_enabled=true` and `mfa_verified=true`. Security rules now permit only the public auth endpoints explicitly instead of blanket-permitting all `/auth/**` routes.
+
+## Session Checkpoint
+**Date:** 2026-04-16
+**Last completed task:** P9-28
+**Phase:** 9C â€” MFA / Two-Factor Authentication (Module 14)
+**Next task:** P9-29
+**Branch:** main
+**Last commit:** 5db0a83449ad0c76315e5f39721974536e4f08ae
+**Notes:** Split login into two stages for users with verified MFA: `/auth/login` now returns `mfa_required=true` plus a 5-minute JWT carrying `type=pre_auth`, and `/auth/mfa/validate` exchanges a valid pre-auth token + OTP for the normal JWT response. `LoginResponse` now supports the MFA flags/token fields with the required snake_case JSON names, while the non-MFA login flow remains unchanged for existing users and tests.

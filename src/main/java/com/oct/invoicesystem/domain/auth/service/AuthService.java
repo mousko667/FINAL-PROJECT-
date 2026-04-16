@@ -6,6 +6,7 @@ import com.oct.invoicesystem.domain.auth.dto.RefreshTokenRequest;
 import com.oct.invoicesystem.domain.auth.dto.SupplierRegistrationRequest;
 import com.oct.invoicesystem.domain.mfa.dto.MfaConfirmRequest;
 import com.oct.invoicesystem.domain.mfa.dto.MfaSetupResponse;
+import com.oct.invoicesystem.domain.mfa.dto.MfaValidateRequest;
 import com.oct.invoicesystem.domain.mfa.service.MfaService;
 import com.oct.invoicesystem.domain.supplier.model.Supplier;
 import com.oct.invoicesystem.domain.supplier.model.SupplierStatus;
@@ -16,6 +17,7 @@ import com.oct.invoicesystem.domain.user.model.UserRole;
 import com.oct.invoicesystem.domain.user.model.UserRoleId;
 import com.oct.invoicesystem.domain.user.repository.RoleRepository;
 import com.oct.invoicesystem.domain.user.repository.UserRepository;
+import com.oct.invoicesystem.shared.exception.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -55,23 +57,14 @@ public class AuthService {
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        Map<String, Object> extraClaims = new HashMap<>();
-        if (user.getSupplier() != null) {
-            extraClaims.put("supplierId", user.getSupplier().getId().toString());
+        if (user.isMfaEnabled() && user.isMfaVerified()) {
+            return LoginResponse.builder()
+                    .mfaRequired(true)
+                    .preAuthToken(jwtService.generatePreAuthToken(buildExtraClaims(user), user))
+                    .build();
         }
 
-        String jwt = jwtService.generateToken(extraClaims, user);
-        String refreshToken = jwtService.generateRefreshToken(user);
-
-        return LoginResponse.builder()
-                .accessToken(jwt)
-                .refreshToken(refreshToken)
-                .userId(user.getId())
-                .username(user.getUsername())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .roles(user.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()))
-                .build();
+        return buildAuthenticatedLoginResponse(user);
     }
 
     public LoginResponse refresh(RefreshTokenRequest request) {
@@ -81,23 +74,27 @@ public class AuthService {
                     .orElseThrow(() -> new RuntimeException("User not found"));
             
             if (jwtService.isTokenValid(request.getRefreshToken(), user)) {
-                Map<String, Object> extraClaims = new HashMap<>();
-                if (user.getSupplier() != null) {
-                    extraClaims.put("supplierId", user.getSupplier().getId().toString());
-                }
-                String jwt = jwtService.generateToken(extraClaims, user);
-                return LoginResponse.builder()
-                        .accessToken(jwt)
-                        .refreshToken(request.getRefreshToken())
-                        .userId(user.getId())
-                        .username(user.getUsername())
-                        .firstName(user.getFirstName())
-                        .lastName(user.getLastName())
-                        .roles(user.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()))
-                        .build();
+                return buildAuthenticatedLoginResponse(user, request.getRefreshToken());
             }
         }
         throw new RuntimeException("Invalid refresh token");
+    }
+
+    public LoginResponse validateMfa(MfaValidateRequest request) {
+        String username = jwtService.extractUsername(request.getPreAuthToken());
+        User user = findUserByUsername(username);
+
+        if (!jwtService.isTokenValid(request.getPreAuthToken(), user) || !jwtService.isPreAuthToken(request.getPreAuthToken())) {
+            throw new UnauthorizedException("Invalid pre-auth token");
+        }
+        if (!user.isMfaEnabled() || !user.isMfaVerified() || user.getMfaSecret() == null) {
+            throw new UnauthorizedException("MFA is not active for this account");
+        }
+        if (!mfaService.verifyOtp(user.getMfaSecret(), request.getOtp())) {
+            throw new UnauthorizedException("Invalid OTP");
+        }
+
+        return buildAuthenticatedLoginResponse(user);
     }
 
     @Transactional
@@ -197,5 +194,30 @@ public class AuthService {
     private User findUserByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    private LoginResponse buildAuthenticatedLoginResponse(User user) {
+        return buildAuthenticatedLoginResponse(user, jwtService.generateRefreshToken(user));
+    }
+
+    private LoginResponse buildAuthenticatedLoginResponse(User user, String refreshToken) {
+        String jwt = jwtService.generateToken(buildExtraClaims(user), user);
+        return LoginResponse.builder()
+                .accessToken(jwt)
+                .refreshToken(refreshToken)
+                .userId(user.getId())
+                .username(user.getUsername())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .roles(user.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()))
+                .build();
+    }
+
+    private Map<String, Object> buildExtraClaims(User user) {
+        Map<String, Object> extraClaims = new HashMap<>();
+        if (user.getSupplier() != null) {
+            extraClaims.put("supplierId", user.getSupplier().getId().toString());
+        }
+        return extraClaims;
     }
 }

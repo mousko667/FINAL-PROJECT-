@@ -292,7 +292,7 @@ internal staff endpoints. All tests pass.
 - [x] **P9-27** Implement MFA setup flow:
       `POST /api/v1/auth/mfa/setup` — returns QR code URL (only once);
       `POST /api/v1/auth/mfa/confirm` — verifies first OTP, sets `mfa_verified=true`
-- [ ] **P9-28** Update `AuthService` login flow: if user has `mfa_enabled=true`,
+- [x] **P9-28** Update `AuthService` login flow: if user has `mfa_enabled=true`,
       return `{ mfa_required: true, pre_auth_token: "..." }` instead of full JWT;
       add `POST /api/v1/auth/mfa/validate` to accept OTP + pre_auth_token,
       return full JWT on success

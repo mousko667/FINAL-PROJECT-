@@ -26,6 +26,9 @@ public class JwtService {
     @Value("${jwt.refresh-expiration-ms}")
     private long refreshExpirationMs;
 
+    @Value("${jwt.pre-auth-expiration-ms:300000}")
+    private long preAuthExpirationMs;
+
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
@@ -45,6 +48,16 @@ public class JwtService {
 
     public String generateRefreshToken(UserDetails userDetails) {
         return buildToken(new HashMap<>(), userDetails, refreshExpirationMs);
+    }
+
+    public String generatePreAuthToken(Map<String, Object> extraClaims, UserDetails userDetails) {
+        Map<String, Object> claims = new HashMap<>(extraClaims);
+        claims.put("type", "pre_auth");
+        return buildToken(claims, userDetails, preAuthExpirationMs);
+    }
+
+    public boolean isPreAuthToken(String token) {
+        return "pre_auth".equals(extractClaim(token, claims -> claims.get("type", String.class)));
     }
 
     private String buildToken(Map<String, Object> extraClaims, UserDetails userDetails, long expiration) {

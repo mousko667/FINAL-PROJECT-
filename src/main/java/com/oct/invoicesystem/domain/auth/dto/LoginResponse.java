@@ -1,5 +1,7 @@
 package com.oct.invoicesystem.domain.auth.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,6 +14,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class LoginResponse {
     private String accessToken;
     private String refreshToken;
@@ -20,4 +23,13 @@ public class LoginResponse {
     private String firstName;
     private String lastName;
     private List<String> roles;
+
+    @JsonProperty("mfa_required")
+    private Boolean mfaRequired;
+
+    @JsonProperty("mfa_setup_required")
+    private Boolean mfaSetupRequired;
+
+    @JsonProperty("pre_auth_token")
+    private String preAuthToken;
 }

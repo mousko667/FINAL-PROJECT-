@@ -7,6 +7,7 @@ import com.oct.invoicesystem.domain.auth.dto.SupplierRegistrationRequest;
 import com.oct.invoicesystem.domain.auth.service.AuthService;
 import com.oct.invoicesystem.domain.mfa.dto.MfaConfirmRequest;
 import com.oct.invoicesystem.domain.mfa.dto.MfaSetupResponse;
+import com.oct.invoicesystem.domain.mfa.dto.MfaValidateRequest;
 import com.oct.invoicesystem.shared.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -68,5 +69,11 @@ public class AuthController {
             @AuthenticationPrincipal UserDetails currentUser) {
         authService.confirmMfa(request, currentUser);
         return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @PostMapping("/mfa/validate")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<ApiResponse<LoginResponse>> validateMfa(@Valid @RequestBody MfaValidateRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(authService.validateMfa(request)));
     }
 }

@@ -76,6 +76,7 @@ jwt:
   secret: ${JWT_SECRET}
   expiration-ms: ${JWT_EXPIRATION_MS:86400000}
   refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000}
+  pre-auth-expiration-ms: ${JWT_PRE_AUTH_EXPIRATION_MS:300000}
 
 # ── Encryption ───────────────────────────────────────────────
 encryption:
@@ -219,6 +220,7 @@ jwt:
   secret: dGVzdFNlY3JldEtleUZvckpXVFRlc3RpbmdPbmx5MTIzNDU2Nzg5MA==
   expiration-ms: 86400000
   refresh-expiration-ms: 604800000
+  pre-auth-expiration-ms: 300000
 
 encryption:
   key: TestEncryptionKey1234567890ABCDEF
