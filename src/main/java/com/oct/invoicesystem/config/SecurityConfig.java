@@ -18,6 +18,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.oct.invoicesystem.domain.auth.filter.JwtAuthenticationFilter;
+import com.oct.invoicesystem.config.security.MfaSetupEnforcementFilter;
 import com.oct.invoicesystem.config.security.RateLimitingFilter;
 import com.oct.invoicesystem.config.security.HttpSecurityHeadersFilter;
 
@@ -29,13 +30,16 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final RateLimitingFilter rateLimitingFilter;
     private final HttpSecurityHeadersFilter httpSecurityHeadersFilter;
+    private final MfaSetupEnforcementFilter mfaSetupEnforcementFilter;
 
     public SecurityConfig(@org.springframework.context.annotation.Lazy JwtAuthenticationFilter jwtAuthFilter,
                          RateLimitingFilter rateLimitingFilter,
-                         HttpSecurityHeadersFilter httpSecurityHeadersFilter) {
+                         HttpSecurityHeadersFilter httpSecurityHeadersFilter,
+                         MfaSetupEnforcementFilter mfaSetupEnforcementFilter) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.rateLimitingFilter = rateLimitingFilter;
         this.httpSecurityHeadersFilter = httpSecurityHeadersFilter;
+        this.mfaSetupEnforcementFilter = mfaSetupEnforcementFilter;
     }
 
     
@@ -60,7 +64,8 @@ public class SecurityConfig {
             .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .addFilterBefore(httpSecurityHeadersFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterAfter(mfaSetupEnforcementFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

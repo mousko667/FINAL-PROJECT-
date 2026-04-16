@@ -75,6 +75,18 @@ public class AuthService {
 
         user = findUserByUsername(request.getUsername());
 
+        if (requiresMandatoryMfaSetup(user)) {
+            return LoginResponse.builder()
+                    .mfaSetupRequired(true)
+                    .accessToken(jwtService.generateToken(buildExtraClaims(user), user))
+                    .userId(user.getId())
+                    .username(user.getUsername())
+                    .firstName(user.getFirstName())
+                    .lastName(user.getLastName())
+                    .roles(user.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()))
+                    .build();
+        }
+
         if (user.isMfaEnabled() && user.isMfaVerified()) {
             return LoginResponse.builder()
                     .mfaRequired(true)
@@ -92,6 +104,17 @@ public class AuthService {
                     .orElseThrow(() -> new RuntimeException("User not found"));
             
             if (jwtService.isTokenValid(request.getRefreshToken(), user)) {
+                if (requiresMandatoryMfaSetup(user)) {
+                    return LoginResponse.builder()
+                            .mfaSetupRequired(true)
+                            .accessToken(jwtService.generateToken(buildExtraClaims(user), user))
+                            .userId(user.getId())
+                            .username(user.getUsername())
+                            .firstName(user.getFirstName())
+                            .lastName(user.getLastName())
+                            .roles(user.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()))
+                            .build();
+                }
                 return buildAuthenticatedLoginResponse(user, request.getRefreshToken());
             }
         }
@@ -241,6 +264,15 @@ public class AuthService {
             extraClaims.put("supplierId", user.getSupplier().getId().toString());
         }
         return extraClaims;
+    }
+
+    private boolean requiresMandatoryMfaSetup(User user) {
+        return !user.isMfaVerified() && user.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(role -> "ROLE_ADMIN".equals(role)
+                        || "ROLE_DAF".equals(role)
+                        || role.startsWith("ROLE_VALIDATEUR_N1_")
+                        || role.startsWith("ROLE_VALIDATEUR_N2_"));
     }
 
     private void ensureAccountNotLocked(User user) {
