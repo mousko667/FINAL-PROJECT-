@@ -343,6 +343,13 @@ class ApprovalControllerTest {
                 .lastName("Test")
                 .preferredLang("fr")
                 .build();
+        
+        // For high-privilege roles, set mfaVerified=true to avoid MFA enforcement filter blocking
+        if (requiresMandatoryMfa(roleName)) {
+            user.setMfaEnabled(true);
+            user.setMfaVerified(true);
+        }
+        
         user = userRepository.save(user);   // user.getId() is now non-null
 
         // Step 2: build UserRole with explicit composite key and add it
@@ -356,6 +363,13 @@ class ApprovalControllerTest {
 
         // Re-fetch fully loaded (with roles eager via @EntityGraph on findByUsername)
         return userRepository.findByUsername(user.getUsername()).orElseThrow();
+    }
+    
+    private boolean requiresMandatoryMfa(String roleName) {
+        return "ROLE_ADMIN".equals(roleName)
+                || "ROLE_DAF".equals(roleName)
+                || roleName.startsWith("ROLE_VALIDATEUR_N1_")
+                || roleName.startsWith("ROLE_VALIDATEUR_N2_");
     }
 
     private Invoice createInvoice(Department dept, User actor) {
