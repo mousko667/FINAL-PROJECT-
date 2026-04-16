@@ -286,7 +286,7 @@ internal staff endpoints. All tests pass.
 ## Phase 9C — MFA / Two-Factor Authentication (Module 14)
 *Goal: TOTP-based MFA mandatory for all finance and admin roles*
 
-- [ ] **P9-25** Add `dev.samstevens.totp:totp:1.7.1` dependency to `pom.xml`
+- [x] **P9-25** Add `dev.samstevens.totp:totp:1.7.1` dependency to `pom.xml`
 - [ ] **P9-26** Implement `MfaService` — generate TOTP secret, produce QR code
       URL (otpauth URI), verify OTP code against stored secret
 - [ ] **P9-27** Implement MFA setup flow:

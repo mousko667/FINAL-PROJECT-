@@ -67,6 +67,7 @@ public class InvoicePerformanceTest {
   public void testInvoiceListPerformance() throws Exception {
     // Seed database with 10,000 invoices
     seedLargeDataset();
+    invoiceRepository.flush();
 
     // Warm up: run once to load classes, initialize caches
     mockMvc.perform(get("/api/v1/invoices?page=0&size=50"))
@@ -104,6 +105,7 @@ public class InvoicePerformanceTest {
   @DisplayName("Invoice list with status filter should complete in < 5 seconds")
   public void testInvoiceListFilterPerformance() throws Exception {
     seedLargeDataset();
+    invoiceRepository.flush();
 
     long startTime = System.currentTimeMillis();
 

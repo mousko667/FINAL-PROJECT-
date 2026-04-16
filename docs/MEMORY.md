@@ -351,3 +351,12 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 **Branch:** main
 **Last commit:** Pending
 **Notes:** Completed Phase 9B. Supplier registration, email verification, login (with supplierId claim), invoice submission, and status tracking are fully functional and tested. Added i18n keys and removed hardcoded strings in AuthController and SupplierPortalController. Mocked MinioStorageService in integration tests to ensure CI/local test stability. Security boundaries (staff vs supplier) verified.
+
+## Session Checkpoint
+**Date:** 2026-04-16
+**Last completed task:** P9-25
+**Phase:** 9C â€” MFA / Two-Factor Authentication (Module 14)
+**Next task:** P9-26
+**Branch:** main
+**Last commit:** 648606c5d28379c8edccd23c14307ef900383a8a
+**Notes:** Added `dev.samstevens.totp:totp:1.7.1` to `pom.xml`. Full test suite passes again. `mvnw` is broken in this Windows environment (`Cannot start maven from wrapper`), so the validation gate was run with system `mvn test`. Stabilized two existing test harnesses while preserving application behavior: `InvoiceSystemApplicationTests` now reuses the cached MockMvc Spring context, and `InvoicePerformanceTest` flushes seeded invoices before timing requests.

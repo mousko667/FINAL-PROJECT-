@@ -105,6 +105,12 @@
             <version>7.6.0</version>
         </dependency>
 
+        <dependency>
+            <groupId>dev.samstevens.totp</groupId>
+            <artifactId>totp</artifactId>
+            <version>1.7.1</version>
+        </dependency>
+
         <!-- ── Database ─────────────────────────────────── -->
         <dependency>
             <groupId>org.postgresql</groupId>
