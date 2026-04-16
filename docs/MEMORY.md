@@ -387,3 +387,12 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 **Branch:** main
 **Last commit:** 5db0a83449ad0c76315e5f39721974536e4f08ae
 **Notes:** Split login into two stages for users with verified MFA: `/auth/login` now returns `mfa_required=true` plus a 5-minute JWT carrying `type=pre_auth`, and `/auth/mfa/validate` exchanges a valid pre-auth token + OTP for the normal JWT response. `LoginResponse` now supports the MFA flags/token fields with the required snake_case JSON names, while the non-MFA login flow remains unchanged for existing users and tests.
+
+## Session Checkpoint
+**Date:** 2026-04-16
+**Last completed task:** P9-29
+**Phase:** 9C â€” MFA / Two-Factor Authentication (Module 14)
+**Next task:** P9-30
+**Branch:** main
+**Last commit:** d74ef165bc6b61bd7b83526429cc4c5a2829045f
+**Notes:** Added failed login tracking for wrong passwords and wrong OTPs, with a 15-minute lock window after 5 failures. Locked accounts now return HTTP 423 with the exact message `account.locked`, and counters are reset only after a full successful login completes.

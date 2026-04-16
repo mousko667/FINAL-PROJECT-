@@ -17,8 +17,10 @@ import com.oct.invoicesystem.domain.user.model.UserRole;
 import com.oct.invoicesystem.domain.user.model.UserRoleId;
 import com.oct.invoicesystem.domain.user.repository.RoleRepository;
 import com.oct.invoicesystem.domain.user.repository.UserRepository;
+import com.oct.invoicesystem.shared.exception.AccountLockedException;
 import com.oct.invoicesystem.shared.exception.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -38,6 +40,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AuthService {
 
+    private static final int MAX_FAILED_LOGIN_ATTEMPTS = 5;
+    private static final long ACCOUNT_LOCK_MINUTES = 15;
+    private static final String ACCOUNT_LOCKED_MESSAGE = "account.locked";
+
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final UserRepository userRepository;
@@ -46,16 +52,28 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final MfaService mfaService;
 
+    @Transactional
     public LoginResponse login(LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getUsername(),
-                        request.getPassword()
-                )
-        );
+        User user = userRepository.findByUsername(request.getUsername()).orElse(null);
+        if (user != null) {
+            ensureAccountNotLocked(user);
+        }
 
-        User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getUsername(),
+                            request.getPassword()
+                    )
+            );
+        } catch (BadCredentialsException ex) {
+            if (user != null) {
+                registerFailedAuthentication(user);
+            }
+            throw ex;
+        }
+
+        user = findUserByUsername(request.getUsername());
 
         if (user.isMfaEnabled() && user.isMfaVerified()) {
             return LoginResponse.builder()
@@ -80,9 +98,11 @@ public class AuthService {
         throw new RuntimeException("Invalid refresh token");
     }
 
+    @Transactional
     public LoginResponse validateMfa(MfaValidateRequest request) {
         String username = jwtService.extractUsername(request.getPreAuthToken());
         User user = findUserByUsername(username);
+        ensureAccountNotLocked(user);
 
         if (!jwtService.isTokenValid(request.getPreAuthToken(), user) || !jwtService.isPreAuthToken(request.getPreAuthToken())) {
             throw new UnauthorizedException("Invalid pre-auth token");
@@ -91,6 +111,7 @@ public class AuthService {
             throw new UnauthorizedException("MFA is not active for this account");
         }
         if (!mfaService.verifyOtp(user.getMfaSecret(), request.getOtp())) {
+            registerFailedAuthentication(user);
             throw new UnauthorizedException("Invalid OTP");
         }
 
@@ -201,6 +222,7 @@ public class AuthService {
     }
 
     private LoginResponse buildAuthenticatedLoginResponse(User user, String refreshToken) {
+        resetFailedAuthentication(user);
         String jwt = jwtService.generateToken(buildExtraClaims(user), user);
         return LoginResponse.builder()
                 .accessToken(jwt)
@@ -219,5 +241,29 @@ public class AuthService {
             extraClaims.put("supplierId", user.getSupplier().getId().toString());
         }
         return extraClaims;
+    }
+
+    private void ensureAccountNotLocked(User user) {
+        if (user.getLockedUntil() != null && user.getLockedUntil().isAfter(Instant.now())) {
+            throw new AccountLockedException(ACCOUNT_LOCKED_MESSAGE);
+        }
+    }
+
+    private void registerFailedAuthentication(User user) {
+        user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
+        if (user.getFailedLoginAttempts() >= MAX_FAILED_LOGIN_ATTEMPTS) {
+            user.setLockedUntil(Instant.now().plus(ACCOUNT_LOCK_MINUTES, ChronoUnit.MINUTES));
+            userRepository.save(user);
+            throw new AccountLockedException(ACCOUNT_LOCKED_MESSAGE);
+        }
+        userRepository.save(user);
+    }
+
+    private void resetFailedAuthentication(User user) {
+        if (user.getFailedLoginAttempts() != 0 || user.getLockedUntil() != null) {
+            user.setFailedLoginAttempts(0);
+            user.setLockedUntil(null);
+            userRepository.save(user);
+        }
     }
 }

@@ -296,7 +296,7 @@ internal staff endpoints. All tests pass.
       return `{ mfa_required: true, pre_auth_token: "..." }` instead of full JWT;
       add `POST /api/v1/auth/mfa/validate` to accept OTP + pre_auth_token,
       return full JWT on success
-- [ ] **P9-29** Implement login attempt tracking: increment `failed_login_attempts`
+- [x] **P9-29** Implement login attempt tracking: increment `failed_login_attempts`
       on each failed OTP; lock account (`locked_until = NOW() + 15min`)
       after 5 failures; return 423 LOCKED when locked
 - [ ] **P9-30** Enforce MFA mandatory for high-privilege roles: on first login
