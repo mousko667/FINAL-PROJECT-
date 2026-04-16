@@ -360,3 +360,12 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 **Branch:** main
 **Last commit:** 648606c5d28379c8edccd23c14307ef900383a8a
 **Notes:** Added `dev.samstevens.totp:totp:1.7.1` to `pom.xml`. Full test suite passes again. `mvnw` is broken in this Windows environment (`Cannot start maven from wrapper`), so the validation gate was run with system `mvn test`. Stabilized two existing test harnesses while preserving application behavior: `InvoiceSystemApplicationTests` now reuses the cached MockMvc Spring context, and `InvoicePerformanceTest` flushes seeded invoices before timing requests.
+
+## Session Checkpoint
+**Date:** 2026-04-16
+**Last completed task:** P9-26
+**Phase:** 9C â€” MFA / Two-Factor Authentication (Module 14)
+**Next task:** P9-27
+**Branch:** main
+**Last commit:** 8ef4eb1d1a9b9cdf8fcdf962d68c6ba643057bed
+**Notes:** Added `domain.mfa.service.MfaService` with TOTP secret generation, otpauth URI generation, and OTP verification using `dev.samstevens.totp`. `User.mfaSecret` is now encrypted at rest via `EncryptionAttributeConverter`, which keeps the upcoming MFA setup flow aligned with the DB storage rule.

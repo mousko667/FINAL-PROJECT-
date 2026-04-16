@@ -287,7 +287,7 @@ internal staff endpoints. All tests pass.
 *Goal: TOTP-based MFA mandatory for all finance and admin roles*
 
 - [x] **P9-25** Add `dev.samstevens.totp:totp:1.7.1` dependency to `pom.xml`
-- [ ] **P9-26** Implement `MfaService` — generate TOTP secret, produce QR code
+- [x] **P9-26** Implement `MfaService` — generate TOTP secret, produce QR code
       URL (otpauth URI), verify OTP code against stored secret
 - [ ] **P9-27** Implement MFA setup flow:
       `POST /api/v1/auth/mfa/setup` — returns QR code URL (only once);

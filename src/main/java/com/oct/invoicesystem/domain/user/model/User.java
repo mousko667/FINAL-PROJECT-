@@ -14,7 +14,9 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.Convert;
 import com.oct.invoicesystem.domain.supplier.model.Supplier;
+import com.oct.invoicesystem.shared.util.EncryptionAttributeConverter;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -93,6 +95,7 @@ public class User implements UserDetails {
     @Builder.Default
     private boolean mfaEnabled = false;
 
+    @Convert(converter = EncryptionAttributeConverter.class)
     @Column(name = "mfa_secret", length = 64)
     private String mfaSecret;
 
