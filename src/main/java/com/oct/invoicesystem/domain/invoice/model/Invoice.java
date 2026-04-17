@@ -114,6 +114,12 @@ public class Invoice {
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
+    @Column(name = "purchase_order_id")
+    private UUID purchaseOrderId;
+
+    @Column(name = "matching_status", length = 20)
+    private String matchingStatus;
+
     @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<InvoiceItem> items = new ArrayList<>();

@@ -165,7 +165,7 @@ class MfaIntegrationTest {
                 .password(passwordEncoder.encode(password))
                 .firstName(username)
                 .lastName("Test")
-                .active(true)
+                .isActive(true)
                 .mfaEnabled(mfaVerified)
                 .mfaVerified(mfaVerified)
                 .build();

@@ -10,6 +10,12 @@ import com.oct.invoicesystem.domain.notification.event.BonAPayerEvent;
 import com.oct.invoicesystem.domain.notification.event.InvoiceRejectedEvent;
 import com.oct.invoicesystem.domain.notification.event.InvoiceSubmittedEvent;
 import com.oct.invoicesystem.domain.notification.event.InvoiceValidatedEvent;
+import com.oct.invoicesystem.domain.purchasing.model.MatchingStatus;
+import com.oct.invoicesystem.domain.purchasing.model.ThreeWayMatchingResult;
+import com.oct.invoicesystem.domain.purchasing.repository.GoodsReceiptNoteRepository;
+import com.oct.invoicesystem.domain.purchasing.repository.PurchaseOrderRepository;
+import com.oct.invoicesystem.domain.purchasing.repository.ThreeWayMatchingResultRepository;
+import com.oct.invoicesystem.domain.purchasing.service.ThreeWayMatchingService;
 import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 import com.oct.invoicesystem.shared.exception.WorkflowException;
@@ -30,7 +36,6 @@ import java.util.Map;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class InvoiceStateMachineServiceImpl implements InvoiceStateMachineService {
 
@@ -38,12 +43,40 @@ public class InvoiceStateMachineServiceImpl implements InvoiceStateMachineServic
     private final StateMachineFactory<InvoiceStatus, InvoiceEvent> stateMachineFactory;
     private final InvoiceStateChangeListener invoiceStateChangeListener;
     private final ApplicationEventPublisher eventPublisher;
+    private final ThreeWayMatchingService threeWayMatchingService;
+    private final PurchaseOrderRepository purchaseOrderRepository;
+    private final GoodsReceiptNoteRepository goodsReceiptNoteRepository;
+    private final ThreeWayMatchingResultRepository matchingResultRepository;
+
+    public InvoiceStateMachineServiceImpl(
+            InvoiceRepository invoiceRepository,
+            StateMachineFactory<InvoiceStatus, InvoiceEvent> stateMachineFactory,
+            InvoiceStateChangeListener invoiceStateChangeListener,
+            ApplicationEventPublisher eventPublisher,
+            ThreeWayMatchingService threeWayMatchingService,
+            PurchaseOrderRepository purchaseOrderRepository,
+            GoodsReceiptNoteRepository goodsReceiptNoteRepository,
+            ThreeWayMatchingResultRepository matchingResultRepository) {
+        this.invoiceRepository = invoiceRepository;
+        this.stateMachineFactory = stateMachineFactory;
+        this.invoiceStateChangeListener = invoiceStateChangeListener;
+        this.eventPublisher = eventPublisher;
+        this.threeWayMatchingService = threeWayMatchingService;
+        this.purchaseOrderRepository = purchaseOrderRepository;
+        this.goodsReceiptNoteRepository = goodsReceiptNoteRepository;
+        this.matchingResultRepository = matchingResultRepository;
+    }
 
     @Override
     @Transactional
     public void sendEvent(UUID invoiceId, InvoiceEvent event, Map<String, Object> variables) {
         Invoice invoice = invoiceRepository.findByIdAndDeletedAtIsNull(invoiceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Invoice not found with id " + invoiceId));
+
+        // CRITICAL: Perform three-way matching BEFORE state transition on SUBMIT event
+        if (event.equals(InvoiceEvent.SUBMIT) && invoice.getPurchaseOrderId() != null) {
+            performMatchingCheck(invoice);
+        }
 
         StateMachine<InvoiceStatus, InvoiceEvent> sm = build(invoice);
 
@@ -81,6 +114,55 @@ public class InvoiceStateMachineServiceImpl implements InvoiceStateMachineServic
 
         // Publish domain notification events after successful state transition
         publishNotificationEvent(event, invoiceId, variables);
+    }
+
+    /**
+     * Perform three-way matching check before invoice submission.
+     * If invoice has a purchaseOrderId and matching result is MISMATCH,
+     * block the transition unless an override exists.
+     *
+     * @param invoice the invoice to check
+     * @throws WorkflowException if matching is MISMATCH and no override exists
+     */
+    private void performMatchingCheck(Invoice invoice) {
+        try {
+            // Check if a matching result already exists (override scenario)
+            var existingResult = matchingResultRepository.findByInvoiceId(invoice.getId());
+            if (existingResult.isPresent() && existingResult.get().getStatus().equals(MatchingStatus.OVERRIDDEN)) {
+                log.info("Matching override found for invoice {}, proceeding with submission", invoice.getId());
+                return;
+            }
+
+            // Fetch PO
+            var po = purchaseOrderRepository.findByIdActive(invoice.getPurchaseOrderId())
+                .orElseThrow(() -> new WorkflowException("Referenced purchase order not found or has been deleted"));
+
+            // Fetch GRN if matching configuration requires it
+            var grn = goodsReceiptNoteRepository.findByPurchaseOrderId(po.getId()).stream().findFirst().orElse(null);
+
+            // Perform matching
+            ThreeWayMatchingResult result = threeWayMatchingService.match(invoice, po, grn);
+
+            // Update invoice matching_status
+            invoice.setMatchingStatus(result.getStatus().name());
+            invoiceRepository.save(invoice);
+
+            // Throw exception if MISMATCH
+            if (result.getStatus().equals(MatchingStatus.MISMATCH)) {
+                throw new WorkflowException(
+                    String.format("Invoice matching failed with MISMATCH status. Discrepancies: %s. An override is required to proceed.",
+                        result.getDiscrepancyNotes())
+                );
+            }
+
+            log.info("Matching check passed for invoice {} with status {}", invoice.getId(), result.getStatus());
+        } catch (Exception e) {
+            if (e instanceof WorkflowException) {
+                throw (WorkflowException) e;
+            }
+            // If matching fails for other reasons, log but continue (graceful degradation)
+            log.warn("Matching check failed for invoice {}: {}", invoice.getId(), e.getMessage());
+        }
     }
 
     /**
