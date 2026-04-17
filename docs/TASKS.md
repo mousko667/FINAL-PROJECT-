@@ -308,7 +308,7 @@ internal staff endpoints. All tests pass.
 - [x] **P9-32** Add MFA-related i18n keys FR + EN
 - [x] **P9-33** Write unit tests: `MfaServiceTest`
       (secret generation, QR URL, valid OTP, invalid OTP, expired OTP)
-- [ ] **P9-34** Write integration tests: MFA setup → confirm → login with OTP;
+- [x] **P9-34** Write integration tests: MFA setup → confirm → login with OTP;
       5 failed attempts → account locked → admin unlock
 
 **Phase 9C Exit Criteria:** Finance/admin roles cannot access protected endpoints
