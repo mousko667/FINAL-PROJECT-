@@ -306,7 +306,7 @@ internal staff endpoints. All tests pass.
       `POST /api/v1/users/{id}/unlock` (ROLE_ADMIN only) — resets
       `failed_login_attempts`, clears `locked_until`
 - [x] **P9-32** Add MFA-related i18n keys FR + EN
-- [ ] **P9-33** Write unit tests: `MfaServiceTest`
+- [x] **P9-33** Write unit tests: `MfaServiceTest`
       (secret generation, QR URL, valid OTP, invalid OTP, expired OTP)
 - [ ] **P9-34** Write integration tests: MFA setup → confirm → login with OTP;
       5 failed attempts → account locked → admin unlock
