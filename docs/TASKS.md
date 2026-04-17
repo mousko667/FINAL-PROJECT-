@@ -405,7 +405,7 @@ All tests pass.
       + `webhook_deliveries` table (webhook_id FK, event_type, payload TEXT,
       response_status INT, attempt_count, last_attempted_at,
       success BOOLEAN, created_at) — append-only
-- [ ] **P9-60** Implement `Webhook`, `WebhookDelivery` entities
+- [x] **P9-60** Implement `Webhook`, `WebhookDelivery` entities
 - [ ] **P9-61** Implement `WebhookService`:
       register/update/delete (logical) webhooks;
       build signed payload (HMAC-SHA256 with stored secret);
