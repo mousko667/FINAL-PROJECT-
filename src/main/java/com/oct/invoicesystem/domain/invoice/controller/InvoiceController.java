@@ -9,6 +9,9 @@ import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
 import com.oct.invoicesystem.domain.invoice.service.InvoiceService;
 import com.oct.invoicesystem.domain.invoice.service.InvoiceStateMachineService;
 import com.oct.invoicesystem.domain.invoice.statemachine.InvoiceEvent;
+import com.oct.invoicesystem.domain.purchasing.dto.MatchingOverrideRequest;
+import com.oct.invoicesystem.domain.purchasing.model.ThreeWayMatchingResult;
+import com.oct.invoicesystem.domain.purchasing.service.ThreeWayMatchingService;
 import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.domain.user.repository.UserRepository;
 import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
@@ -46,6 +49,7 @@ public class InvoiceController {
 
     private final InvoiceService invoiceService;
     private final InvoiceStateMachineService invoiceStateMachineService;
+    private final ThreeWayMatchingService threeWayMatchingService;
     private final UserRepository userRepository;
 
     @GetMapping
@@ -121,6 +125,22 @@ public class InvoiceController {
     public ResponseEntity<ApiResponse<Void>> resubmitInvoice(@PathVariable UUID id) {
         invoiceStateMachineService.sendEvent(id, InvoiceEvent.RESUBMIT, null);
         return ResponseEntity.ok(ApiResponse.success(null, "action.resubmit.success"));
+    }
+
+    @PostMapping("/{id}/matching/override")
+    @PreAuthorize("hasAnyRole('ROLE_DAF', 'ADMIN')")
+    @Operation(summary = "Override three-way matching mismatch", 
+               description = "DAF or Admin can force an invoice through despite matching discrepancies")
+    public ResponseEntity<ApiResponse<Void>> overrideMatchingMismatch(
+            @PathVariable UUID id,
+            @Valid @RequestBody MatchingOverrideRequest request,
+            Authentication authentication) {
+        UUID actorId = getActorId(authentication);
+        User actor = userRepository.findById(actorId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + actorId));
+        
+        threeWayMatchingService.recordOverride(id, actor, request.overrideReason());
+        return ResponseEntity.ok(ApiResponse.success(null, "action.mismatch_override.success"));
     }
 
     private UUID getActorId(Authentication authentication) {
