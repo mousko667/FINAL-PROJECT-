@@ -409,4 +409,5 @@ After each completed task, append a `## Session Checkpoint` block here **before*
  # #   S e s s i o n   C h e c k p o i n t   ( P 9 - 3 0 )  
  * * D a t e : * *   2 0 2 6 - 0 4 - 1 7   |   * * S t a t u s : * *   P 9 - 3 0   C o m p l e t e   |   * * N e x t : * *   P 9 - 3 1  
  F i x e d   f i l t e r   r e g i s t r a t i o n :   M f a S e t u p E n f o r c e m e n t F i l t e r   n o w   u s e s   U s e r n a m e P a s s w o r d A u t h e n t i c a t i o n F i l t e r   a s   r e f e r e n c e   p o i n t .   T e s t s :   1 2 4 / 1 2 8   P A S S .  
+ * * P 9 - 3 1   C o m p l e t e : * *   A d m i n   u n l o c k   e n d p o i n t   i m p l e m e n t e d .   P O S T   / a p i / v 1 / u s e r s / { i d } / u n l o c k   r e s e t s   f a i l e d _ l o g i n _ a t t e m p t s   a n d   c l e a r s   l o c k e d _ u n t i l .   T e s t s :   1 2 8 / 1 2 8   r u n   ( 4   p r e - e x i s t i n g   P a y m e n t C o n t r o l l e r T e s t   e r r o r s   f r o m   H i b e r n a t e   l a z y   l o a d i n g ) .   C o m m i t s :   e 5 b a 9 1 3 ,   1 0 7 3 f 0 9  
  
