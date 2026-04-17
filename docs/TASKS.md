@@ -365,29 +365,29 @@ on submit. MISMATCH blocks workflow without override. All tests pass.
 ## Phase 9E — Payment Tracking Enhancements (Module 7)
 *Goal: Aging analysis, remittance advice, cash flow, payment alerts*
 
-- [ ] **P9-48** Create `V19__create_remittance_advice.sql` — remittance advice
+- [x] **P9-48** Create `V19__create_remittance_advice.sql` — remittance advice
       table (payment_id FK UNIQUE, pdf_object_key, generated_at, generated_by FK)
-- [ ] **P9-49** Implement aging analysis query in `ReportService`:
+- [x] **P9-49** Implement aging analysis query in `ReportService`:
       bucket overdue invoices into 0–30, 31–60, 61–90, 90+ days;
       expose via `GET /api/v1/reports/aging`
-- [ ] **P9-50** Implement `RemittanceAdviceService` — generate PDF per payment
+- [x] **P9-50** Implement `RemittanceAdviceService` — generate PDF per payment
       using iText (supplier name, invoice ref, amount, payment date, method,
       reference number); store in MinIO; record in `remittance_advice` table
-- [ ] **P9-51** Auto-generate remittance advice when payment is recorded
+- [x] **P9-51** Auto-generate remittance advice when payment is recorded
       (triggered in `PaymentServiceImpl.recordPayment`)
-- [ ] **P9-52** Implement remittance download endpoint:
+- [x] **P9-52** Implement remittance download endpoint:
       `GET /api/v1/payments/{id}/remittance` — returns pre-signed MinIO URL
-- [ ] **P9-53** Implement cash flow projection endpoint:
+- [x] **P9-53** Implement cash flow projection endpoint:
       `GET /api/v1/reports/cash-flow?days=30` — sum of pending invoices
       due within N days, grouped by week
-- [ ] **P9-54** Implement supplier payment history endpoint:
+- [x] **P9-54** Implement supplier payment history endpoint:
       `GET /api/v1/reports/supplier/{supplierId}/payments` (DAF, AUDITEUR, ADMIN)
-- [ ] **P9-55** Extend `DeadlineReminderJob` to also fire payment due date
+- [x] **P9-55** Extend `DeadlineReminderJob` to also fire payment due date
       alerts (7 days before `due_date`) to ASSISTANT_COMPTABLE
-- [ ] **P9-56** Add payment enhancement i18n keys FR + EN
-- [ ] **P9-57** Write unit tests: aging bucket calculation, remittance PDF
+- [x] **P9-56** Add payment enhancement i18n keys FR + EN
+- [x] **P9-57** Write unit tests: aging bucket calculation, remittance PDF
       generation (verify PDF not null, contains expected data)
-- [ ] **P9-58** Write integration tests: record payment → remittance auto-generated
+- [x] **P9-58** Write integration tests: record payment → remittance auto-generated
       → download URL returned; aging report returns correct buckets
 
 **Phase 9E Exit Criteria:** Remittance advice auto-generated on payment.
@@ -399,7 +399,7 @@ All tests pass.
 ## Phase 9F — Webhooks / ERP Integration (Module 12)
 *Goal: External systems receive real-time events via signed webhook calls*
 
-- [ ] **P9-59** Create `V20__create_webhooks.sql` — webhooks table
+- [x] **P9-59** Create `V20__create_webhooks.sql` — webhooks table
       (id, name, url, secret_hash VARCHAR(64), events TEXT[] or VARCHAR(500),
       is_active, created_by FK, created_at, updated_at)
       + `webhook_deliveries` table (webhook_id FK, event_type, payload TEXT,

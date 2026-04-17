@@ -1,7 +1,11 @@
 package com.oct.invoicesystem.domain.notification.scheduler;
 
+import com.oct.invoicesystem.domain.invoice.model.Invoice;
+import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
+import com.oct.invoicesystem.domain.invoice.repository.InvoiceRepository;
 import com.oct.invoicesystem.domain.notification.event.ApprovalDeadlineEvent;
 import com.oct.invoicesystem.domain.notification.service.EmailService;
+import com.oct.invoicesystem.domain.user.model.Role;
 import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.domain.user.repository.UserRepository;
 import com.oct.invoicesystem.domain.workflow.model.ApprovalStep;
@@ -15,6 +19,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +31,7 @@ import java.util.Map;
 public class DeadlineReminderJob {
 
     private final ApprovalStepRepository approvalStepRepository;
+    private final InvoiceRepository invoiceRepository;
     private final EmailService emailService;
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
@@ -83,5 +89,65 @@ public class DeadlineReminderJob {
         }
 
         log.info("Deadline reminder job completed.");
+    }
+
+    /**
+     * Runs daily at 06:00 (server time). Checks for invoices due within 7 days
+     * and sends payment due date alert emails to ASSISTANT_COMPTABLE users.
+     * P9-55: Payment due date alerts
+     */
+    @Scheduled(cron = "0 0 6 * * *")
+    public void sendPaymentDueAlerts() {
+        log.info("Running payment due alert job...");
+        LocalDate today = LocalDate.now();
+        LocalDate in7days = today.plusDays(7);
+
+        // Find invoices in BON_A_PAYER status due within 7 days
+        List<Invoice> upcomingPayments = invoiceRepository.findAll().stream()
+                .filter(inv -> inv.getStatus() == InvoiceStatus.BON_A_PAYER &&
+                           inv.getDueDate() != null &&
+                           !inv.getDueDate().isBefore(today) &&
+                           !inv.getDueDate().isAfter(in7days))
+                .toList();
+
+        log.info("Found {} invoices due within 7 days", upcomingPayments.size());
+
+        // Get all ASSISTANT_COMPTABLE users
+        List<User> comptables = userRepository.findAll().stream()
+                .filter(u -> u.getUserRoles() != null &&
+                           u.getUserRoles().stream()
+                              .anyMatch(ur -> "ASSISTANT_COMPTABLE".equals(ur.getRole().getName())))
+                .toList();
+
+        log.info("Found {} ASSISTANT_COMPTABLE users to notify", comptables.size());
+
+        for (Invoice invoice : upcomingPayments) {
+            for (User comptable : comptables) {
+                try {
+                    Map<String, Object> vars = new HashMap<>();
+                    vars.put("reference", invoice.getReferenceNumber());
+                    vars.put("supplierName", invoice.getSupplierName());
+                    vars.put("amount", invoice.getAmount() + " " + invoice.getCurrency());
+                    vars.put("dueDate", invoice.getDueDate().toString());
+                    vars.put("daysUntilDue", ChronoUnit.DAYS.between(today, invoice.getDueDate()));
+                    vars.put("frontendUrl", frontendUrl);
+
+                    emailService.sendEmail(
+                            comptable.getEmail(),
+                            "💰 Alerte Échéance de Paiement / Payment Due Alert",
+                            "payment-due-alert",
+                            vars
+                    );
+
+                    log.info("Payment due alert sent to {} for invoice {}", comptable.getEmail(), invoice.getReferenceNumber());
+
+                } catch (Exception e) {
+                    log.error("Failed to send payment due alert to {} for invoice {}: {}",
+                            comptable.getEmail(), invoice.getReferenceNumber(), e.getMessage());
+                }
+            }
+        }
+
+        log.info("Payment due alert job completed.");
     }
 }

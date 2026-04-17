@@ -1,12 +1,16 @@
 package com.oct.invoicesystem.domain.report.controller;
 
 import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
+import com.oct.invoicesystem.domain.report.dto.AgingReportDTO;
+import com.oct.invoicesystem.domain.report.dto.CashFlowProjectionDTO;
 import com.oct.invoicesystem.domain.report.dto.DashboardKpiDTO;
+import com.oct.invoicesystem.domain.report.dto.SupplierPaymentHistoryDTO;
 import com.oct.invoicesystem.domain.report.service.ReportService;
 import com.oct.invoicesystem.shared.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -19,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.ByteArrayInputStream;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -83,5 +88,28 @@ public class ReportController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=compliance_report.pdf")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(file);
+    }
+
+    @GetMapping("/aging")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DAF')")
+    @Operation(summary = "Get Aging Analysis Report", description = "Analyzes overdue invoices grouped by days overdue")
+    public ApiResponse<AgingReportDTO> getAgingAnalysis() {
+        return ApiResponse.success(reportService.getAgingAnalysis());
+    }
+
+    @GetMapping("/cash-flow")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DAF')")
+    @Operation(summary = "Get Cash Flow Projection", description = "Projects cash flow for invoices due within N days, grouped by week")
+    public ApiResponse<CashFlowProjectionDTO> getCashFlowProjection(
+            @RequestParam(defaultValue = "30") int days) {
+        return ApiResponse.success(reportService.getCashFlowProjection(days));
+    }
+
+    @GetMapping("/supplier/{supplierId}/payments")
+    @PreAuthorize("hasAnyRole('DAF', 'AUDITEUR', 'ADMIN')")
+    @Operation(summary = "Get Supplier Payment History", description = "Retrieves all payments made to a specific supplier")
+    public ApiResponse<List<SupplierPaymentHistoryDTO>> getSupplierPaymentHistory(
+            @PathVariable UUID supplierId) {
+        return ApiResponse.success(reportService.getSupplierPaymentHistory(supplierId));
     }
 }

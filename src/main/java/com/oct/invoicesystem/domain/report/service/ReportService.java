@@ -1,8 +1,12 @@
 package com.oct.invoicesystem.domain.report.service;
 
+import com.oct.invoicesystem.domain.report.dto.AgingReportDTO;
+import com.oct.invoicesystem.domain.report.dto.CashFlowProjectionDTO;
 import com.oct.invoicesystem.domain.report.dto.DashboardKpiDTO;
+import com.oct.invoicesystem.domain.report.dto.SupplierPaymentHistoryDTO;
 import java.io.ByteArrayInputStream;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
@@ -22,4 +26,31 @@ public interface ReportService {
     ByteArrayInputStream generateInvoiceAuditPdf(UUID invoiceId);
 
     ByteArrayInputStream generateCompliancePdf(LocalDate startDate, LocalDate endDate);
+
+    /**
+     * Generate aging analysis for overdue invoices.
+     * Buckets invoices by days overdue: 0-30, 31-60, 61-90, 90+
+     * Only includes invoices NOT in status: PAYE, ARCHIVE, REJETE
+     *
+     * @return AgingReportDTO with buckets and totals
+     */
+    AgingReportDTO getAgingAnalysis();
+
+    /**
+     * Get cash flow projection for invoices due within N days.
+     * Groups by week and sums pending invoice amounts.
+     *
+     * @param days Number of days to project (default 30)
+     * @return CashFlowProjectionDTO with weekly breakdown
+     */
+    CashFlowProjectionDTO getCashFlowProjection(int days);
+
+    /**
+     * Get payment history for a specific supplier.
+     * Returns all payments received for invoices from this supplier.
+     *
+     * @param supplierId Supplier ID
+     * @return List of SupplierPaymentHistoryDTO
+     */
+    List<SupplierPaymentHistoryDTO> getSupplierPaymentHistory(UUID supplierId);
 }

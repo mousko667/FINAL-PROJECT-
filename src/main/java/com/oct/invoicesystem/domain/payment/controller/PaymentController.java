@@ -2,7 +2,9 @@ package com.oct.invoicesystem.domain.payment.controller;
 
 import com.oct.invoicesystem.domain.payment.dto.PaymentDTO;
 import com.oct.invoicesystem.domain.payment.dto.PaymentRequest;
+import com.oct.invoicesystem.domain.payment.dto.RemittanceAdviceDTO;
 import com.oct.invoicesystem.domain.payment.service.PaymentService;
+import com.oct.invoicesystem.domain.payment.service.RemittanceAdviceService;
 import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.shared.response.ApiResponse;
 import com.oct.invoicesystem.shared.response.PagedResponse;
@@ -27,6 +29,7 @@ import java.util.UUID;
 public class PaymentController {
 
     private final PaymentService paymentService;
+    private final RemittanceAdviceService remittanceAdviceService;
 
     @PostMapping("/invoice/{invoiceId}")
     @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
@@ -57,5 +60,13 @@ public class PaymentController {
 
         Page<PaymentDTO> page = paymentService.listPayments(departmentCode, pageable);
         return ResponseEntity.ok(ApiResponse.success(PagedResponse.of(page)));
+    }
+
+    @GetMapping("/{paymentId}/remittance")
+    @PreAuthorize("hasAnyRole('ASSISTANT_COMPTABLE', 'DAF', 'AUDITEUR', 'ADMIN')")
+    @Operation(summary = "Get pre-signed URL for remittance advice PDF download")
+    public ResponseEntity<ApiResponse<String>> getRemittanceDownloadUrl(@PathVariable UUID paymentId) {
+        String downloadUrl = remittanceAdviceService.getDownloadUrl(paymentId);
+        return ResponseEntity.ok(ApiResponse.success(downloadUrl, "remittance.download.url.generated"));
     }
 }

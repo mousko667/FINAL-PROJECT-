@@ -10,7 +10,13 @@ import com.itextpdf.layout.properties.UnitValue;
 import com.oct.invoicesystem.domain.invoice.model.Invoice;
 import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
 import com.oct.invoicesystem.domain.invoice.repository.InvoiceRepository;
+import com.oct.invoicesystem.domain.payment.model.Payment;
+import com.oct.invoicesystem.domain.payment.repository.PaymentRepository;
+import com.oct.invoicesystem.domain.report.dto.AgingReportDTO;
+import com.oct.invoicesystem.domain.report.dto.CashFlowProjectionDTO;
+import com.oct.invoicesystem.domain.report.dto.CashFlowWeekDTO;
 import com.oct.invoicesystem.domain.report.dto.DashboardKpiDTO;
+import com.oct.invoicesystem.domain.report.dto.SupplierPaymentHistoryDTO;
 import com.oct.invoicesystem.domain.workflow.model.InvoiceStatusHistory;
 import com.oct.invoicesystem.domain.workflow.repository.InvoiceStatusHistoryRepository;
 import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
@@ -29,8 +35,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.temporal.WeekFields;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -43,6 +51,7 @@ public class ReportServiceImpl implements ReportService {
 
     private final InvoiceRepository invoiceRepository;
     private final InvoiceStatusHistoryRepository historyRepository;
+    private final PaymentRepository paymentRepository;
     private final MessageSource messageSource;
 
     @Override
@@ -315,5 +324,171 @@ public class ReportServiceImpl implements ReportService {
             log.error("Error generating compliance PDF", e);
             throw new RuntimeException("Fail to generate Compliance PDF file: " + e.getMessage());
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AgingReportDTO getAgingAnalysis() {
+        log.info("Calculating aging analysis");
+
+        LocalDate today = LocalDate.now();
+        List<Invoice> invoices = invoiceRepository.findAllWithFilters(
+                null, null, null, null, null, null, Pageable.unpaged()).getContent();
+
+        // Filter: exclude PAYE, ARCHIVE, REJETE
+        List<Invoice> filteredInvoices = invoices.stream()
+                .filter(inv -> inv.getStatus() != InvoiceStatus.PAYE 
+                        && inv.getStatus() != InvoiceStatus.ARCHIVE 
+                        && inv.getStatus() != InvoiceStatus.REJETE)
+                .toList();
+
+        // Bucket invoices by days overdue
+        long count0to30 = 0;
+        long count31to60 = 0;
+        long count61to90 = 0;
+        long count90plus = 0;
+
+        BigDecimal amount0to30 = BigDecimal.ZERO;
+        BigDecimal amount31to60 = BigDecimal.ZERO;
+        BigDecimal amount61to90 = BigDecimal.ZERO;
+        BigDecimal amount90plus = BigDecimal.ZERO;
+
+        for (Invoice inv : filteredInvoices) {
+            if (inv.getDueDate() == null || !inv.getDueDate().isBefore(today)) {
+                continue; // Not overdue
+            }
+
+            long daysOverdue = Duration.between(
+                    inv.getDueDate().atStartOfDay(),
+                    today.atStartOfDay()
+            ).toDays();
+
+            if (daysOverdue <= 30) {
+                count0to30++;
+                amount0to30 = amount0to30.add(inv.getAmount());
+            } else if (daysOverdue <= 60) {
+                count31to60++;
+                amount31to60 = amount31to60.add(inv.getAmount());
+            } else if (daysOverdue <= 90) {
+                count61to90++;
+                amount61to90 = amount61to90.add(inv.getAmount());
+            } else {
+                count90plus++;
+                amount90plus = amount90plus.add(inv.getAmount());
+            }
+        }
+
+        // Create buckets map
+        Map<String, AgingReportDTO.AgingBucketDTO> buckets = new LinkedHashMap<>();
+        buckets.put("0_30", AgingReportDTO.AgingBucketDTO.builder()
+                .bucketKey("0_30")
+                .displayName("0-30 days")
+                .invoiceCount(count0to30)
+                .totalAmount(amount0to30)
+                .build());
+        buckets.put("31_60", AgingReportDTO.AgingBucketDTO.builder()
+                .bucketKey("31_60")
+                .displayName("31-60 days")
+                .invoiceCount(count31to60)
+                .totalAmount(amount31to60)
+                .build());
+        buckets.put("61_90", AgingReportDTO.AgingBucketDTO.builder()
+                .bucketKey("61_90")
+                .displayName("61-90 days")
+                .invoiceCount(count61to90)
+                .totalAmount(amount61to90)
+                .build());
+        buckets.put("90_plus", AgingReportDTO.AgingBucketDTO.builder()
+                .bucketKey("90_plus")
+                .displayName("90+ days")
+                .invoiceCount(count90plus)
+                .totalAmount(amount90plus)
+                .build());
+
+        BigDecimal totalAmount = amount0to30.add(amount31to60).add(amount61to90).add(amount90plus);
+        long totalCount = count0to30 + count31to60 + count61to90 + count90plus;
+
+        return AgingReportDTO.builder()
+                .buckets(buckets)
+                .totalOverdueAmount(totalAmount)
+                .totalOverdueInvoiceCount(totalCount)
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CashFlowProjectionDTO getCashFlowProjection(int days) {
+        log.info("Calculating cash flow projection for {} days", days);
+
+        LocalDate today = LocalDate.now();
+        LocalDate endDate = today.plusDays(days);
+
+        List<Invoice> invoices = invoiceRepository.findAllWithFilters(
+                null, null, today, endDate, null, null, Pageable.unpaged()).getContent();
+
+        // Filter: only include invoices not yet paid and not in excluded statuses
+        List<Invoice> filteredInvoices = invoices.stream()
+                .filter(inv -> inv.getStatus() != InvoiceStatus.PAYE 
+                        && inv.getStatus() != InvoiceStatus.ARCHIVE 
+                        && inv.getStatus() != InvoiceStatus.REJETE)
+                .toList();
+
+        // Group by week
+        WeekFields weekFields = WeekFields.ISO;
+        Map<Integer, List<Invoice>> byWeek = filteredInvoices.stream()
+                .collect(Collectors.groupingBy(inv -> inv.getDueDate().get(weekFields.weekOfYear())));
+
+        List<CashFlowWeekDTO> weeklyBreakdown = new ArrayList<>();
+        BigDecimal totalProjected = BigDecimal.ZERO;
+
+        for (Integer weekNum : new TreeSet<>(byWeek.keySet())) {
+            List<Invoice> weekInvoices = byWeek.get(weekNum);
+            BigDecimal weekAmount = weekInvoices.stream()
+                    .map(Invoice::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            
+            LocalDate weekStart = weekInvoices.get(0).getDueDate()
+                    .with(weekFields.dayOfWeek(), 1); // Monday
+            LocalDate weekEnd = weekStart.plusDays(6); // Sunday
+
+            weeklyBreakdown.add(new CashFlowWeekDTO(
+                    weekStart,
+                    weekEnd,
+                    weekAmount,
+                    (long) weekInvoices.size()
+            ));
+
+            totalProjected = totalProjected.add(weekAmount);
+        }
+
+        return new CashFlowProjectionDTO(
+                today,
+                endDate,
+                totalProjected,
+                weeklyBreakdown
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SupplierPaymentHistoryDTO> getSupplierPaymentHistory(UUID supplierId) {
+        log.info("Getting payment history for supplier {}", supplierId);
+
+        List<Payment> payments = paymentRepository.findAll().stream()
+                .filter(p -> p.getInvoice().getSupplier() != null && 
+                           p.getInvoice().getSupplier().getId().equals(supplierId))
+                .sorted(Comparator.comparing(Payment::getPaymentDate).reversed())
+                .toList();
+
+        return payments.stream()
+                .map(p -> new SupplierPaymentHistoryDTO(
+                        p.getId(),
+                        p.getInvoice().getReferenceNumber(),
+                        p.getAmountPaid(),
+                        p.getPaymentMethod().toString(),
+                        p.getPaymentDate(),
+                        p.getReference()
+                ))
+                .toList();
     }
 }

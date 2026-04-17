@@ -33,6 +33,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final InvoiceRepository invoiceRepository;
     private final UserRepository userRepository;
     private final InvoiceStateMachineService invoiceStateMachineService;
+    private final RemittanceAdviceService remittanceAdviceService;
 
     @Override
     @Transactional
@@ -62,6 +63,10 @@ public class PaymentServiceImpl implements PaymentService {
 
         payment = paymentRepository.save(payment);
         log.info("Recorded payment {} for invoice {}", payment.getId(), invoiceId);
+
+        // Auto-generate remittance advice (P9-51)
+        remittanceAdviceService.generateRemittanceAdvice(payment.getId(), userId);
+        log.info("Auto-generated remittance advice for payment {}", payment.getId());
 
         // State Machine transition: BON_A_PAYER -> PAYE
         invoiceStateMachineService.sendEvent(invoiceId, InvoiceEvent.RECORD_PAYMENT,
