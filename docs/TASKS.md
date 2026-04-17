@@ -302,7 +302,7 @@ internal staff endpoints. All tests pass.
 - [x] **P9-30** Enforce MFA mandatory for high-privilege roles: on first login
       after role assignment, if MFA not set up, return `mfa_setup_required: true`
       and restrict access to setup endpoints only
-- [ ] **P9-31** Implement admin unlock endpoint
+- [x] **P9-31** Implement admin unlock endpoint
       `POST /api/v1/users/{id}/unlock` (ROLE_ADMIN only) — resets
       `failed_login_attempts`, clears `locked_until`
 - [ ] **P9-32** Add MFA-related i18n keys FR + EN
