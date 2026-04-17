@@ -77,4 +77,11 @@ public class UserController {
         userService.assignRoles(id, request);
         return ResponseEntity.ok(ApiResponse.success(null, "Roles assigned successfully"));
     }
+
+    @PostMapping("/{id}/unlock")
+    @Operation(summary = "Unlock user account", description = "Resets failed login attempts and removes account lock for a user")
+    public ResponseEntity<ApiResponse<Void>> unlockUser(@PathVariable UUID id) {
+        userService.unlockUser(id);
+        return ResponseEntity.ok(ApiResponse.success(null, "User account unlocked successfully"));
+    }
 }

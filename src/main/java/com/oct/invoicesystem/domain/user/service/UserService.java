@@ -164,4 +164,15 @@ public class UserService {
         
         userRepository.save(user);
     }
+
+    @Transactional
+    public void unlockUser(UUID id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
+        user.setFailedLoginAttempts(0);
+        user.setLockedUntil(null);
+        
+        userRepository.save(user);
+    }
 }

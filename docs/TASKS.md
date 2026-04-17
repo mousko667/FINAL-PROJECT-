@@ -299,7 +299,7 @@ internal staff endpoints. All tests pass.
 - [x] **P9-29** Implement login attempt tracking: increment `failed_login_attempts`
       on each failed OTP; lock account (`locked_until = NOW() + 15min`)
       after 5 failures; return 423 LOCKED when locked
-- [ ] **P9-30** Enforce MFA mandatory for high-privilege roles: on first login
+- [x] **P9-30** Enforce MFA mandatory for high-privilege roles: on first login
       after role assignment, if MFA not set up, return `mfa_setup_required: true`
       and restrict access to setup endpoints only
 - [ ] **P9-31** Implement admin unlock endpoint
