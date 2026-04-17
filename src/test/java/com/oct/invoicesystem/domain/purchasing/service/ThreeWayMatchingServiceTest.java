@@ -61,7 +61,7 @@ class ThreeWayMatchingServiceTest {
                 .id(UUID.randomUUID())
                 .tolerancePercentage(new BigDecimal("2.00"))
                 .toleranceAmount(new BigDecimal("10.00"))
-                .requireGrn(true)
+                .requireGrn(false)
                 .isActive(true)
                 .updatedBy(mock(User.class))
                 .updatedAt(Instant.now())
@@ -74,6 +74,10 @@ class ThreeWayMatchingServiceTest {
                 .build();
 
         when(matchingConfigRepository.findByIsActiveTrue()).thenReturn(Optional.of(activeConfig));
+        
+        // Mock save to return the argument passed to it
+        when(matchingResultRepository.save(any(com.oct.invoicesystem.domain.purchasing.model.ThreeWayMatchingResult.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     @Test
@@ -225,7 +229,19 @@ class ThreeWayMatchingServiceTest {
     @Test
     @DisplayName("Should throw exception when GRN is required but not provided")
     void testGrnRequiredButNotProvided() {
-        // Setup invoice
+        // Setup config that requires GRN
+        MatchingConfig grnRequiredConfig = MatchingConfig.builder()
+                .id(UUID.randomUUID())
+                .tolerancePercentage(new BigDecimal("2.00"))
+                .toleranceAmount(new BigDecimal("10.00"))
+                .requireGrn(true)
+                .isActive(true)
+                .updatedBy(mock(User.class))
+                .updatedAt(Instant.now())
+                .build();
+        
+        when(matchingConfigRepository.findByIsActiveTrue()).thenReturn(Optional.of(grnRequiredConfig));
+
         InvoiceItem invoiceItem = InvoiceItem.builder()
                 .id(UUID.randomUUID())
                 .description("Widget D")
@@ -260,6 +276,9 @@ class ThreeWayMatchingServiceTest {
         assertThatThrownBy(() -> threeWayMatchingService.match(invoice, purchaseOrder, null))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("GRN is required");
+                
+        // Reset to default config for other tests
+        when(matchingConfigRepository.findByIsActiveTrue()).thenReturn(Optional.of(activeConfig));
     }
 
     @Test
@@ -301,9 +320,9 @@ class ThreeWayMatchingServiceTest {
         String overrideReason = "Approved by DAF due to supplier delay";
 
         var existingResult = mock(com.oct.invoicesystem.domain.purchasing.model.ThreeWayMatchingResult.class);
-        existingResult.setStatus(MatchingStatus.MISMATCH);
-        existingResult.setInvoice(mock(Invoice.class));
-        existingResult.setPurchaseOrder(mock(PurchaseOrder.class));
+        when(existingResult.getStatus()).thenReturn(MatchingStatus.MISMATCH);
+        when(existingResult.getInvoice()).thenReturn(mock(Invoice.class));
+        when(existingResult.getPurchaseOrder()).thenReturn(mock(PurchaseOrder.class));
 
         when(matchingResultRepository.findByInvoiceId(invoiceId)).thenReturn(Optional.of(existingResult));
         when(matchingResultRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -338,7 +357,7 @@ class ThreeWayMatchingServiceTest {
         String overrideReason = "Valid override reason with enough characters";
 
         var existingResult = mock(com.oct.invoicesystem.domain.purchasing.model.ThreeWayMatchingResult.class);
-        existingResult.setStatus(MatchingStatus.MATCHED); // Not a MISMATCH
+        when(existingResult.getStatus()).thenReturn(MatchingStatus.MATCHED); // Not a MISMATCH
 
         when(matchingResultRepository.findByInvoiceId(invoiceId)).thenReturn(Optional.of(existingResult));
 

@@ -89,10 +89,8 @@ class ThreeWayMatchingIntegrationTest {
         // Create test supplier
         Supplier supplier = Supplier.builder()
                 .companyName("Test Supplier")
-                .email("supplier@test.com")
+                .contactEmail("supplier@test.com")
                 .taxId("12345678")
-                .country("FR")
-                .currency("EUR")
                 .build();
         supplier = supplierRepository.save(supplier);
         supplierId = supplier.getId();
