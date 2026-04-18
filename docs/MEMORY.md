@@ -912,3 +912,14 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 **Branch:** main
 **Last commit:** 6c8502e
 **Notes:** Completed P9-68 (approval bottleneck detection), P9-69 (supplier performance report), P9-70 (extended KPIs with overdue buckets, approval averages, webhook success rate). All code implemented, tests compilation fixed, ready to proceed to P9-71 supplier dashboard enhancements.
+
+---
+
+## Session Checkpoint
+**Date:** 2026-04-18
+**Last completed task:** P9-71
+**Phase:** 9G — Dashboard & Reporting Enhancements (Module 2, 11)
+**Next task:** P9-72
+**Branch:** main
+**Last commit:** 9881987
+**Notes:** Completed P9-71 supplier dashboard enhancements with matching status breakdown and next expected payment date. Fixed Spring context loading issues by adding WebConfig for RestTemplate bean. Updated integration test expectations.

@@ -450,7 +450,7 @@ fire signed HTTP POSTs. Failures retry and are logged. All tests pass.
 - [x] **P9-71** Add supplier dashboard enhancements (requires Phase 9B):
       `GET /api/v1/supplier/dashboard` extended with matching status breakdown
       and next expected payment date
-- [ ] **P9-72** Add i18n keys for new report labels FR + EN
+- [x] **P9-72** Add i18n keys for new report labels FR + EN
 - [ ] **P9-73** Write unit tests: `ReportServiceTest` extensions
       (bottleneck calculation, supplier performance metrics, extended KPIs)
 - [ ] **P9-74** Write integration tests: `ReportControllerTest` extensions
