@@ -399,34 +399,34 @@ All tests pass.
 ## Phase 9F — Webhooks / ERP Integration (Module 12)
 *Goal: External systems receive real-time events via signed webhook calls*
 
-- [ ] **P9-59** Create `V20__create_webhooks.sql` — webhooks table
+- [x] **P9-59** Create `V20__create_webhooks.sql` — webhooks table
       (id, name, url, secret_hash VARCHAR(64), events TEXT[] or VARCHAR(500),
       is_active, created_by FK, created_at, updated_at)
       + `webhook_deliveries` table (webhook_id FK, event_type, payload TEXT,
       response_status INT, attempt_count, last_attempted_at,
       success BOOLEAN, created_at) — append-only
-- [ ] **P9-60** Implement `Webhook`, `WebhookDelivery` entities
-- [ ] **P9-61** Implement `WebhookService`:
+- [x] **P9-60** Implement `Webhook`, `WebhookDelivery` entities
+- [x] **P9-61** Implement `WebhookService`:
       register/update/delete (logical) webhooks;
       build signed payload (HMAC-SHA256 with stored secret);
       deliver via `RestTemplate` with 5s timeout;
       retry 3× with backoff 5s/25s/125s;
       log every attempt to `webhook_deliveries`
-- [ ] **P9-62** Publish webhook events by adding `WebhookEventPublisher`
+- [x] **P9-62** Publish webhook events by adding `WebhookEventPublisher`
       as an additional `@Async @EventListener` alongside existing listeners:
       fire on `InvoiceSubmittedEvent`, `InvoiceValidatedEvent`,
       `InvoiceRejectedEvent`, `BonAPayerEvent`
-- [ ] **P9-63** Implement `WebhookController`:
+- [x] **P9-63** Implement `WebhookController`:
       `GET/POST/DELETE /api/v1/integrations/webhooks` (ROLE_ADMIN only);
       `GET /api/v1/integrations/webhooks/{id}/deliveries` (delivery log)
-- [ ] **P9-64** Implement integration health endpoint:
+- [x] **P9-64** Implement integration health endpoint:
       `GET /api/v1/integrations/status` — lists all active webhooks
       with last delivery status
-- [ ] **P9-65** Add webhook i18n keys FR + EN
-- [ ] **P9-66** Write unit tests: `WebhookServiceTest`
+- [x] **P9-65** Add webhook i18n keys FR + EN
+- [x] **P9-66** Write unit tests: `WebhookServiceTest`
       (payload signing, delivery success, delivery failure + retry,
       max retries exceeded → logged as failed)
-- [ ] **P9-67** Write integration tests: register webhook → trigger invoice
+- [x] **P9-67** Write integration tests: register webhook → trigger invoice
       event → verify delivery logged; failed endpoint → verify retry count = 3
 
 **Phase 9F Exit Criteria:** Admin can register webhooks. Invoice state changes
