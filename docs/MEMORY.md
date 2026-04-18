@@ -934,3 +934,10 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 **Branch:** main
 **Last commit:** 5af05bd
 **Notes:** Completed P9-72 i18n keys for bottleneck reports, supplier performance, extended KPIs, and supplier dashboard labels in both FR and EN.
+
+## Session Checkpoint: P9-73 Complete
+- **Task**: P9-73 unit tests for ReportService extensions
+- **Changes**: Added comprehensive unit tests for getApprovalBottlenecks(), getSupplierPerformance(), and extended getDashboardKpis() fields
+- **Tests**: All 3 new test methods pass (bottleneck SLA flagging, supplier performance metrics calculation, extended KPI fields validation)
+- **Status**: ? Complete, 0 test failures, commit 418ea80 created
+- **Next**: Proceed to P9-74 integration tests

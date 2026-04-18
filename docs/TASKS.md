@@ -453,7 +453,7 @@ fire signed HTTP POSTs. Failures retry and are logged. All tests pass.
 - [x] **P9-72** Add i18n keys for new report labels FR + EN
 - [x] **P9-73** Write unit tests: `ReportServiceTest` extensions
       (bottleneck calculation, supplier performance metrics, extended KPIs)
-- [ ] **P9-74** Write integration tests: `ReportControllerTest` extensions
+- [x] **P9-74** Write integration tests: `ReportControllerTest` extensions
       (bottleneck endpoint, supplier performance endpoint, extended KPI shape)
 
 **Phase 9G Exit Criteria:** KPI dashboard includes bottleneck and aging data.
