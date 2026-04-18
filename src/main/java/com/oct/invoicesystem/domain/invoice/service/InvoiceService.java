@@ -236,4 +236,21 @@ public class InvoiceService {
         }
         return map;
     }
+
+    @Transactional(readOnly = true)
+    public java.util.Map<String, Long> getSupplierInvoiceMatchingStatusCounts(UUID supplierId) {
+        java.util.List<Object[]> results = invoiceRepository.countInvoicesByMatchingStatusForSupplier(supplierId);
+        java.util.Map<String, Long> map = new java.util.HashMap<>();
+        for (Object[] r : results) {
+            String matchingStatus = (String) r[0];
+            Long count = (Long) r[1];
+            map.put(matchingStatus != null ? matchingStatus : "PENDING", count);
+        }
+        return map;
+    }
+
+    @Transactional(readOnly = true)
+    public java.time.LocalDate getSupplierNextExpectedPaymentDate(UUID supplierId) {
+        return invoiceRepository.findNextExpectedPaymentDateForSupplier(supplierId);
+    }
 }

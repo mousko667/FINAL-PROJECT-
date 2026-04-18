@@ -2,9 +2,11 @@ package com.oct.invoicesystem.domain.report.controller;
 
 import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
 import com.oct.invoicesystem.domain.report.dto.AgingReportDTO;
+import com.oct.invoicesystem.domain.report.dto.BottleneckDTO;
 import com.oct.invoicesystem.domain.report.dto.CashFlowProjectionDTO;
 import com.oct.invoicesystem.domain.report.dto.DashboardKpiDTO;
 import com.oct.invoicesystem.domain.report.dto.SupplierPaymentHistoryDTO;
+import com.oct.invoicesystem.domain.report.dto.SupplierPerformanceDTO;
 import com.oct.invoicesystem.domain.report.service.ReportService;
 import com.oct.invoicesystem.shared.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -111,5 +113,19 @@ public class ReportController {
     public ApiResponse<List<SupplierPaymentHistoryDTO>> getSupplierPaymentHistory(
             @PathVariable UUID supplierId) {
         return ApiResponse.success(reportService.getSupplierPaymentHistory(supplierId));
+    }
+
+    @GetMapping("/bottlenecks")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DAF') or hasRole('AUDITEUR')")
+    @Operation(summary = "Get Approval Bottlenecks", description = "Detects approval steps exceeding 3-day SLA")
+    public ApiResponse<List<BottleneckDTO>> getApprovalBottlenecks() {
+        return ApiResponse.success(reportService.getApprovalBottlenecks());
+    }
+
+    @GetMapping("/supplier/{supplierId}/performance")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DAF') or hasRole('AUDITEUR')")
+    @Operation(summary = "Get Supplier Performance Metrics", description = "Returns accuracy rate, rejection rate, and average payment time for a supplier")
+    public ApiResponse<SupplierPerformanceDTO> getSupplierPerformance(@PathVariable UUID supplierId) {
+        return ApiResponse.success(reportService.getSupplierPerformance(supplierId));
     }
 }

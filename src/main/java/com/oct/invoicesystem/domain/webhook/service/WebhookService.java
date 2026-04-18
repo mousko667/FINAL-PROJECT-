@@ -176,7 +176,7 @@ public class WebhookService {
     /**
      * Build HMAC-SHA256 signature for payload
      */
-    private String buildSignature(String payload, String rawSecret) {
+    String buildSignature(String payload, String rawSecret) {
         try {
             Mac mac = Mac.getInstance(HMAC_ALGORITHM);
             SecretKeySpec spec = new SecretKeySpec(rawSecret.getBytes(StandardCharsets.UTF_8), HMAC_ALGORITHM);
@@ -192,7 +192,7 @@ public class WebhookService {
     /**
      * Record successful delivery
      */
-    private void recordDeliverySuccess(Webhook webhook, String eventType, String payload, int responseStatus, int attemptCount) {
+    void recordDeliverySuccess(Webhook webhook, String eventType, String payload, int responseStatus, int attemptCount) {
         WebhookDelivery delivery = WebhookDelivery.builder()
                 .webhook(webhook)
                 .eventType(eventType)
@@ -208,7 +208,7 @@ public class WebhookService {
     /**
      * Record failed delivery
      */
-    private void recordDeliveryFailure(Webhook webhook, String eventType, String payload, Integer responseStatus, int attemptCount, Instant lastAttempted) {
+    void recordDeliveryFailure(Webhook webhook, String eventType, String payload, Integer responseStatus, int attemptCount, Instant lastAttempted) {
         WebhookDelivery delivery = WebhookDelivery.builder()
                 .webhook(webhook)
                 .eventType(eventType)
@@ -224,7 +224,7 @@ public class WebhookService {
     /**
      * Generate a cryptographically secure random secret
      */
-    private String generateSecret() {
+    String generateSecret() {
         UUID uuid = UUID.randomUUID();
         return Base64.getEncoder().encodeToString(uuid.toString().getBytes(StandardCharsets.UTF_8));
     }
@@ -232,7 +232,7 @@ public class WebhookService {
     /**
      * Hash a secret using SHA-256
      */
-    private String hashSecret(String secret) {
+    String hashSecret(String secret) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(secret.getBytes(StandardCharsets.UTF_8));

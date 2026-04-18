@@ -45,6 +45,9 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
     @Query("SELECT COUNT(i) FROM Invoice i WHERE i.deletedAt IS NULL AND i.dueDate < :today AND i.status NOT IN ('PAYE', 'ARCHIVE')")
     long countOverdueInvoices(@Param("today") LocalDate today);
 
+    @Query("SELECT i FROM Invoice i WHERE i.deletedAt IS NULL AND i.dueDate < :today AND i.status NOT IN ('PAYE', 'ARCHIVE')")
+    List<Invoice> findOverdueInvoices(@Param("today") LocalDate today);
+
     @Query("SELECT i.supplierName, SUM(i.amount) FROM Invoice i WHERE i.deletedAt IS NULL GROUP BY i.supplierName ORDER BY SUM(i.amount) DESC")
     Page<Object[]> findTopSuppliersByAmount(Pageable pageable);
 
@@ -53,4 +56,10 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
 
     @Query("SELECT i.status, COUNT(i) FROM Invoice i WHERE i.deletedAt IS NULL AND i.supplier IS NOT NULL AND i.supplier.id = :supplierId GROUP BY i.status")
     List<Object[]> countInvoicesByStatusForSupplier(@Param("supplierId") UUID supplierId);
+
+    @Query("SELECT i.matchingStatus, COUNT(i) FROM Invoice i WHERE i.deletedAt IS NULL AND i.supplier IS NOT NULL AND i.supplier.id = :supplierId GROUP BY i.matchingStatus")
+    List<Object[]> countInvoicesByMatchingStatusForSupplier(@Param("supplierId") UUID supplierId);
+
+    @Query("SELECT MIN(i.dueDate) FROM Invoice i WHERE i.deletedAt IS NULL AND i.supplier IS NOT NULL AND i.supplier.id = :supplierId AND i.status = 'BON_A_PAYER' AND NOT EXISTS (SELECT p FROM Payment p WHERE p.invoice = i AND p.deleted = false)")
+    java.time.LocalDate findNextExpectedPaymentDateForSupplier(@Param("supplierId") UUID supplierId);
 }

@@ -447,7 +447,7 @@ fire signed HTTP POSTs. Failures retry and are logged. All tests pass.
       `overdueByBucket` (0-30/31-60/61-90/90+ count + value),
       `averageN1ApprovalDays`, `averageN2ApprovalDays`, `averageDafApprovalDays`,
       `webhookDeliverySuccessRate` (last 7 days)
-- [ ] **P9-71** Add supplier dashboard enhancements (requires Phase 9B):
+- [x] **P9-71** Add supplier dashboard enhancements (requires Phase 9B):
       `GET /api/v1/supplier/dashboard` extended with matching status breakdown
       and next expected payment date
 - [ ] **P9-72** Add i18n keys for new report labels FR + EN

@@ -8,5 +8,10 @@ public record DashboardKpiDTO(
     double averageProcessingTimeDays,
     double rejectionRate,
     long overdueCount,
+    Map<String, Long> overdueByBucket,
+    double averageN1ApprovalDays,
+    double averageN2ApprovalDays,
+    double averageDafApprovalDays,
+    double webhookDeliverySuccessRate,
     Map<String, Double> volumeBySupplier
 ) {}

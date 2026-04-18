@@ -13,12 +13,18 @@ import com.oct.invoicesystem.domain.invoice.repository.InvoiceRepository;
 import com.oct.invoicesystem.domain.payment.model.Payment;
 import com.oct.invoicesystem.domain.payment.repository.PaymentRepository;
 import com.oct.invoicesystem.domain.report.dto.AgingReportDTO;
+import com.oct.invoicesystem.domain.report.dto.BottleneckDTO;
 import com.oct.invoicesystem.domain.report.dto.CashFlowProjectionDTO;
 import com.oct.invoicesystem.domain.report.dto.CashFlowWeekDTO;
 import com.oct.invoicesystem.domain.report.dto.DashboardKpiDTO;
 import com.oct.invoicesystem.domain.report.dto.SupplierPaymentHistoryDTO;
+import com.oct.invoicesystem.domain.report.dto.SupplierPerformanceDTO;
+import com.oct.invoicesystem.domain.workflow.model.ApprovalStep;
+import com.oct.invoicesystem.domain.workflow.model.ApprovalStepStatus;
 import com.oct.invoicesystem.domain.workflow.model.InvoiceStatusHistory;
+import com.oct.invoicesystem.domain.workflow.repository.ApprovalStepRepository;
 import com.oct.invoicesystem.domain.workflow.repository.InvoiceStatusHistoryRepository;
+import com.oct.invoicesystem.domain.webhook.repository.WebhookDeliveryRepository;
 import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,10 +43,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.temporal.WeekFields;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.WeekFields;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -51,7 +59,9 @@ public class ReportServiceImpl implements ReportService {
 
     private final InvoiceRepository invoiceRepository;
     private final InvoiceStatusHistoryRepository historyRepository;
+    private final ApprovalStepRepository approvalStepRepository;
     private final PaymentRepository paymentRepository;
+    private final WebhookDeliveryRepository webhookDeliveryRepository;
     private final MessageSource messageSource;
 
     @Override
@@ -69,6 +79,7 @@ public class ReportServiceImpl implements ReportService {
                 ));
 
         long overdueCount = invoiceRepository.countOverdueInvoices(LocalDate.now());
+        Map<String, Long> overdueByBucket = calculateOverdueBuckets();
 
         // Top 5 Suppliers
         Map<String, Double> topSuppliers = invoiceRepository.findTopSuppliersByAmount(PageRequest.of(0, 5))
@@ -88,12 +99,25 @@ public class ReportServiceImpl implements ReportService {
         // Average Processing Time (SOUMIS -> BON_A_PAYER)
         double avgProcessingTimeDays = calculateAverageProcessingTimeDays();
 
+        // Approval step averages
+        double averageN1ApprovalDays = calculateAverageApprovalDays(1);
+        double averageN2ApprovalDays = calculateAverageApprovalDays(2);
+        double averageDafApprovalDays = calculateAverageApprovalDays(3);
+
+        // Webhook delivery success rate over last 7 days
+        double webhookDeliverySuccessRate = calculateWebhookDeliverySuccessRate();
+
         return new DashboardKpiDTO(
                 totalInvoices,
                 countByStatus,
                 avgProcessingTimeDays,
                 rejectionRate,
                 overdueCount,
+                overdueByBucket,
+                averageN1ApprovalDays,
+                averageN2ApprovalDays,
+                averageDafApprovalDays,
+                webhookDeliverySuccessRate,
                 topSuppliers
         );
     }
@@ -127,6 +151,58 @@ public class ReportServiceImpl implements ReportService {
 
         double avgSeconds = durationsSeconds.stream().mapToLong(Long::longValue).average().orElse(0.0);
         return avgSeconds / (24 * 3600); // Convert to days
+    }
+
+    private Map<String, Long> calculateOverdueBuckets() {
+        List<Invoice> overdueInvoices = invoiceRepository.findOverdueInvoices(LocalDate.now());
+        Map<String, Long> buckets = new LinkedHashMap<>();
+        buckets.put("0_30", 0L);
+        buckets.put("31_60", 0L);
+        buckets.put("61_90", 0L);
+        buckets.put("90_plus", 0L);
+
+        for (Invoice invoice : overdueInvoices) {
+            if (invoice.getDueDate() == null) {
+                continue;
+            }
+            long daysOverdue = java.time.temporal.ChronoUnit.DAYS.between(invoice.getDueDate(), LocalDate.now());
+            if (daysOverdue <= 30) {
+                buckets.compute("0_30", (k, v) -> v + 1);
+            } else if (daysOverdue <= 60) {
+                buckets.compute("31_60", (k, v) -> v + 1);
+            } else if (daysOverdue <= 90) {
+                buckets.compute("61_90", (k, v) -> v + 1);
+            } else {
+                buckets.compute("90_plus", (k, v) -> v + 1);
+            }
+        }
+
+        return buckets;
+    }
+
+    private double calculateAverageApprovalDays(int stepOrder) {
+        List<ApprovalStep> steps = approvalStepRepository.findAll().stream()
+                .filter(step -> step.getStepOrder() != null && step.getStepOrder() == stepOrder)
+                .filter(step -> step.getStatus() == ApprovalStepStatus.APPROVED || step.getStatus() == ApprovalStepStatus.REJECTED)
+                .filter(step -> step.getCreatedAt() != null && step.getActionAt() != null)
+                .toList();
+
+        if (steps.isEmpty()) {
+            return 0.0;
+        }
+
+        double totalDays = steps.stream()
+                .mapToDouble(step -> Duration.between(step.getCreatedAt(), step.getActionAt()).toSeconds() / (24.0 * 3600.0))
+                .sum();
+
+        return totalDays / steps.size();
+    }
+
+    private double calculateWebhookDeliverySuccessRate() {
+        Instant since = Instant.now().minus(7, ChronoUnit.DAYS);
+        long totalDeliveries = webhookDeliveryRepository.countByCreatedAtAfter(since);
+        long successfulDeliveries = webhookDeliveryRepository.countByCreatedAtAfterAndSuccessTrue(since);
+        return totalDeliveries == 0 ? 1.0 : (double) successfulDeliveries / totalDeliveries;
     }
 
     @Override
@@ -490,5 +566,155 @@ public class ReportServiceImpl implements ReportService {
                         p.getReference()
                 ))
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BottleneckDTO> getApprovalBottlenecks() {
+        log.info("Calculating approval bottlenecks (steps exceeding 3-day SLA)");
+
+        // Get all APPROVED and REJECTED approval steps
+        List<ApprovalStep> steps = approvalStepRepository.findAll().stream()
+                .filter(s -> s.getStatus() == ApprovalStepStatus.APPROVED || s.getStatus() == ApprovalStepStatus.REJECTED)
+                .filter(s -> s.getActionAt() != null && s.getCreatedAt() != null)
+                .toList();
+
+        // Group by (departmentCode, stepOrder)
+        Map<String, List<ApprovalStep>> groupedSteps = new HashMap<>();
+        for (ApprovalStep step : steps) {
+            String key = step.getDepartmentCode() + "_" + step.getStepOrder();
+            groupedSteps.computeIfAbsent(key, k -> new ArrayList<>()).add(step);
+        }
+
+        List<BottleneckDTO> bottlenecks = new ArrayList<>();
+        final double SLA_DAYS = 3.0;
+
+        for (Map.Entry<String, List<ApprovalStep>> entry : groupedSteps.entrySet()) {
+            String[] parts = entry.getKey().split("_");
+            String departmentCode = parts[0];
+            Integer stepOrder = Integer.parseInt(parts[1]);
+
+            List<ApprovalStep> groupSteps = entry.getValue();
+            long count = groupSteps.size();
+
+            // Calculate average duration
+            double totalDays = 0.0;
+            for (ApprovalStep step : groupSteps) {
+                long seconds = java.time.Duration.between(step.getCreatedAt(), step.getActionAt()).getSeconds();
+                double days = seconds / (24.0 * 3600.0);
+                totalDays += days;
+            }
+            double averageDays = totalDays / count;
+            boolean isBottleneck = averageDays > SLA_DAYS;
+
+            // Map step order to display name
+            String stepName = mapStepOrderToName(stepOrder);
+
+            bottlenecks.add(BottleneckDTO.builder()
+                    .departmentCode(departmentCode)
+                    .stepOrder(stepOrder)
+                    .stepName(stepName)
+                    .averageDays(Math.round(averageDays * 100.0) / 100.0) // Round to 2 decimals
+                    .stepCount(count)
+                    .bottleneck(isBottleneck)
+                    .build());
+        }
+
+        return bottlenecks.stream()
+                .sorted(Comparator.comparing(BottleneckDTO::getBottleneck).reversed()
+                        .thenComparing(BottleneckDTO::getDepartmentCode))
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public SupplierPerformanceDTO getSupplierPerformance(UUID supplierId) {
+        log.info("Calculating performance metrics for supplier {}", supplierId);
+
+        // Get all invoices from this supplier that have been submitted (status SOUMIS or later)
+        List<Invoice> allInvoices = invoiceRepository.findAll();
+        List<Invoice> supplierInvoices = allInvoices.stream()
+                .filter(inv -> inv.getSupplier() != null && inv.getSupplier().getId().equals(supplierId))
+                .toList();
+
+        if (supplierInvoices.isEmpty()) {
+            throw new ResourceNotFoundException("Supplier not found or has no invoices: " + supplierId);
+        }
+
+        String supplierName = supplierInvoices.get(0).getSupplierName();
+
+        // Count invoices by matching status
+        long matchedCount = supplierInvoices.stream()
+                .filter(inv -> "MATCHED".equals(inv.getMatchingStatus()))
+                .count();
+        long mismatchedCount = supplierInvoices.stream()
+                .filter(inv -> "MISMATCH".equals(inv.getMatchingStatus()))
+                .count();
+
+        // Invoices with no matching_status (null) are also considered matched for accuracy rate
+        long totalCount = supplierInvoices.size();
+        long accuracyCount = matchedCount + supplierInvoices.stream()
+                .filter(inv -> inv.getMatchingStatus() == null)
+                .count();
+
+        double accuracyRate = totalCount > 0 ? (double) accuracyCount / totalCount : 1.0;
+
+        // Count rejections
+        long rejectedCount = supplierInvoices.stream()
+                .filter(inv -> inv.getStatus() == InvoiceStatus.REJETE)
+                .count();
+        double rejectionRate = totalCount > 0 ? (double) rejectedCount / totalCount : 0.0;
+
+        // Calculate average payment time (SOUMIS -> PAYE)
+        double averagePaymentDays = 0.0;
+        List<Long> paymentDurations = new ArrayList<>();
+        for (Invoice inv : supplierInvoices) {
+            List<InvoiceStatusHistory> history = historyRepository.findAll().stream()
+                    .filter(h -> h.getInvoice().getId().equals(inv.getId()))
+                    .sorted(Comparator.comparing(InvoiceStatusHistory::getChangedAt))
+                    .toList();
+
+            InvoiceStatusHistory submitted = history.stream()
+                    .filter(h -> "SOUMIS".equals(h.getToStatus()))
+                    .findFirst()
+                    .orElse(null);
+
+            InvoiceStatusHistory paid = history.stream()
+                    .filter(h -> "PAYE".equals(h.getToStatus()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (submitted != null && paid != null) {
+                long seconds = java.time.Duration.between(submitted.getChangedAt(), paid.getChangedAt()).getSeconds();
+                if (seconds > 0) {
+                    paymentDurations.add(seconds);
+                }
+            }
+        }
+
+        if (!paymentDurations.isEmpty()) {
+            double avgSeconds = paymentDurations.stream().mapToLong(Long::longValue).average().orElse(0.0);
+            averagePaymentDays = avgSeconds / (24.0 * 3600.0);
+        }
+
+        return SupplierPerformanceDTO.builder()
+                .supplierId(supplierId.toString())
+                .supplierName(supplierName)
+                .invoiceAccuracyRate(Math.round(accuracyRate * 10000.0) / 10000.0) // Round to 2 decimals (for percentage)
+                .rejectionRate(Math.round(rejectionRate * 10000.0) / 10000.0)
+                .averagePaymentDays(Math.round(averagePaymentDays * 100.0) / 100.0)
+                .totalInvoicesSubmitted((long) totalCount)
+                .matchedInvoices(matchedCount)
+                .mismatchedInvoices(mismatchedCount)
+                .build();
+    }
+
+    private String mapStepOrderToName(Integer stepOrder) {
+        return switch (stepOrder) {
+            case 1 -> "N1 Reviewer";
+            case 2 -> "N2 Reviewer";
+            case 3 -> "DAF Reviewer";
+            default -> "Approval Step " + stepOrder;
+        };
     }
 }

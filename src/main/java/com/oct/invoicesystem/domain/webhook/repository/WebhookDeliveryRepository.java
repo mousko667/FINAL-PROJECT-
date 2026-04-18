@@ -24,4 +24,8 @@ public interface WebhookDeliveryRepository extends JpaRepository<WebhookDelivery
 
     @Query("SELECT wd FROM WebhookDelivery wd WHERE wd.webhook.id = ?1 AND wd.createdAt >= ?2 ORDER BY wd.createdAt DESC")
     Page<WebhookDelivery> findDeliveriesSinceTime(UUID webhookId, Instant since, Pageable pageable);
+
+    long countByCreatedAtAfter(Instant since);
+
+    long countByCreatedAtAfterAndSuccessTrue(Instant since);
 }

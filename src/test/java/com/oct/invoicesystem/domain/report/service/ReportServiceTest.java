@@ -9,8 +9,8 @@ import com.oct.invoicesystem.domain.payment.repository.PaymentRepository;
 import com.oct.invoicesystem.domain.report.dto.AgingReportDTO;
 import com.oct.invoicesystem.domain.report.dto.CashFlowProjectionDTO;
 import com.oct.invoicesystem.domain.report.dto.DashboardKpiDTO;
-import com.oct.invoicesystem.domain.workflow.model.InvoiceStatusHistory;
-import com.oct.invoicesystem.domain.workflow.repository.InvoiceStatusHistoryRepository;
+import com.oct.invoicesystem.domain.workflow.repository.ApprovalStepRepository;
+import com.oct.invoicesystem.domain.webhook.repository.WebhookDeliveryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,7 +47,13 @@ class ReportServiceTest {
     private InvoiceStatusHistoryRepository historyRepository;
 
     @Mock
+    private ApprovalStepRepository approvalStepRepository;
+
+    @Mock
     private PaymentRepository paymentRepository;
+
+    @Mock
+    private WebhookDeliveryRepository webhookDeliveryRepository;
 
     @Mock
     private MessageSource messageSource;
@@ -60,6 +66,13 @@ class ReportServiceTest {
     @BeforeEach
     void setUp() {
         invoiceId = UUID.randomUUID();
+        
+        // Mock approval steps
+        when(approvalStepRepository.findAll()).thenReturn(Collections.emptyList());
+        
+        // Mock webhook deliveries
+        when(webhookDeliveryRepository.countByCreatedAtAfter(any())).thenReturn(10L);
+        when(webhookDeliveryRepository.countByCreatedAtAfterAndSuccessTrue(any())).thenReturn(8L);
     }
 
     @Test

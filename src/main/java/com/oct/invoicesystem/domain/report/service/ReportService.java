@@ -1,9 +1,11 @@
 package com.oct.invoicesystem.domain.report.service;
 
 import com.oct.invoicesystem.domain.report.dto.AgingReportDTO;
+import com.oct.invoicesystem.domain.report.dto.BottleneckDTO;
 import com.oct.invoicesystem.domain.report.dto.CashFlowProjectionDTO;
 import com.oct.invoicesystem.domain.report.dto.DashboardKpiDTO;
 import com.oct.invoicesystem.domain.report.dto.SupplierPaymentHistoryDTO;
+import com.oct.invoicesystem.domain.report.dto.SupplierPerformanceDTO;
 import java.io.ByteArrayInputStream;
 import java.time.LocalDate;
 import java.util.List;
@@ -53,4 +55,20 @@ public interface ReportService {
      * @return List of SupplierPaymentHistoryDTO
      */
     List<SupplierPaymentHistoryDTO> getSupplierPaymentHistory(UUID supplierId);
+
+    /**
+     * Detect approval bottlenecks: approval steps exceeding 3-business-day SLA.
+     * Analyzes average duration per (department, step_order) for APPROVED and REJECTED steps.
+     *
+     * @return List of BottleneckDTO, flagged where average > 3 business days
+     */
+    List<BottleneckDTO> getApprovalBottlenecks();
+
+    /**
+     * Get supplier performance metrics: accuracy rate, rejection rate, average payment time.
+     *
+     * @param supplierId Supplier ID
+     * @return SupplierPerformanceDTO with calculated metrics
+     */
+    SupplierPerformanceDTO getSupplierPerformance(UUID supplierId);
 }

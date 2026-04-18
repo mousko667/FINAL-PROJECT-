@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.io.ByteArrayInputStream;
 import java.time.LocalDate;
 import java.util.Collections;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -35,7 +36,8 @@ class ReportControllerTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void getKpis_WithAdmin_ReturnsSuccess() throws Exception {
-        DashboardKpiDTO kpis = new DashboardKpiDTO(10, Collections.emptyMap(), 2.0, 0.1, 2, Collections.emptyMap());
+        Map<String, Long> overdueByBucket = Map.of("0_30", 1L, "31_60", 0L, "61_90", 0L, "90_plus", 1L);
+        DashboardKpiDTO kpis = new DashboardKpiDTO(10, Collections.emptyMap(), 2.0, 0.1, 2, overdueByBucket, 1.5, 2.0, 0.8, 0.95, Collections.emptyMap());
         when(reportService.getDashboardKpis()).thenReturn(kpis);
 
         mockMvc.perform(get("/api/v1/reports/kpis"))

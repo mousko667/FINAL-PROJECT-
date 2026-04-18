@@ -137,13 +137,19 @@ public class SupplierPortalController {
     }
 
     @GetMapping("/dashboard")
-    @Operation(summary = "Dashboard statistics", description = "Returns invoice status counts for the supplier")
+    @Operation(summary = "Dashboard statistics", description = "Returns invoice status counts, matching status breakdown, and next expected payment date for the supplier")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getDashboardStats(Authentication authentication) {
         UUID supplierId = getSupplierId(authentication);
         
         Map<String, Object> stats = new HashMap<>();
         Map<String, Long> statusCounts = invoiceService.getSupplierInvoiceStatusCounts(supplierId);
         stats.put("statusCounts", statusCounts);
+        
+        Map<String, Long> matchingStatusCounts = invoiceService.getSupplierInvoiceMatchingStatusCounts(supplierId);
+        stats.put("matchingStatusBreakdown", matchingStatusCounts);
+        
+        java.time.LocalDate nextExpectedPaymentDate = invoiceService.getSupplierNextExpectedPaymentDate(supplierId);
+        stats.put("nextExpectedPaymentDate", nextExpectedPaymentDate);
         
         return ResponseEntity.ok(ApiResponse.success(stats));
     }
