@@ -437,13 +437,13 @@ fire signed HTTP POSTs. Failures retry and are logged. All tests pass.
 ## Phase 9G — Dashboard & Reporting Enhancements (Module 2, 11)
 *Goal: Bottleneck detection, budget comparison, supplier performance analytics*
 
-- [ ] **P9-68** Add approval bottleneck detection to `ReportService`:
+- [x] **P9-68** Add approval bottleneck detection to `ReportService`:
       `GET /api/v1/reports/bottlenecks` — average days spent per approval step
       type (N1, N2, DAF) per department; flag steps exceeding SLA (3 business days)
-- [ ] **P9-69** Add supplier performance report:
+- [x] **P9-69** Add supplier performance report:
       `GET /api/v1/reports/supplier/{supplierId}/performance` — invoice accuracy
       rate (% matched on first submission), rejection rate, average payment time
-- [ ] **P9-70** Extend `GET /api/v1/reports/kpis` to include:
+- [x] **P9-70** Extend `GET /api/v1/reports/kpis` to include:
       `overdueByBucket` (0-30/31-60/61-90/90+ count + value),
       `averageN1ApprovalDays`, `averageN2ApprovalDays`, `averageDafApprovalDays`,
       `webhookDeliverySuccessRate` (last 7 days)
