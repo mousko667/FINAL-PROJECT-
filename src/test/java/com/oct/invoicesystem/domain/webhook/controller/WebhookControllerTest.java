@@ -108,6 +108,7 @@ class WebhookControllerTest {
 
         mockMvc.perform(post("/api/v1/integrations/webhooks")
                 .contentType(MediaType.APPLICATION_JSON)
+                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication(new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(testUser, "password", java.util.Collections.singletonList(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN")))))
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.id").isNotEmpty())
@@ -201,6 +202,10 @@ class WebhookControllerTest {
                 .build();
 
         when(webhookRepository.findById(webhookId)).thenReturn(Optional.of(testWebhook));
+        
+        org.springframework.data.domain.PageImpl<WebhookDelivery> page = new org.springframework.data.domain.PageImpl<>(Arrays.asList(delivery));
+        when(deliveryRepository.findByWebhookOrderByCreatedAtDesc(eq(testWebhook), any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(page);
 
         mockMvc.perform(get("/api/v1/integrations/webhooks/" + webhookId + "/deliveries")
                 .contentType(MediaType.APPLICATION_JSON))

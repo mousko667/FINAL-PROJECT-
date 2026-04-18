@@ -1,0 +1,59 @@
+# ============================================================
+#  OCT Invoice System — Test Configuration
+#  File: src/test/resources/application-test.yml
+# ============================================================
+
+spring:
+  # Use H2 in-memory database for unit tests
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  # JPA configuration for tests
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        # Exclude audit package from entity scanning to avoid JSONB issues
+        hbm2ddl:
+          default_schema: public
+
+  # Disable Flyway for unit tests (H2 schema created by Hibernate)
+  flyway:
+    enabled: false
+
+  # Mail configuration for tests
+  mail:
+    host: localhost
+    port: 1025
+    username: test
+    password: test
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+# JWT configuration for tests
+app:
+  jwt:
+    secret: test-jwt-secret-key-for-unit-tests-only-not-for-production-use
+    expiration: 86400000  # 24 hours in milliseconds
+
+# MinIO configuration for tests
+minio:
+  endpoint: http://localhost:9000
+  access-key: test-access-key
+  secret-key: test-secret-key
+  bucket: test-bucket
+
+# Webhook configuration for tests
+webhook:
+  max-retries: 3
+  retry-delay-ms: 1000

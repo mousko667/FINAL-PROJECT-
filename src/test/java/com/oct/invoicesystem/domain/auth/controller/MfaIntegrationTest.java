@@ -28,6 +28,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -42,6 +43,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Transactional
 @DisplayName("MfaIntegrationTest")
 class MfaIntegrationTest {
 
@@ -61,7 +63,6 @@ class MfaIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        cleanDb();
         provisionRoles();
         
         // Create test user with DAF role (requires mandatory MFA)
@@ -69,11 +70,6 @@ class MfaIntegrationTest {
         
         // Create admin user
         adminUser = createUser("mfa_admin", "ROLE_ADMIN", adminPassword, true);
-    }
-
-    @AfterEach
-    void tearDown() {
-        cleanDb();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -128,16 +124,6 @@ class MfaIntegrationTest {
     // ─────────────────────────────────────────────────────────────────────────
     // Helper methods
     // ─────────────────────────────────────────────────────────────────────────
-
-    private void cleanDb() {
-        try {
-            jdbcTemplate.execute("DELETE FROM user_role");
-            jdbcTemplate.execute("DELETE FROM users");
-            jdbcTemplate.execute("DELETE FROM roles");
-        } catch (Exception e) {
-            // Ignore if tables don't exist
-        }
-    }
 
     private void provisionRoles() {
         if (roleRepository.findByName("ROLE_ADMIN").isEmpty()) {

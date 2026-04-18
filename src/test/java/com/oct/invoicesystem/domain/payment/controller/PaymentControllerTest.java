@@ -9,6 +9,8 @@ import com.oct.invoicesystem.domain.invoice.repository.InvoiceRepository;
 import com.oct.invoicesystem.domain.payment.dto.PaymentRequest;
 import com.oct.invoicesystem.domain.payment.model.PaymentMethod;
 import com.oct.invoicesystem.domain.payment.repository.PaymentRepository;
+import com.oct.invoicesystem.domain.storage.service.MinioStorageService;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import com.oct.invoicesystem.domain.user.model.Role;
 import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.domain.user.model.UserRole;
@@ -27,6 +29,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -42,6 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Transactional
 class PaymentControllerTest {
 
     @Autowired
@@ -71,19 +75,21 @@ class PaymentControllerTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    @MockBean
+    private MinioStorageService minioStorageService;
+
     private User assistant;
     private User auditeur;
     private Invoice invoice;
 
     @BeforeEach
     void setUp() {
-        cleanDb();
-
         Department dept = new Department();
         dept.setCode("IT");
         dept.setNameFr("Information Technology");
         dept.setNameEn("Information Technology");
         dept.setN1Role("ROLE_MANAGER");
+        dept.setActive(true);
         dept.setRequiresN2(false);
         departmentRepository.save(dept);
 
@@ -144,23 +150,6 @@ class PaymentControllerTest {
         invoice.setSubmittedBy(assistant);
         invoice.setStatus(InvoiceStatus.BON_A_PAYER);
         invoice = invoiceRepository.save(invoice);
-    }
-
-    @AfterEach
-    void tearDown() throws InterruptedException {
-        Thread.sleep(100);
-        cleanDb();
-    }
-
-    private void cleanDb() {
-        jdbcTemplate.execute("DELETE FROM payments");
-        jdbcTemplate.execute("DELETE FROM invoice_status_history");
-        jdbcTemplate.execute("DELETE FROM notifications");
-        jdbcTemplate.execute("DELETE FROM approval_steps");
-        jdbcTemplate.execute("DELETE FROM invoices");
-        jdbcTemplate.execute("DELETE FROM user_roles");
-        jdbcTemplate.execute("DELETE FROM users");
-        jdbcTemplate.execute("DELETE FROM departments");
     }
 
     @Test

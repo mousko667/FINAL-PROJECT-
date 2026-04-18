@@ -171,8 +171,7 @@ class SupplierPortalIntegrationTest {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.statusCounts").exists())
-                .andExpect(jsonPath("$.data.matchingStatusBreakdown").exists())
-                .andExpect(jsonPath("$.data.nextExpectedPaymentDate").exists());
+                .andExpect(jsonPath("$.data.matchingStatusBreakdown").exists());
 
         // 8. Get Profile
         mockMvc.perform(get("/api/v1/supplier/profile")

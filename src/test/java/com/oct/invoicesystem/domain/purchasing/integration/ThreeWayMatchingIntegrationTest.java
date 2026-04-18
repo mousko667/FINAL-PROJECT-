@@ -2,6 +2,7 @@ package com.oct.invoicesystem.domain.purchasing.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oct.invoicesystem.domain.invoice.model.Invoice;
+import com.oct.invoicesystem.domain.invoice.model.InvoiceDocument;
 import com.oct.invoicesystem.domain.invoice.model.InvoiceItem;
 import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
 import com.oct.invoicesystem.domain.purchasing.dto.MatchingOverrideRequest;
@@ -12,7 +13,9 @@ import com.oct.invoicesystem.domain.purchasing.model.GoodsReceiptItem;
 import com.oct.invoicesystem.domain.purchasing.model.PurchaseOrder;
 import com.oct.invoicesystem.domain.purchasing.model.PurchaseOrderItem;
 import com.oct.invoicesystem.domain.purchasing.model.PurchaseOrderStatus;
+import com.oct.invoicesystem.domain.purchasing.model.MatchingConfig;
 import com.oct.invoicesystem.domain.purchasing.repository.GoodsReceiptNoteRepository;
+import com.oct.invoicesystem.domain.purchasing.repository.MatchingConfigRepository;
 import com.oct.invoicesystem.domain.purchasing.repository.PurchaseOrderRepository;
 import com.oct.invoicesystem.domain.purchasing.repository.ThreeWayMatchingResultRepository;
 import com.oct.invoicesystem.domain.supplier.model.Supplier;
@@ -21,6 +24,8 @@ import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.domain.user.model.Role;
 import com.oct.invoicesystem.domain.user.repository.UserRepository;
 import com.oct.invoicesystem.domain.invoice.repository.InvoiceRepository;
+import com.oct.invoicesystem.domain.department.model.Department;
+import com.oct.invoicesystem.domain.department.repository.DepartmentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -28,6 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -48,9 +54,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@TestPropertySource(properties = {
-        "spring.test.mockmvc.print=true"
-})
 @DisplayName("Three-Way Matching Integration Tests")
 @Transactional
 class ThreeWayMatchingIntegrationTest {
@@ -77,15 +80,39 @@ class ThreeWayMatchingIntegrationTest {
     private UserRepository userRepository;
 
     @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
     private ThreeWayMatchingResultRepository matchingResultRepository;
+
+    @Autowired
+    private DepartmentRepository departmentRepository;
+
+    @Autowired
+    private MatchingConfigRepository matchingConfigRepository;
 
     private UUID supplierId;
     private UUID departmentId;
     private String adminToken;
     private String assistantToken;
+    private User adminUser;
+    private Department department;
 
     @BeforeEach
     void setUp() {
+        // Create test admin user so controller can find by username
+        adminUser = userRepository.findByUsername("admin").orElseGet(() -> {
+            User u = User.builder()
+                    .username("admin")
+                    .email("admin@test.local")
+                    .password(passwordEncoder.encode("Password!1"))
+                    .firstName("Admin")
+                    .lastName("Test")
+                    .preferredLang("fr")
+                    .build();
+            return userRepository.save(u);
+        });
+
         // Create test supplier
         Supplier supplier = Supplier.builder()
                 .companyName("Test Supplier")
@@ -95,8 +122,28 @@ class ThreeWayMatchingIntegrationTest {
         supplier = supplierRepository.save(supplier);
         supplierId = supplier.getId();
 
-        // Create test department
-        departmentId = UUID.randomUUID(); // Assumes department exists from seed data
+        // Seed a department
+        department = departmentRepository.findByCode("TEST").orElseGet(() -> {
+            Department d = new Department();
+            d.setCode("TEST");
+            d.setNameFr("Test Department");
+            d.setNameEn("Test Department");
+            d.setN1Role("ROLE_MANAGER");
+            d.setActive(true);
+            d.setRequiresN2(false);
+            return departmentRepository.save(d);
+        });
+        departmentId = department.getId();
+
+        if (matchingConfigRepository.findByIsActiveTrue().isEmpty()) {
+            MatchingConfig config = new MatchingConfig();
+            config.setTolerancePercentage(new BigDecimal("5.00"));
+            config.setToleranceAmount(new BigDecimal("100.00"));
+            config.setRequireGrn(true);
+            config.setIsActive(true);
+            config.setUpdatedBy(adminUser);
+            matchingConfigRepository.save(config);
+        }
 
         // Create or get test users with required roles
         Role adminRole = new Role();
@@ -105,7 +152,7 @@ class ThreeWayMatchingIntegrationTest {
 
     @Test
     @DisplayName("Complete workflow: PO → GRN → Invoice → Matching → Override")
-    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    @WithMockUser(username = "admin", roles = {"ADMIN", "ASSISTANT_COMPTABLE", "DAF"})
     void testCompleteThreeWayMatchingWorkflow() throws Exception {
         // Step 1: Create Purchase Order
         PurchaseOrderItemCreateRequest poItem = new PurchaseOrderItemCreateRequest(
@@ -129,7 +176,7 @@ class ThreeWayMatchingIntegrationTest {
                 .andExpect(status().isCreated())
                 .andReturn();
 
-        assertThat(poResult.getResponse().getContentAsString()).contains("\"po_number\":\"PO-TEST-001\"");
+        assertThat(poResult.getResponse().getContentAsString()).contains("\"poNumber\":\"PO-TEST-001\"");
 
         // Step 2: Retrieve created PO (get PO ID from response)
         PurchaseOrder purchaseOrder = purchaseOrderRepository.findByPoNumber("PO-TEST-001")
@@ -137,21 +184,26 @@ class ThreeWayMatchingIntegrationTest {
         UUID poId = purchaseOrder.getId();
 
         // Step 3: Create Goods Receipt Note with matching quantities
-        GoodsReceiptItem grnItem = GoodsReceiptItem.builder()
-                .purchaseOrderItem(purchaseOrder.getItems().get(0))
-                .receivedQuantity(new BigDecimal("100"))
-                .build();
-
         GoodsReceiptNote grn = GoodsReceiptNote.builder()
                 .grnNumber("GRN-TEST-001")
                 .purchaseOrder(purchaseOrder)
-                .items(List.of(grnItem))
+                .receivedBy(adminUser)
+                .receiptDate(LocalDate.now())
                 .build();
+        grn = goodsReceiptNoteRepository.save(grn);
+
+        GoodsReceiptItem grnItem = GoodsReceiptItem.builder()
+                .goodsReceiptNote(grn)
+                .purchaseOrderItem(purchaseOrder.getItems().get(0))
+                .receivedQuantity(new BigDecimal("100"))
+                .build();
+        grn.getItems().add(grnItem);
         grn = goodsReceiptNoteRepository.save(grn);
         UUID grnId = grn.getId();
 
         // Step 4: Create Invoice with PO reference
         InvoiceItem invoiceItem = InvoiceItem.builder()
+                .lineNumber(1)
                 .description("Widget A")
                 .quantity(new BigDecimal("150")) // Mismatch: 150 vs 100 in PO
                 .unitPrice(new BigDecimal("50.00"))
@@ -166,9 +218,24 @@ class ThreeWayMatchingIntegrationTest {
                 .currency("EUR")
                 .issueDate(LocalDate.now())
                 .dueDate(LocalDate.now().plusDays(30))
-                .items(List.of(invoiceItem))
+                .department(department)
+                .submittedBy(adminUser)
                 .purchaseOrderId(poId) // Link to PO
                 .build();
+        
+        invoiceItem.setInvoice(invoice);
+        invoice.setItems(List.of(invoiceItem));
+
+        InvoiceDocument document = InvoiceDocument.builder()
+                .originalFilename("invoice.pdf")
+                .minioObjectKey("docs/invoice1.pdf")
+                .fileType("application/pdf")
+                .fileSizeBytes(1024L)
+                .checksumSha256("hash1")
+                .uploadedBy(adminUser)
+                .build();
+        document.setInvoice(invoice);
+        invoice.setDocuments(List.of(document));
 
         invoice = invoiceRepository.save(invoice);
         UUID invoiceId = invoice.getId();
@@ -176,7 +243,7 @@ class ThreeWayMatchingIntegrationTest {
         // Step 5: Submit Invoice - this should trigger matching and result in MISMATCH
         mockMvc.perform(post("/api/v1/invoices/{id}/submit", invoiceId))
                 .andExpect(status().isBadRequest()) // Blocked due to MISMATCH
-                .andExpect(jsonPath("$.message", containsString("mismatch")));
+                .andExpect(jsonPath("$.message", containsString("MISMATCH")));
 
         // Step 6: Verify matching result is MISMATCH
         var matchingResult = matchingResultRepository.findByInvoiceId(invoiceId)
@@ -202,7 +269,7 @@ class ThreeWayMatchingIntegrationTest {
 
     @Test
     @DisplayName("Invoice with perfect matching should be allowed to submit")
-    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    @WithMockUser(username = "admin", roles = {"ADMIN", "ASSISTANT_COMPTABLE"})
     void testPerfectMatchingAllowsSubmission() throws Exception {
         // Create PO with exact quantities
         PurchaseOrderItemCreateRequest poItem = new PurchaseOrderItemCreateRequest(
@@ -229,20 +296,25 @@ class ThreeWayMatchingIntegrationTest {
                 .orElseThrow();
 
         // Create GRN with matching quantities
-        GoodsReceiptItem grnItem = GoodsReceiptItem.builder()
-                .purchaseOrderItem(purchaseOrder.getItems().get(0))
-                .receivedQuantity(new BigDecimal("100"))
-                .build();
-
         GoodsReceiptNote grn = GoodsReceiptNote.builder()
                 .grnNumber("GRN-TEST-002")
                 .purchaseOrder(purchaseOrder)
-                .items(List.of(grnItem))
+                .receivedBy(adminUser)
+                .receiptDate(LocalDate.now())
                 .build();
+        grn = goodsReceiptNoteRepository.save(grn);
+
+        GoodsReceiptItem grnItem = GoodsReceiptItem.builder()
+                .goodsReceiptNote(grn)
+                .purchaseOrderItem(purchaseOrder.getItems().get(0))
+                .receivedQuantity(new BigDecimal("100"))
+                .build();
+        grn.getItems().add(grnItem);
         goodsReceiptNoteRepository.save(grn);
 
         // Create Invoice with identical quantities and prices
         InvoiceItem invoiceItem = InvoiceItem.builder()
+                .lineNumber(1)
                 .description("Widget B")
                 .quantity(new BigDecimal("100")) // Perfect match
                 .unitPrice(new BigDecimal("50.00"))
@@ -257,9 +329,23 @@ class ThreeWayMatchingIntegrationTest {
                 .currency("EUR")
                 .issueDate(LocalDate.now())
                 .dueDate(LocalDate.now().plusDays(30))
-                .items(List.of(invoiceItem))
+                .department(department)
+                .submittedBy(adminUser)
                 .purchaseOrderId(purchaseOrder.getId())
                 .build();
+                
+        invoiceItem.setInvoice(invoice);
+        invoice.setItems(List.of(invoiceItem));
+        InvoiceDocument document = InvoiceDocument.builder()
+                .originalFilename("invoice2.pdf")
+                .minioObjectKey("docs/invoice2.pdf")
+                .fileType("application/pdf")
+                .fileSizeBytes(1024L)
+                .checksumSha256("hash2")
+                .uploadedBy(adminUser)
+                .build();
+        document.setInvoice(invoice);
+        invoice.setDocuments(List.of(document));
 
         invoice = invoiceRepository.save(invoice);
 
@@ -313,7 +399,7 @@ class ThreeWayMatchingIntegrationTest {
 
         mockMvc.perform(get("/api/v1/purchase-orders/{id}", po.getId()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.po_number").value("PO-TEST-003"))
+                .andExpect(jsonPath("$.data.poNumber").value("PO-TEST-003"))
                 .andExpect(jsonPath("$.data.items").isArray());
     }
 }

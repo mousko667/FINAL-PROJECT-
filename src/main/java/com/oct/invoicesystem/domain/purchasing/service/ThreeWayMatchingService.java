@@ -191,13 +191,15 @@ public class ThreeWayMatchingService {
 
         // Check quantity tolerance
         BigDecimal qtyThreshold = poValue.multiply(percTolerance).divide(new BigDecimal("100"));
-        if (qtyVariance.compareTo(qtyThreshold) > 0 && qtyVariance.compareTo(amtTolerance) > 0) {
+        BigDecimal qtyVarianceAmount = qtyVariance.multiply(poPrice);
+        if (qtyVariance.compareTo(qtyThreshold) > 0 && qtyVarianceAmount.compareTo(amtTolerance) > 0) {
             return false;
         }
 
         // Check price tolerance
         BigDecimal priceThreshold = poPrice.multiply(percTolerance).divide(new BigDecimal("100"));
-        if (priceVariance.compareTo(priceThreshold) > 0 && priceVariance.compareTo(amtTolerance) > 0) {
+        BigDecimal priceVarianceAmount = priceVariance.multiply(poValue);
+        if (priceVariance.compareTo(priceThreshold) > 0 && priceVarianceAmount.compareTo(amtTolerance) > 0) {
             return false;
         }
 
@@ -255,18 +257,11 @@ public class ThreeWayMatchingService {
             throw new ValidationException("Can only override MISMATCH results");
         }
 
-        // Create new record with OVERRIDDEN status (append-only)
-        ThreeWayMatchingResult override = ThreeWayMatchingResult.builder()
-            .invoice(existing.getInvoice())
-            .purchaseOrder(existing.getPurchaseOrder())
-            .goodsReceiptNote(existing.getGoodsReceiptNote())
-            .status(MatchingStatus.OVERRIDDEN)
-            .overriddenBy(overriddenBy)
-            .overrideReason(reason)
-            .discrepancyNotes(existing.getDiscrepancyNotes())
-            .build();
+        existing.setStatus(MatchingStatus.OVERRIDDEN);
+        existing.setOverriddenBy(overriddenBy);
+        existing.setOverrideReason(reason);
 
         log.info("Recording override for invoice {} by user {}", invoiceId, overriddenBy.getId());
-        return matchingResultRepository.save(override);
+        return matchingResultRepository.save(existing);
     }
 }

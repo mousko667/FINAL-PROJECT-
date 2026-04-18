@@ -80,14 +80,17 @@ class PaymentIntegrationTest {
     void setUp() {
         // Create department
         department = Department.builder()
-                .id(UUID.randomUUID())
                 .code("DEPT-001")
+                .nameFr("Ventes")
+                .nameEn("Sales")
+                .n1Role("ROLE_MANAGER")
+                .isActive(true)
+                .requiresN2(false)
                 .build();
         department = departmentRepository.save(department);
 
         // Create user
         assistantComptable = User.builder()
-                .id(UUID.randomUUID())
                 .username("assistant_comptable_1")
                 .email("assistant@test.com")
                 .password("hashed_password")
@@ -98,7 +101,6 @@ class PaymentIntegrationTest {
         assistantComptable = userRepository.save(assistantComptable);
 
         assistantComptable2 = User.builder()
-                .id(UUID.randomUUID())
                 .username("assistant_comptable_2")
                 .email("assistant2@test.com")
                 .password("hashed_password")
@@ -110,7 +112,6 @@ class PaymentIntegrationTest {
 
         // Create invoice
         invoice = Invoice.builder()
-                .id(UUID.randomUUID())
                 .referenceNumber("FAC-2024-00001")
                 .department(department)
                 .submittedBy(assistantComptable)
@@ -185,7 +186,6 @@ class PaymentIntegrationTest {
     void agingReport_CorrectlyReflectsOverdueInvoices() {
         // Arrange - Create multiple invoices with different due dates
         Invoice overdueInvoice = Invoice.builder()
-                .id(UUID.randomUUID())
                 .referenceNumber("FAC-OVERDUE-001")
                 .department(department)
                 .submittedBy(assistantComptable)
@@ -200,7 +200,6 @@ class PaymentIntegrationTest {
         invoiceRepository.save(overdueInvoice);
 
         Invoice recentInvoice = Invoice.builder()
-                .id(UUID.randomUUID())
                 .referenceNumber("FAC-RECENT-001")
                 .department(department)
                 .submittedBy(assistantComptable)
@@ -275,7 +274,6 @@ class PaymentIntegrationTest {
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         Invoice invoice2 = Invoice.builder()
-                .id(UUID.randomUUID())
                 .referenceNumber("FAC-2024-00002")
                 .department(department)
                 .submittedBy(assistantComptable)

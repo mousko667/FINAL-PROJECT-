@@ -17,10 +17,11 @@ import com.oct.invoicesystem.domain.user.model.UserRole;
 import com.oct.invoicesystem.domain.user.model.UserRoleId;
 import com.oct.invoicesystem.domain.user.repository.RoleRepository;
 import com.oct.invoicesystem.domain.user.repository.UserRepository;
-import com.oct.invoicesystem.domain.workflow.dto.ApprovalRequest;
-import com.oct.invoicesystem.domain.workflow.dto.RejectRequest;
+import com.oct.invoicesystem.config.TestConfig;
 import com.oct.invoicesystem.domain.workflow.repository.ApprovalStepRepository;
 import com.oct.invoicesystem.domain.workflow.repository.InvoiceStatusHistoryRepository;
+import com.oct.invoicesystem.domain.workflow.dto.ApprovalRequest;
+import com.oct.invoicesystem.domain.workflow.dto.RejectRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
+@SpringBootTest(classes = TestConfig.class)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class ApprovalControllerTest {

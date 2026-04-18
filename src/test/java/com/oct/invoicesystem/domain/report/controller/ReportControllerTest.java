@@ -1,6 +1,7 @@
 package com.oct.invoicesystem.domain.report.controller;
 
 import com.oct.invoicesystem.domain.report.dto.BottleneckDTO;
+import com.oct.invoicesystem.domain.report.dto.DashboardKpiDTO;
 import com.oct.invoicesystem.domain.report.dto.SupplierPerformanceDTO;
 import com.oct.invoicesystem.domain.report.service.ReportService;
 import com.oct.invoicesystem.shared.response.ApiResponse;
@@ -97,7 +98,7 @@ class ReportControllerTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void getApprovalBottlenecks_WithAdmin_ReturnsSuccess() throws Exception {
-        BottleneckDTO bottleneck = new BottleneckDTO("FIN", 1, "N1_VALIDATION", 4.5, 10, true);
+        BottleneckDTO bottleneck = new BottleneckDTO("FIN", 1, "N1_VALIDATION", 4.5, 10L, true);
         when(reportService.getApprovalBottlenecks()).thenReturn(List.of(bottleneck));
 
         mockMvc.perform(get("/api/v1/reports/bottlenecks"))
@@ -111,7 +112,7 @@ class ReportControllerTest {
     @Test
     @WithMockUser(roles = "DAF")
     void getApprovalBottlenecks_WithDaf_ReturnsSuccess() throws Exception {
-        BottleneckDTO bottleneck = new BottleneckDTO("FIN", 1, "N1_VALIDATION", 4.5, 10, true);
+        BottleneckDTO bottleneck = new BottleneckDTO("FIN", 1, "N1_VALIDATION", 4.5, 10L, true);
         when(reportService.getApprovalBottlenecks()).thenReturn(List.of(bottleneck));
 
         mockMvc.perform(get("/api/v1/reports/bottlenecks"))
@@ -122,7 +123,7 @@ class ReportControllerTest {
     @Test
     @WithMockUser(roles = "AUDITEUR")
     void getApprovalBottlenecks_WithAuditeur_ReturnsSuccess() throws Exception {
-        BottleneckDTO bottleneck = new BottleneckDTO("FIN", 1, "N1_VALIDATION", 4.5, 10, true);
+        BottleneckDTO bottleneck = new BottleneckDTO("FIN", 1, "N1_VALIDATION", 4.5, 10L, true);
         when(reportService.getApprovalBottlenecks()).thenReturn(List.of(bottleneck));
 
         mockMvc.perform(get("/api/v1/reports/bottlenecks"))
@@ -142,7 +143,7 @@ class ReportControllerTest {
     void getSupplierPerformance_WithAdmin_ReturnsSuccess() throws Exception {
         UUID supplierId = UUID.randomUUID();
         SupplierPerformanceDTO performance = new SupplierPerformanceDTO(
-                supplierId, "Test Supplier", 0.85, 0.05, 15.0, 20, 17, 2);
+                supplierId.toString(), "Test Supplier", 0.85, 0.05, 15.0, 20L, 17L, 2L);
         when(reportService.getSupplierPerformance(supplierId)).thenReturn(performance);
 
         mockMvc.perform(get("/api/v1/reports/supplier/" + supplierId + "/performance"))
@@ -159,7 +160,7 @@ class ReportControllerTest {
     void getSupplierPerformance_WithDaf_ReturnsSuccess() throws Exception {
         UUID supplierId = UUID.randomUUID();
         SupplierPerformanceDTO performance = new SupplierPerformanceDTO(
-                supplierId, "Test Supplier", 0.85, 0.05, 15.0, 20, 17, 2);
+                supplierId.toString(), "Test Supplier", 0.85, 0.05, 15.0, 20L, 17L, 2L);
         when(reportService.getSupplierPerformance(supplierId)).thenReturn(performance);
 
         mockMvc.perform(get("/api/v1/reports/supplier/" + supplierId + "/performance"))
@@ -172,7 +173,7 @@ class ReportControllerTest {
     void getSupplierPerformance_WithAuditeur_ReturnsSuccess() throws Exception {
         UUID supplierId = UUID.randomUUID();
         SupplierPerformanceDTO performance = new SupplierPerformanceDTO(
-                supplierId, "Test Supplier", 0.85, 0.05, 15.0, 20, 17, 2);
+                supplierId.toString(), "Test Supplier", 0.85, 0.05, 15.0, 20L, 17L, 2L);
         when(reportService.getSupplierPerformance(supplierId)).thenReturn(performance);
 
         mockMvc.perform(get("/api/v1/reports/supplier/" + supplierId + "/performance"))

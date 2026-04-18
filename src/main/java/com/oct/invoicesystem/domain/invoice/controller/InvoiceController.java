@@ -11,8 +11,10 @@ import com.oct.invoicesystem.domain.invoice.service.InvoiceStateMachineService;
 import com.oct.invoicesystem.domain.invoice.statemachine.InvoiceEvent;
 import com.oct.invoicesystem.domain.purchasing.dto.MatchingOverrideRequest;
 import com.oct.invoicesystem.domain.purchasing.model.ThreeWayMatchingResult;
+import com.oct.invoicesystem.domain.purchasing.model.ThreeWayMatchingResult;
 import com.oct.invoicesystem.domain.purchasing.service.ThreeWayMatchingService;
 import com.oct.invoicesystem.domain.user.model.User;
+import com.oct.invoicesystem.domain.invoice.statemachine.WorkflowExtendedStateKeys;
 import com.oct.invoicesystem.domain.user.repository.UserRepository;
 import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 import com.oct.invoicesystem.shared.response.ApiResponse;
@@ -114,16 +116,18 @@ public class InvoiceController {
     @PostMapping("/{id}/submit")
     @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
     @Operation(summary = "Submit invoice", description = "Submits a draft invoice for approval")
-    public ResponseEntity<ApiResponse<Void>> submitInvoice(@PathVariable UUID id) {
-        invoiceStateMachineService.sendEvent(id, InvoiceEvent.SUBMIT, null);
+    public ResponseEntity<ApiResponse<Void>> submitInvoice(@PathVariable UUID id, Authentication authentication) {
+        UUID actorId = getActorId(authentication);
+        invoiceStateMachineService.sendEvent(id, InvoiceEvent.SUBMIT, java.util.Map.of(WorkflowExtendedStateKeys.USER_ID, actorId));
         return ResponseEntity.ok(ApiResponse.success(null, "action.submit.success"));
     }
 
     @PostMapping("/{id}/resubmit")
     @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
     @Operation(summary = "Resubmit invoice", description = "Resubmits a rejected invoice for approval")
-    public ResponseEntity<ApiResponse<Void>> resubmitInvoice(@PathVariable UUID id) {
-        invoiceStateMachineService.sendEvent(id, InvoiceEvent.RESUBMIT, null);
+    public ResponseEntity<ApiResponse<Void>> resubmitInvoice(@PathVariable UUID id, Authentication authentication) {
+        UUID actorId = getActorId(authentication);
+        invoiceStateMachineService.sendEvent(id, InvoiceEvent.RESUBMIT, java.util.Map.of(WorkflowExtendedStateKeys.USER_ID, actorId));
         return ResponseEntity.ok(ApiResponse.success(null, "action.resubmit.success"));
     }
 

@@ -22,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 
 import jakarta.validation.Valid;
 import java.util.List;
@@ -83,7 +84,7 @@ public class WebhookController {
         log.info("Admin deactivating webhook: {}", id);
 
         Webhook webhook = webhookRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Webhook not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Webhook not found: " + id));
 
         webhookService.deactivateWebhook(id);
 
@@ -101,7 +102,7 @@ public class WebhookController {
         log.info("Admin requesting delivery log for webhook: {}", id);
 
         Webhook webhook = webhookRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Webhook not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Webhook not found: " + id));
 
         Page<WebhookDelivery> deliveries = deliveryRepository.findByWebhookOrderByCreatedAtDesc(webhook, pageable);
         

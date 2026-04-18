@@ -941,3 +941,10 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 - **Tests**: All 3 new test methods pass (bottleneck SLA flagging, supplier performance metrics calculation, extended KPI fields validation)
 - **Status**: ? Complete, 0 test failures, commit 418ea80 created
 - **Next**: Proceed to P9-74 integration tests
+
+## Session Checkpoint: P9-74 Complete
+- **Task**: P9-74 integration tests for ReportController extensions
+- **Changes**: Added comprehensive integration tests for GET /api/v1/reports/bottlenecks and GET /api/v1/reports/supplier/{supplierId}/performance endpoints with role-based access control
+- **Tests**: All 8 new test methods pass (bottleneck endpoint with ADMIN/DAF/AUDITEUR access, supplier performance with same roles, extended KPI fields validation)
+- **Status**: ? Complete, 0 test failures, commit d476b42 created
+- **Next**: Phase 9G complete - all dashboard & reporting enhancements implemented

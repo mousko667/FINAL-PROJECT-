@@ -7,7 +7,7 @@ import com.oct.invoicesystem.domain.webhook.model.WebhookDelivery;
 import com.oct.invoicesystem.domain.webhook.repository.WebhookDeliveryRepository;
 import com.oct.invoicesystem.domain.webhook.repository.WebhookRepository;
 import com.oct.invoicesystem.domain.user.model.User;
-import com.oct.invoicesystem.domain.user.model.Role;
+import com.oct.invoicesystem.config.TestConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -81,7 +81,19 @@ class WebhookServiceTest {
                 .events(Arrays.asList("INVOICE_SUBMITTED", "INVOICE_VALIDATED"))
                 .build();
 
-        when(webhookRepository.save(any(Webhook.class))).thenReturn(testWebhook);
+        when(webhookRepository.save(any(Webhook.class))).thenAnswer(invocation -> {
+            Webhook w = invocation.getArgument(0);
+            if (w.getId() == null) w = Webhook.builder()
+                    .id(UUID.randomUUID())
+                    .name(w.getName())
+                    .url(w.getUrl())
+                    .isActive(w.getIsActive())
+                    .secretHash(w.getSecretHash())
+                    .events(w.getEvents())
+                    .createdBy(w.getCreatedBy())
+                    .build();
+            return w;
+        });
 
         var response = webhookService.registerWebhook(request, testUser);
 
@@ -97,9 +109,13 @@ class WebhookServiceTest {
     @Test
     @DisplayName("Should deactivate webhook with soft delete")
     void testDeactivateWebhook() {
+        when(webhookRepository.findById(testWebhook.getId())).thenReturn(Optional.of(testWebhook));
+        when(webhookRepository.save(any(Webhook.class))).thenReturn(testWebhook);
+
         webhookService.deactivateWebhook(testWebhook.getId());
 
         verify(webhookRepository).findById(testWebhook.getId());
+        verify(webhookRepository).save(any(Webhook.class));
     }
 
     @Test

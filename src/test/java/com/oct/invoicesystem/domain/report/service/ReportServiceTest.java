@@ -70,21 +70,22 @@ class ReportServiceTest {
     @BeforeEach
     void setUp() {
         invoiceId = UUID.randomUUID();
-        
+    }
+
+    @Test
+    void getDashboardKpis_ReturnsCorrectData() {
         // Mock approval steps
         when(approvalStepRepository.findAll()).thenReturn(Collections.emptyList());
         
         // Mock webhook deliveries
         when(webhookDeliveryRepository.countByCreatedAtAfter(any())).thenReturn(10L);
         when(webhookDeliveryRepository.countByCreatedAtAfterAndSuccessTrue(any())).thenReturn(8L);
-    }
 
-    @Test
-    void getDashboardKpis_ReturnsCorrectData() {
         // Arrange
         when(invoiceRepository.count()).thenReturn(10L);
         when(invoiceRepository.countInvoicesByStatus()).thenReturn(Collections.singletonList(new Object[]{"SOUMIS", 5L}));
         when(invoiceRepository.countOverdueInvoices(any())).thenReturn(2L);
+        when(invoiceRepository.findOverdueInvoices(any())).thenReturn(Collections.emptyList());
         
         Page<Object[]> topSuppliersPage = new PageImpl<>(Collections.singletonList(new Object[]{"Supplier A", 1000.0}));
         when(invoiceRepository.findTopSuppliersByAmount(any())).thenReturn(topSuppliersPage);
@@ -105,7 +106,6 @@ class ReportServiceTest {
         // Act
         DashboardKpiDTO result = reportService.getDashboardKpis();
 
-        // Assert
         assertEquals(10L, result.totalInvoices());
         assertEquals(2L, result.overdueCount());
         assertEquals(0.2, result.rejectionRate());
@@ -350,6 +350,7 @@ class ReportServiceTest {
         // Arrange
         Instant now = Instant.now();
         ApprovalStep bottleneckStep = ApprovalStep.builder()
+                .departmentCode("FIN")
                 .stepOrder(1)
                 .status(ApprovalStepStatus.APPROVED)
                 .createdAt(now.minus(5, ChronoUnit.DAYS))
@@ -357,6 +358,7 @@ class ReportServiceTest {
                 .build();
         
         ApprovalStep normalStep = ApprovalStep.builder()
+                .departmentCode("HR")
                 .stepOrder(2)
                 .status(ApprovalStepStatus.APPROVED)
                 .createdAt(now.minus(2, ChronoUnit.DAYS))
@@ -368,12 +370,20 @@ class ReportServiceTest {
         // Act
         List<BottleneckDTO> result = reportService.getApprovalBottlenecks();
 
-        // Assert
-        assertEquals(1, result.size());
+        assertEquals(2, result.size());
+        
+        // Since they are sorted by bottleneck (true first)
         BottleneckDTO bottleneck = result.get(0);
-        assertEquals(1, bottleneck.stepOrder());
-        assertTrue(bottleneck.averageDays() > 3.0);
-        assertTrue(bottleneck.bottleneck());
+        assertEquals("FIN", bottleneck.getDepartmentCode());
+        assertEquals(1, bottleneck.getStepOrder());
+        assertTrue(bottleneck.getAverageDays() > 3.0);
+        assertTrue(bottleneck.getBottleneck());
+
+        BottleneckDTO normal = result.get(1);
+        assertEquals("HR", normal.getDepartmentCode());
+        assertEquals(2, normal.getStepOrder());
+        assertTrue(normal.getAverageDays() <= 3.0);
+        assertFalse(normal.getBottleneck());
     }
 
     @Test
@@ -381,14 +391,22 @@ class ReportServiceTest {
         // Arrange
         UUID supplierId = UUID.randomUUID();
         
-        // Mock invoices: 3 total, 2 MATCHED, 1 null (pending), 0 MISMATCH
+        com.oct.invoicesystem.domain.supplier.model.Supplier supplier = new com.oct.invoicesystem.domain.supplier.model.Supplier();
+        supplier.setId(supplierId);
+
         Invoice matchedInvoice = Invoice.builder()
+                .id(UUID.randomUUID())
+                .supplier(supplier)
                 .matchingStatus("MATCHED")
                 .build();
         Invoice pendingInvoice = Invoice.builder()
+                .id(UUID.randomUUID())
+                .supplier(supplier)
                 .matchingStatus(null)
                 .build();
         Invoice mismatchInvoice = Invoice.builder()
+                .id(UUID.randomUUID())
+                .supplier(supplier)
                 .matchingStatus("MISMATCH")
                 .build();
         
@@ -398,40 +416,52 @@ class ReportServiceTest {
         Instant now = Instant.now();
         List<InvoiceStatusHistory> paymentHistories = List.of(
             InvoiceStatusHistory.builder()
+                .invoice(matchedInvoice)
                 .toStatus("SOUMIS")
                 .changedAt(now.minus(10, ChronoUnit.DAYS))
                 .build(),
             InvoiceStatusHistory.builder()
+                .invoice(matchedInvoice)
                 .toStatus("PAYE")
                 .changedAt(now)
                 .build()
         );
-        when(historyRepository.findByInvoiceId(any())).thenReturn(paymentHistories);
+        when(historyRepository.findAll()).thenReturn(paymentHistories);
 
         // Act
         SupplierPerformanceDTO result = reportService.getSupplierPerformance(supplierId);
 
         // Assert
-        assertEquals(supplierId, result.supplierId());
-        assertEquals(0.67, result.invoiceAccuracyRate(), 0.01); // 2/3
-        assertEquals(10.0, result.averagePaymentDays(), 0.01); // 10 days
-        assertEquals(3, result.totalInvoicesSubmitted());
-        assertEquals(2, result.matchedInvoices());
-        assertEquals(1, result.mismatchedInvoices());
+        assertEquals(supplierId.toString(), result.getSupplierId());
+        assertEquals(0.67, result.getInvoiceAccuracyRate(), 0.01); // 2/3
+        assertEquals(10.0, result.getAveragePaymentDays(), 0.01); // 10 days
+        assertEquals(3, result.getTotalInvoicesSubmitted());
+        assertEquals(1, result.getMatchedInvoices());
+        assertEquals(1, result.getMismatchedInvoices());
     }
 
     @Test
     void getDashboardKpis_IncludesExtendedFields() {
+        // Mock approval steps
+        when(approvalStepRepository.findAll()).thenReturn(Collections.emptyList());
+        
+        // Mock webhook deliveries
+        when(webhookDeliveryRepository.countByCreatedAtAfter(any())).thenReturn(10L);
+        when(webhookDeliveryRepository.countByCreatedAtAfterAndSuccessTrue(any())).thenReturn(8L);
+
         // Arrange - similar to existing test but check new fields
         when(invoiceRepository.count()).thenReturn(10L);
         when(invoiceRepository.countInvoicesByStatus()).thenReturn(Collections.singletonList(new Object[]{"SOUMIS", 5L}));
         when(invoiceRepository.countOverdueInvoices(any())).thenReturn(2L);
         
         // Mock overdue buckets
-        when(invoiceRepository.countOverdueInvoicesInBucket(0, 30)).thenReturn(1L);
-        when(invoiceRepository.countOverdueInvoicesInBucket(31, 60)).thenReturn(2L);
-        when(invoiceRepository.countOverdueInvoicesInBucket(61, 90)).thenReturn(1L);
-        when(invoiceRepository.countOverdueInvoicesInBucket(91, Integer.MAX_VALUE)).thenReturn(0L);
+        LocalDate today = LocalDate.now();
+        Invoice inv0to30 = Invoice.builder().dueDate(today.minusDays(15)).build();
+        Invoice inv31to601 = Invoice.builder().dueDate(today.minusDays(45)).build();
+        Invoice inv31to602 = Invoice.builder().dueDate(today.minusDays(45)).build();
+        Invoice inv61to90 = Invoice.builder().dueDate(today.minusDays(75)).build();
+        
+        when(invoiceRepository.findOverdueInvoices(today)).thenReturn(List.of(inv0to30, inv31to601, inv31to602, inv61to90));
         
         Page<Object[]> topSuppliersPage = new PageImpl<>(Collections.singletonList(new Object[]{"Supplier A", 1000.0}));
         when(invoiceRepository.findTopSuppliersByAmount(any())).thenReturn(topSuppliersPage);
@@ -472,3 +502,4 @@ class ReportServiceTest {
         // Webhook success rate (mocked 8/10 = 0.8)
         assertEquals(0.8, result.webhookDeliverySuccessRate());
     }
+}

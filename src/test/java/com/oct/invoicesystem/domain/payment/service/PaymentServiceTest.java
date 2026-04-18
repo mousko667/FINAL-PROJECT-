@@ -42,6 +42,8 @@ class PaymentServiceTest {
     private UserRepository userRepository;
     @Mock
     private InvoiceStateMachineService invoiceStateMachineService;
+    @Mock
+    private RemittanceAdviceService remittanceAdviceService;
 
     @InjectMocks
     private PaymentServiceImpl paymentService;

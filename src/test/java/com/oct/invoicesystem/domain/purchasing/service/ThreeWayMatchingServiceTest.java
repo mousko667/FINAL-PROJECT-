@@ -8,6 +8,7 @@ import com.oct.invoicesystem.domain.purchasing.model.MatchingConfig;
 import com.oct.invoicesystem.domain.purchasing.model.MatchingStatus;
 import com.oct.invoicesystem.domain.purchasing.model.PurchaseOrder;
 import com.oct.invoicesystem.domain.purchasing.model.PurchaseOrderItem;
+import com.oct.invoicesystem.domain.purchasing.model.ThreeWayMatchingResult;
 import com.oct.invoicesystem.domain.purchasing.repository.MatchingConfigRepository;
 import com.oct.invoicesystem.domain.purchasing.repository.ThreeWayMatchingResultRepository;
 import com.oct.invoicesystem.domain.user.model.User;
@@ -319,10 +320,11 @@ class ThreeWayMatchingServiceTest {
         UUID invoiceId = UUID.randomUUID();
         String overrideReason = "Approved by DAF due to supplier delay";
 
-        var existingResult = mock(com.oct.invoicesystem.domain.purchasing.model.ThreeWayMatchingResult.class);
-        when(existingResult.getStatus()).thenReturn(MatchingStatus.MISMATCH);
-        when(existingResult.getInvoice()).thenReturn(mock(Invoice.class));
-        when(existingResult.getPurchaseOrder()).thenReturn(mock(PurchaseOrder.class));
+        var existingResult = com.oct.invoicesystem.domain.purchasing.model.ThreeWayMatchingResult.builder()
+                .status(MatchingStatus.MISMATCH)
+                .invoice(mock(Invoice.class))
+                .purchaseOrder(mock(PurchaseOrder.class))
+                .build();
 
         when(matchingResultRepository.findByInvoiceId(invoiceId)).thenReturn(Optional.of(existingResult));
         when(matchingResultRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
