@@ -114,10 +114,10 @@ public class WebhookService {
      * Runs asynchronously; failures do NOT block the calling transaction.
      */
     @Async
-    public void deliverWebhook(Webhook webhook, String eventType, Map<String, Object> payload, String rawSecret) {
+    public void deliverWebhook(Webhook webhook, String eventType, Map<String, Object> payload) {
         try {
             String payloadJson = objectMapper.writeValueAsString(payload);
-            deliverWithRetry(webhook, eventType, payloadJson, rawSecret, 0);
+            deliverWithRetry(webhook, eventType, payloadJson, 0);
         } catch (Exception e) {
             log.error("Failed to serialize webhook payload for webhook {}: {}", webhook.getId(), e.getMessage(), e);
             recordDeliveryFailure(webhook, eventType, "{}", null, 0, null);
@@ -127,7 +127,7 @@ public class WebhookService {
     /**
      * Retry logic with exponential backoff.
      */
-    private void deliverWithRetry(Webhook webhook, String eventType, String payloadJson, String rawSecret, int attemptNumber) {
+    private void deliverWithRetry(Webhook webhook, String eventType, String payloadJson, int attemptNumber) {
         if (attemptNumber >= MAX_RETRIES) {
             log.warn("Webhook {} failed after {} retries for event {}", webhook.getId(), MAX_RETRIES, eventType);
             recordDeliveryFailure(webhook, eventType, payloadJson, null, MAX_RETRIES, null);
@@ -148,8 +148,8 @@ public class WebhookService {
         }
 
         try {
-            // Build signed request
-            String signature = buildSignature(payloadJson, rawSecret);
+            // Build signed request using the stored secret hash
+            String signature = buildSignature(payloadJson, webhook.getSecretHash());
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.set("X-OCT-Signature", signature);
@@ -165,11 +165,11 @@ public class WebhookService {
                 recordDeliverySuccess(webhook, eventType, payloadJson, statusCode, attemptNumber + 1);
             } else {
                 log.warn("Webhook {} returned non-2xx status {} from {}", webhook.getId(), statusCode, webhook.getUrl());
-                deliverWithRetry(webhook, eventType, payloadJson, rawSecret, attemptNumber + 1);
+                deliverWithRetry(webhook, eventType, payloadJson, attemptNumber + 1);
             }
         } catch (RestClientException e) {
             log.warn("Webhook {} delivery failed (attempt {}) to {}: {}", webhook.getId(), attemptNumber + 1, webhook.getUrl(), e.getMessage());
-            deliverWithRetry(webhook, eventType, payloadJson, rawSecret, attemptNumber + 1);
+            deliverWithRetry(webhook, eventType, payloadJson, attemptNumber + 1);
         }
     }
 
