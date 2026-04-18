@@ -1,78 +1,67 @@
 package com.oct.invoicesystem.domain.webhook.model;
 
 import com.oct.invoicesystem.domain.user.model.User;
-import jakarta.persistence.*;
-import lombok.*;
-import org.hibernate.annotations.SoftDelete;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
 import java.util.UUID;
 
-/**
- * Webhook entity — represents an external endpoint to receive invoice state change events.
- * Webhooks are soft-deleted, never hard-deleted.
- * Secret is stored as SHA-256 hash; raw secret never persisted.
- */
 @Entity
-@Table(name = "webhooks", indexes = {
-        @Index(name = "idx_webhooks_created_by", columnList = "created_by"),
-        @Index(name = "idx_webhooks_is_active", columnList = "is_active")
-})
+@Table(name = "webhooks")
+@EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@SoftDelete(columnName = "deleted_at")
 public class Webhook {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false, length = 2048)
+    @Column(nullable = false, length = 1000)
     private String url;
 
-    /**
-     * SHA-256 hash of the original secret.
-     * The raw secret is NEVER stored in the database.
-     */
-    @Column(nullable = false, length = 64)
+    @Column(name = "secret_hash", nullable = false, length = 64)
     private String secretHash;
 
-    /**
-     * Comma-separated list of event types: INVOICE_SUBMITTED,INVOICE_VALIDATED,INVOICE_REJECTED,INVOICE_PAID
-     */
     @Column(nullable = false, length = 500)
     private String events;
 
-    @Column(nullable = false)
-    private boolean isActive;
+    @Column(name = "is_active", nullable = false)
+    @Builder.Default
+    private Boolean isActive = true;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
 
-    @Column(nullable = false, updatable = false)
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    @Column(nullable = false)
+    @LastModifiedDate
+    @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
-
-    @Column(name = "deleted_at")
-    private Instant deletedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = Instant.now();
-        updatedAt = Instant.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = Instant.now();
-    }
 }

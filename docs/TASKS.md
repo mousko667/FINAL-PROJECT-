@@ -399,13 +399,13 @@ All tests pass.
 ## Phase 9F — Webhooks / ERP Integration (Module 12)
 *Goal: External systems receive real-time events via signed webhook calls*
 
-- [x] **P9-59** Create `V20__create_webhooks.sql` — webhooks table
+- [ ] **P9-59** Create `V20__create_webhooks.sql` — webhooks table
       (id, name, url, secret_hash VARCHAR(64), events TEXT[] or VARCHAR(500),
       is_active, created_by FK, created_at, updated_at)
       + `webhook_deliveries` table (webhook_id FK, event_type, payload TEXT,
       response_status INT, attempt_count, last_attempted_at,
       success BOOLEAN, created_at) — append-only
-- [x] **P9-60** Implement `Webhook`, `WebhookDelivery` entities
+- [ ] **P9-60** Implement `Webhook`, `WebhookDelivery` entities
 - [ ] **P9-61** Implement `WebhookService`:
       register/update/delete (logical) webhooks;
       build signed payload (HMAC-SHA256 with stored secret);

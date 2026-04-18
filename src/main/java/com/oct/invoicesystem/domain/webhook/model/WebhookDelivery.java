@@ -1,25 +1,29 @@
 package com.oct.invoicesystem.domain.webhook.model;
 
-import com.oct.invoicesystem.domain.invoice.model.Invoice;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
 import java.util.UUID;
 
-/**
- * WebhookDelivery entity — APPEND-ONLY audit log of webhook delivery attempts.
- * Records are never updated or deleted (enforced at DB level via trigger).
- * Each delivery attempt is logged, including retries.
- */
 @Entity
-@Table(name = "webhook_deliveries", indexes = {
-        @Index(name = "idx_webhook_deliveries_webhook_id", columnList = "webhook_id"),
-        @Index(name = "idx_webhook_deliveries_event_type", columnList = "event_type"),
-        @Index(name = "idx_webhook_deliveries_success", columnList = "success"),
-        @Index(name = "idx_webhook_deliveries_created_at", columnList = "created_at DESC"),
-        @Index(name = "idx_webhook_deliveries_invoice_id", columnList = "invoice_id")
-})
+@Table(name = "webhook_deliveries")
+@EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -31,80 +35,31 @@ public class WebhookDelivery {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "webhook_id", nullable = false)
     private Webhook webhook;
 
-    /**
-     * Event type that triggered this delivery: INVOICE_SUBMITTED, INVOICE_VALIDATED, INVOICE_REJECTED, INVOICE_PAID
-     */
-    @Column(nullable = false, length = 50)
+    @Column(name = "event_type", nullable = false, length = 100)
     private String eventType;
 
-    /**
-     * The invoice that triggered the webhook event (if applicable)
-     */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "invoice_id")
-    private Invoice invoice;
-
-    /**
-     * JSON payload sent to the webhook endpoint.
-     * Structure: { "event": "...", "timestamp": "...", "invoiceId": "...", ... }
-     */
     @Column(nullable = false, columnDefinition = "TEXT")
     private String payload;
 
-    /**
-     * Request headers sent (e.g., "X-OCT-Signature: sha256=...")
-     */
-    @Column(columnDefinition = "TEXT")
-    private String requestHeaders;
-
-    /**
-     * HTTP status code from the webhook endpoint (e.g., 200, 500)
-     */
-    @Column
+    @Column(name = "response_status")
     private Integer responseStatus;
 
-    /**
-     * Response body from the webhook endpoint (for debugging)
-     */
-    @Column(columnDefinition = "TEXT")
-    private String responseBody;
+    @Column(name = "attempt_count", nullable = false)
+    @Builder.Default
+    private Integer attemptCount = 0;
 
-    /**
-     * Number of delivery attempts made (1 for success, up to 3 for retry scenarios)
-     */
-    @Column(nullable = false)
-    private Integer attemptCount;
-
-    /**
-     * Timestamp of the last delivery attempt
-     */
-    @Column
+    @Column(name = "last_attempted_at")
     private Instant lastAttemptedAt;
 
-    /**
-     * Whether the delivery was successful (HTTP 200-299)
-     */
     @Column(nullable = false)
-    private Boolean success;
+    @Builder.Default
+    private Boolean success = false;
 
-    /**
-     * When the record was created (immutable)
-     */
-    @Column(nullable = false, updatable = false)
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = Instant.now();
-        if (attemptCount == null) {
-            attemptCount = 0;
-        }
-        if (success == null) {
-            success = false;
-        }
-    }
 }
