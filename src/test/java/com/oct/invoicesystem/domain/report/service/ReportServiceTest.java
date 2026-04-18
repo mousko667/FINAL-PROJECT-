@@ -9,9 +9,13 @@ import com.oct.invoicesystem.domain.payment.repository.PaymentRepository;
 import com.oct.invoicesystem.domain.report.dto.AgingReportDTO;
 import com.oct.invoicesystem.domain.report.dto.CashFlowProjectionDTO;
 import com.oct.invoicesystem.domain.report.dto.DashboardKpiDTO;
+import com.oct.invoicesystem.domain.report.dto.BottleneckDTO;
+import com.oct.invoicesystem.domain.report.dto.SupplierPerformanceDTO;
 import com.oct.invoicesystem.domain.workflow.repository.ApprovalStepRepository;
-import com.oct.invoicesystem.domain.webhook.repository.WebhookDeliveryRepository;
-import org.junit.jupiter.api.BeforeEach;
+import com.oct.invoicesystem.domain.webhook.repository.WebhookDeliveryRepository;import com.oct.invoicesystem.domain.workflow.model.ApprovalStep;
+import com.oct.invoicesystem.domain.workflow.model.ApprovalStepStatus;
+import com.oct.invoicesystem.domain.workflow.model.InvoiceStatusHistory;
+import com.oct.invoicesystem.domain.workflow.repository.InvoiceStatusHistoryRepository;import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -340,4 +344,131 @@ class ReportServiceTest {
         assertEquals("FAC-001", result.get(0).invoiceReference());
         assertEquals(BigDecimal.valueOf(100), result.get(0).amountPaid());
     }
-}
+
+    @Test
+    void getApprovalBottlenecks_ReturnsBottlenecksWhereAverageExceedsSLA() {
+        // Arrange
+        Instant now = Instant.now();
+        ApprovalStep bottleneckStep = ApprovalStep.builder()
+                .stepOrder(1)
+                .status(ApprovalStepStatus.APPROVED)
+                .createdAt(now.minus(5, ChronoUnit.DAYS))
+                .actionAt(now)
+                .build();
+        
+        ApprovalStep normalStep = ApprovalStep.builder()
+                .stepOrder(2)
+                .status(ApprovalStepStatus.APPROVED)
+                .createdAt(now.minus(2, ChronoUnit.DAYS))
+                .actionAt(now)
+                .build();
+        
+        when(approvalStepRepository.findAll()).thenReturn(List.of(bottleneckStep, normalStep));
+
+        // Act
+        List<BottleneckDTO> result = reportService.getApprovalBottlenecks();
+
+        // Assert
+        assertEquals(1, result.size());
+        BottleneckDTO bottleneck = result.get(0);
+        assertEquals(1, bottleneck.stepOrder());
+        assertTrue(bottleneck.averageDays() > 3.0);
+        assertTrue(bottleneck.bottleneck());
+    }
+
+    @Test
+    void getSupplierPerformance_CalculatesCorrectMetrics() {
+        // Arrange
+        UUID supplierId = UUID.randomUUID();
+        
+        // Mock invoices: 3 total, 2 MATCHED, 1 null (pending), 0 MISMATCH
+        Invoice matchedInvoice = Invoice.builder()
+                .matchingStatus("MATCHED")
+                .build();
+        Invoice pendingInvoice = Invoice.builder()
+                .matchingStatus(null)
+                .build();
+        Invoice mismatchInvoice = Invoice.builder()
+                .matchingStatus("MISMATCH")
+                .build();
+        
+        when(invoiceRepository.findAll()).thenReturn(List.of(matchedInvoice, pendingInvoice, mismatchInvoice));
+        
+        // Mock payment history for average payment time
+        Instant now = Instant.now();
+        List<InvoiceStatusHistory> paymentHistories = List.of(
+            InvoiceStatusHistory.builder()
+                .toStatus("SOUMIS")
+                .changedAt(now.minus(10, ChronoUnit.DAYS))
+                .build(),
+            InvoiceStatusHistory.builder()
+                .toStatus("PAYE")
+                .changedAt(now)
+                .build()
+        );
+        when(historyRepository.findByInvoiceId(any())).thenReturn(paymentHistories);
+
+        // Act
+        SupplierPerformanceDTO result = reportService.getSupplierPerformance(supplierId);
+
+        // Assert
+        assertEquals(supplierId, result.supplierId());
+        assertEquals(0.67, result.invoiceAccuracyRate(), 0.01); // 2/3
+        assertEquals(10.0, result.averagePaymentDays(), 0.01); // 10 days
+        assertEquals(3, result.totalInvoicesSubmitted());
+        assertEquals(2, result.matchedInvoices());
+        assertEquals(1, result.mismatchedInvoices());
+    }
+
+    @Test
+    void getDashboardKpis_IncludesExtendedFields() {
+        // Arrange - similar to existing test but check new fields
+        when(invoiceRepository.count()).thenReturn(10L);
+        when(invoiceRepository.countInvoicesByStatus()).thenReturn(Collections.singletonList(new Object[]{"SOUMIS", 5L}));
+        when(invoiceRepository.countOverdueInvoices(any())).thenReturn(2L);
+        
+        // Mock overdue buckets
+        when(invoiceRepository.countOverdueInvoicesInBucket(0, 30)).thenReturn(1L);
+        when(invoiceRepository.countOverdueInvoicesInBucket(31, 60)).thenReturn(2L);
+        when(invoiceRepository.countOverdueInvoicesInBucket(61, 90)).thenReturn(1L);
+        when(invoiceRepository.countOverdueInvoicesInBucket(91, Integer.MAX_VALUE)).thenReturn(0L);
+        
+        Page<Object[]> topSuppliersPage = new PageImpl<>(Collections.singletonList(new Object[]{"Supplier A", 1000.0}));
+        when(invoiceRepository.findTopSuppliersByAmount(any())).thenReturn(topSuppliersPage);
+
+        when(historyRepository.countUniqueInvoicesByToStatus("SOUMIS")).thenReturn(5L);
+        when(historyRepository.countUniqueInvoicesByToStatus("REJETE")).thenReturn(1L);
+
+        Invoice invoice = new Invoice();
+        invoice.setId(invoiceId);
+        
+        Instant now = Instant.now();
+        List<InvoiceStatusHistory> histories = List.of(
+            InvoiceStatusHistory.builder().invoice(invoice).toStatus("SOUMIS").changedAt(now.minus(2, ChronoUnit.DAYS)).build(),
+            InvoiceStatusHistory.builder().invoice(invoice).toStatus("BON_A_PAYER").changedAt(now).build()
+        );
+        when(historyRepository.findRelevantHistoryForProcessingTime()).thenReturn(histories);
+
+        // Act
+        DashboardKpiDTO result = reportService.getDashboardKpis();
+
+        // Assert existing fields still work
+        assertEquals(10L, result.totalInvoices());
+        assertEquals(2L, result.overdueCount());
+        
+        // Assert new extended fields
+        assertNotNull(result.overdueByBucket());
+        assertEquals(4, result.overdueByBucket().size()); // All buckets present
+        assertEquals(1L, result.overdueByBucket().get("0_30"));
+        assertEquals(2L, result.overdueByBucket().get("31_60"));
+        assertEquals(1L, result.overdueByBucket().get("61_90"));
+        assertEquals(0L, result.overdueByBucket().get("90_plus"));
+        
+        // Approval averages (mocked to return 0.0)
+        assertEquals(0.0, result.averageN1ApprovalDays());
+        assertEquals(0.0, result.averageN2ApprovalDays());
+        assertEquals(0.0, result.averageDafApprovalDays());
+        
+        // Webhook success rate (mocked 8/10 = 0.8)
+        assertEquals(0.8, result.webhookDeliverySuccessRate());
+    }

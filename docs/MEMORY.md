@@ -923,3 +923,14 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 **Branch:** main
 **Last commit:** 9881987
 **Notes:** Completed P9-71 supplier dashboard enhancements with matching status breakdown and next expected payment date. Fixed Spring context loading issues by adding WebConfig for RestTemplate bean. Updated integration test expectations.
+
+---
+
+## Session Checkpoint
+**Date:** 2026-04-18
+**Last completed task:** P9-72
+**Phase:** 9G — Dashboard & Reporting Enhancements (Module 2, 11)
+**Next task:** P9-73
+**Branch:** main
+**Last commit:** 5af05bd
+**Notes:** Completed P9-72 i18n keys for bottleneck reports, supplier performance, extended KPIs, and supplier dashboard labels in both FR and EN.

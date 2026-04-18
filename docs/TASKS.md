@@ -451,7 +451,7 @@ fire signed HTTP POSTs. Failures retry and are logged. All tests pass.
       `GET /api/v1/supplier/dashboard` extended with matching status breakdown
       and next expected payment date
 - [x] **P9-72** Add i18n keys for new report labels FR + EN
-- [ ] **P9-73** Write unit tests: `ReportServiceTest` extensions
+- [x] **P9-73** Write unit tests: `ReportServiceTest` extensions
       (bottleneck calculation, supplier performance metrics, extended KPIs)
 - [ ] **P9-74** Write integration tests: `ReportControllerTest` extensions
       (bottleneck endpoint, supplier performance endpoint, extended KPI shape)
