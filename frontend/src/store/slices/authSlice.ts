@@ -1,4 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
+import type { RootState } from '@/store'
 
 export type UserRole = string
 
@@ -8,6 +9,7 @@ export interface AuthUser {
   email?: string
   roles: UserRole[]
   departmentId?: string
+  supplierId?: string
 }
 
 interface AuthState {
@@ -60,3 +62,10 @@ const authSlice = createSlice({
 
 export const { setCredentials, updateToken, logout } = authSlice.actions
 export default authSlice.reducer
+
+// Selectors
+export const selectIsSupplier = (state: RootState) =>
+  state.auth.user?.roles.includes('ROLE_SUPPLIER') ?? false
+
+export const selectSupplierId = (state: RootState) =>
+  state.auth.user?.supplierId ?? null

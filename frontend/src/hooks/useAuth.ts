@@ -17,11 +17,13 @@ interface LoginResponse {
     userId: string
     username: string
     roles: string[]
+    supplierId?: string
   }
 }
 
 /**
  * useAuth — provides login and logout mutations with Redux side effects.
+ * Suppliers are redirected to /supplier/dashboard after login.
  */
 export function useAuth() {
   const dispatch = useAppDispatch()
@@ -31,7 +33,8 @@ export function useAuth() {
     mutationFn: (credentials: LoginRequest) =>
       apiClient.post<LoginResponse>('/auth/login', credentials),
     onSuccess: (response) => {
-      const { accessToken, refreshToken, userId, username, roles } = response.data.data
+      const { accessToken, refreshToken, userId, username, roles, supplierId } =
+        response.data.data
       dispatch(
         setCredentials({
           user: {
@@ -39,12 +42,18 @@ export function useAuth() {
             username,
             email: '',
             roles: roles as AuthUser['roles'],
+            supplierId,
           },
           accessToken,
           refreshToken,
         })
       )
-      navigate('/dashboard')
+      // Suppliers have a separate portal layout
+      if (roles.includes('ROLE_SUPPLIER')) {
+        navigate('/supplier/dashboard')
+      } else {
+        navigate('/dashboard')
+      }
     },
   })
 
