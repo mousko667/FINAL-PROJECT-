@@ -15,7 +15,15 @@
     "filter": "Filtrer",
     "export": "Exporter",
     "noData": "Aucune donnée disponible",
-    "all": "Tous"
+    "all": "Tous",
+    "actions": "Actions",
+    "back": "Retour",
+    "notFound": "Introuvable",
+    "allStatus": "Tous les statuts",
+    "page": "Page",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "days": "jours"
   },
   "auth": {
     "login": "Connexion",
@@ -34,7 +42,8 @@
     "users": "Utilisateurs",
     "departments": "Départements",
     "auditLog": "Journal d'audit",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "suppliers": "Fournisseurs"
   },
   "invoice": {
     "title": "Factures",
@@ -139,5 +148,53 @@
     "previous": "Précédent",
     "next": "Suivant",
     "perPage": "Par page"
+  },
+  "supplier": {
+    "title": "Fournisseurs",
+    "create": "Ajouter un fournisseur",
+    "edit": "Modifier le fournisseur",
+    "status": {
+      "PENDING_VERIFICATION": "En attente de vérification",
+      "ACTIVE": "Actif",
+      "SUSPENDED": "Suspendu"
+    },
+    "fields": {
+      "companyName": "Raison sociale",
+      "taxId": "NIF / Identifiant fiscal",
+      "contactEmail": "Email de contact",
+      "contactPhone": "Téléphone",
+      "address": "Adresse",
+      "status": "Statut",
+      "onboardingDate": "Date d'entrée",
+      "createdAt": "Date de création",
+      "bankDetails": "Coordonnées bancaires",
+      "bankDetailsHint": "écriture seule, stocké chiffré"
+    },
+    "actions": {
+      "activate": "Activer",
+      "suspend": "Suspendre",
+      "delete": "Supprimer",
+      "suspendReason": "Motif de suspension :",
+      "deleteConfirm": "Êtes-vous sûr de vouloir supprimer ce fournisseur ?"
+    },
+    "tabs": {
+      "details": "Informations",
+      "documents": "Documents",
+      "performance": "Performance"
+    },
+    "document": {
+      "upload": "Téléverser un document",
+      "type": {
+        "label": "Type de document",
+        "TAX_CERTIFICATE": "Attestation fiscale",
+        "CONTRACT": "Contrat",
+        "OTHER": "Autre"
+      }
+    },
+    "performance": {
+      "accuracyRate": "Taux de conformité",
+      "rejectionRate": "Taux de rejet",
+      "averagePaymentTime": "Délai moyen de paiement"
+    }
   }
 }

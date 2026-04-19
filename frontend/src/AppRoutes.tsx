@@ -15,6 +15,9 @@ const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage'))
 const AdminDepartmentsPage = lazy(() => import('@/pages/admin/AdminDepartmentsPage'))
 const AdminAuditPage = lazy(() => import('@/pages/admin/AdminAuditPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
+const SuppliersPage = lazy(() => import('@/pages/admin/SuppliersPage'))
+const SupplierDetailPage = lazy(() => import('@/pages/admin/SupplierDetailPage'))
+const SupplierFormPage = lazy(() => import('@/pages/admin/SupplierFormPage'))
 
 function AppRoutes() {
   // Initialize WebSocket connection for authenticated users
@@ -37,6 +40,10 @@ function AppRoutes() {
             <Route path="/admin/users" element={<AdminUsersPage />} />
             <Route path="/admin/departments" element={<AdminDepartmentsPage />} />
             <Route path="/admin/audit" element={<AdminAuditPage />} />
+            <Route path="/admin/suppliers" element={<SuppliersPage />} />
+            <Route path="/admin/suppliers/new" element={<SupplierFormPage />} />
+            <Route path="/admin/suppliers/:id" element={<SupplierDetailPage />} />
+            <Route path="/admin/suppliers/:id/edit" element={<SupplierFormPage />} />
           </Route>
         </Route>
 

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
@@ -7,17 +7,20 @@ import {
   useSupplierPerformance,
   useActivateSupplier,
   useSuspendSupplier,
-  useDeleteSupplier
+  useDeleteSupplier,
+  useUploadSupplierDocument
 } from '@/api/suppliers'
 import { useAppSelector } from '@/store/hooks'
 import { SupplierStatusBadge } from '@/components/SupplierStatusBadge'
-import { Loader2, ArrowLeft, CheckCircle, Ban, Trash2, Building, Mail, Phone, MapPin, Calendar, FileText, Activity } from 'lucide-react'
+import { Loader2, ArrowLeft, CheckCircle, Ban, Trash2, Building, Mail, Phone, MapPin, Calendar, FileText, Activity, Upload } from 'lucide-react'
 
 export default function SupplierDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<'DETAILS' | 'DOCUMENTS' | 'PERFORMANCE'>('DETAILS')
+  const [docType, setDocType] = useState<'TAX_CERTIFICATE' | 'CONTRACT' | 'OTHER'>('TAX_CERTIFICATE')
+  const fileInputRef = useRef<HTMLInputElement>(null)
   
   const { user } = useAppSelector((state) => state.auth)
   const isAdmin = user?.roles.includes('ROLE_ADMIN')
@@ -27,6 +30,7 @@ export default function SupplierDetailPage() {
   const { data: perf, isLoading: loadingPerf } = useSupplierPerformance(id)
 
   const { mutate: activate, isPending: activating } = useActivateSupplier()
+  const { mutateAsync: uploadDocument, isPending: uploading } = useUploadSupplierDocument()
   const { mutate: suspend, isPending: suspending } = useSuspendSupplier()
   const { mutate: deleteSupplier, isPending: deleting } = useDeleteSupplier()
 
@@ -183,26 +187,73 @@ export default function SupplierDetailPage() {
       )}
 
       {activeTab === 'DOCUMENTS' && (
-        <div className="bg-white rounded-xl border">
-          {loadingDocs ? (
-            <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin" /></div>
-          ) : !documents?.length ? (
-            <div className="text-center py-16 text-muted-foreground">{t('app.noData', 'No documents found.')}</div>
-          ) : (
-            <ul className="divide-y">
-              {documents.map((doc) => (
-                <li key={doc.id} className="p-4 flex flex-center justify-between">
-                  <div>
-                    <p className="font-medium text-gray-900">{doc.originalFilename}</p>
-                    <p className="text-sm text-gray-500">{t(`supplier.document.type.${doc.documentType}`, doc.documentType)}</p>
-                  </div>
-                  <div className="text-sm text-gray-400">
-                    {new Date(doc.uploadedAt).toLocaleDateString()}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+        <div className="space-y-4">
+          <div className="bg-white rounded-xl border p-5 flex flex-col sm:flex-row items-start sm:items-end gap-4">
+            <div className="flex-1 w-full">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t('supplier.document.type.label', 'Document Type')}
+              </label>
+              <select
+                value={docType}
+                onChange={(e) => setDocType(e.target.value as typeof docType)}
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="TAX_CERTIFICATE">{t('supplier.document.type.TAX_CERTIFICATE', 'Tax Certificate')}</option>
+                <option value="CONTRACT">{t('supplier.document.type.CONTRACT', 'Contract')}</option>
+                <option value="OTHER">{t('supplier.document.type.OTHER', 'Other')}</option>
+              </select>
+            </div>
+            <div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.png,.jpg,.jpeg,.xlsx"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0]
+                  if (!file || !id) return
+                  const formData = new FormData()
+                  formData.append('file', file)
+                  formData.append('documentType', docType)
+                  await uploadDocument({ id, formData })
+                  if (fileInputRef.current) fileInputRef.current.value = ''
+                }}
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
+              >
+                {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                {t('supplier.document.upload', 'Upload Document')}
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border">
+            {loadingDocs ? (
+              <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin" /></div>
+            ) : !documents?.length ? (
+              <div className="text-center py-16 text-muted-foreground">{t('app.noData', 'No documents found.')}</div>
+            ) : (
+              <ul className="divide-y">
+                {documents.map((doc) => (
+                  <li key={doc.id} className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-5 h-5 text-gray-400" />
+                      <div>
+                        <p className="font-medium text-gray-900">{doc.originalFilename}</p>
+                        <p className="text-sm text-gray-500">{t(`supplier.document.type.${doc.documentType}`, doc.documentType)}</p>
+                      </div>
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {new Date(doc.uploadedAt).toLocaleDateString()}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       )}
 

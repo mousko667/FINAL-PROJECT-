@@ -10,6 +10,7 @@ import {
   Building2,
   ScrollText,
   ChevronRight,
+  Truck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -72,6 +73,10 @@ export default function Sidebar() {
             <NavLink to="/admin/audit" className={navLinkClass}>
               <ScrollText className="w-4 h-4" />
               {t('nav.auditLog')}
+            </NavLink>
+            <NavLink to="/admin/suppliers" className={navLinkClass}>
+              <Truck className="w-4 h-4" />
+              {t('nav.suppliers', 'Fournisseurs')}
             </NavLink>
           </div>
         </RoleGuard>
