@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Client, StompSubscription } from '@stomp/stompjs'
+import { Client, type StompSubscription } from '@stomp/stompjs'
 import SockJS from 'sockjs-client'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { addNotification } from '@/store/slices/notificationSlice'
