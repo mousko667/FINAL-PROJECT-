@@ -8,6 +8,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,6 +27,11 @@ public class MfaSetupEnforcementFilter extends OncePerRequestFilter {
 
     private final ObjectMapper objectMapper;
 
+    // In dev profile, allow accounts with mfa_verified=true (even if no secret) to pass through.
+    // This lets pre-seeded dev accounts work without going through TOTP setup.
+    @Value("${app.security.mfa.enforce-secret-check:true}")
+    private boolean enforceSecretCheck;
+
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
@@ -38,7 +44,19 @@ public class MfaSetupEnforcementFilter extends OncePerRequestFilter {
             return;
         }
 
-        if (!requiresMandatoryMfa(user) || user.isMfaVerified() || isAllowedPath(request.getRequestURI())) {
+        // When enforceSecretCheck=true (production), mfa_verified=true is only trusted when
+        // a real TOTP secret exists. When false (dev), mfa_verified=true is trusted as-is,
+        // allowing pre-seeded accounts without a TOTP device to access the system.
+        boolean trulyVerified;
+        if (enforceSecretCheck) {
+            trulyVerified = user.isMfaVerified()
+                    && user.getMfaSecret() != null
+                    && !user.getMfaSecret().isBlank();
+        } else {
+            trulyVerified = user.isMfaVerified();
+        }
+
+        if (!requiresMandatoryMfa(user) || trulyVerified || isAllowedPath(request.getRequestURI())) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -58,6 +76,7 @@ public class MfaSetupEnforcementFilter extends OncePerRequestFilter {
                 .map(authority -> authority.getAuthority())
                 .anyMatch(role -> "ROLE_ADMIN".equals(role)
                         || "ROLE_DAF".equals(role)
+                        || "ROLE_ASSISTANT_COMPTABLE".equals(role)
                         || role.startsWith("ROLE_VALIDATEUR_N1_")
                         || role.startsWith("ROLE_VALIDATEUR_N2_"));
     }

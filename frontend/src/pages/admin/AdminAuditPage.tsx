@@ -9,9 +9,13 @@ interface AuditLog {
   id: string
   action: string
   entityType: string
-  entityId: string
+  entityId?: string
   performedBy?: { username: string }
-  performedAt: string
+  performedAt?: string
+  createdAt?: string
+  ipAddress?: string
+  userAgent?: string
+  newValue?: string
   details?: string
 }
 
@@ -28,7 +32,7 @@ export default function AdminAuditPage() {
   const [filters, setFilters] = useState<AuditFilters>({ page: 0, size: 20 })
 
   const { data, isLoading } = useQuery({
-    queryKey: ['audit-logs', filters],
+    queryKey: ['audit-logs-system', filters],
     queryFn: async () => {
       const { data } = await apiClient.get<ApiResponse<PagedResponse<AuditLog>>>(
         '/audit-logs',
@@ -101,26 +105,32 @@ export default function AdminAuditPage() {
                   </tr>
                 ) : (
                   logs.map((log) => (
-                    <tr key={log.id} id={`audit-row-${log.id}`} className="hover:bg-gray-50">
+                    <tr key={log.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
-                        {new Date(log.performedAt).toLocaleString()}
+                        {(() => {
+                          const raw = log.createdAt ?? log.performedAt
+                          if (!raw) return '—'
+                          const d = new Date(raw)
+                          return isNaN(d.getTime()) ? raw : d.toLocaleString()
+                        })()}
                       </td>
-                      <td className="px-4 py-3 font-medium text-gray-700">
-                        {log.performedBy?.username ?? '—'}
+                      <td className="px-4 py-3 font-medium text-gray-700 text-xs">
+                        <div>{log.performedBy?.username ?? '—'}</div>
+                        {log.ipAddress && <div className="text-gray-400 font-mono">{log.ipAddress}</div>}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-xs font-mono bg-amber-50 text-amber-700 px-2 py-0.5 rounded border border-amber-100">
+                        <span className="text-xs font-mono bg-amber-50 text-amber-700 px-2 py-0.5 rounded border border-amber-100 break-all">
                           {log.action}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-600">
-                        {log.entityType}
+                      <td className="px-4 py-3 text-gray-600 text-xs">
+                        <div>{log.entityType}</div>
                         {log.entityId && (
-                          <span className="ml-1 text-xs text-muted-foreground">#{log.entityId.slice(0, 8)}</span>
+                          <span className="text-muted-foreground font-mono">{log.entityId.slice(0, 40)}</span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-500 max-w-xs truncate">
-                        {log.details ?? '—'}
+                        {log.details ?? log.newValue ?? '—'}
                       </td>
                     </tr>
                   ))

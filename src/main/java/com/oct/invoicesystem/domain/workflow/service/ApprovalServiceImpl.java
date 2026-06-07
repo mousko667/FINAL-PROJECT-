@@ -6,8 +6,10 @@ import com.oct.invoicesystem.domain.invoice.repository.InvoiceRepository;
 import com.oct.invoicesystem.domain.invoice.service.InvoiceStateMachineService;
 import com.oct.invoicesystem.domain.invoice.statemachine.InvoiceEvent;
 import com.oct.invoicesystem.domain.user.model.User;
+import com.oct.invoicesystem.domain.workflow.model.ApprovalDelegation;
 import com.oct.invoicesystem.domain.workflow.model.ApprovalStep;
 import com.oct.invoicesystem.domain.workflow.model.ApprovalStepStatus;
+import com.oct.invoicesystem.domain.workflow.repository.ApprovalDelegationRepository;
 import com.oct.invoicesystem.domain.workflow.repository.ApprovalStepRepository;
 import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 import com.oct.invoicesystem.shared.exception.WorkflowException;
@@ -21,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -35,6 +38,7 @@ public class ApprovalServiceImpl implements ApprovalService {
     private final ApprovalStepRepository approvalStepRepository;
     private final InvoiceRepository invoiceRepository;
     private final InvoiceStateMachineService invoiceStateMachineService;
+    private final ApprovalDelegationRepository delegationRepository;
 
     @Override
     @Transactional
@@ -202,9 +206,19 @@ public class ApprovalServiceImpl implements ApprovalService {
         if (requiredRole == null) return;
         boolean hasRole = user.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals(requiredRole));
-        if (!hasRole) {
-            throw new AccessDeniedException("User does not have required role: " + requiredRole);
-        }
+        if (hasRole) return;
+
+        // Check if user has an active delegation covering this role's department
+        // Department code is embedded in roles like ROLE_VALIDATEUR_N1_INFO or ROLE_DAF
+        String deptCode = requiredRole.replaceAll("^ROLE_(VALIDATEUR_N[12]_)?", "");
+        List<ApprovalDelegation> delegations =
+                delegationRepository.findActiveDelegationsForDelegatee(user.getId(), LocalDate.now());
+        boolean hasDelegation = delegations.stream()
+                .anyMatch(d -> d.getDepartmentCode().equals(deptCode));
+        if (hasDelegation) return;
+
+        throw new AccessDeniedException("User does not have required role: " + requiredRole
+                + " and has no active delegation for department: " + deptCode);
     }
 
     private void ensureNotSubmitter(Invoice invoice, User approver) {

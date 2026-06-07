@@ -2,12 +2,17 @@ package com.oct.invoicesystem.domain.auth.service;
 
 import com.oct.invoicesystem.domain.auth.dto.LoginRequest;
 import com.oct.invoicesystem.domain.auth.dto.LoginResponse;
+import com.oct.invoicesystem.domain.auth.dto.PasswordResetConfirmRequest;
+import com.oct.invoicesystem.domain.auth.dto.PasswordResetRequest;
 import com.oct.invoicesystem.domain.auth.dto.RefreshTokenRequest;
 import com.oct.invoicesystem.domain.auth.dto.SupplierRegistrationRequest;
+import com.oct.invoicesystem.domain.auth.model.ActiveSession;
+import com.oct.invoicesystem.domain.auth.repository.ActiveSessionRepository;
 import com.oct.invoicesystem.domain.mfa.dto.MfaConfirmRequest;
 import com.oct.invoicesystem.domain.mfa.dto.MfaSetupResponse;
 import com.oct.invoicesystem.domain.mfa.dto.MfaValidateRequest;
 import com.oct.invoicesystem.domain.mfa.service.MfaService;
+import com.oct.invoicesystem.domain.notification.service.EmailService;
 import com.oct.invoicesystem.domain.supplier.model.Supplier;
 import com.oct.invoicesystem.domain.supplier.model.SupplierStatus;
 import com.oct.invoicesystem.domain.supplier.repository.SupplierRepository;
@@ -20,6 +25,7 @@ import com.oct.invoicesystem.domain.user.repository.UserRepository;
 import com.oct.invoicesystem.shared.exception.AccountLockedException;
 import com.oct.invoicesystem.shared.exception.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -51,10 +57,20 @@ public class AuthService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final MfaService mfaService;
+    private final EmailService emailService;
+    private final ActiveSessionRepository activeSessionRepository;
+
+    @Value("${app.frontend-url:http://localhost:3000}")
+    private String frontendUrl;
+
+    @Value("${jwt.refresh-expiration-ms:604800000}")
+    private long refreshExpirationMs;
 
     @Transactional
     public LoginResponse login(LoginRequest request) {
-        User user = userRepository.findByUsername(request.getUsername()).orElse(null);
+        User user = userRepository.findByUsername(request.getUsername())
+                .or(() -> userRepository.findByEmail(request.getUsername()))
+                .orElse(null);
         if (user != null) {
             ensureAccountNotLocked(user);
         }
@@ -62,7 +78,7 @@ public class AuthService {
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            request.getUsername(),
+                            user != null ? user.getUsername() : request.getUsername(),
                             request.getPassword()
                     )
             );
@@ -73,7 +89,7 @@ public class AuthService {
             throw ex;
         }
 
-        user = findUserByUsername(request.getUsername());
+        user = findUserByUsername(user != null ? user.getUsername() : request.getUsername());
 
         if (requiresMandatoryMfaSetup(user)) {
             return LoginResponse.builder()
@@ -163,15 +179,16 @@ public class AuthService {
         supplier.setStatus(SupplierStatus.PENDING_VERIFICATION);
         supplier = supplierRepository.save(supplier);
 
+        String verificationToken = UUID.randomUUID().toString();
         User user = User.builder()
                 .username(request.email())
                 .email(request.email())
                 .password(passwordEncoder.encode(request.password()))
-                .firstName(request.firstName())
-                .lastName(request.lastName())
-                .isActive(false) // Account active after email verification
+                .firstName(request.firstName() != null ? request.firstName() : request.companyName())
+                .lastName(request.lastName() != null ? request.lastName() : "")
+                .active(false) // Account active after email verification
                 .supplier(supplier)
-                .emailVerificationToken(UUID.randomUUID().toString())
+                .emailVerificationToken(verificationToken)
                 .emailVerificationTokenExpiry(Instant.now().plus(24, ChronoUnit.HOURS))
                 .build();
 
@@ -184,6 +201,14 @@ public class AuthService {
         user.getUserRoles().add(userRole);
 
         userRepository.save(user);
+
+        String verificationUrl = frontendUrl + "/verify-email?token=" + verificationToken;
+        emailService.sendEmail(
+                user.getEmail(),
+                "Verify your OCT supplier account",
+                "email-verification",
+                Map.of("verificationUrl", verificationUrl)
+        );
     }
 
     @Transactional
@@ -198,6 +223,40 @@ public class AuthService {
         user.setActive(true);
         user.setEmailVerificationToken(null);
         user.setEmailVerificationTokenExpiry(null);
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void requestPasswordReset(PasswordResetRequest request) {
+        userRepository.findByEmail(request.email()).ifPresent(user -> {
+            String token = UUID.randomUUID().toString();
+            user.setPasswordResetToken(token);
+            user.setPasswordResetTokenExpiry(Instant.now().plus(1, ChronoUnit.HOURS));
+            userRepository.save(user);
+
+            String resetUrl = frontendUrl + "/reset-password?token=" + token;
+            emailService.sendEmail(
+                    user.getEmail(),
+                    "OCT Invoice System password reset",
+                    "password-reset",
+                    Map.of("resetUrl", resetUrl)
+            );
+        });
+    }
+
+    @Transactional
+    public void confirmPasswordReset(PasswordResetConfirmRequest request) {
+        User user = userRepository.findByPasswordResetToken(request.token())
+                .orElseThrow(() -> new com.oct.invoicesystem.shared.exception.ValidationException("Invalid password reset token"));
+
+        if (user.getPasswordResetTokenExpiry() == null || user.getPasswordResetTokenExpiry().isBefore(Instant.now())) {
+            throw new com.oct.invoicesystem.shared.exception.ValidationException("Password reset token has expired");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        user.setPasswordResetToken(null);
+        user.setPasswordResetTokenExpiry(null);
+        resetFailedAuthentication(user);
         userRepository.save(user);
     }
 
@@ -247,6 +306,12 @@ public class AuthService {
     private LoginResponse buildAuthenticatedLoginResponse(User user, String refreshToken) {
         resetFailedAuthentication(user);
         String jwt = jwtService.generateToken(buildExtraClaims(user), user);
+        // Track active session for admin visibility
+        activeSessionRepository.save(ActiveSession.builder()
+                .user(user)
+                .refreshToken(refreshToken)
+                .expiresAt(Instant.now().plusMillis(refreshExpirationMs))
+                .build());
         return LoginResponse.builder()
                 .accessToken(jwt)
                 .refreshToken(refreshToken)
@@ -263,6 +328,9 @@ public class AuthService {
         if (user.getSupplier() != null) {
             extraClaims.put("supplierId", user.getSupplier().getId().toString());
         }
+        if (user.getDepartmentId() != null) {
+            extraClaims.put("departmentId", user.getDepartmentId().toString());
+        }
         return extraClaims;
     }
 
@@ -271,6 +339,7 @@ public class AuthService {
                 .map(GrantedAuthority::getAuthority)
                 .anyMatch(role -> "ROLE_ADMIN".equals(role)
                         || "ROLE_DAF".equals(role)
+                        || "ROLE_ASSISTANT_COMPTABLE".equals(role)
                         || role.startsWith("ROLE_VALIDATEUR_N1_")
                         || role.startsWith("ROLE_VALIDATEUR_N2_"));
     }

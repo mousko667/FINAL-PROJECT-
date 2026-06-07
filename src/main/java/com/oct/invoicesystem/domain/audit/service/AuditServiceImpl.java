@@ -16,6 +16,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -103,6 +104,30 @@ public class AuditServiceImpl implements AuditService {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("action"), action));
         }
         
+        return auditLogRepository.findAll(spec, pageable).map(this::toDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AuditLogDTO> searchLogsWithActionFilter(UUID userId, String entityType, String entityId, String action, List<String> allowedActions, Pageable pageable) {
+        Specification<AuditLog> spec = Specification.where(null);
+
+        if (userId != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("user").get("id"), userId));
+        }
+        if (entityType != null && !entityType.isBlank()) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("entityType"), entityType));
+        }
+        if (entityId != null && !entityId.isBlank()) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("entityId"), entityId));
+        }
+        // Always restrict to the allowed action set for this role
+        spec = spec.and((root, query, cb) -> root.get("action").in(allowedActions));
+        // Optional additional action filter within the allowed set
+        if (action != null && !action.isBlank()) {
+            spec = spec.and((root, query, cb) -> cb.like(cb.upper(root.get("action")), "%" + action.toUpperCase() + "%"));
+        }
+
         return auditLogRepository.findAll(spec, pageable).map(this::toDTO);
     }
 

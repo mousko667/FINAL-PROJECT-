@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 public interface UserMapper {
 
     @Mapping(target = "roles", source = "userRoles", qualifiedByName = "mapUserRolesToRoleNames")
+    @Mapping(target = "active", source = "active")
     UserDTO toDto(User user);
 
     @Mapping(target = "id", ignore = true)
@@ -27,7 +28,7 @@ public interface UserMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "userRoles", ignore = true)
-    @Mapping(target = "isActive", ignore = true)
+    @Mapping(target = "active", ignore = true)
     @Mapping(target = "password", ignore = true)
     User toEntity(UserCreateRequest request);
 

@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Email Verification</title>
+</head>
+<body style="font-family: Arial, sans-serif; color: #1f2933;">
+    <h2>Verify Your Email</h2>
+    <p>Welcome to the OCT Invoice System. Please verify your email address to activate your supplier account.</p>
+    <p>This link expires in 24 hours.</p>
+    <p><a th:href="${verificationUrl}" style="display:inline-block;padding:10px 16px;background:#1a3a5c;color:#ffffff;text-decoration:none;border-radius:4px;">Verify Email</a></p>
+</body>
+</html>

@@ -7,17 +7,14 @@ import com.oct.invoicesystem.domain.webhook.model.WebhookDelivery;
 import com.oct.invoicesystem.domain.webhook.repository.WebhookDeliveryRepository;
 import com.oct.invoicesystem.domain.webhook.repository.WebhookRepository;
 import com.oct.invoicesystem.domain.user.model.User;
-import com.oct.invoicesystem.config.TestConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.HttpStatus;
-import org.springframework.test.context.ActiveProfiles;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
@@ -26,26 +23,21 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@ActiveProfiles("test")
+@ExtendWith(MockitoExtension.class)
 @DisplayName("WebhookService Tests")
 class WebhookServiceTest {
 
-    @Autowired
+    @InjectMocks
     private WebhookService webhookService;
 
-    @MockBean
+    @Mock
     private WebhookRepository webhookRepository;
 
-    @MockBean
+    @Mock
     private WebhookDeliveryRepository deliveryRepository;
 
-    @MockBean
+    @Mock
     private RestTemplate restTemplate;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     private User testUser;
     private Webhook testWebhook;
@@ -58,7 +50,7 @@ class WebhookServiceTest {
                 .email("admin@test.com")
                 .firstName("Admin")
                 .lastName("User")
-                .isActive(true)
+                .active(true)
                 .build();
 
         testWebhook = Webhook.builder()

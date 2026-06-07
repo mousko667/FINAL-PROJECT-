@@ -121,7 +121,9 @@ class ApprovalControllerTest {
         invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.RECORD_PAYMENT, 
                 java.util.Map.of(WorkflowExtendedStateKeys.USER_ID, daf.getId()));
         invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.ARCHIVE, 
-                java.util.Map.of(WorkflowExtendedStateKeys.USER_ID, daf.getId()));
+                java.util.Map.of(
+                        WorkflowExtendedStateKeys.USER_ID, daf.getId(),
+                        WorkflowExtendedStateKeys.AUTO_ARCHIVE, true));
 
         // Final state
         Invoice updated = invoiceRepository.findById(invoice.getId()).orElseThrow();
@@ -175,7 +177,9 @@ class ApprovalControllerTest {
         invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.RECORD_PAYMENT, 
                 java.util.Map.of(WorkflowExtendedStateKeys.USER_ID, daf.getId()));
         invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.ARCHIVE, 
-                java.util.Map.of(WorkflowExtendedStateKeys.USER_ID, daf.getId()));
+                java.util.Map.of(
+                        WorkflowExtendedStateKeys.USER_ID, daf.getId(),
+                        WorkflowExtendedStateKeys.AUTO_ARCHIVE, true));
 
         Invoice updated = invoiceRepository.findById(invoice.getId()).orElseThrow();
         assertEquals(InvoiceStatus.ARCHIVE, updated.getStatus());

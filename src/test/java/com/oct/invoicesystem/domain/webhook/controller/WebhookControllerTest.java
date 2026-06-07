@@ -66,7 +66,7 @@ class WebhookControllerTest {
                 .email("admin@test.com")
                 .firstName("Admin")
                 .lastName("User")
-                .isActive(true)
+                .active(true)
                 .build();
 
         testWebhook = Webhook.builder()

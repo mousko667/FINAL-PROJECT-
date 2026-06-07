@@ -19,8 +19,17 @@ interface AuthState {
   isAuthenticated: boolean
 }
 
+function loadUser(): AuthUser | null {
+  try {
+    const raw = localStorage.getItem('user')
+    return raw ? (JSON.parse(raw) as AuthUser) : null
+  } catch {
+    return null
+  }
+}
+
 const initialState: AuthState = {
-  user: null,
+  user: loadUser(),
   accessToken: localStorage.getItem('accessToken'),
   refreshToken: localStorage.getItem('refreshToken'),
   isAuthenticated: !!localStorage.getItem('accessToken'),
@@ -44,6 +53,7 @@ const authSlice = createSlice({
       state.isAuthenticated = true
       localStorage.setItem('accessToken', action.payload.accessToken)
       localStorage.setItem('refreshToken', action.payload.refreshToken)
+      localStorage.setItem('user', JSON.stringify(action.payload.user))
     },
     updateToken: (state, action: PayloadAction<string>) => {
       state.accessToken = action.payload
@@ -56,6 +66,7 @@ const authSlice = createSlice({
       state.isAuthenticated = false
       localStorage.removeItem('accessToken')
       localStorage.removeItem('refreshToken')
+      localStorage.removeItem('user')
     },
   },
 })

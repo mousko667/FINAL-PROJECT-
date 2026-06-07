@@ -11,11 +11,13 @@ import com.oct.invoicesystem.domain.payment.dto.PaymentRequest;
 import com.oct.invoicesystem.domain.payment.model.Payment;
 import com.oct.invoicesystem.domain.payment.repository.PaymentRepository;
 import com.oct.invoicesystem.domain.user.model.User;
+import com.oct.invoicesystem.domain.notification.event.InvoicePayedEvent;
 import com.oct.invoicesystem.domain.user.repository.UserRepository;
 import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 import com.oct.invoicesystem.shared.exception.WorkflowException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -34,6 +36,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final UserRepository userRepository;
     private final InvoiceStateMachineService invoiceStateMachineService;
     private final RemittanceAdviceService remittanceAdviceService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -64,9 +67,16 @@ public class PaymentServiceImpl implements PaymentService {
         payment = paymentRepository.save(payment);
         log.info("Recorded payment {} for invoice {}", payment.getId(), invoiceId);
 
-        // Auto-generate remittance advice (P9-51)
+        // Auto-generate remittance advice
         remittanceAdviceService.generateRemittanceAdvice(payment.getId(), userId);
         log.info("Auto-generated remittance advice for payment {}", payment.getId());
+
+        // Publish payment event — notifies supplier
+        try {
+            eventPublisher.publishEvent(new InvoicePayedEvent(this, invoiceId, payment.getId()));
+        } catch (Exception e) {
+            log.error("Failed to publish InvoicePayedEvent for invoice {}: {}", invoiceId, e.getMessage());
+        }
 
         // State Machine transition: BON_A_PAYER -> PAYE
         invoiceStateMachineService.sendEvent(invoiceId, InvoiceEvent.RECORD_PAYMENT,
@@ -74,7 +84,10 @@ public class PaymentServiceImpl implements PaymentService {
 
         // State Machine transition: PAYE -> ARCHIVE (Automatically as per rules)
         invoiceStateMachineService.sendEvent(invoiceId, InvoiceEvent.ARCHIVE,
-                Map.of(WorkflowExtendedStateKeys.USER_ID, userId));
+                Map.of(
+                        WorkflowExtendedStateKeys.USER_ID, userId,
+                        WorkflowExtendedStateKeys.AUTO_ARCHIVE, true
+                ));
 
         return toDTO(payment);
     }

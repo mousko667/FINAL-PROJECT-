@@ -23,7 +23,9 @@ export default function SupplierDetailPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   const { user } = useAppSelector((state) => state.auth)
+  // Both Admin and Accounting Assistant manage supplier lifecycle (briefing §5.2)
   const isAdmin = user?.roles.includes('ROLE_ADMIN')
+  const canManageSupplier = user?.roles.some(r => r === 'ROLE_ADMIN' || r === 'ROLE_ASSISTANT_COMPTABLE')
 
   const { data: supplier, isLoading: loadingInfo } = useSupplier(id)
   const { data: documents, isLoading: loadingDocs } = useSupplierDocuments(id)
@@ -63,7 +65,7 @@ export default function SupplierDetailPage() {
         <SupplierStatusBadge status={supplier.status} className="text-sm px-3 py-1" />
       </div>
 
-      {isAdmin && (
+      {canManageSupplier && (
         <div className="flex items-center gap-3 bg-white p-4 rounded-xl border">
           {supplier.status !== 'ACTIVE' && (
             <button
@@ -78,7 +80,7 @@ export default function SupplierDetailPage() {
           {supplier.status === 'ACTIVE' && (
             <button
               onClick={() => {
-                const reason = window.prompt(t('supplier.actions.suspendReason', 'Reason:'))
+                const reason = window.prompt(t('supplier.actions.suspendReason', 'Suspension reason:'))
                 if (reason) suspend({ id: supplier.id, reason })
               }}
               disabled={suspending}
@@ -89,19 +91,22 @@ export default function SupplierDetailPage() {
             </button>
           )}
           <div className="flex-1" />
-          <button
-            onClick={() => {
-              if (window.confirm(t('supplier.actions.deleteConfirm', 'Are you sure?'))) {
-                deleteSupplier(supplier.id)
-                navigate('/admin/suppliers')
-              }
-            }}
-            disabled={deleting}
-            className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-700 hover:bg-red-100 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-          >
-            <Trash2 className="w-4 h-4" />
-            {t('supplier.actions.delete', 'Delete')}
-          </button>
+          {/* Delete is Admin-only */}
+          {isAdmin && (
+            <button
+              onClick={() => {
+                if (window.confirm(t('supplier.actions.deleteConfirm', 'Are you sure you want to delete this supplier?'))) {
+                  deleteSupplier(supplier.id)
+                  navigate('/admin/suppliers')
+                }
+              }}
+              disabled={deleting}
+              className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-700 hover:bg-red-100 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+            >
+              <Trash2 className="w-4 h-4" />
+              {t('supplier.actions.delete', 'Delete')}
+            </button>
+          )}
         </div>
       )}
 

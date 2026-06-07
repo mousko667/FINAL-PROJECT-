@@ -27,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -59,7 +60,7 @@ public class WebhookService {
         String rawSecret = generateSecret();
         String secretHash = hashSecret(rawSecret);
 
-        // Save webhook with hashed secret
+        // Save webhook — only the SHA-256 hash is persisted; raw secret is returned once.
         Webhook webhook = Webhook.builder()
                 .name(request.getName())
                 .url(request.getUrl())
@@ -148,8 +149,8 @@ public class WebhookService {
         }
 
         try {
-            // Build signed request using the stored secret hash
-            String signature = buildSignature(payloadJson, webhook.getSecretHash());
+            String signingSecret = webhook.getSecretHash();
+            String signature = buildSignature(payloadJson, signingSecret);
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.set("X-OCT-Signature", signature);
@@ -236,7 +237,7 @@ public class WebhookService {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(secret.getBytes(StandardCharsets.UTF_8));
-            return Base64.getEncoder().encodeToString(hash);
+            return HexFormat.of().formatHex(hash);
         } catch (Exception e) {
             log.error("Failed to hash secret: {}", e.getMessage(), e);
             throw new RuntimeException("Secret hashing failed", e);

@@ -1,0 +1,182 @@
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
+import apiClient from '@/services/apiClient'
+import { PageRoleGuard } from '@/components/auth/RoleGuard'
+import { Loader2, Archive, Search, Download, Filter, ExternalLink, FileText } from 'lucide-react'
+
+interface ArchivedInvoice {
+  id: string
+  referenceNumber: string
+  supplierName: string
+  amount: number
+  currency: string
+  status: string
+  issueDate: string
+  createdAt: string
+  departmentCode?: string
+  description?: string
+}
+
+export default function ArchivePage() {
+  const { t } = useTranslation()
+  const [search, setSearch] = useState('')
+  const [deptFilter, setDeptFilter] = useState('')
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
+  const [page, setPage] = useState(0)
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['archive', search, deptFilter, fromDate, toDate, page],
+    queryFn: async () => {
+      const params: Record<string, string | number> = {
+        status: 'ARCHIVE',
+        page,
+        size: 20,
+        sort: 'createdAt,desc',
+      }
+      if (search) params.search = search
+      if (deptFilter) params.department = deptFilter
+      if (fromDate) params.fromDate = fromDate
+      if (toDate) params.toDate = toDate
+      const { data } = await apiClient.get<{ data: { content: ArchivedInvoice[]; totalElements: number; totalPages: number } }>(
+        '/invoices', { params }
+      )
+      return data.data
+    },
+  })
+
+  const invoices = data?.content ?? []
+
+  return (
+    <PageRoleGuard allowedRoles={['ROLE_DAF', 'ROLE_ASSISTANT_COMPTABLE', 'ROLE_ADMIN']}>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{t('archive.title', 'Archive Numérique')}</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {t('archive.subtitle', 'Toutes les factures archivées — recherche et téléchargement')}
+            {data && <span className="ml-2 font-medium text-gray-700">{data.totalElements} documents</span>}
+          </p>
+        </div>
+
+        {/* Search & Filters */}
+        <div className="bg-white rounded-xl border p-4 space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="flex-1 flex items-center gap-2 border rounded-lg px-3 py-2">
+              <Search className="w-4 h-4 text-gray-400 shrink-0" />
+              <input
+                className="flex-1 text-sm outline-none bg-transparent"
+                placeholder={t('archive.searchPlaceholder', 'Rechercher par référence, fournisseur, description...')}
+                value={search}
+                onChange={e => { setSearch(e.target.value); setPage(0) }}
+              />
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-gray-400" />
+              <select value={deptFilter} onChange={e => { setDeptFilter(e.target.value); setPage(0) }}
+                className="text-sm border rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20">
+                <option value="">Tous les départements</option>
+                {['DRH','DG','FIN','INFO','TERM','COM','QHSSE','INFRA','TECH'].map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">Du</span>
+              <input type="date" value={fromDate} onChange={e => { setFromDate(e.target.value); setPage(0) }}
+                className="text-sm border rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/20" />
+              <span className="text-xs text-gray-500">au</span>
+              <input type="date" value={toDate} onChange={e => { setToDate(e.target.value); setPage(0) }}
+                className="text-sm border rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/20" />
+            </div>
+            {(search || deptFilter || fromDate || toDate) && (
+              <button onClick={() => { setSearch(''); setDeptFilter(''); setFromDate(''); setToDate(''); setPage(0) }}
+                className="text-xs text-red-500 hover:underline">
+                Réinitialiser les filtres
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Results */}
+        <div className="bg-white rounded-xl border overflow-hidden">
+          {isLoading ? (
+            <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+          ) : invoices.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-3 text-gray-400">
+              <Archive className="w-10 h-10" />
+              <p className="text-sm font-medium">
+                {search || deptFilter
+                  ? t('archive.noResults', 'Aucun document ne correspond à vos critères de recherche.')
+                  : t('archive.empty', 'Aucune facture archivée pour le moment.')}
+              </p>
+            </div>
+          ) : (
+            <>
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b">
+                  <tr>
+                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.reference')}</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.supplier')}</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.department')}</th>
+                    <th className="text-right px-4 py-3 font-medium text-gray-600">{t('invoice.amount')}</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.issueDate')}</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.audit.date', 'Archivé le')}</th>
+                    <th className="px-4 py-3" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {invoices.map(inv => (
+                    <tr key={inv.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 font-mono text-xs font-semibold text-gray-900">{inv.referenceNumber}</td>
+                      <td className="px-4 py-3 text-gray-700 truncate max-w-[160px]">{inv.supplierName}</td>
+                      <td className="px-4 py-3">
+                        {inv.departmentCode
+                          ? <span className="text-xs font-mono bg-gray-100 text-gray-700 px-2 py-0.5 rounded">{inv.departmentCode}</span>
+                          : <span className="text-gray-400">—</span>}
+                      </td>
+                      <td className="px-4 py-3 text-right font-medium text-gray-900">
+                        {Number(inv.amount).toLocaleString()} {inv.currency}
+                      </td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">{new Date(inv.issueDate).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">{new Date(inv.createdAt).toLocaleDateString()}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2 justify-end">
+                          <Link to={`/invoices/${inv.id}`}
+                            className="flex items-center gap-1 text-xs text-primary hover:underline">
+                            <ExternalLink className="w-3 h-3" /> {t('app.view')}
+                          </Link>
+                          <button className="flex items-center gap-1 text-xs text-gray-500 hover:text-primary transition-colors">
+                            <Download className="w-3 h-3" /> PDF
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {data && data.totalPages > 1 && (
+                <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
+                  <span className="text-sm text-gray-500">{t('pagination.page')} {page + 1} / {data.totalPages} — {data.totalElements} documents</span>
+                  <div className="flex gap-2">
+                    <button disabled={page === 0} onClick={() => setPage(p => p - 1)} className="px-3 py-1.5 bg-white border rounded-lg text-sm disabled:opacity-40 hover:bg-gray-50">{t('app.previous')}</button>
+                    <button disabled={page >= data.totalPages - 1} onClick={() => setPage(p => p + 1)} className="px-3 py-1.5 bg-white border rounded-lg text-sm disabled:opacity-40 hover:bg-gray-50">{t('app.next')}</button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        <p className="text-xs text-gray-400">
+          <FileText className="w-3.5 h-3.5 inline mr-1" />
+          {t('archive.retentionNote', 'Les documents archivés sont conservés 10 ans conformément à la politique de rétention OCT. SHA-256 vérifié à chaque téléchargement.')}
+        </p>
+      </div>
+    </PageRoleGuard>
+  )
+}

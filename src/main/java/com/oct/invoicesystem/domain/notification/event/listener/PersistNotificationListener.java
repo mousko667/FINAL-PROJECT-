@@ -1,6 +1,7 @@
 package com.oct.invoicesystem.domain.notification.event.listener;
 
 import com.oct.invoicesystem.domain.invoice.model.Invoice;
+import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
 import com.oct.invoicesystem.domain.invoice.repository.InvoiceRepository;
 import com.oct.invoicesystem.domain.notification.event.*;
 import com.oct.invoicesystem.domain.notification.model.Notification;
@@ -111,14 +112,54 @@ public class PersistNotificationListener {
     }
 
     /**
-     * Persist a deadline reminder notification for the assigned approver.
+     * Persist an in-app notification for the supplier when payment is recorded.
+     */
+    @Async
+    @EventListener
+    public void onInvoicePayed(InvoicePayedEvent event) {
+        log.info("Persisting payment notification for invoice {}", event.getInvoiceId());
+        invoiceRepository.findById(event.getInvoiceId()).ifPresent(invoice -> {
+            // Notify the supplier user(s) linked to this invoice
+            if (invoice.getSupplier() != null) {
+                userRepository.findActiveUsersBySupplierId(invoice.getSupplier().getId()).forEach(user ->
+                    save(user, invoice,
+                        "Paiement effectué",
+                        "Payment processed",
+                        "Votre facture " + invoice.getReferenceNumber() + " a été payée. L'avis de remise vous a été envoyé par email.",
+                        "Your invoice " + invoice.getReferenceNumber() + " has been paid. A remittance advice has been sent to your email.",
+                        NotificationType.PAYMENT)
+                );
+            }
+        });
+    }
+
+    /**
+     * Persist an SLA breach notification for the current approver when the deadline is exceeded.
      */
     @Async
     @EventListener
     public void onApprovalDeadline(ApprovalDeadlineEvent event) {
-        log.info("Persisting deadline notification for invoice {}", event.getInvoiceId());
+        log.info("Persisting SLA deadline notification for invoice {}", event.getInvoiceId());
         invoiceRepository.findById(event.getInvoiceId()).ifPresent(invoice -> {
-            // The scheduled job provides this — persist for the currently assigned approver if any
+            var dept = invoice.getDepartment();
+            if (dept == null) return;
+
+            List<User> approvers;
+            String roleToNotify;
+            switch (invoice.getStatus()) {
+                case EN_VALIDATION_N1 -> roleToNotify = dept.getN1Role();
+                case EN_VALIDATION_N2 -> roleToNotify = dept.getN2Role();
+                case VALIDE -> roleToNotify = "ROLE_DAF";
+                default -> { return; }
+            }
+            approvers = userRepository.findActiveUsersByRoleName(roleToNotify);
+
+            approvers.forEach(user -> save(user, invoice,
+                    "URGENT — Délai d'approbation SLA dépassé",
+                    "URGENT — Approval SLA deadline breached",
+                    "La facture " + invoice.getReferenceNumber() + " attend votre validation depuis plus de 3 jours ouvrables. Action immédiate requise.",
+                    "Invoice " + invoice.getReferenceNumber() + " has been awaiting your approval for more than 3 business days. Immediate action required.",
+                    NotificationType.VALIDATION));
         });
     }
 

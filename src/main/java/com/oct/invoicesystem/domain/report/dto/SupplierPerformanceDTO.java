@@ -39,4 +39,18 @@ public class SupplierPerformanceDTO {
     
     /** Invoices with matching status MISMATCH */
     private Long mismatchedInvoices;
+
+    /**
+     * Backward-compatible alias used by the supplier management endpoint.
+     */
+    public Double getAccuracyRate() {
+        return invoiceAccuracyRate;
+    }
+
+    /**
+     * Backward-compatible alias used by earlier supplier performance responses.
+     */
+    public Double getAveragePaymentTimeDays() {
+        return averagePaymentDays;
+    }
 }

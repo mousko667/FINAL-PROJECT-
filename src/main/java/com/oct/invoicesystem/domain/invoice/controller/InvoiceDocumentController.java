@@ -51,6 +51,7 @@ public class InvoiceDocumentController {
     }
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List documents", description = "Lists all documents for an invoice")
     public ResponseEntity<ApiResponse<List<InvoiceDocumentDTO>>> list(@PathVariable UUID invoiceId) {
         List<InvoiceDocumentDTO> documents = invoiceDocumentService.listByInvoice(invoiceId)
@@ -61,6 +62,7 @@ public class InvoiceDocumentController {
     }
 
     @GetMapping("/{docId}/download")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get download URL", description = "Generates a pre-signed URL for document download")
     public ResponseEntity<ApiResponse<Map<String, String>>> download(
             @PathVariable UUID invoiceId,

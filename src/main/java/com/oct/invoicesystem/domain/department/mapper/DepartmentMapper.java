@@ -13,6 +13,9 @@ import java.time.ZonedDateTime;
 @Mapper(componentModel = "spring")
 public interface DepartmentMapper {
 
+    // No explicit mapping needed: both entity and DTO expose property "active"
+    // (entity via isActive() getter, DTO via constructor param "active").
+    // @JsonProperty("isActive") on DTO ensures JSON output is named "isActive".
     DepartmentDTO toDto(Department department);
 
     @Mapping(target = "id", ignore = true)

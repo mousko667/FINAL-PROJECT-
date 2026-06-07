@@ -19,6 +19,25 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
 
     Optional<Invoice> findByReferenceNumber(String referenceNumber);
 
+    /**
+     * Duplicate detection: checks whether an invoice with the same supplier AND the same
+     * description (used as invoice number when submitted via supplier portal) already exists
+     * in a non-rejected, non-archived state within the last 365 days.
+     */
+    @Query("""
+            SELECT COUNT(i) FROM Invoice i
+            WHERE i.deletedAt IS NULL
+              AND i.supplier.id = :supplierId
+              AND LOWER(i.description) = LOWER(:description)
+              AND i.status NOT IN ('REJETE', 'ARCHIVE')
+              AND i.createdAt >= :since
+            """)
+    long countDuplicatesBySupplierAndDescription(
+            @Param("supplierId") UUID supplierId,
+            @Param("description") String description,
+            @Param("since") java.time.Instant since
+    );
+
     Optional<Invoice> findByIdAndDeletedAtIsNull(UUID id);
 
     @Query("""
@@ -47,6 +66,14 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
 
     @Query("SELECT i FROM Invoice i WHERE i.deletedAt IS NULL AND i.dueDate < :today AND i.status NOT IN ('PAYE', 'ARCHIVE')")
     List<Invoice> findOverdueInvoices(@Param("today") LocalDate today);
+
+    @Query("""
+            SELECT i
+            FROM Invoice i
+            WHERE i.deletedAt IS NULL
+              AND i.status IN ('EN_VALIDATION_N1', 'EN_VALIDATION_N2')
+            """)
+    Page<Invoice> findPendingValidationQueue(Pageable pageable);
 
     @Query("SELECT i.supplierName, SUM(i.amount) FROM Invoice i WHERE i.deletedAt IS NULL GROUP BY i.supplierName ORDER BY SUM(i.amount) DESC")
     Page<Object[]> findTopSuppliersByAmount(Pageable pageable);

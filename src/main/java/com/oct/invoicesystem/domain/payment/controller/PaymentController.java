@@ -44,7 +44,7 @@ public class PaymentController {
     }
 
     @GetMapping("/invoice/{invoiceId}")
-    @PreAuthorize("hasAnyRole('ASSISTANT_COMPTABLE', 'DAF', 'AUDITEUR', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('ASSISTANT_COMPTABLE', 'DAF', 'ADMIN')")
     @Operation(summary = "Get payment details for an invoice")
     public ResponseEntity<ApiResponse<PaymentDTO>> getPaymentByInvoiceId(@PathVariable UUID invoiceId) {
         PaymentDTO paymentDTO = paymentService.getPaymentByInvoiceId(invoiceId);
@@ -52,7 +52,7 @@ public class PaymentController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ASSISTANT_COMPTABLE', 'DAF', 'AUDITEUR', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('ASSISTANT_COMPTABLE', 'DAF', 'ADMIN')")
     @Operation(summary = "List all payments with optional department filtering")
     public ResponseEntity<ApiResponse<PagedResponse<PaymentDTO>>> listPayments(
             @RequestParam(required = false) String departmentCode,
@@ -63,7 +63,7 @@ public class PaymentController {
     }
 
     @GetMapping("/{paymentId}/remittance")
-    @PreAuthorize("hasAnyRole('ASSISTANT_COMPTABLE', 'DAF', 'AUDITEUR', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('ASSISTANT_COMPTABLE', 'DAF', 'ADMIN')")
     @Operation(summary = "Get pre-signed URL for remittance advice PDF download")
     public ResponseEntity<ApiResponse<String>> getRemittanceDownloadUrl(@PathVariable UUID paymentId) {
         String downloadUrl = remittanceAdviceService.getDownloadUrl(paymentId);

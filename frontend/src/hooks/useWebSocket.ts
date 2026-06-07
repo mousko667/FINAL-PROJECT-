@@ -38,8 +38,11 @@ export function useWebSocket() {
           }
         )
       },
-      onStompError: (frame) => {
-        console.error('STOMP error', frame)
+      onStompError: () => {
+        // WS unavailable — silent fail, notifications will be fetched via polling
+      },
+      onDisconnect: () => {
+        // silent
       },
     })
 

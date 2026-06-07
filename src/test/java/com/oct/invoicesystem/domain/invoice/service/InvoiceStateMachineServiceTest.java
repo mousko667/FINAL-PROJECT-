@@ -6,6 +6,7 @@ import com.oct.invoicesystem.domain.invoice.model.InvoiceDocument;
 import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
 import com.oct.invoicesystem.domain.invoice.repository.InvoiceRepository;
 import com.oct.invoicesystem.domain.invoice.statemachine.InvoiceEvent;
+import com.oct.invoicesystem.domain.invoice.statemachine.WorkflowExtendedStateKeys;
 import com.oct.invoicesystem.domain.user.model.Role;
 import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.domain.user.model.UserRole;
@@ -271,7 +272,8 @@ class InvoiceStateMachineServiceTest {
     @Test
     void archive_Success() {
         invoice.setStatus(InvoiceStatus.PAYE);
-        invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.ARCHIVE, null);
+        invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.ARCHIVE,
+                Map.of(WorkflowExtendedStateKeys.AUTO_ARCHIVE, true));
     }
 
     @Test

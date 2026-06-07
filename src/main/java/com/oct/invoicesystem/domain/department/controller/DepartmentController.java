@@ -28,6 +28,7 @@ public class DepartmentController {
     private final DepartmentService departmentService;
 
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "List all departments", description = "Retrieves a paginated list of departments (All authenticated users)")
     public ResponseEntity<ApiResponse<PagedResponse<DepartmentDTO>>> getDepartments(
             @RequestParam(defaultValue = "0") int page,
@@ -37,6 +38,7 @@ public class DepartmentController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get department by ID", description = "Retrieves a single department (All authenticated users)")
     public ResponseEntity<ApiResponse<DepartmentDTO>> getDepartmentById(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(departmentService.getDepartmentById(id)));

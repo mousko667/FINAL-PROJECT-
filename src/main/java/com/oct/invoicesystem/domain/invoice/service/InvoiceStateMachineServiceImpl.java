@@ -73,9 +73,23 @@ public class InvoiceStateMachineServiceImpl implements InvoiceStateMachineServic
         Invoice invoice = invoiceRepository.findByIdAndDeletedAtIsNull(invoiceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Invoice not found with id " + invoiceId));
 
-        // CRITICAL: Perform three-way matching BEFORE state transition on SUBMIT event
-        if (event.equals(InvoiceEvent.SUBMIT) && invoice.getPurchaseOrderId() != null) {
-            performMatchingCheck(invoice);
+        if (event.equals(InvoiceEvent.ARCHIVE)) {
+            boolean automaticArchive = variables != null
+                    && Boolean.TRUE.equals(variables.get(WorkflowExtendedStateKeys.AUTO_ARCHIVE));
+            if (!automaticArchive) {
+                throw new WorkflowException("Archive transition is automatic and can only be triggered by payment processing");
+            }
+        }
+
+        if (event.equals(InvoiceEvent.SUBMIT)) {
+            // Duplicate detection — block if same supplier already has a non-rejected invoice
+            // with the same description within the last 365 days
+            performDuplicateCheck(invoice);
+
+            // Three-way matching — block if PO is linked and matching result is MISMATCH
+            if (invoice.getPurchaseOrderId() != null) {
+                performMatchingCheck(invoice);
+            }
         }
 
         StateMachine<InvoiceStatus, InvoiceEvent> sm = build(invoice);
@@ -114,6 +128,31 @@ public class InvoiceStateMachineServiceImpl implements InvoiceStateMachineServic
 
         // Publish domain notification events after successful state transition
         publishNotificationEvent(event, invoiceId, variables);
+    }
+
+    /**
+     * Duplicate detection: blocks submission if the same supplier already has a non-rejected,
+     * non-archived invoice with the same description within the last 365 days.
+     */
+    private void performDuplicateCheck(Invoice invoice) {
+        if (invoice.getSupplier() == null || invoice.getDescription() == null || invoice.getDescription().isBlank()) {
+            return; // Cannot detect duplicates without supplier + description
+        }
+        try {
+            java.time.Instant since = java.time.Instant.now().minus(365, java.time.temporal.ChronoUnit.DAYS);
+            long count = invoiceRepository.countDuplicatesBySupplierAndDescription(
+                    invoice.getSupplier().getId(), invoice.getDescription(), since);
+            // Exclude the current invoice itself (it was just created so count should be 1 if it's a dup)
+            if (count > 1) {
+                throw new WorkflowException(
+                        "Duplicate invoice detected: an invoice with the same supplier and description already exists in the system. "
+                        + "Please verify this is not a duplicate before resubmitting.");
+            }
+        } catch (WorkflowException e) {
+            throw e;
+        } catch (Exception e) {
+            log.warn("Duplicate check failed for invoice {}: {}", invoice.getId(), e.getMessage());
+        }
     }
 
     /**

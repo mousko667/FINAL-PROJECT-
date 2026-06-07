@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Facture soumise / Invoice Submitted</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 32px auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+        .header { background: #1a3a5c; padding: 24px; text-align: center; }
+        .header h1 { color: #fff; font-size: 20px; margin: 0; }
+        .body { padding: 32px; color: #333; }
+        .body p { line-height: 1.6; }
+        .invoice-box { background: #f0f4fa; border-left: 4px solid #16a34a; padding: 16px 20px; border-radius: 4px; margin: 20px 0; }
+        .invoice-box p { margin: 6px 0; }
+        .label { font-weight: bold; color: #1a3a5c; }
+        .badge { display: inline-block; background: #dcfce7; color: #15803d; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; margin-bottom: 12px; }
+        .btn { display: inline-block; margin-top: 24px; padding: 12px 28px; background: #1a3a5c; color: #fff; text-decoration: none; border-radius: 6px; font-weight: bold; }
+        .divider { border: none; border-top: 1px solid #e0e0e0; margin: 24px 0; }
+        .footer { background: #f9f9f9; padding: 16px 32px; font-size: 12px; color: #888; text-align: center; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>OCT — Portail Fournisseurs</h1>
+    </div>
+    <div class="body">
+        <div class="badge">✓ Soumise / Submitted</div>
+
+        <!-- FR -->
+        <p>Bonjour,</p>
+        <p>Votre facture a bien été reçue par OCT (Owendo Container Terminal) et est maintenant en cours de traitement.</p>
+        <div class="invoice-box">
+            <p><span class="label">Référence OCT :</span> <span th:text="${reference}">FAC-2026-00001</span></p>
+            <p><span class="label">Montant :</span> <span th:text="${amount}">0 XAF</span></p>
+            <p><span class="label">Statut :</span> En cours de validation</p>
+        </div>
+        <p>Vous pouvez suivre l'état de votre facture en temps réel sur le portail fournisseurs.</p>
+
+        <hr class="divider"/>
+
+        <!-- EN -->
+        <p>Hello,</p>
+        <p>Your invoice has been received by OCT (Owendo Container Terminal) and is now being processed.</p>
+        <div class="invoice-box">
+            <p><span class="label">OCT Reference:</span> <span th:text="${reference}">FAC-2026-00001</span></p>
+            <p><span class="label">Amount:</span> <span th:text="${amount}">0 XAF</span></p>
+            <p><span class="label">Status:</span> Under review</p>
+        </div>
+        <p>You can track the status of your invoice in real time on the supplier portal.</p>
+        <a th:href="${frontendUrl + '/supplier/invoices'}" class="btn">Track Invoice →</a>
+    </div>
+    <div class="footer">
+        OCT — Owendo Container Terminal, Libreville, Gabon · Ne pas répondre à cet email / Do not reply to this email.
+    </div>
+</div>
+</body>
+</html>

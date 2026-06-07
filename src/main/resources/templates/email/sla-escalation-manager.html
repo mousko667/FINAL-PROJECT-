@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Escalade SLA — Facture bloquée</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 32px auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+        .header { background: #0F2540; padding: 24px; text-align: center; }
+        .header h1 { color: #C8A84B; font-size: 20px; margin: 0; }
+        .header p  { color: #93b0d4; font-size: 13px; margin: 6px 0 0; }
+        .body { padding: 32px; color: #333; }
+        .body p { line-height: 1.6; }
+        .invoice-box { background: #fef2f2; border-left: 4px solid #0F2540; padding: 16px 20px; border-radius: 4px; margin: 20px 0; }
+        .invoice-box p { margin: 6px 0; }
+        .label { font-weight: bold; color: #0F2540; }
+        .badge-overdue { display: inline-block; background: #dc2626; color: #fff; font-size: 11px; font-weight: bold; padding: 3px 10px; border-radius: 20px; margin-left: 6px; }
+        .summary { background: #fff8f0; border: 1px solid #f59e0b; border-radius: 6px; padding: 14px 18px; margin: 16px 0; }
+        .btn { display: inline-block; margin-top: 20px; padding: 12px 28px; background: #0F2540; color: #C8A84B; text-decoration: none; border-radius: 6px; font-weight: bold; }
+        .divider { border: none; border-top: 1px solid #e0e0e0; margin: 24px 0; }
+        .footer { background: #f9f9f9; padding: 16px 32px; font-size: 12px; color: #888; text-align: center; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🚨 Escalade SLA — Facture bloquée</h1>
+        <p>OCT · Système de Gestion des Factures</p>
+    </div>
+    <div class="body">
+        <p>Bonjour,</p>
+        <p>Une facture en attente de validation a <strong>dépassé son délai SLA</strong> et nécessite votre attention en tant que responsable.</p>
+
+        <div class="invoice-box">
+            <p>
+                <span class="label">Référence :</span>
+                <span th:text="${reference}">FAC-2026-00001</span>
+                <span class="badge-overdue" th:text="${hoursOverdue + 'h de retard'}">Xh de retard</span>
+            </p>
+            <p><span class="label">Fournisseur :</span> <span th:text="${supplierName}">Fournisseur SA</span></p>
+            <p><span class="label">Montant :</span> <span th:text="${amount}">0 XAF</span></p>
+            <p><span class="label">Étape bloquée :</span> <span th:text="${stepName}">Validation N1</span> (<span th:text="${department}">INFO</span>)</p>
+            <p><span class="label">Validateur concerné :</span> <span th:text="${approverName}">—</span></p>
+            <p><span class="label">Délai initial :</span> <span th:text="${deadline}">—</span></p>
+        </div>
+
+        <div class="summary">
+            <strong>Actions possibles :</strong>
+            <ul style="margin: 8px 0; padding-left: 20px;">
+                <li>Contacter directement le validateur pour débloquer la situation</li>
+                <li>Réassigner l'étape à un validateur suppléant</li>
+                <li>Consulter la facture dans le système pour plus de détails</li>
+            </ul>
+        </div>
+
+        <a th:href="${frontendUrl + '/invoices/' + invoiceId}" class="btn">Voir la facture →</a>
+
+        <hr class="divider"/>
+
+        <p>Hello,</p>
+        <p>An invoice awaiting approval has <strong>breached its SLA deadline</strong> and requires your attention as a manager.</p>
+        <p>Please review the invoice and contact the assigned validator, or reassign the approval step as appropriate.</p>
+        <a th:href="${frontendUrl + '/invoices/' + invoiceId}" class="btn">View invoice →</a>
+    </div>
+    <div class="footer">
+        OCT — Owendo Container Terminal · Ce message est à usage interne exclusivement / For internal use only.<br/>
+        Vous recevez cet email car vous êtes DAF ou Administrateur du système.
+    </div>
+</div>
+</body>
+</html>

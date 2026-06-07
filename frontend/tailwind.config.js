@@ -51,6 +51,15 @@ module.exports = {
           DEFAULT: "var(--card)",
           foreground: "var(--card-foreground)",
         },
+        /* OCT Brand palette — usable as bg-oct-navy, text-oct-gold, etc. */
+        oct: {
+          navy:       "#0F2540",
+          "navy-light": "#1A3A5C",
+          "navy-dark":  "#091829",
+          gold:       "#C8A84B",
+          "gold-light": "#D4BC74",
+          "gold-muted": "#8A7535",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

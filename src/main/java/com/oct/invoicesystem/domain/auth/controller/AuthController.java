@@ -2,6 +2,8 @@ package com.oct.invoicesystem.domain.auth.controller;
 
 import com.oct.invoicesystem.domain.auth.dto.LoginRequest;
 import com.oct.invoicesystem.domain.auth.dto.LoginResponse;
+import com.oct.invoicesystem.domain.auth.dto.PasswordResetConfirmRequest;
+import com.oct.invoicesystem.domain.auth.dto.PasswordResetRequest;
 import com.oct.invoicesystem.domain.auth.dto.RefreshTokenRequest;
 import com.oct.invoicesystem.domain.auth.dto.SupplierRegistrationRequest;
 import com.oct.invoicesystem.domain.auth.service.AuthService;
@@ -54,6 +56,20 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> verifyEmail(@RequestParam("token") String token, java.util.Locale locale) {
         authService.verifyEmail(token);
         return ResponseEntity.ok(ApiResponse.success(null, messageSource.getMessage("supplier.email.verified", null, locale)));
+    }
+
+    @PostMapping("/forgot-password")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody PasswordResetRequest request) {
+        authService.requestPasswordReset(request);
+        return ResponseEntity.ok(ApiResponse.success(null, "If an account exists for this email, a reset link has been sent"));
+    }
+
+    @PostMapping("/reset-password")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody PasswordResetConfirmRequest request) {
+        authService.confirmPasswordReset(request);
+        return ResponseEntity.ok(ApiResponse.success(null, "Password reset successful"));
     }
 
     @PostMapping("/mfa/setup")

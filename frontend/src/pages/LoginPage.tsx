@@ -2,12 +2,12 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { useAppDispatch } from '@/store/hooks'
 import { setCredentials } from '@/store/slices/authSlice'
 import apiClient from '@/services/apiClient'
-import { AlertCircle, Loader2 } from 'lucide-react'
+import { AlertCircle, Loader2, Globe } from 'lucide-react'
 
 const loginSchema = z.object({
   username: z.string().min(1, 'validation.required'),
@@ -27,7 +27,7 @@ interface LoginResponse {
 }
 
 export default function LoginPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
 
@@ -56,12 +56,34 @@ export default function LoginPage() {
           refreshToken,
         })
       )
-      navigate('/dashboard')
+      if (roles.includes('ROLE_SUPPLIER')) {
+        navigate('/supplier/dashboard')
+      } else {
+        navigate('/dashboard')
+      }
     },
   })
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex items-center justify-center p-4">
+      {/* Language switcher — top right corner */}
+      <div className="absolute top-4 right-4 flex items-center gap-1">
+        <Globe className="w-4 h-4 text-white/60" />
+        <button
+          onClick={() => i18n.changeLanguage('fr')}
+          className={`text-sm px-2 py-1 rounded transition-colors ${i18n.language === 'fr' ? 'text-white font-semibold' : 'text-white/60 hover:text-white'}`}
+        >
+          FR
+        </button>
+        <span className="text-white/40">|</span>
+        <button
+          onClick={() => i18n.changeLanguage('en')}
+          className={`text-sm px-2 py-1 rounded transition-colors ${i18n.language === 'en' ? 'text-white font-semibold' : 'text-white/60 hover:text-white'}`}
+        >
+          EN
+        </button>
+      </div>
+
       <div className="w-full max-w-md">
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-2xl p-8">
@@ -151,6 +173,15 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+
+          <div className="mt-6 pt-6 border-t text-center">
+            <p className="text-sm text-gray-500">
+              {t('supplier.register.isSupplier', 'Are you a supplier?')}{' '}
+              <Link to="/register" className="text-primary font-medium hover:underline">
+                {t('supplier.register.linkText', 'Register')}
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

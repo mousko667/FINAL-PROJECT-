@@ -13,6 +13,7 @@ public record InvoiceDTO(
         UUID departmentId,
         UUID submittedBy,
         UUID supplierId,
+        UUID purchaseOrderId,
         String supplierName,
         String supplierEmail,
         String supplierTaxId,
@@ -22,6 +23,7 @@ public record InvoiceDTO(
         LocalDate dueDate,
         String description,
         InvoiceStatus status,
+        String matchingStatus,
         Integer version,
         Instant createdAt,
         Instant updatedAt

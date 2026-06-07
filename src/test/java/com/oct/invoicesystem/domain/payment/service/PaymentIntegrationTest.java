@@ -96,7 +96,7 @@ class PaymentIntegrationTest {
                 .password("hashed_password")
                 .firstName("Jean")
                 .lastName("Dupont")
-                .isActive(true)
+                .active(true)
                 .build();
         assistantComptable = userRepository.save(assistantComptable);
 
@@ -106,7 +106,7 @@ class PaymentIntegrationTest {
                 .password("hashed_password")
                 .firstName("Marie")
                 .lastName("Martin")
-                .isActive(true)
+                .active(true)
                 .build();
         assistantComptable2 = userRepository.save(assistantComptable2);
 

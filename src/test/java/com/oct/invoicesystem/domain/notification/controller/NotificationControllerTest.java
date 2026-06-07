@@ -199,7 +199,7 @@ class NotificationControllerTest {
         User user = userRepository.save(User.builder()
                 .username(username).email(username + "@oct.ga")
                 .password("$2a$12$dummy").firstName("Test").lastName("User")
-                .isActive(true).preferredLang("fr").build());
+                .active(true).preferredLang("fr").build());
 
         UserRoleId id = new UserRoleId();
         id.setUserId(user.getId());

@@ -22,8 +22,12 @@ public class EmailServiceImpl implements EmailService {
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
 
-    @Value("${spring.mail.username:noreply@oct.ga}")
+    // Use dedicated app.mail.from — spring.mail.username may be empty when no SMTP auth is required
+    @Value("${app.mail.from:noreply@oct.ga}")
     private String fromAddress;
+
+    @Value("${app.mail.from-name:OCT Invoice System}")
+    private String fromName;
 
     /**
      * Send a single HTML email using a Thymeleaf template.
@@ -42,7 +46,7 @@ public class EmailServiceImpl implements EmailService {
 
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setFrom(fromAddress);
+            helper.setFrom(fromAddress, fromName);
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(htmlContent, true);

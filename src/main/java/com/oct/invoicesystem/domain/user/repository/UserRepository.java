@@ -15,10 +15,15 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByUsername(String username);
     Optional<User> findByEmail(String email);
 
-    @Query("SELECT u FROM User u JOIN u.userRoles ur WHERE ur.role.name = :roleName AND u.isActive = true")
+    @Query("SELECT u FROM User u JOIN u.userRoles ur WHERE ur.role.name = :roleName AND u.active = true")
     java.util.List<User> findActiveUsersByRoleName(String roleName);
+
+    @Query("SELECT u FROM User u WHERE u.supplier.id = :supplierId AND u.active = true")
+    java.util.List<User> findActiveUsersBySupplierId(java.util.UUID supplierId);
 
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
     Optional<User> findByEmailVerificationToken(String token);
+
+    Optional<User> findByPasswordResetToken(String token);
 }

@@ -4,17 +4,19 @@ import com.oct.invoicesystem.domain.webhook.model.Webhook;
 import com.oct.invoicesystem.domain.webhook.model.WebhookDelivery;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
+import org.springframework.data.repository.Repository;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-@Repository
-public interface WebhookDeliveryRepository extends JpaRepository<WebhookDelivery, UUID> {
+@org.springframework.stereotype.Repository
+public interface WebhookDeliveryRepository extends Repository<WebhookDelivery, UUID> {
+
+    <S extends WebhookDelivery> S save(S delivery);
+
     Page<WebhookDelivery> findByWebhookOrderByCreatedAtDesc(Webhook webhook, Pageable pageable);
 
     @Query("SELECT wd FROM WebhookDelivery wd WHERE wd.webhook = ?1 ORDER BY wd.createdAt DESC LIMIT 1")

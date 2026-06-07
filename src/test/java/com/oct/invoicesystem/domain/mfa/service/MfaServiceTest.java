@@ -77,16 +77,14 @@ class MfaServiceTest {
     void testVerifyOtp_WithValidOtp_ReturnsTrue() throws CodeGenerationException {
         String secret = mfaService.generateSecret();
         
-        // Note: We test the general flow; actual OTP validation depends on time sync
-        // The CodeVerifier handles time-window tolerance internally
         assertNotNull(secret);
-        // Generate a valid OTP for current time
+        // Generate a valid OTP for current time using the same algorithm as MfaService
         CodeGenerator codeGenerator = new DefaultCodeGenerator(HashingAlgorithm.SHA1, MfaService.OTP_DIGITS);
-        String validOtp = codeGenerator.generate(secret, System.currentTimeMillis() / 1000L);
-        // The verification should work within the current time window
-        boolean result = mfaService.verifyOtp(secret, validOtp);
-        // Accept if passes; time window may have shifted between generation and verification
-        assertNotNull(result);
+        long currentPeriod = System.currentTimeMillis() / 1000L / MfaService.OTP_PERIOD_SECONDS;
+        String validOtp = codeGenerator.generate(secret, currentPeriod);
+        // verifyOtp must return true for an OTP generated in the current time window
+        assertTrue(mfaService.verifyOtp(secret, validOtp),
+                "verifyOtp must return true for a freshly generated OTP");
     }
 
     @Test
@@ -147,17 +145,14 @@ class MfaServiceTest {
         
         CodeGenerator codeGenerator = new DefaultCodeGenerator(HashingAlgorithm.SHA1, MfaService.OTP_DIGITS);
         
-        // Generate OTP for current time
-        long currentTimeSeconds = System.currentTimeMillis() / 1000L;
-        String currentOtp = codeGenerator.generate(secret, currentTimeSeconds);
-        
-        // Verify current OTP (should work if time window hasn't shifted)
-        boolean currentResult = mfaService.verifyOtp(secret, currentOtp);
-        assertNotNull(currentResult);
-        
-        // Verify the service accepts valid-format OTPs
-        // The actual time window behavior is handled by the underlying CodeVerifier
-        assertTrue(currentOtp.matches("\\d{6}"));
+        // Generate OTP for the current 30-second period
+        long currentPeriod = System.currentTimeMillis() / 1000L / MfaService.OTP_PERIOD_SECONDS;
+        String currentOtp = codeGenerator.generate(secret, currentPeriod);
+
+        // The OTP must be valid and have the correct 6-digit format
+        assertTrue(currentOtp.matches("\\d{6}"), "OTP must be 6 digits");
+        assertTrue(mfaService.verifyOtp(secret, currentOtp),
+                "verifyOtp must accept OTP for the current time period");
     }
 
     @Test

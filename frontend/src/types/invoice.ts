@@ -29,16 +29,23 @@ export interface InvoiceDocument {
 export interface Invoice {
   id: string
   referenceNumber: string
+  supplierId?: string
   supplierName: string
+  supplierEmail?: string
+  supplierTaxId?: string
+  purchaseOrderId?: string
   amount: number
   currency: string
   issueDate: string
   dueDate: string
   status: InvoiceStatus
+  matchingStatus?: 'MATCHED' | 'PARTIAL' | 'MISMATCH' | 'OVERRIDDEN' | null
   description?: string
   department?: {
     id: string
     name: string
+    nameEn?: string
+    nameFr?: string
     code: string
   }
   lineItems?: InvoiceLineItem[]

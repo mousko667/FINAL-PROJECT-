@@ -1,6 +1,8 @@
 import { useTranslation } from 'react-i18next'
+import { useQuery } from '@tanstack/react-query'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { Invoice } from '@/types/invoice'
+import apiClient from '@/services/apiClient'
 
 interface InvoiceTimelineProps {
   invoice: Invoice
@@ -10,15 +12,21 @@ interface StatusHistory {
   id: string
   fromStatus: string
   toStatus: string
-  changedBy?: { username: string }
+  changedByUsername?: string
   changedAt: string
   changeReason?: string
 }
 
 export function InvoiceTimeline({ invoice }: InvoiceTimelineProps) {
   const { t } = useTranslation()
-  // In a real implementation, history comes from invoice or a separate query
-  const history: StatusHistory[] = (invoice as Invoice & { statusHistory?: StatusHistory[] }).statusHistory ?? []
+  const { data: history = [] } = useQuery({
+    queryKey: ['invoice-history', invoice.id],
+    queryFn: async () => {
+      const response = await apiClient.get<{ data: StatusHistory[] }>(`/invoices/${invoice.id}/history`)
+      return response.data.data
+    },
+    enabled: !!invoice.id,
+  })
 
   return (
     <div className="bg-white rounded-xl border p-5">
@@ -34,11 +42,11 @@ export function InvoiceTimeline({ invoice }: InvoiceTimelineProps) {
               </span>
               <div className="flex items-center gap-2 flex-wrap">
                 <StatusBadge status={h.fromStatus as never} />
-                <span className="text-gray-400 text-xs">→</span>
+                <span className="text-gray-400 text-xs">to</span>
                 <StatusBadge status={h.toStatus as never} />
               </div>
               <div className="mt-1 text-xs text-muted-foreground">
-                {h.changedBy?.username} · {new Date(h.changedAt).toLocaleString()}
+                {h.changedByUsername ?? 'System'} - {new Date(h.changedAt).toLocaleString()}
               </div>
               {h.changeReason && (
                 <p className="mt-1 text-xs text-gray-600 italic">{h.changeReason}</p>

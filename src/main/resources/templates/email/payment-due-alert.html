@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Payment Due Alert</title>
+</head>
+<body style="font-family: Arial, sans-serif; color: #1f2933;">
+    <h2>Payment Due Alert</h2>
+    <p>The following invoice is due for payment soon.</p>
+    <p><strong>Reference:</strong> <span th:text="${reference}">FAC-2026-00001</span></p>
+    <p><strong>Supplier:</strong> <span th:text="${supplierName}">Supplier</span></p>
+    <p><strong>Amount:</strong> <span th:text="${amount}">0 XAF</span></p>
+    <p><strong>Due date:</strong> <span th:text="${dueDate}">2026-01-01</span></p>
+    <p><strong>Days until due:</strong> <span th:text="${daysUntilDue}">7</span></p>
+    <p><a th:href="${frontendUrl}" style="display:inline-block;padding:10px 16px;background:#1a3a5c;color:#ffffff;text-decoration:none;border-radius:4px;">Open OCT Invoice System</a></p>
+</body>
+</html>

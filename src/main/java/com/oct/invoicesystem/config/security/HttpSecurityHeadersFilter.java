@@ -32,19 +32,20 @@ public class HttpSecurityHeadersFilter extends OncePerRequestFilter {
     // Prevent MIME type sniffing (e.g., serving JS as text/html)
     response.setHeader("X-Content-Type-Options", "nosniff");
     
-    // Content Security Policy: only allow same-origin resources
-    // Allow self for styles, scripts, images
-    // Disallow unsafe-inline and unsafe-eval
+    // Content Security Policy — no unsafe-inline or unsafe-eval.
+    // The React SPA is bundled into static files; all scripts and styles are external assets.
+    // WebSocket connections to the same origin are permitted for STOMP notifications.
     response.setHeader("Content-Security-Policy",
         "default-src 'self'; " +
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-        "style-src 'self' 'unsafe-inline'; " +
+        "script-src 'self'; " +
+        "style-src 'self'; " +
         "img-src 'self' data: https:; " +
         "font-src 'self'; " +
         "connect-src 'self' ws: wss:; " +
         "frame-ancestors 'none'; " +
         "base-uri 'self'; " +
-        "form-action 'self'");
+        "form-action 'self'; " +
+        "object-src 'none'");
     
     // HTTP Strict Transport Security (HSTS)
     // Force HTTPS for 1 year, include subdomains

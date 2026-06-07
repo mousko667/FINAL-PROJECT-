@@ -12,6 +12,7 @@ import java.util.UUID;
 public record InvoiceCreateRequest(
         @NotNull UUID departmentId,
         UUID supplierId,
+        UUID purchaseOrderId,
         @Size(max = 255) String supplierName,
         @Email @Size(max = 255) String supplierEmail,
         String supplierTaxId,
@@ -22,4 +23,20 @@ public record InvoiceCreateRequest(
         @NotNull LocalDate dueDate,
         String description
 ) {
+    public InvoiceCreateRequest(
+            UUID departmentId,
+            UUID supplierId,
+            String supplierName,
+            String supplierEmail,
+            String supplierTaxId,
+            String supplierBankDetails,
+            BigDecimal amount,
+            String currency,
+            LocalDate issueDate,
+            LocalDate dueDate,
+            String description
+    ) {
+        this(departmentId, supplierId, null, supplierName, supplierEmail, supplierTaxId,
+                supplierBankDetails, amount, currency, issueDate, dueDate, description);
+    }
 }

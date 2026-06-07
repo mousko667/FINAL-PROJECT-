@@ -2,23 +2,45 @@ package com.oct.invoicesystem.domain.auth.service;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.SecretKey;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * JWT service using RS256 asymmetric signing (RSA-2048).
+ *
+ * The private key signs tokens and is kept secret on the server.
+ * The public key verifies tokens and can be distributed safely.
+ *
+ * Keys are loaded from environment variables as Base64-encoded DER bytes:
+ *   JWT_PRIVATE_KEY  — PKCS#8 Base64-encoded RSA private key
+ *   JWT_PUBLIC_KEY   — X.509 Base64-encoded RSA public key
+ *
+ * To generate a key pair (run once, store in secrets manager):
+ *   openssl genrsa -out private.pem 2048
+ *   openssl pkcs8 -topk8 -inform PEM -outform DER -in private.pem -nocrypt | base64 -w0
+ *   openssl rsa -in private.pem -pubout -outform DER | base64 -w0
+ */
 @Service
 public class JwtService {
 
-    @Value("${jwt.secret}")
-    private String secretKey;
+    @Value("${jwt.private-key}")
+    private String privateKeyBase64;
+
+    @Value("${jwt.public-key}")
+    private String publicKeyBase64;
 
     @Value("${jwt.expiration-ms}")
     private long jwtExpirationMs;
@@ -29,13 +51,14 @@ public class JwtService {
     @Value("${jwt.pre-auth-expiration-ms:300000}")
     private long preAuthExpirationMs;
 
+    // ── Public API ────────────────────────────────────────────────────────────
+
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(token);
-        return claimsResolver.apply(claims);
+        return claimsResolver.apply(extractAllClaims(token));
     }
 
     public String generateToken(UserDetails userDetails) {
@@ -60,39 +83,53 @@ public class JwtService {
         return "pre_auth".equals(extractClaim(token, claims -> claims.get("type", String.class)));
     }
 
+    public boolean isTokenValid(String token, UserDetails userDetails) {
+        final String username = extractUsername(token);
+        return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+    }
+
+    // ── Internal helpers ──────────────────────────────────────────────────────
+
+    @SuppressWarnings("deprecation")
     private String buildToken(Map<String, Object> extraClaims, UserDetails userDetails, long expiration) {
         return Jwts.builder()
                 .claims(extraClaims)
                 .subject(userDetails.getUsername())
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSignInKey(), Jwts.SIG.HS256)
+                .signWith(getPrivateKey(), SignatureAlgorithm.RS256)
                 .compact();
     }
 
-    public boolean isTokenValid(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
-    }
-
     private boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
-    }
-
-    private Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
+        return extractClaim(token, Claims::getExpiration).before(new Date());
     }
 
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
-                .verifyWith(getSignInKey())
+                .verifyWith(getPublicKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
     }
 
-    private SecretKey getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
-        return Keys.hmacShaKeyFor(keyBytes);
+    private PrivateKey getPrivateKey() {
+        try {
+            byte[] keyBytes = Decoders.BASE64.decode(privateKeyBase64);
+            return KeyFactory.getInstance("RSA")
+                    .generatePrivate(new PKCS8EncodedKeySpec(keyBytes));
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to load RSA private key for JWT signing", e);
+        }
+    }
+
+    private PublicKey getPublicKey() {
+        try {
+            byte[] keyBytes = Decoders.BASE64.decode(publicKeyBase64);
+            return KeyFactory.getInstance("RSA")
+                    .generatePublic(new X509EncodedKeySpec(keyBytes));
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to load RSA public key for JWT verification", e);
+        }
     }
 }
