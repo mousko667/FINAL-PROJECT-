@@ -238,6 +238,16 @@
 - **Règle préventive :** Tout champ contenant des données financières ou personnelles sensibles DOIT avoir `@Convert(EncryptionAttributeConverter)`. Créer un test de réflexion qui vérifie la présence de l'annotation sur tous les champs `*BankDetails`, `*Secret`, `*Password` dans les entités JPA.
 - **Fichiers modifiés :** `Invoice.java`, `V35__encrypt_invoice_bank_details.sql`
 
+### [PROB-019] AuditLoggingFilter existait mais n'était pas câblé dans Spring Security
+- **Catégorie :** Architecture
+- **Sévérité :** 🔴 Critique
+- **Découvert :** 2026-06-06 — Audit complet
+- **Symptôme :** La table `audit_logs` ne recevait aucune entrée des filtres HTTP. Seules les actions explicitement loggées par les services apparaissaient.
+- **Cause racine :** `AuditLoggingFilter` était un `@Component` Spring mais n'était jamais ajouté à la chaîne de filtres `SecurityConfig`. Spring ne l'incluait donc pas automatiquement dans la chaîne de sécurité (contrairement aux filtres déclarés via `web.xml`).
+- **Solution appliquée :** Injection de `AuditLoggingFilter` dans `SecurityConfig` et ajout via `.addFilterAfter(auditLoggingFilter, UsernamePasswordAuthenticationFilter.class)`. Note : `JwtAuthenticationFilter` ne peut pas être utilisé comme point d'ancrage dans `addFilterAfter` car il s'agit d'un filtre custom sans ordre enregistré — Spring Security exige un filtre standard (comme `UsernamePasswordAuthenticationFilter`) comme référence.
+- **Règle préventive :** Tout filtre Spring Security DOIT être explicitement ajouté dans `SecurityConfig.securityFilterChain()`. L'annotation `@Component` seule ne l'inclut pas dans la chaîne de sécurité. Pour `addFilterAfter`/`addFilterBefore`, utiliser uniquement des filtres Spring Security standard ayant un ordre enregistré (ex: `UsernamePasswordAuthenticationFilter`). Vérifier à chaque ajout de filtre qu'il est câblé ET dans le bon ordre.
+- **Fichiers modifiés :** `SecurityConfig.java`
+
 ---
 
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER

@@ -21,6 +21,7 @@ import com.oct.invoicesystem.domain.auth.filter.JwtAuthenticationFilter;
 import com.oct.invoicesystem.config.security.MfaSetupEnforcementFilter;
 import com.oct.invoicesystem.config.security.RateLimitingFilter;
 import com.oct.invoicesystem.config.security.HttpSecurityHeadersFilter;
+import com.oct.invoicesystem.shared.filter.AuditLoggingFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -31,15 +32,18 @@ public class SecurityConfig {
     private final RateLimitingFilter rateLimitingFilter;
     private final HttpSecurityHeadersFilter httpSecurityHeadersFilter;
     private final MfaSetupEnforcementFilter mfaSetupEnforcementFilter;
+    private final AuditLoggingFilter auditLoggingFilter;
 
     public SecurityConfig(@org.springframework.context.annotation.Lazy JwtAuthenticationFilter jwtAuthFilter,
                          RateLimitingFilter rateLimitingFilter,
                          HttpSecurityHeadersFilter httpSecurityHeadersFilter,
-                         MfaSetupEnforcementFilter mfaSetupEnforcementFilter) {
+                         MfaSetupEnforcementFilter mfaSetupEnforcementFilter,
+                         AuditLoggingFilter auditLoggingFilter) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.rateLimitingFilter = rateLimitingFilter;
         this.httpSecurityHeadersFilter = httpSecurityHeadersFilter;
         this.mfaSetupEnforcementFilter = mfaSetupEnforcementFilter;
+        this.auditLoggingFilter = auditLoggingFilter;
     }
 
     
@@ -54,6 +58,8 @@ public class SecurityConfig {
                         "/api/v1/auth/refresh",
                         "/api/v1/auth/register/supplier",
                         "/api/v1/auth/verify-email",
+                        "/api/v1/auth/forgot-password",
+                        "/api/v1/auth/reset-password",
                         "/api/v1/auth/mfa/validate"
                 ).permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
@@ -65,7 +71,8 @@ public class SecurityConfig {
             .addFilterBefore(httpSecurityHeadersFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-            .addFilterAfter(mfaSetupEnforcementFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterAfter(mfaSetupEnforcementFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterAfter(auditLoggingFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
