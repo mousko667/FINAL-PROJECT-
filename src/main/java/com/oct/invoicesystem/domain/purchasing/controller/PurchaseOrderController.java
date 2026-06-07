@@ -10,9 +10,8 @@ import com.oct.invoicesystem.domain.purchasing.model.PurchaseOrderItem;
 import com.oct.invoicesystem.domain.purchasing.model.PurchaseOrderStatus;
 import com.oct.invoicesystem.domain.purchasing.service.PurchaseOrderService;
 import com.oct.invoicesystem.domain.user.model.User;
-import com.oct.invoicesystem.domain.user.repository.UserRepository;
-import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 import com.oct.invoicesystem.shared.response.ApiResponse;
+import com.oct.invoicesystem.shared.util.SecurityHelper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -45,19 +44,16 @@ public class PurchaseOrderController {
 
     private final PurchaseOrderService purchaseOrderService;
     private final PurchaseOrderMapper purchaseOrderMapper;
-    private final UserRepository userRepository;
+    private final SecurityHelper securityHelper;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_ASSISTANT_COMPTABLE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
     @Operation(summary = "Create purchase order", description = "Creates a new purchase order with items")
     public ResponseEntity<ApiResponse<PurchaseOrderDTO>> createPurchaseOrder(
             @Valid @RequestBody PurchaseOrderCreateRequest request,
             Authentication authentication) {
-        UUID actorId = getActorId(authentication);
-        User actor = userRepository.findById(actorId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + actorId));
+        User actor = securityHelper.currentUser(authentication);
 
-        // Convert PO items
         List<PurchaseOrderItem> items = request.items().stream()
                 .map(itemReq -> {
                     BigDecimal lineTotal = itemReq.quantity().multiply(itemReq.unitPrice());
@@ -83,7 +79,7 @@ public class PurchaseOrderController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_ASSISTANT_COMPTABLE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
     @Operation(summary = "Get purchase order", description = "Retrieves a purchase order with all items")
     public ResponseEntity<ApiResponse<PurchaseOrderDTO>> getPurchaseOrder(@PathVariable UUID id) {
         PurchaseOrder po = purchaseOrderService.getPurchaseOrderWithItems(id);
@@ -92,11 +88,13 @@ public class PurchaseOrderController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_ASSISTANT_COMPTABLE')")
-    @Operation(summary = "List purchase orders by supplier", description = "Lists all purchase orders for a given supplier")
-    public ResponseEntity<ApiResponse<List<PurchaseOrderDTO>>> listBySupplier(
-            @RequestParam UUID supplierId) {
-        List<PurchaseOrder> pos = purchaseOrderService.listBySupplier(supplierId);
+    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE', 'DAF')")
+    @Operation(summary = "List purchase orders", description = "Lists purchase orders, optionally filtered by supplier")
+    public ResponseEntity<ApiResponse<List<PurchaseOrderDTO>>> listPurchaseOrders(
+            @RequestParam(required = false) UUID supplierId) {
+        List<PurchaseOrder> pos = supplierId != null
+                ? purchaseOrderService.listBySupplier(supplierId)
+                : purchaseOrderService.listAll();
         List<PurchaseOrderDTO> dtos = pos.stream()
                 .map(purchaseOrderMapper::toPurchaseOrderDTO)
                 .toList();
@@ -104,7 +102,7 @@ public class PurchaseOrderController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_ASSISTANT_COMPTABLE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
     @Operation(summary = "Update purchase order", description = "Updates a purchase order status and items")
     public ResponseEntity<ApiResponse<PurchaseOrderDTO>> updatePurchaseOrder(
             @PathVariable UUID id,
@@ -116,17 +114,10 @@ public class PurchaseOrderController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_ASSISTANT_COMPTABLE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
     @Operation(summary = "Delete purchase order", description = "Soft-deletes a purchase order")
     public ResponseEntity<ApiResponse<Void>> deletePurchaseOrder(@PathVariable UUID id) {
         purchaseOrderService.deletePurchaseOrder(id);
         return ResponseEntity.ok(ApiResponse.success(null, "purchase_order.deleted"));
-    }
-
-    private UUID getActorId(Authentication authentication) {
-        String username = authentication.getName();
-        return userRepository.findByUsername(username)
-                .map(User::getId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
     }
 }

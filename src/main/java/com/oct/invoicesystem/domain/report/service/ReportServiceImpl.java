@@ -19,6 +19,7 @@ import com.oct.invoicesystem.domain.report.dto.CashFlowWeekDTO;
 import com.oct.invoicesystem.domain.report.dto.DashboardKpiDTO;
 import com.oct.invoicesystem.domain.report.dto.SupplierPaymentHistoryDTO;
 import com.oct.invoicesystem.domain.report.dto.SupplierPerformanceDTO;
+import com.oct.invoicesystem.domain.workflow.dto.InvoiceHistoryDTO;
 import com.oct.invoicesystem.domain.workflow.model.ApprovalStep;
 import com.oct.invoicesystem.domain.workflow.model.ApprovalStepStatus;
 import com.oct.invoicesystem.domain.workflow.model.InvoiceStatusHistory;
@@ -707,6 +708,17 @@ public class ReportServiceImpl implements ReportService {
                 .matchedInvoices(matchedCount)
                 .mismatchedInvoices(mismatchedCount)
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<InvoiceHistoryDTO> getRecentActivity(int limit) {
+        int boundedLimit = Math.max(1, Math.min(limit, 100));
+        return historyRepository.findAllByOrderByChangedAtDesc(PageRequest.of(0, boundedLimit)).stream()
+                .map(h -> new InvoiceHistoryDTO(h.getId(), null, null,
+                        h.getFromStatus(), h.getToStatus(), null, null,
+                        h.getChangeReason(), h.getChangedAt()))
+                .toList();
     }
 
     private String mapStepOrderToName(Integer stepOrder) {

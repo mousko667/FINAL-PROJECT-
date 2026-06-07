@@ -8,11 +8,11 @@ import com.oct.invoicesystem.domain.report.dto.DashboardKpiDTO;
 import com.oct.invoicesystem.domain.report.dto.SupplierPaymentHistoryDTO;
 import com.oct.invoicesystem.domain.report.dto.SupplierPerformanceDTO;
 import com.oct.invoicesystem.domain.report.service.ReportService;
+import com.oct.invoicesystem.domain.workflow.dto.InvoiceHistoryDTO;
 import com.oct.invoicesystem.shared.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -38,14 +38,28 @@ public class ReportController {
     private final ReportService reportService;
 
     @GetMapping("/kpis")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('DAF')")
+    @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
     @Operation(summary = "Get Dashboard KPIs", description = "Retrieves real-time KPIs for the dashboard")
     public ApiResponse<DashboardKpiDTO> getKpis() {
         return ApiResponse.success(reportService.getDashboardKpis());
     }
 
+    @GetMapping("/summary")
+    @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
+    @Operation(summary = "Get report summary", description = "Alias for /kpis — invoice counts and metrics")
+    public ApiResponse<DashboardKpiDTO> getSummary() {
+        return ApiResponse.success(reportService.getDashboardKpis());
+    }
+
+    @GetMapping("/activity")
+    @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
+    @Operation(summary = "Get recent invoice activity", description = "Returns recent invoice status changes for dashboard activity feeds")
+    public ApiResponse<List<InvoiceHistoryDTO>> getRecentActivity(@RequestParam(defaultValue = "20") int limit) {
+        return ApiResponse.success(reportService.getRecentActivity(limit));
+    }
+
     @GetMapping("/export/excel")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('DAF')")
+    @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
     @Operation(summary = "Export Invoices to Excel", description = "Generates and downloads an Excel file of filtered invoices")
     public ResponseEntity<Resource> exportExcel(
             @RequestParam(required = false) InvoiceStatus status,
@@ -64,7 +78,7 @@ public class ReportController {
     }
 
     @GetMapping("/export/pdf/audit/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('DAF')")
+    @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
     @Operation(summary = "Export Invoice Audit to PDF", description = "Generates and downloads a detailed audit trail for a specific invoice")
     public ResponseEntity<Resource> exportAuditPdf(@PathVariable UUID id) {
         ByteArrayInputStream stream = reportService.generateInvoiceAuditPdf(id);
@@ -77,7 +91,7 @@ public class ReportController {
     }
 
     @GetMapping("/export/pdf/compliance")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('DAF')")
+    @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
     @Operation(summary = "Export Compliance Report to PDF", description = "Generates and downloads a compliance summary for a date range")
     public ResponseEntity<Resource> exportCompliancePdf(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
@@ -93,14 +107,14 @@ public class ReportController {
     }
 
     @GetMapping("/aging")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('DAF')")
+    @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
     @Operation(summary = "Get Aging Analysis Report", description = "Analyzes overdue invoices grouped by days overdue")
     public ApiResponse<AgingReportDTO> getAgingAnalysis() {
         return ApiResponse.success(reportService.getAgingAnalysis());
     }
 
     @GetMapping("/cash-flow")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('DAF')")
+    @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
     @Operation(summary = "Get Cash Flow Projection", description = "Projects cash flow for invoices due within N days, grouped by week")
     public ApiResponse<CashFlowProjectionDTO> getCashFlowProjection(
             @RequestParam(defaultValue = "30") int days) {
@@ -108,7 +122,7 @@ public class ReportController {
     }
 
     @GetMapping("/supplier/{supplierId}/payments")
-    @PreAuthorize("hasAnyRole('DAF', 'AUDITEUR', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
     @Operation(summary = "Get Supplier Payment History", description = "Retrieves all payments made to a specific supplier")
     public ApiResponse<List<SupplierPaymentHistoryDTO>> getSupplierPaymentHistory(
             @PathVariable UUID supplierId) {
@@ -116,14 +130,14 @@ public class ReportController {
     }
 
     @GetMapping("/bottlenecks")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('DAF') or hasRole('AUDITEUR')")
+    @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
     @Operation(summary = "Get Approval Bottlenecks", description = "Detects approval steps exceeding 3-day SLA")
     public ApiResponse<List<BottleneckDTO>> getApprovalBottlenecks() {
         return ApiResponse.success(reportService.getApprovalBottlenecks());
     }
 
     @GetMapping("/supplier/{supplierId}/performance")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('DAF') or hasRole('AUDITEUR')")
+    @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
     @Operation(summary = "Get Supplier Performance Metrics", description = "Returns accuracy rate, rejection rate, and average payment time for a supplier")
     public ApiResponse<SupplierPerformanceDTO> getSupplierPerformance(@PathVariable UUID supplierId) {
         return ApiResponse.success(reportService.getSupplierPerformance(supplierId));

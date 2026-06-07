@@ -248,6 +248,16 @@
 - **Règle préventive :** Tout filtre Spring Security DOIT être explicitement ajouté dans `SecurityConfig.securityFilterChain()`. L'annotation `@Component` seule ne l'inclut pas dans la chaîne de sécurité. Pour `addFilterAfter`/`addFilterBefore`, utiliser uniquement des filtres Spring Security standard ayant un ordre enregistré (ex: `UsernamePasswordAuthenticationFilter`). Vérifier à chaque ajout de filtre qu'il est câblé ET dans le bon ordre.
 - **Fichiers modifiés :** `SecurityConfig.java`
 
+### [PROB-020] Repositories injectés directement dans 7+ contrôleurs (violation layer rules)
+- **Catégorie :** Architecture
+- **Sévérité :** 🔴 Critique
+- **Découvert :** 2026-06-06 — Audit complet
+- **Symptôme :** Logique métier et queries dans les contrôleurs. Contournement des services. Transactions non gérées par @Transactional dans les contrôleurs.
+- **Cause racine :** Pattern de "raccourci" : certains contrôleurs injectaient des repositories pour éviter d'ajouter une méthode de service. Pratique acceptable en prototype mais interdite en CLAUDE.md §3.
+- **Solution appliquée :** Création de `SecurityHelper` pour la résolution de l'utilisateur courant. Déplacement de toute la logique dans les services. Utilisation de `InvoiceMapper` au lieu de `toDto()` manuelle.
+- **Règle préventive :** Un contrôleur ne peut contenir que : (1) routing/binding, (2) un seul appel de service, (3) wrapping de la réponse. Si un contrôleur a besoin de plus d'un service ou d'un repository, la logique doit être dans un service.
+- **Fichiers modifiés :** SecurityHelper.java (créé), InvoiceController.java, ApprovalController.java, UserProfileController.java, SupplierController.java, SupplierPortalController.java, MatchingConfigController.java, PurchaseOrderController.java, ReportController.java, InvoiceService.java, ApprovalService.java, ApprovalServiceImpl.java, ReportService.java, ReportServiceImpl.java, UserService.java, SupplierService.java, SupplierServiceImpl.java
+
 ---
 
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER

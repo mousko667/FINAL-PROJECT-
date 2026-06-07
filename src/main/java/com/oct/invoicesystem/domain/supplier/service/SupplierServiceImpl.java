@@ -5,8 +5,12 @@ import com.oct.invoicesystem.domain.supplier.dto.SupplierResponse;
 import com.oct.invoicesystem.domain.supplier.dto.SupplierUpdateRequest;
 import com.oct.invoicesystem.domain.supplier.mapper.SupplierMapper;
 import com.oct.invoicesystem.domain.supplier.model.Supplier;
+import com.oct.invoicesystem.domain.supplier.model.SupplierDocument;
+import com.oct.invoicesystem.domain.supplier.model.SupplierDocumentType;
 import com.oct.invoicesystem.domain.supplier.model.SupplierStatus;
+import com.oct.invoicesystem.domain.supplier.repository.SupplierDocumentRepository;
 import com.oct.invoicesystem.domain.supplier.repository.SupplierRepository;
+import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 import com.oct.invoicesystem.shared.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -26,6 +31,7 @@ public class SupplierServiceImpl implements SupplierService {
 
     private final SupplierRepository supplierRepository;
     private final SupplierMapper supplierMapper;
+    private final SupplierDocumentRepository supplierDocumentRepository;
 
     @Override
     public SupplierResponse createSupplier(SupplierCreateRequest request) {
@@ -53,7 +59,7 @@ public class SupplierServiceImpl implements SupplierService {
     @Override
     @Transactional(readOnly = true)
     public Page<SupplierResponse> searchSuppliers(String name, String taxId, SupplierStatus status, Pageable pageable) {
-        return supplierRepository.searchSuppliers(name, taxId, status, pageable)
+        return supplierRepository.searchSuppliers(name, taxId, status != null ? status.name() : null, pageable)
                 .map(supplierMapper::toResponse);
     }
 
@@ -95,5 +101,30 @@ public class SupplierServiceImpl implements SupplierService {
             "rejectionRate", 0.0,
             "averagePaymentTimeDays", 15
         );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SupplierDocument> listDocuments(UUID supplierId) {
+        return supplierDocumentRepository.findBySupplierId(supplierId);
+    }
+
+    @Override
+    @Transactional
+    public SupplierDocument uploadDocument(UUID supplierId, SupplierDocumentType documentType,
+                                            String originalFilename, String objectKey,
+                                            Long fileSizeBytes, String checksumSha256, User uploadedBy) {
+        Supplier supplier = new Supplier();
+        supplier.setId(supplierId);
+        SupplierDocument document = SupplierDocument.builder()
+                .supplier(supplier)
+                .documentType(documentType)
+                .originalFilename(originalFilename)
+                .minioObjectKey(objectKey)
+                .fileSizeBytes(fileSizeBytes)
+                .checksumSha256(checksumSha256)
+                .uploadedBy(uploadedBy)
+                .build();
+        return supplierDocumentRepository.save(document);
     }
 }

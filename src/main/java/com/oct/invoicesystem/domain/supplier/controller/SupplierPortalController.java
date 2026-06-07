@@ -1,19 +1,29 @@
 package com.oct.invoicesystem.domain.supplier.controller;
 
 import com.oct.invoicesystem.domain.invoice.dto.InvoiceCreateRequest;
+import com.oct.invoicesystem.domain.invoice.dto.InvoiceDocumentDTO;
 import com.oct.invoicesystem.domain.invoice.dto.InvoiceDTO;
+import com.oct.invoicesystem.domain.invoice.model.InvoiceDocument;
 import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
+import com.oct.invoicesystem.domain.invoice.service.InvoiceDocumentService;
 import com.oct.invoicesystem.domain.invoice.service.InvoiceService;
+import com.oct.invoicesystem.domain.invoice.service.InvoiceStateMachineService;
 import com.oct.invoicesystem.domain.invoice.model.Invoice;
+import com.oct.invoicesystem.domain.invoice.statemachine.InvoiceEvent;
+import com.oct.invoicesystem.domain.invoice.statemachine.WorkflowExtendedStateKeys;
 import com.oct.invoicesystem.domain.supplier.dto.SupplierUpdateRequest;
 import com.oct.invoicesystem.domain.supplier.dto.SupplierResponse;
 import com.oct.invoicesystem.domain.supplier.model.Supplier;
+import com.oct.invoicesystem.domain.supplier.model.SupplierDocument;
+import com.oct.invoicesystem.domain.supplier.model.SupplierDocumentType;
 import com.oct.invoicesystem.domain.supplier.service.SupplierService;
+import com.oct.invoicesystem.domain.storage.service.MinioStorageService;
 import com.oct.invoicesystem.domain.user.model.User;
-import com.oct.invoicesystem.domain.user.repository.UserRepository;
+import com.oct.invoicesystem.shared.exception.ValidationException;
 import com.oct.invoicesystem.shared.response.ApiResponse;
 import com.oct.invoicesystem.shared.response.PagedResponse;
 import com.oct.invoicesystem.domain.department.model.Department;
+import com.oct.invoicesystem.shared.util.SecurityHelper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,14 +35,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import com.oct.invoicesystem.domain.supplier.repository.SupplierRepository;
-import com.oct.invoicesystem.shared.exception.ValidationException;
-import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
-
-import com.oct.invoicesystem.domain.supplier.model.SupplierDocumentType;
-import com.oct.invoicesystem.domain.supplier.model.SupplierDocument;
-import com.oct.invoicesystem.domain.supplier.repository.SupplierDocumentRepository;
-import com.oct.invoicesystem.domain.storage.service.MinioStorageService;
 
 import java.security.MessageDigest;
 import java.time.LocalDate;
@@ -51,27 +53,19 @@ import java.util.HashMap;
 public class SupplierPortalController {
 
     private final InvoiceService invoiceService;
+    private final InvoiceStateMachineService invoiceStateMachineService;
+    private final InvoiceDocumentService invoiceDocumentService;
     private final SupplierService supplierService;
-    private final UserRepository userRepository;
-    private final SupplierRepository supplierRepository;
-    private final SupplierDocumentRepository supplierDocumentRepository;
     private final MinioStorageService minioStorageService;
+    private final SecurityHelper securityHelper;
     private final org.springframework.context.MessageSource messageSource;
 
     private UUID getSupplierId(Authentication authentication) {
-        String username = authentication.getName();
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = securityHelper.currentUser(authentication);
         if (user.getSupplier() == null) {
             throw new ValidationException("Supplier not linked to user");
         }
         return user.getSupplier().getId();
-    }
-
-    private User getUser(Authentication authentication) {
-        String username = authentication.getName();
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
     @PostMapping("/invoices")
@@ -80,18 +74,12 @@ public class SupplierPortalController {
             @Valid @RequestBody InvoiceCreateRequest request,
             Authentication authentication,
             java.util.Locale locale) {
-        User user = getUser(authentication);
+        User user = securityHelper.currentUser(authentication);
         UUID supplierId = getSupplierId(authentication);
 
-        // Security override: Force supplierId
         Invoice invoicePayload = toInvoice(request, user.getId(), supplierId);
-        
-        // Use invoiceService or directly save? Wait, invoiceService ensures ASSISTANT_COMPTABLE!
-        // We must implement a supplierCreateInvoice method in InvoiceService or do it here.
-        // Actually, we can bypass createInvoice and just save, or better: modify invoiceService to allow Supplier?
-        // Let's create it directly here to ensure separation of concerns.
         Invoice created = invoiceService.createSupplierInvoice(invoicePayload, user.getId(), supplierId);
-        
+
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(toDto(created), messageSource.getMessage("supplier.invoice.submitted", null, locale)));
     }
@@ -107,7 +95,7 @@ public class SupplierPortalController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt,desc") String sort,
             Authentication authentication) {
-        
+
         UUID supplierId = getSupplierId(authentication);
         PagedResponse<Invoice> paged = invoiceService.listInvoices(status, null, from, to, reference, supplierId, page, size, sort);
         List<InvoiceDTO> mapped = paged.getContent().stream().map(this::toDto).toList();
@@ -116,12 +104,51 @@ public class SupplierPortalController {
         ));
     }
 
+    @PostMapping("/invoices/{invoiceId}/submit")
+    @Operation(summary = "Submit supplier invoice", description = "Moves the supplier's own draft invoice into the validation workflow")
+    public ResponseEntity<ApiResponse<Void>> submitMyInvoice(
+            @PathVariable UUID invoiceId,
+            Authentication authentication,
+            java.util.Locale locale) {
+        User user = securityHelper.currentUser(authentication);
+        ensureOwnInvoice(invoiceId, getSupplierId(authentication));
+        invoiceStateMachineService.sendEvent(invoiceId, InvoiceEvent.SUBMIT,
+                Map.of(WorkflowExtendedStateKeys.USER_ID, user.getId()));
+        return ResponseEntity.ok(ApiResponse.success(null, messageSource.getMessage("action.submit.success", null, locale)));
+    }
+
+    @PostMapping("/invoices/{invoiceId}/resubmit")
+    @Operation(summary = "Resubmit supplier invoice", description = "Resubmits the supplier's own rejected invoice")
+    public ResponseEntity<ApiResponse<Void>> resubmitMyInvoice(
+            @PathVariable UUID invoiceId,
+            Authentication authentication,
+            java.util.Locale locale) {
+        User user = securityHelper.currentUser(authentication);
+        ensureOwnInvoice(invoiceId, getSupplierId(authentication));
+        invoiceStateMachineService.sendEvent(invoiceId, InvoiceEvent.RESUBMIT,
+                Map.of(WorkflowExtendedStateKeys.USER_ID, user.getId()));
+        return ResponseEntity.ok(ApiResponse.success(null, messageSource.getMessage("action.resubmit.success", null, locale)));
+    }
+
+    @PostMapping(value = "/invoices/{invoiceId}/documents", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload supplier invoice document", description = "Uploads a supporting invoice document for the supplier's own invoice")
+    public ResponseEntity<ApiResponse<InvoiceDocumentDTO>> uploadMyInvoiceDocument(
+            @PathVariable UUID invoiceId,
+            @RequestParam("file") MultipartFile file,
+            Authentication authentication,
+            java.util.Locale locale) throws Exception {
+        User user = securityHelper.currentUser(authentication);
+        ensureOwnInvoice(invoiceId, getSupplierId(authentication));
+        InvoiceDocument document = invoiceDocumentService.upload(invoiceId, file, user.getId());
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(toDocumentDto(document), messageSource.getMessage("supplier.document.uploaded", null, locale)));
+    }
+
     @GetMapping("/profile")
     @Operation(summary = "Get supplier profile", description = "Returns the supplier's own profile")
     public ResponseEntity<ApiResponse<Supplier>> getProfile(Authentication authentication) {
         UUID supplierId = getSupplierId(authentication);
-        Supplier supplier = supplierRepository.findByIdAndDeletedAtIsNull(supplierId)
-                .orElseThrow(() -> new ResourceNotFoundException("Supplier not found"));
+        Supplier supplier = supplierService.findEntityById(supplierId);
         return ResponseEntity.ok(ApiResponse.success(supplier));
     }
 
@@ -140,17 +167,40 @@ public class SupplierPortalController {
     @Operation(summary = "Dashboard statistics", description = "Returns invoice status counts, matching status breakdown, and next expected payment date for the supplier")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getDashboardStats(Authentication authentication) {
         UUID supplierId = getSupplierId(authentication);
-        
+
         Map<String, Object> stats = new HashMap<>();
         Map<String, Long> statusCounts = invoiceService.getSupplierInvoiceStatusCounts(supplierId);
         stats.put("statusCounts", statusCounts);
-        
+        stats.put("submittedCount", statusCounts.getOrDefault(InvoiceStatus.SOUMIS.name(), 0L));
+        stats.put("pendingCount",
+                statusCounts.getOrDefault(InvoiceStatus.SOUMIS.name(), 0L)
+                        + statusCounts.getOrDefault(InvoiceStatus.EN_VALIDATION_N1.name(), 0L)
+                        + statusCounts.getOrDefault(InvoiceStatus.EN_VALIDATION_N2.name(), 0L));
+        stats.put("approvedCount",
+                statusCounts.getOrDefault(InvoiceStatus.VALIDE.name(), 0L)
+                        + statusCounts.getOrDefault(InvoiceStatus.BON_A_PAYER.name(), 0L));
+        stats.put("paidCount",
+                statusCounts.getOrDefault(InvoiceStatus.PAYE.name(), 0L)
+                        + statusCounts.getOrDefault(InvoiceStatus.ARCHIVE.name(), 0L));
+        stats.put("rejectedCount", statusCounts.getOrDefault(InvoiceStatus.REJETE.name(), 0L));
+
         Map<String, Long> matchingStatusCounts = invoiceService.getSupplierInvoiceMatchingStatusCounts(supplierId);
         stats.put("matchingStatusBreakdown", matchingStatusCounts);
-        
+
         java.time.LocalDate nextExpectedPaymentDate = invoiceService.getSupplierNextExpectedPaymentDate(supplierId);
         stats.put("nextExpectedPaymentDate", nextExpectedPaymentDate);
-        
+
+        PagedResponse<Invoice> pendingInvoices = invoiceService.listInvoices(null, null, null, null, null, supplierId, 0, 5, "dueDate,asc");
+        stats.put("pendingActions", pendingInvoices.getContent().stream()
+                .filter(invoice -> invoice.getStatus() == InvoiceStatus.REJETE || invoice.getStatus() == InvoiceStatus.BROUILLON)
+                .map(invoice -> Map.of(
+                        "id", invoice.getId(),
+                        "referenceNumber", invoice.getReferenceNumber(),
+                        "status", invoice.getStatus().name(),
+                        "dueDate", invoice.getDueDate()
+                ))
+                .toList());
+
         return ResponseEntity.ok(ApiResponse.success(stats));
     }
 
@@ -161,7 +211,7 @@ public class SupplierPortalController {
             @RequestParam("documentType") SupplierDocumentType documentType,
             Authentication authentication,
             java.util.Locale locale) {
-        User user = getUser(authentication);
+        User user = securityHelper.currentUser(authentication);
         UUID supplierId = getSupplierId(authentication);
 
         try {
@@ -172,19 +222,9 @@ public class SupplierPortalController {
             String objectKey = "supplier-docs/" + supplierId + "/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
             minioStorageService.upload(objectKey, bytes, file.getContentType());
 
-            Supplier supplier = new Supplier();
-            supplier.setId(supplierId);
-
-            SupplierDocument doc = SupplierDocument.builder()
-                    .supplier(supplier)
-                    .documentType(documentType)
-                    .originalFilename(file.getOriginalFilename())
-                    .minioObjectKey(objectKey)
-                    .fileSizeBytes(file.getSize())
-                    .checksumSha256(checksum)
-                    .uploadedBy(user)
-                    .build();
-            supplierDocumentRepository.save(doc);
+            SupplierDocument doc = supplierService.uploadDocument(
+                    supplierId, documentType, file.getOriginalFilename(),
+                    objectKey, file.getSize(), checksum, user);
 
             Map<String, Object> result = new HashMap<>();
             result.put("id", doc.getId());
@@ -201,7 +241,7 @@ public class SupplierPortalController {
     @Operation(summary = "List supplier documents", description = "Lists all documents uploaded by this supplier")
     public ResponseEntity<ApiResponse<List<Map<String, Object>>>> listDocuments(Authentication authentication) {
         UUID supplierId = getSupplierId(authentication);
-        List<SupplierDocument> docs = supplierDocumentRepository.findBySupplierId(supplierId);
+        List<SupplierDocument> docs = supplierService.listDocuments(supplierId);
         List<Map<String, Object>> result = docs.stream().map(d -> {
             Map<String, Object> m = new HashMap<>();
             m.put("id", d.getId());
@@ -227,6 +267,7 @@ public class SupplierPortalController {
                 .department(department)
                 .submittedBy(actor)
                 .supplier(supplier)
+                .purchaseOrderId(request.purchaseOrderId())
                 .amount(request.amount())
                 .currency(request.currency())
                 .issueDate(request.issueDate())
@@ -243,6 +284,7 @@ public class SupplierPortalController {
                 invoice.getDepartment() != null ? invoice.getDepartment().getId() : null,
                 invoice.getSubmittedBy() != null ? invoice.getSubmittedBy().getId() : null,
                 invoice.getSupplier() != null ? invoice.getSupplier().getId() : null,
+                invoice.getPurchaseOrderId(),
                 invoice.getSupplierName(),
                 invoice.getSupplierEmail(),
                 invoice.getSupplierTaxId(),
@@ -252,9 +294,30 @@ public class SupplierPortalController {
                 invoice.getDueDate(),
                 invoice.getDescription(),
                 invoice.getStatus(),
+                invoice.getMatchingStatus(),
                 invoice.getVersion(),
                 invoice.getCreatedAt(),
                 invoice.getUpdatedAt()
+        );
+    }
+
+    private void ensureOwnInvoice(UUID invoiceId, UUID supplierId) {
+        Invoice invoice = invoiceService.getById(invoiceId);
+        if (invoice.getSupplier() == null || !supplierId.equals(invoice.getSupplier().getId())) {
+            throw new ValidationException("Supplier can only access own invoice");
+        }
+    }
+
+    private InvoiceDocumentDTO toDocumentDto(InvoiceDocument document) {
+        return new InvoiceDocumentDTO(
+                document.getId(),
+                document.getInvoice() != null ? document.getInvoice().getId() : null,
+                document.getOriginalFilename(),
+                document.getFileType(),
+                document.getFileSizeBytes(),
+                document.getChecksumSha256(),
+                document.getUploadedBy() != null ? document.getUploadedBy().getId() : null,
+                document.getUploadedAt()
         );
     }
 }

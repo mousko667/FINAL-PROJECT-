@@ -6,6 +6,7 @@ import com.oct.invoicesystem.domain.report.dto.CashFlowProjectionDTO;
 import com.oct.invoicesystem.domain.report.dto.DashboardKpiDTO;
 import com.oct.invoicesystem.domain.report.dto.SupplierPaymentHistoryDTO;
 import com.oct.invoicesystem.domain.report.dto.SupplierPerformanceDTO;
+import com.oct.invoicesystem.domain.workflow.dto.InvoiceHistoryDTO;
 import java.io.ByteArrayInputStream;
 import java.time.LocalDate;
 import java.util.List;
@@ -71,4 +72,6 @@ public interface ReportService {
      * @return SupplierPerformanceDTO with calculated metrics
      */
     SupplierPerformanceDTO getSupplierPerformance(UUID supplierId);
+
+    List<InvoiceHistoryDTO> getRecentActivity(int limit);
 }

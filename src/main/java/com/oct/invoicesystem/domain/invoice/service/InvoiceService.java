@@ -4,11 +4,16 @@ import com.oct.invoicesystem.domain.department.model.Department;
 import com.oct.invoicesystem.domain.department.repository.DepartmentRepository;
 import com.oct.invoicesystem.domain.invoice.model.Invoice;
 import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
+import com.oct.invoicesystem.domain.invoice.repository.InvoiceDocumentRepository;
 import com.oct.invoicesystem.domain.invoice.repository.InvoiceRepository;
+import com.oct.invoicesystem.domain.purchasing.model.ThreeWayMatchingResult;
+import com.oct.invoicesystem.domain.purchasing.repository.ThreeWayMatchingResultRepository;
 import com.oct.invoicesystem.domain.supplier.model.Supplier;
 import com.oct.invoicesystem.domain.supplier.repository.SupplierRepository;
 import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.domain.user.repository.UserRepository;
+import com.oct.invoicesystem.domain.workflow.dto.InvoiceHistoryDTO;
+import com.oct.invoicesystem.domain.workflow.repository.InvoiceStatusHistoryRepository;
 import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 import com.oct.invoicesystem.shared.exception.ValidationException;
 import com.oct.invoicesystem.shared.exception.WorkflowException;
@@ -39,6 +44,9 @@ public class InvoiceService {
     private final UserRepository userRepository;
     private final SupplierRepository supplierRepository;
     private final ReferenceNumberGenerator referenceNumberGenerator;
+    private final InvoiceDocumentRepository invoiceDocumentRepository;
+    private final ThreeWayMatchingResultRepository matchingResultRepository;
+    private final InvoiceStatusHistoryRepository historyRepository;
 
     /**
      * Creates an invoice draft in BROUILLON status.
@@ -83,6 +91,7 @@ public class InvoiceService {
         existing.setSupplierEmail(updatedInvoice.getSupplierEmail());
         existing.setSupplierTaxId(updatedInvoice.getSupplierTaxId());
         existing.setSupplierBankDetails(updatedInvoice.getSupplierBankDetails());
+        existing.setPurchaseOrderId(updatedInvoice.getPurchaseOrderId());
 
         populateSupplierFields(existing);
 
@@ -169,6 +178,29 @@ public class InvoiceService {
                 invoices.getTotalPages(),
                 invoices.isLast()
         );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Invoice> getPendingValidationQueue(Pageable pageable) {
+        return invoiceRepository.findPendingValidationQueue(pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public ThreeWayMatchingResult getMatchingResult(UUID invoiceId) {
+        return matchingResultRepository.findByInvoiceId(invoiceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Matching result not found for invoice: " + invoiceId));
+    }
+
+    @Transactional(readOnly = true)
+    public List<InvoiceHistoryDTO> getInvoiceHistory(UUID invoiceId) {
+        getById(invoiceId); // validates existence
+        return historyRepository.findHistoryDTOsByInvoiceId(invoiceId);
+    }
+
+    public void validateDocumentPresent(UUID invoiceId) {
+        if (invoiceDocumentRepository.findByInvoiceId(invoiceId).isEmpty()) {
+            throw new ValidationException("error.invoice.no_document");
+        }
     }
 
     private Department resolveDepartment(Department department) {

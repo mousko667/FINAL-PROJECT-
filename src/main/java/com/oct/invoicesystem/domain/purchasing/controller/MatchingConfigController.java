@@ -6,9 +6,8 @@ import com.oct.invoicesystem.domain.purchasing.mapper.MatchingConfigMapper;
 import com.oct.invoicesystem.domain.purchasing.model.MatchingConfig;
 import com.oct.invoicesystem.domain.purchasing.service.MatchingConfigService;
 import com.oct.invoicesystem.domain.user.model.User;
-import com.oct.invoicesystem.domain.user.repository.UserRepository;
-import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 import com.oct.invoicesystem.shared.response.ApiResponse;
+import com.oct.invoicesystem.shared.util.SecurityHelper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,8 +22,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.UUID;
-
 @RestController
 @RequestMapping("/api/v1/matching-config")
 @RequiredArgsConstructor
@@ -34,10 +31,10 @@ public class MatchingConfigController {
 
     private final MatchingConfigService matchingConfigService;
     private final MatchingConfigMapper matchingConfigMapper;
-    private final UserRepository userRepository;
+    private final SecurityHelper securityHelper;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_ASSISTANT_COMPTABLE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
     @Operation(summary = "Get active matching configuration", description = "Retrieves the current active matching configuration")
     public ResponseEntity<ApiResponse<MatchingConfigDTO>> getActiveConfig() {
         MatchingConfig config = matchingConfigService.getActiveConfig();
@@ -46,30 +43,19 @@ public class MatchingConfigController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update matching configuration", description = "Updates the matching tolerance and GRN requirements (ADMIN only)")
     public ResponseEntity<ApiResponse<MatchingConfigDTO>> updateConfig(
             @Valid @RequestBody MatchingConfigUpdateRequest request,
             Authentication authentication) {
-        UUID actorId = getActorId(authentication);
-        User actor = userRepository.findById(actorId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + actorId));
-
+        User actor = securityHelper.currentUser(authentication);
         MatchingConfig updated = matchingConfigService.updateConfig(
                 request.tolerancePercentage(),
                 request.toleranceAmount(),
                 request.requireGrn(),
                 actor
         );
-
         MatchingConfigDTO dto = matchingConfigMapper.toDTO(updated);
         return ResponseEntity.ok(ApiResponse.success(dto, "matching_config.updated"));
-    }
-
-    private UUID getActorId(Authentication authentication) {
-        String username = authentication.getName();
-        return userRepository.findByUsername(username)
-                .map(User::getId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
     }
 }

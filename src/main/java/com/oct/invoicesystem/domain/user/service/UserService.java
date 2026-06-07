@@ -83,18 +83,22 @@ public class UserService {
         user.setActive(true);
         user.setUserRoles(new HashSet<>());
 
+        // Save first so the user gets a UUID, then attach roles
+        User savedUser = userRepository.save(user);
+
         if (request.roles() != null && !request.roles().isEmpty()) {
             for (String roleName : request.roles()) {
                 Role role = roleRepository.findByName(roleName)
                         .orElseThrow(() -> new ResourceNotFoundException("Role not found: " + roleName));
                 UserRole userRole = new UserRole();
-                userRole.setUser(user);
+                userRole.setId(new com.oct.invoicesystem.domain.user.model.UserRoleId(savedUser.getId(), role.getId()));
+                userRole.setUser(savedUser);
                 userRole.setRole(role);
-                user.getUserRoles().add(userRole);
+                savedUser.getUserRoles().add(userRole);
             }
+            savedUser = userRepository.save(savedUser);
         }
 
-        User savedUser = userRepository.save(user);
         return userMapper.toDto(savedUser);
     }
 
@@ -113,6 +117,9 @@ public class UserService {
         if (request.firstName() != null) user.setFirstName(request.firstName());
         if (request.lastName() != null) user.setLastName(request.lastName());
         if (request.preferredLang() != null) user.setPreferredLang(request.preferredLang());
+        if (request.employeeId() != null) user.setEmployeeId(request.employeeId());
+        if (request.departmentId() != null) user.setDepartmentId(request.departmentId());
+        if (request.approvalLimit() != null) user.setApprovalLimit(request.approvalLimit());
 
         if (request.roles() != null) {
             user.getUserRoles().clear();
@@ -163,6 +170,16 @@ public class UserService {
         }
         
         userRepository.save(user);
+    }
+
+    @Transactional
+    public User updateProfile(UUID userId, String firstName, String lastName, String preferredLang) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        if (firstName != null) user.setFirstName(firstName);
+        if (lastName != null) user.setLastName(lastName);
+        if (preferredLang != null) user.setPreferredLang(preferredLang);
+        return userRepository.save(user);
     }
 
     @Transactional

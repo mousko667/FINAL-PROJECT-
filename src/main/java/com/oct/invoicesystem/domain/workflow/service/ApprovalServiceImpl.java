@@ -21,6 +21,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -65,6 +68,7 @@ public class ApprovalServiceImpl implements ApprovalService {
             throw new WorkflowException("Invoice is not in N1 validation state");
         }
         checkRole(currentUser, invoice.getDepartment().getN1Role());
+        ensureNotSubmitter(invoice, currentUser);
         
         createOrUpdateStep(invoice, 1, currentUser, "Validation N1 - " + invoice.getDepartment().getCode(), comment, null, ApprovalStepStatus.APPROVED);
         invoiceStateMachineService.sendEvent(invoiceId, InvoiceEvent.VALIDATE_N1, Map.of("comment", comment != null ? comment : ""));
@@ -80,6 +84,7 @@ public class ApprovalServiceImpl implements ApprovalService {
             throw new WorkflowException("Invoice is not in N2 validation state");
         }
         checkRole(currentUser, invoice.getDepartment().getN2Role());
+        ensureNotSubmitter(invoice, currentUser);
 
         createOrUpdateStep(invoice, 2, currentUser, "Validation N2 - " + invoice.getDepartment().getCode(), comment, null, ApprovalStepStatus.APPROVED);
         invoiceStateMachineService.sendEvent(invoiceId, InvoiceEvent.VALIDATE_N2, Map.of("comment", comment != null ? comment : ""));
@@ -95,6 +100,7 @@ public class ApprovalServiceImpl implements ApprovalService {
             throw new WorkflowException("Invoice is not ready for DAF approval (status must be VALIDE)");
         }
         checkRole(currentUser, "ROLE_DAF");
+        ensureNotSubmitter(invoice, currentUser);
         
         // P3-09: DAF step is always step_order 3 regardless of department
         createOrUpdateStep(invoice, 3, currentUser, "Bon à Payer", comment, null, ApprovalStepStatus.APPROVED);
@@ -129,6 +135,32 @@ public class ApprovalServiceImpl implements ApprovalService {
 
         createOrUpdateStep(invoice, stepOrder, currentUser, stepName, null, rejectionReason, ApprovalStepStatus.REJECTED);
         invoiceStateMachineService.sendEvent(invoiceId, InvoiceEvent.REJECT, Map.of("rejectionReason", rejectionReason != null ? rejectionReason : ""));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getApprovalSteps(UUID invoiceId) {
+        List<ApprovalStep> steps = approvalStepRepository.findByInvoiceIdOrderByStepOrderAsc(invoiceId);
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (ApprovalStep s : steps) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", s.getId());
+            m.put("stepOrder", s.getStepOrder());
+            m.put("stepName", s.getStepNameEn());
+            m.put("stepNameFr", s.getStepNameFr());
+            m.put("departmentCode", s.getDepartmentCode());
+            m.put("status", s.getStatus());
+            m.put("approverUsername", s.getApprover() != null ? s.getApprover().getUsername() : null);
+            m.put("approverName", s.getApprover() != null
+                    ? (s.getApprover().getFirstName() + " " + s.getApprover().getLastName()).trim()
+                    : null);
+            m.put("comments", s.getComments());
+            m.put("rejectionReason", s.getRejectionReason());
+            m.put("deadline", s.getDeadline());
+            m.put("actionAt", s.getActionAt());
+            result.add(m);
+        }
+        return result;
     }
 
     private ApprovalStep createOrUpdateStep(Invoice invoice, int stepOrder, User approver, String nameFr, String comment, String rejButtonReason, ApprovalStepStatus status) {
@@ -172,6 +204,14 @@ public class ApprovalServiceImpl implements ApprovalService {
                 .anyMatch(a -> a.getAuthority().equals(requiredRole));
         if (!hasRole) {
             throw new AccessDeniedException("User does not have required role: " + requiredRole);
+        }
+    }
+
+    private void ensureNotSubmitter(Invoice invoice, User approver) {
+        if (invoice.getSubmittedBy() != null
+                && approver != null
+                && invoice.getSubmittedBy().getId().equals(approver.getId())) {
+            throw new WorkflowException("Approver cannot approve their own submitted invoice");
         }
     }
 }
