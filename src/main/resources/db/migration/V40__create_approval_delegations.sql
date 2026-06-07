@@ -14,7 +14,7 @@ CREATE TABLE approval_delegations (
     CONSTRAINT chk_no_self_delegation CHECK (delegator_id <> delegatee_id)
 );
 
-CREATE INDEX idx_delegations_delegatee ON approval_delegations(delegatee_id)
-    WHERE revoked = FALSE AND to_date >= CURRENT_DATE;
-CREATE INDEX idx_delegations_dept ON approval_delegations(department_code)
-    WHERE revoked = FALSE AND to_date >= CURRENT_DATE;
+CREATE INDEX idx_delegations_delegatee ON approval_delegations(delegatee_id, to_date)
+    WHERE revoked = FALSE;
+CREATE INDEX idx_delegations_dept ON approval_delegations(department_code, to_date)
+    WHERE revoked = FALSE;
