@@ -72,7 +72,7 @@ public class SecurityConfig {
             .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterAfter(mfaSetupEnforcementFilter, UsernamePasswordAuthenticationFilter.class)
-            .addFilterAfter(auditLoggingFilter, JwtAuthenticationFilter.class);
+            .addFilterAfter(auditLoggingFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
