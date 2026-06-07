@@ -123,6 +123,11 @@ public class PurchaseOrderService {
         return purchaseOrderRepository.findBySupplierId(supplierId);
     }
 
+    @Transactional(readOnly = true)
+    public List<PurchaseOrder> listAll() {
+        return purchaseOrderRepository.findAll();
+    }
+
     /**
      * Get a purchase order by ID with all items loaded.
      *

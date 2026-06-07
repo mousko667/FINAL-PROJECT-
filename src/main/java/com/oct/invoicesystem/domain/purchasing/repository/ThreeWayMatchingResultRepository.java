@@ -10,5 +10,9 @@ import java.util.UUID;
 @Repository
 public interface ThreeWayMatchingResultRepository extends JpaRepository<ThreeWayMatchingResult, UUID> {
 
-    Optional<ThreeWayMatchingResult> findByInvoiceId(UUID invoiceId);
+    Optional<ThreeWayMatchingResult> findTopByInvoiceIdOrderByCreatedAtDesc(UUID invoiceId);
+
+    default Optional<ThreeWayMatchingResult> findByInvoiceId(UUID invoiceId) {
+        return findTopByInvoiceIdOrderByCreatedAtDesc(invoiceId);
+    }
 }

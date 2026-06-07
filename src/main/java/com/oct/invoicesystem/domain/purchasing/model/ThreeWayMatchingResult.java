@@ -14,7 +14,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -28,9 +27,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "three_way_matching_results", uniqueConstraints = {
-    @UniqueConstraint(columnNames = "invoice_id")
-})
+@Table(name = "three_way_matching_results")
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter

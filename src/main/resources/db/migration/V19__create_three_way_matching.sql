@@ -26,8 +26,7 @@ CREATE TABLE matching_config (
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     updated_by UUID NOT NULL,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_mc_updated_by FOREIGN KEY (updated_by) REFERENCES users(id),
-    CONSTRAINT only_one_active CHECK (is_active = FALSE OR id = (SELECT id FROM matching_config WHERE is_active = TRUE LIMIT 1))
+    CONSTRAINT fk_mc_updated_by FOREIGN KEY (updated_by) REFERENCES users(id)
 );
 
 -- Indexes for performance

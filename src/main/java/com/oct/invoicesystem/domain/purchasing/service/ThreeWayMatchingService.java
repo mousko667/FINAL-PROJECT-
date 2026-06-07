@@ -257,11 +257,17 @@ public class ThreeWayMatchingService {
             throw new ValidationException("Can only override MISMATCH results");
         }
 
-        existing.setStatus(MatchingStatus.OVERRIDDEN);
-        existing.setOverriddenBy(overriddenBy);
-        existing.setOverrideReason(reason);
+        ThreeWayMatchingResult override = ThreeWayMatchingResult.builder()
+            .invoice(existing.getInvoice())
+            .purchaseOrder(existing.getPurchaseOrder())
+            .goodsReceiptNote(existing.getGoodsReceiptNote())
+            .status(MatchingStatus.OVERRIDDEN)
+            .discrepancyNotes(existing.getDiscrepancyNotes())
+            .overriddenBy(overriddenBy)
+            .overrideReason(reason)
+            .build();
 
         log.info("Recording override for invoice {} by user {}", invoiceId, overriddenBy.getId());
-        return matchingResultRepository.save(existing);
+        return matchingResultRepository.save(override);
     }
 }
