@@ -199,6 +199,14 @@
     "daysOverdue": "Jours de retard",
     "amountDue": "Montant dû (XAF)"
   },
+  "role": {
+    "admin": "Administrateur",
+    "daf": "DAF",
+    "assistant_comptable": "Ass. Comptable",
+    "validateur_n1": "Validateur N1",
+    "validateur_n2": "Validateur N2",
+    "supplier": "Fournisseur"
+  },
   "roles": {
     "ROLE_ADMIN": "Administrateur",
     "ROLE_DAF": "DAF (Directeur Administratif et Financier)",

@@ -22,7 +22,7 @@ Spring Boot Backend (Modular Monolith)
     │   └── storage
     └── Shared (exceptions, response wrappers, utils)
         ↕ JPA/JDBC              ↕ S3 API
-    PostgreSQL 15           MinIO (file storage)
+    PostgreSQL 18           MinIO (file storage)
 ```
 
 ---
@@ -151,6 +151,59 @@ com.oct.invoicesystem/
 
 ---
 
+## 4.1 Known Implementation Gaps
+
+> Last updated: 2026-06-06. Full history and resolutions in `docs/KNOWN_ISSUES_REGISTRY.md`.
+
+| # | Gap | Severity | Status |
+|---|---|---|---|
+| GAP 1 | **OCR not implemented** — Apache Tika (MIME detection only) is present. Tess4J must be added and `OcrService` implemented for invoice field extraction. | 🔴 Critical | ❌ Not implemented |
+| GAP 2 | **JWT uses HS256 instead of RS256** — JJWT 0.12.6 uses symmetric shared secret. Must migrate to RSA-2048 asymmetric (RS256). See PROB-014 in KNOWN_ISSUES_REGISTRY.md. | 🟠 High | ❌ Not implemented |
+| GAP 3 | **GitHub Actions CI pipeline missing** — No `.github/workflows/ci.yml`. Pipeline must: build backend, run tests, build frontend, run Vitest, build Docker images. | 🟡 Medium | ❌ Not implemented |
+| GAP 4 | **TLS 1.3 not configured in Spring Boot** — TLS handled at infra level only. Must configure `server.ssl` in `application-prod.yml`. | 🟡 Medium | ❌ Not implemented |
+| GAP 5 | **OWASP ZAP security scan absent** — No automated security scan in CI. | 🟡 Medium | ❌ Not implemented |
+| GAP 6 | **Approval Delegation not implemented** — No entity, service, endpoint, or UI for approval delegation (absence management). See PROB-016. | 🟠 High | ❌ Not implemented |
+| GAP 7 | **Financial audit sub-typing absent** — All audit logs are of type HTTP_REQUEST. No financial-specific categorization. | 🟡 Medium | ❌ Not implemented |
+| GAP 8 | **Archive full-text search absent** — Archive page only filters by status/dept/date. No keyword search on invoice content. | 🟡 Medium | ❌ Not implemented |
+
+## 4.2 Resolved Architecture Issues (from KNOWN_ISSUES_REGISTRY.md)
+
+| # | Issue | Resolution |
+|---|---|---|
+| PROB-001 | User lost on page refresh (Redux state not rehydrated) | AuthRehydrator component calls GET /profile on startup |
+| PROB-002 | Supplier routes blocked by wrong guard | Added SupplierRoute guard, separate from ProtectedRoute |
+| PROB-003 | boolean isActive → isIsActive() Lombok double-prefix bug | Renamed field to `active`, Lombok generates `isActive()` |
+| PROB-004 | RoleGuard showing error UI in sidebar | Split into RoleGuard (null) + PageRoleGuard (error UI) |
+| PROB-005 | Audit log page always empty | Fixed endpoint /audit-logs/system → /audit-logs |
+| PROB-009 | Flyway checksum violation on startup | Never modify applied migrations — added to absolute rules |
+| PROB-011 | Nginx serving old frontend after deploy | docker cp + nginx -s reload procedure documented |
+| PROB-012 | iText 8 Cell.setBorderColor() not found | Use SolidBorder instead — iText 8 API change |
+
+## 4.3 Deployment Procedures (verified 2026-06-06)
+
+### Frontend deploy (no image rebuild)
+```bash
+npm run build
+docker cp dist/. oct_frontend:/usr/share/nginx/html/
+docker exec oct_frontend nginx -s reload
+```
+
+### Backend deploy (no image rebuild)
+```powershell
+.\mvnw.cmd -DskipTests package
+docker cp target\invoice-system-1.0.0-SNAPSHOT.jar oct_backend:/app/app.jar
+docker restart oct_backend
+# Wait ~30s for startup. Check: docker logs oct_backend --tail=20
+```
+
+### Verify all services healthy
+```bash
+docker ps --format "table {{.Names}}\t{{.Status}}"
+# Expected: oct_backend, oct_frontend, oct_postgres, oct_minio, oct_mailhog — all Up
+```
+
+---
+
 ## 5. Security Architecture
 
 ```
@@ -172,24 +225,36 @@ Business logic
 ```
 
 ### Role Hierarchy
+
+There are exactly **six roles** in this system. No Auditor role exists.
+
 ```
 ROLE_ADMIN
-  → can do everything
+  → Manages all user accounts, system config, approval matrix
+  → Access to system/security audit trail ONLY (not financial data)
+  → MFA mandatory
 
-ROLE_DAF (Directeur Administratif et Financier)
-  → BON_A_PAYER authorization, payment validation, all reports
+ROLE_DAF (CFO — Directeur Administratif et Financier)
+  → Level 1 approver for Finance department invoices
+  → Issues Bon à Payer (final payment authorisation) for ALL departments
+  → Access to financial audit trail ONLY (not system/security logs)
+  → MFA mandatory
 
 ROLE_VALIDATEUR_N2_{DEPT}
-  → Second-level approval for their department
+  → Second-level approval for their department (IT, Infrastructure, Workshop only)
+  → MFA mandatory
 
 ROLE_VALIDATEUR_N1_{DEPT}
   → First-level approval for their department
+  → MFA mandatory
 
 ROLE_ASSISTANT_COMPTABLE
-  → Create/submit invoices, record payments
+  → Creates/submits invoices, validates, manages suppliers, records payments
+  → MFA mandatory
 
-ROLE_AUDITEUR
-  → Read-only: all invoices, audit logs, reports
+ROLE_SUPPLIER
+  → Submits own invoices via supplier portal, tracks status
+  → MFA NOT required (only role exempt from MFA)
 ```
 
 ---
@@ -241,7 +306,7 @@ validation.rejection_reason.required = Le motif de rejet est obligatoire
 
 ```yaml
 services:
-  postgres:    port 5432 — PostgreSQL 15
+  postgres:    port 5432 — PostgreSQL 18
   minio:       port 9000/9001 — MinIO object storage
   backend:     port 8080 — Spring Boot app
   frontend:    port 3000 — React app (nginx in prod)
@@ -308,10 +373,11 @@ OTP valid?
 ├── NO → increment failed_login_attempts; lock if ≥5
 └── YES → return full JWT
 MFA mandatory enforcement:
-If user has ROLE_DAF | ROLE_ADMIN | ROLE_VALIDATEUR_N1_* | ROLE_VALIDATEUR_N2_*
+If user has ROLE_ASSISTANT_COMPTABLE | ROLE_DAF | ROLE_ADMIN | ROLE_VALIDATEUR_N1_* | ROLE_VALIDATEUR_N2_*
 and mfa_verified = false:
 → login returns { mfa_setup_required: true }
 → only /auth/mfa/setup and /auth/mfa/confirm are accessible
+Note: ROLE_SUPPLIER is the ONLY role exempt from MFA.
 
 
 ## Three-Way Matching Integration Point

@@ -199,6 +199,14 @@
     "daysOverdue": "Days Overdue",
     "amountDue": "Amount Due (XAF)"
   },
+  "role": {
+    "admin": "Administrator",
+    "daf": "CFO",
+    "assistant_comptable": "Acc. Assistant",
+    "validateur_n1": "Validator N1",
+    "validateur_n2": "Validator N2",
+    "supplier": "Supplier"
+  },
   "roles": {
     "ROLE_ADMIN": "Administrator",
     "ROLE_DAF": "CFO (Finance Director)",

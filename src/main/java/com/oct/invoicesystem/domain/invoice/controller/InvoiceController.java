@@ -47,9 +47,11 @@ import com.oct.invoicesystem.domain.invoice.service.InvoicePdfService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.format.annotation.DateTimeFormat;
 
 @RestController
 @RequestMapping("/api/v1/invoices")
@@ -186,6 +188,21 @@ public class InvoiceController {
         User actor = securityHelper.currentUser(authentication);
         threeWayMatchingService.recordOverride(id, actor, request.overrideReason());
         return ResponseEntity.ok(ApiResponse.success(null, "action.mismatch_override.success"));
+    }
+
+    @GetMapping("/archive")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DAF', 'ASSISTANT_COMPTABLE')")
+    @Operation(summary = "Rechercher dans les archives", description = "Full-text search dans les factures archivées")
+    public ResponseEntity<ApiResponse<Page<InvoiceDTO>>> searchArchived(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) UUID department,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Invoice> result = invoiceService.searchArchived(keyword, department, from, to, pageable);
+        return ResponseEntity.ok(ApiResponse.success(result.map(invoiceMapper::toDto)));
     }
 
     @GetMapping("/{id}/export/pdf")

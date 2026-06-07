@@ -11,6 +11,8 @@ import com.oct.invoicesystem.domain.mfa.dto.MfaConfirmRequest;
 import com.oct.invoicesystem.domain.mfa.dto.MfaSetupResponse;
 import com.oct.invoicesystem.domain.mfa.dto.MfaValidateRequest;
 import com.oct.invoicesystem.shared.response.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
+@Tag(name = "Authentication", description = "Login, refresh token, MFA, enregistrement fournisseur")
 public class AuthController {
 
     private final AuthService authService;
@@ -34,18 +37,21 @@ public class AuthController {
 
     @PostMapping("/login")
     @PreAuthorize("permitAll()")
+    @Operation(summary = "Login")
     public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(ApiResponse.success(authService.login(request), "Login successful"));
     }
 
     @PostMapping("/refresh")
     @PreAuthorize("permitAll()")
+    @Operation(summary = "Refresh token")
     public ResponseEntity<ApiResponse<LoginResponse>> refresh(@Valid @RequestBody RefreshTokenRequest request) {
         return ResponseEntity.ok(ApiResponse.success(authService.refresh(request), "Token refreshed"));
     }
 
     @PostMapping("/register/supplier")
     @PreAuthorize("permitAll()")
+    @Operation(summary = "Inscription fournisseur")
     public ResponseEntity<ApiResponse<Void>> registerSupplier(@Valid @RequestBody SupplierRegistrationRequest request, java.util.Locale locale) {
         authService.registerSupplier(request);
         return ResponseEntity.ok(ApiResponse.success(null, messageSource.getMessage("supplier.registration.success", null, locale)));
@@ -53,6 +59,7 @@ public class AuthController {
 
     @GetMapping("/verify-email")
     @PreAuthorize("permitAll()")
+    @Operation(summary = "Vérifier email fournisseur")
     public ResponseEntity<ApiResponse<Void>> verifyEmail(@RequestParam("token") String token, java.util.Locale locale) {
         authService.verifyEmail(token);
         return ResponseEntity.ok(ApiResponse.success(null, messageSource.getMessage("supplier.email.verified", null, locale)));
@@ -60,6 +67,7 @@ public class AuthController {
 
     @PostMapping("/forgot-password")
     @PreAuthorize("permitAll()")
+    @Operation(summary = "Demande de reset mot de passe")
     public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody PasswordResetRequest request) {
         authService.requestPasswordReset(request);
         return ResponseEntity.ok(ApiResponse.success(null, "If an account exists for this email, a reset link has been sent"));
@@ -67,6 +75,7 @@ public class AuthController {
 
     @PostMapping("/reset-password")
     @PreAuthorize("permitAll()")
+    @Operation(summary = "Confirmer reset mot de passe")
     public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody PasswordResetConfirmRequest request) {
         authService.confirmPasswordReset(request);
         return ResponseEntity.ok(ApiResponse.success(null, "Password reset successful"));
@@ -74,12 +83,14 @@ public class AuthController {
 
     @PostMapping("/mfa/setup")
     @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Initialiser MFA (TOTP)")
     public ResponseEntity<ApiResponse<MfaSetupResponse>> setupMfa(@AuthenticationPrincipal UserDetails currentUser) {
         return ResponseEntity.ok(ApiResponse.success(authService.setupMfa(currentUser)));
     }
 
     @PostMapping("/mfa/confirm")
     @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Confirmer MFA setup")
     public ResponseEntity<ApiResponse<Void>> confirmMfa(
             @Valid @RequestBody MfaConfirmRequest request,
             @AuthenticationPrincipal UserDetails currentUser) {
@@ -89,6 +100,7 @@ public class AuthController {
 
     @PostMapping("/mfa/validate")
     @PreAuthorize("permitAll()")
+    @Operation(summary = "Valider OTP — retourne JWT complet")
     public ResponseEntity<ApiResponse<LoginResponse>> validateMfa(@Valid @RequestBody MfaValidateRequest request) {
         return ResponseEntity.ok(ApiResponse.success(authService.validateMfa(request)));
     }

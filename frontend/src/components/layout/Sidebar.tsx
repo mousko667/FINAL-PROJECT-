@@ -67,13 +67,13 @@ export default function Sidebar() {
 
   const roleLabel = (() => {
     const roles = user?.roles ?? []
-    if (roles.includes('ROLE_ADMIN')) return 'Administrateur'
-    if (roles.includes('ROLE_DAF')) return 'DAF'
-    if (roles.includes('ROLE_ASSISTANT_COMPTABLE')) return 'Ass. Comptable'
+    if (roles.includes('ROLE_ADMIN')) return t('role.admin', 'Administrateur')
+    if (roles.includes('ROLE_DAF')) return t('role.daf', 'DAF')
+    if (roles.includes('ROLE_ASSISTANT_COMPTABLE')) return t('role.assistant_comptable', 'Ass. Comptable')
     const v = roles.find(r => r.startsWith('ROLE_VALIDATEUR_N1_'))
-    if (v) return `Validateur N1 — ${v.replace('ROLE_VALIDATEUR_N1_', '')}`
+    if (v) return `${t('role.validateur_n1', 'Validateur N1')} — ${v.replace('ROLE_VALIDATEUR_N1_', '')}`
     const v2 = roles.find(r => r.startsWith('ROLE_VALIDATEUR_N2_'))
-    if (v2) return `Validateur N2 — ${v2.replace('ROLE_VALIDATEUR_N2_', '')}`
+    if (v2) return `${t('role.validateur_n2', 'Validateur N2')} — ${v2.replace('ROLE_VALIDATEUR_N2_', '')}`
     return ''
   })()
 

@@ -104,7 +104,7 @@ Every piece of logic must have a corresponding test. Tests are not optional and 
 ### Example coverage for InvoiceController:
 ```
 POST   /api/v1/invoices              → 201 (ASSISTANT_COMPTABLE)
-POST   /api/v1/invoices              → 403 (AUDITEUR)
+POST   /api/v1/invoices              → 403 (VALIDATEUR_N1_DRH)
 POST   /api/v1/invoices              → 401 (no token)
 POST   /api/v1/invoices              → 400 (missing required fields)
 GET    /api/v1/invoices              → 200 paginated (all authenticated roles)
@@ -142,13 +142,18 @@ These are the most important tests — they verify the entire BAP process end-to
 ### Test: Two-Level Approval Lifecycle (Informatique)
 ```
 1. Create users: ASSISTANT_COMPTABLE, VALIDATEUR_N1_INFO (RSI), VALIDATEUR_N2_INFO (DSI), DAF
+   Note: ASSISTANT_COMPTABLE, VALIDATEUR_N1_INFO, VALIDATEUR_N2_INFO, and DAF all require
+   mfa_verified=true to pass MFA enforcement filter in tests.
 2. ASSISTANT_COMPTABLE creates + submits invoice for INFO department
 3. VALIDATEUR_N1_INFO assigns self → EN_VALIDATION_N1
 4. VALIDATEUR_N1_INFO validates → EN_VALIDATION_N2 (not VALIDE — 2-level!)
 5. VALIDATEUR_N2_INFO validates → VALIDE
 6. DAF issues BON_A_PAYER → BON_A_PAYER
-7. ASSISTANT_COMPTABLE records payment → PAYE → ARCHIVE
+   (DAF Bon à Payer is the final payment authorisation gate — applies to ALL departments)
+7. ASSISTANT_COMPTABLE records payment → PAYE → ARCHIVE (automatic)
 8. Assert: approval_steps has 3 records (N1 + N2 + DAF)
+9. Assert: invoice_status_history has entries for every transition
+10. Assert: remittance advice auto-generated and sent to supplier
 ```
 
 ### Test: Rejection + Resubmission Flow
@@ -178,7 +183,9 @@ void submitInvoice_unauthorizedRole_returns403(String role) throws Exception {
 }
 
 static Stream<String> unauthorizedRolesForSubmit() {
-    return Stream.of("VALIDATEUR_N1_DRH", "VALIDATEUR_N2_INFO", "DAF", "AUDITEUR");
+    return Stream.of("VALIDATEUR_N1_DRH", "VALIDATEUR_N2_INFO", "DAF", "ADMIN");
+    // Note: there is no AUDITEUR role in this system. The 6 roles are:
+    // SUPPLIER, ASSISTANT_COMPTABLE, VALIDATEUR_N1_{DEPT}, VALIDATEUR_N2_{DEPT}, DAF, ADMIN.
 }
 ```
 
@@ -259,7 +266,46 @@ cd frontend && npm test
 
 ---
 
-## 10. Coverage Thresholds (enforced by JaCoCo)
+## 10. Lessons Learned from Audit (2026-06-06)
+
+### Builder Tests After Entity Rename
+
+When renaming a boolean field (e.g. `isActive` → `active`):
+1. Search ALL test files for the old builder call pattern (e.g. `.isActive(true)`)
+2. Only replace in files that use the renamed entity's builder
+3. Other entities (Webhook, Department, MatchingConfig) may still use `.isActive(true)` — do NOT touch those
+4. Compile IMMEDIATELY after changes: `mvnw.cmd compile -DskipTests`
+
+```java
+// After renaming User.isActive → User.active:
+// ✅ User builder
+User.builder().active(true)   // ← change this
+
+// ✅ Other entities — do NOT change
+Webhook.builder().isActive(true)       // Webhook still uses isActive
+Department.builder().isActive(true)    // Department still uses isActive
+```
+
+### Mocking vs Real Behavior in Tests
+
+- Never mock the audit endpoint in tests — always test against a real response shape
+- If a test passes but the page shows empty in the browser, the mock returns the wrong structure
+- Integration tests that use `@Transactional` rollback silently — check DB state with a separate SELECT
+
+### Frontend Test Coverage Gaps (discovered during audit)
+
+The following components lack tests and should be covered in the next test sprint:
+```
+❌ AuthRehydrator — critical path, no test
+❌ SupplierRoute guard — no test
+❌ StatusBadge (new variant: pill/dot-only/inline) — no test
+❌ InvoiceActionPanel i18n key fallback — no test
+❌ WebSocket reconnection on 401 — no test
+```
+
+---
+
+## 11. Coverage Thresholds (enforced by JaCoCo)
 
 ```xml
 <!-- pom.xml JaCoCo config -->

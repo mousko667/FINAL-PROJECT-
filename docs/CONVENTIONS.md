@@ -62,6 +62,36 @@ public class Invoice {
 }
 ```
 
+### ⚠ CRITICAL — Boolean Field Naming with Lombok (from PROB-003)
+
+```java
+// ❌ WRONG — Lombok generates isIsActive() (double prefix) — MapStruct maps nothing → always false
+private boolean isActive = true;
+
+// ✅ CORRECT — Lombok generates isActive() correctly
+private boolean active = true;
+
+// If JSON must serialize as "isActive", use @JsonProperty on the DTO:
+@JsonProperty("isActive")
+private boolean active;
+```
+
+**Rule:** Never prefix boolean fields with `is` when using Lombok. Name the field without the prefix — Lombok adds it via the getter convention automatically.
+
+### ⚠ CRITICAL — Never modify applied Flyway migrations (from PROB-009)
+
+```
+V1__create_users.sql   ← LOCKED once applied. Never touch.
+V2__create_roles.sql   ← LOCKED.
+...
+V34__fix_users.sql     ← LOCKED.
+V35__new_feature.sql   ← New migrations go HERE, always a higher version.
+```
+
+If you need to fix data or schema: create `V{N+1}__fix_description.sql`.
+If you need to fix a column name: create `V{N+1}__rename_col.sql` with `ALTER TABLE`.
+**Never edit the SQL content of an existing migration file.**
+
 ### Service Method Template
 ```java
 /**
@@ -339,6 +369,43 @@ export function useInvoices(filters: InvoiceFilters) {
 ```
 
 ---
+
+## 5.1 Frontend Anti-Patterns (discovered in audit 2026-06-06)
+
+```tsx
+// ❌ WRONG — RoleGuard with visible fallback in navigation items
+<RoleGuard allowedRoles={['ROLE_DAF']}>   // fallback defaults to error UI
+  <NavLink to="/financial-audit">...</NavLink>
+</RoleGuard>
+
+// ✅ CORRECT — silent hide for navigation
+<RoleGuard allowedRoles={['ROLE_DAF']} fallback={null}>
+  <NavLink to="/financial-audit">...</NavLink>
+</RoleGuard>
+
+// ✅ CORRECT — error UI for page-level guard
+<PageRoleGuard allowedRoles={['ROLE_DAF']}>
+  <FinancialAuditPage />
+</PageRoleGuard>
+```
+
+```tsx
+// ❌ WRONG — Showing raw backend error key
+<p>{error.message}</p>   // displays "error.invoice.no_document"
+
+// ✅ CORRECT — Always translate backend messages
+const msg = t(error.message);
+<p>{msg !== error.message ? msg : error.message}</p>
+```
+
+```tsx
+// ❌ WRONG — No rehydration on startup
+const initialState = { user: null, token: localStorage.getItem('token') }
+
+// ✅ CORRECT — Rehydrate user from backend on startup
+// AuthRehydrator calls GET /profile if token exists, dispatches setCredentials
+// See App.tsx — AuthRehydrator wraps AppRoutes
+```
 
 ## 6. Git Commit Convention
 

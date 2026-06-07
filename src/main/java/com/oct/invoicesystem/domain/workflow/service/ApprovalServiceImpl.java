@@ -51,7 +51,6 @@ public class ApprovalServiceImpl implements ApprovalService {
             createOrUpdateStep(invoice, 1, currentUser, "Validation N1 - " + invoice.getDepartment().getCode(), null, null, ApprovalStepStatus.PENDING);
             invoiceStateMachineService.sendEvent(invoiceId, InvoiceEvent.ASSIGN_REVIEWER, null);
         } else if (invoice.getStatus() == InvoiceStatus.EN_VALIDATION_N1 && invoice.getDepartment().isRequiresN2()) {
-            // this handles if N2 assigns while in N1? No, N2 only assigns when EN_VALIDATION_N2
             throw new WorkflowException("Cannot assign N2 while still in N1 validation");
         } else if (invoice.getStatus() == InvoiceStatus.EN_VALIDATION_N2) {
             checkRole(currentUser, invoice.getDepartment().getN2Role());

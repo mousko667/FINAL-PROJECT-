@@ -17,6 +17,7 @@ import com.oct.invoicesystem.shared.response.PagedResponse;
 import com.oct.invoicesystem.shared.util.SecurityHelper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -45,6 +46,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/suppliers")
 @RequiredArgsConstructor
+@Slf4j
 public class SupplierController {
 
     private final SupplierService supplierService;
@@ -86,28 +88,30 @@ public class SupplierController {
 
     @PostMapping("/{id}/activate")
     @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
-    public ApiResponse<Void> activateSupplier(@PathVariable UUID id) {
+    public ApiResponse<Void> activateSupplier(@PathVariable UUID id, Authentication authentication) {
+        log.info("Supplier {} activated by {}", id, authentication != null ? authentication.getName() : "unknown");
         supplierService.activateSupplier(id);
         return ApiResponse.success(null, "supplier.activated.success");
     }
 
     @PatchMapping("/{id}/activate")
     @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
-    public ApiResponse<Void> activateSupplierPatch(@PathVariable UUID id) {
-        return activateSupplier(id);
+    public ApiResponse<Void> activateSupplierPatch(@PathVariable UUID id, Authentication authentication) {
+        return activateSupplier(id, authentication);
     }
 
     @PostMapping("/{id}/suspend")
     @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
-    public ApiResponse<Void> suspendSupplier(@PathVariable UUID id) {
+    public ApiResponse<Void> suspendSupplier(@PathVariable UUID id, Authentication authentication) {
+        log.info("Supplier {} suspended by {}", id, authentication != null ? authentication.getName() : "unknown");
         supplierService.suspendSupplier(id);
         return ApiResponse.success(null, "supplier.suspended.success");
     }
 
     @PatchMapping("/{id}/suspend")
     @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
-    public ApiResponse<Void> suspendSupplierPatch(@PathVariable UUID id) {
-        return suspendSupplier(id);
+    public ApiResponse<Void> suspendSupplierPatch(@PathVariable UUID id, Authentication authentication) {
+        return suspendSupplier(id, authentication);
     }
 
     @DeleteMapping("/{id}")

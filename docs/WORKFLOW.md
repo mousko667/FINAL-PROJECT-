@@ -7,14 +7,15 @@
 
 ## 1. Overview
 
-The "Bon à Payer" (BAP) is OCT's internal process for authorizing supplier invoice payments. It is a **multi-level, department-specific approval workflow** initiated by the accounting assistant when a supplier invoice is received by email.
+The "Bon à Payer" (BAP) is OCT's process for authorizing supplier invoice payments. It is a **multi-level, department-specific approval workflow**.
 
 **Key facts:**
-- Suppliers send invoices **by email** — they never log into the system
-- The **Assistant Comptable** is always the initiator
+- Suppliers submit invoices through the **supplier portal** (they log in with their own credentials)
+- Suppliers can also send invoices by email — in that case the **Assistant Comptable** manually enters them
+- The **Assistant Comptable** is always the workflow initiator (validates, routes, records payment)
 - Approval levels depend on the **department** the invoice belongs to
-- The **DAF** gives the final BAP authorization for all invoices
-- All notifications are **internal only** — no communication to suppliers
+- The **DAF (CFO)** gives the final BAP authorisation for **all departments** — this is distinct from the departmental Level 1/Level 2 approvals
+- Both **internal staff** and **suppliers** receive notifications at appropriate workflow stages
 
 ---
 
@@ -175,20 +176,32 @@ departments {
 
 ---
 
-## 7. Notifications Matrix (Internal Only)
+## 7. Notifications Matrix
+
+Notifications flow to both internal staff and suppliers at appropriate stages.
+
+### Internal Notifications
 
 | Event | Notified Users | Channel |
 |---|---|---|
-| Invoice submitted | N1 approvers of the department | In-app + Email |
-| N1 validation done (2-level) | N2 approvers of the department | In-app + Email |
-| N1 validation done (1-level) | DAF | In-app + Email |
+| Invoice submitted (by supplier portal or AA) | N1 approvers of the department | In-app + Email |
+| N1 validation done (2-level dept) | N2 approvers of the department | In-app + Email |
+| N1 validation done (1-level dept) | DAF | In-app + Email |
 | N2 validation done | DAF | In-app + Email |
 | BON_A_PAYER issued | Assistant Comptable | In-app + Email |
-| Invoice rejected | Assistant Comptable | In-app + Email |
+| Invoice rejected (at any stage) | Assistant Comptable | In-app + Email |
 | Deadline approaching (24h) | Assigned reviewer | Email only |
 | Invoice overdue | DAF + Admin | In-app + Email |
 
-> **Reminder:** No notifications are sent to suppliers at any point.
+### Supplier Notifications
+
+| Event | Notified Users | Channel |
+|---|---|---|
+| Invoice submission confirmed | Supplier | Email + In-app (supplier portal) |
+| Invoice rejected (validation, L1, L2, or DAF) | Supplier | Email + In-app |
+| Invoice approved (BON_A_PAYER issued) | Supplier | Email + In-app |
+| Payment processed (PAYE) | Supplier | Email + In-app |
+| Remittance advice available | Supplier | Email (with download link) |
 
 ---
 
@@ -210,7 +223,8 @@ departments {
 **Key rules:**
 - Supplier cannot log in until status is `ACTIVE`
 - Supplier bank details are AES-256 encrypted at rest
-- Only `ROLE_ADMIN` can transition from `PENDING_VERIFICATION → ACTIVE`
+- The **Accounting Assistant** (`ROLE_ASSISTANT_COMPTABLE`) manages the full supplier lifecycle: initiates onboarding, verifies documents, and activates the supplier account (`PENDING_VERIFICATION → ACTIVE`)
+- The Administrator (`ROLE_ADMIN`) may also activate/suspend suppliers
 - Suspension is soft — supplier data is never deleted
 
 ---
@@ -239,5 +253,6 @@ When a supplier submits their own invoice via the portal:
 **Business rules:**
 - `pre_auth_token` expires in 5 minutes
 - Full JWT not issued until OTP confirmed
-- Finance roles (DAF, N1, N2, ADMIN) must complete MFA setup
-  before first access to protected resources
+- The following roles MUST complete MFA setup before first access to protected resources:
+  `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF`, `ROLE_VALIDATEUR_N1_*`, `ROLE_VALIDATEUR_N2_*`, `ROLE_ADMIN`
+- `ROLE_SUPPLIER` is the **only role exempt from MFA**

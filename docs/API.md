@@ -138,7 +138,7 @@
 |---|---|---|---|
 | POST | `/invoices/{id}/payment` | ASSISTANT_COMPTABLE, ADMIN | Record payment (BON_A_PAYER only) |
 | GET | `/invoices/{id}/payment` | All except N1/N2 | Get payment details |
-| GET | `/payments` | DAF, AUDITEUR, ADMIN | List all payments (paginated) |
+| GET | `/payments` | DAF, ADMIN, ASSISTANT_COMPTABLE | List all payments (paginated) |
 
 ### PaymentRequest body
 ```json
@@ -173,12 +173,16 @@ Message format: { "id": "...", "title": "...", "message": "...", "type": "...", 
 
 ## Audit
 
+The audit log is split by access level (see `OCT_System_Briefing.md §8 Module 10`):
+- **Financial audit trail** (invoices, approvals, payments) → CFO (DAF) only
+- **System/security audit trail** (logins, role changes, integrations) → Administrator only
+
 | Method | Path | Roles | Description |
 |---|---|---|---|
-| GET | `/audit-logs` | AUDITEUR, ADMIN | Paginated audit log |
-| GET | `/audit-logs?userId={id}` | AUDITEUR, ADMIN | Filter by user |
-| GET | `/audit-logs?entityId={invoiceId}` | AUDITEUR, ADMIN | All actions on one invoice |
-| GET | `/audit-logs?action=APPROVE` | AUDITEUR, ADMIN | Filter by action type |
+| GET | `/audit-logs` | DAF, ADMIN | Paginated audit log (DAF sees financial events; ADMIN sees system/security events) |
+| GET | `/audit-logs?userId={id}` | DAF, ADMIN | Filter by user |
+| GET | `/audit-logs?entityId={invoiceId}` | DAF, ADMIN | All actions on one invoice |
+| GET | `/audit-logs?action=APPROVE` | DAF, ADMIN | Filter by action type |
 
 ---
 
@@ -186,10 +190,10 @@ Message format: { "id": "...", "title": "...", "message": "...", "type": "...", 
 
 | Method | Path | Roles | Description |
 |---|---|---|---|
-| GET | `/reports/kpi` | DAF, AUDITEUR, ADMIN | KPI dashboard data |
-| GET | `/reports/export?format=xlsx` | DAF, AUDITEUR, ADMIN | Export filtered invoices to Excel |
-| GET | `/reports/export?format=pdf` | DAF, AUDITEUR, ADMIN | Export compliance report PDF |
-| GET | `/invoices/{id}/export?format=pdf` | DAF, AUDITEUR, ADMIN | Export single invoice audit PDF |
+| GET | `/reports/kpi` | DAF, ADMIN, ASSISTANT_COMPTABLE | KPI dashboard data |
+| GET | `/reports/export?format=xlsx` | DAF, ADMIN, ASSISTANT_COMPTABLE | Export filtered invoices to Excel |
+| GET | `/reports/export?format=pdf` | DAF, ADMIN | Export compliance report PDF |
+| GET | `/invoices/{id}/export?format=pdf` | DAF, ADMIN | Export single invoice audit PDF |
 
 ### KPI Response shape
 ```json
@@ -243,17 +247,19 @@ Message format: { "id": "...", "title": "...", "message": "...", "type": "...", 
 
 ## Supplier Management
 
+The Accounting Assistant manages the full supplier lifecycle (onboarding, updates, activation, deactivation) per `OCT_System_Briefing.md §5.2`.
+
 | Method | Path | Roles | Description |
 |---|---|---|---|
 | GET | `/suppliers` | All authenticated | List suppliers (paginated, filterable by name, taxId, status) |
-| POST | `/suppliers` | ADMIN | Create supplier profile |
+| POST | `/suppliers` | ASSISTANT_COMPTABLE, ADMIN | Create supplier profile (AA manages supplier onboarding) |
 | GET | `/suppliers/{id}` | All authenticated | Get supplier detail |
-| PUT | `/suppliers/{id}` | ADMIN | Update supplier info |
-| PATCH | `/suppliers/{id}/activate` | ADMIN | Activate supplier (PENDING_VERIFICATION → ACTIVE) |
-| PATCH | `/suppliers/{id}/suspend` | ADMIN | Suspend supplier (ACTIVE → SUSPENDED) |
-| DELETE | `/suppliers/{id}` | ADMIN | Soft delete supplier |
-| POST | `/suppliers/{id}/documents` | ADMIN | Upload supplier document (tax certificate, contract) |
-| GET | `/suppliers/{id}/documents` | ADMIN, DAF, AUDITEUR | List supplier documents |
+| PUT | `/suppliers/{id}` | ASSISTANT_COMPTABLE, ADMIN | Update supplier info |
+| PATCH | `/suppliers/{id}/activate` | ASSISTANT_COMPTABLE, ADMIN | Activate supplier (PENDING_VERIFICATION → ACTIVE) |
+| PATCH | `/suppliers/{id}/suspend` | ASSISTANT_COMPTABLE, ADMIN | Suspend supplier (ACTIVE → SUSPENDED) |
+| DELETE | `/suppliers/{id}` | ASSISTANT_COMPTABLE, ADMIN | Soft delete supplier |
+| POST | `/suppliers/{id}/documents` | ASSISTANT_COMPTABLE, ADMIN | Upload supplier document (tax certificate, contract) |
+| GET | `/suppliers/{id}/documents` | ASSISTANT_COMPTABLE, ADMIN, DAF | List supplier documents |
 
 ---
 
@@ -310,7 +316,7 @@ Message format: { "id": "...", "title": "...", "message": "...", "type": "...", 
 
 | Method | Path | Roles | Description |
 |---|---|---|---|
-| GET | `/purchase-orders` | ADMIN, ASSISTANT_COMPTABLE, DAF, AUDITEUR | List POs (paginated) |
+| GET | `/purchase-orders` | ADMIN, ASSISTANT_COMPTABLE, DAF | List POs (paginated) |
 | POST | `/purchase-orders` | ADMIN, ASSISTANT_COMPTABLE | Create PO with line items |
 | GET | `/purchase-orders/{id}` | All authenticated | PO detail with line items |
 | PUT | `/purchase-orders/{id}` | ADMIN, ASSISTANT_COMPTABLE | Update PO (OPEN status only) |
@@ -341,7 +347,7 @@ Message format: { "id": "...", "title": "...", "message": "...", "type": "...", 
 | Method | Path | Roles | Description |
 |---|---|---|---|
 | GET | `/invoices/{id}/matching` | All authenticated | Get matching result for invoice |
-| POST | `/invoices/{id}/matching/override` | DAF, ADMIN | Override MISMATCH with mandatory reason |
+| POST | `/invoices/{id}/matching/override` | ASSISTANT_COMPTABLE, DAF, ADMIN | Override MISMATCH with mandatory written justification (recorded permanently in audit trail) |
 | GET | `/matching-config` | ADMIN | Get current tolerance configuration |
 | PUT | `/matching-config` | ADMIN | Update tolerance thresholds |
 
@@ -414,12 +420,12 @@ Message format: { "id": "...", "title": "...", "message": "...", "type": "...", 
 
 | Method | Path | Roles | Description |
 |---|---|---|---|
-| GET | `/payments/{id}/remittance` | ASSISTANT_COMPTABLE, DAF, AUDITEUR, ADMIN, ROLE_SUPPLIER (own) | Pre-signed URL for remittance advice PDF |
-| GET | `/reports/aging` | DAF, AUDITEUR, ADMIN | Aging analysis by overdue bucket |
-| GET | `/reports/cash-flow` | DAF, AUDITEUR, ADMIN | Cash flow projection (`?days=30`) |
-| GET | `/reports/supplier/{supplierId}/payments` | DAF, AUDITEUR, ADMIN | Full payment history per supplier |
-| GET | `/reports/supplier/{supplierId}/performance` | DAF, AUDITEUR, ADMIN | Invoice accuracy + rejection rate |
-| GET | `/reports/bottlenecks` | DAF, AUDITEUR, ADMIN | Average approval duration per step type and department |
+| GET | `/payments/{id}/remittance` | ASSISTANT_COMPTABLE, DAF, ADMIN, SUPPLIER (own only) | Pre-signed URL for remittance advice PDF |
+| GET | `/reports/aging` | DAF, ADMIN, ASSISTANT_COMPTABLE | Aging analysis by overdue bucket |
+| GET | `/reports/cash-flow` | DAF, ADMIN, ASSISTANT_COMPTABLE | Cash flow projection (`?days=30`) |
+| GET | `/reports/supplier/{supplierId}/payments` | DAF, ADMIN, ASSISTANT_COMPTABLE | Full payment history per supplier |
+| GET | `/reports/supplier/{supplierId}/performance` | DAF, ADMIN, ASSISTANT_COMPTABLE | Invoice accuracy + rejection rate |
+| GET | `/reports/bottlenecks` | DAF, ADMIN, ASSISTANT_COMPTABLE | Average approval duration per step type and department |
 
 ### Aging response shape
 ```json

@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -89,4 +90,24 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
 
     @Query("SELECT MIN(i.dueDate) FROM Invoice i WHERE i.deletedAt IS NULL AND i.supplier IS NOT NULL AND i.supplier.id = :supplierId AND i.status = 'BON_A_PAYER' AND NOT EXISTS (SELECT p FROM Payment p WHERE p.invoice = i AND p.deleted = false)")
     java.time.LocalDate findNextExpectedPaymentDateForSupplier(@Param("supplierId") UUID supplierId);
+
+    @Query("""
+            SELECT i FROM Invoice i
+            WHERE i.deletedAt IS NULL
+              AND i.status = com.oct.invoicesystem.domain.invoice.model.InvoiceStatus.ARCHIVE
+              AND (:keyword IS NULL OR
+                   LOWER(i.referenceNumber) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                   LOWER(i.supplierName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                   LOWER(i.description) LIKE LOWER(CONCAT('%', :keyword, '%')))
+              AND (:department IS NULL OR i.department.id = :department)
+              AND (:from IS NULL OR i.createdAt >= :from)
+              AND (:to IS NULL OR i.createdAt <= :to)
+            ORDER BY i.createdAt DESC
+            """)
+    Page<Invoice> searchArchived(
+            @Param("keyword") String keyword,
+            @Param("department") UUID department,
+            @Param("from") Instant from,
+            @Param("to") Instant to,
+            Pageable pageable);
 }

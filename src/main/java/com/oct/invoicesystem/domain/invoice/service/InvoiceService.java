@@ -242,6 +242,11 @@ public class InvoiceService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public Page<Invoice> searchArchived(String keyword, UUID departmentId, Instant from, Instant to, Pageable pageable) {
+        return invoiceRepository.searchArchived(keyword, departmentId, from, to, pageable);
+    }
+
     @Transactional
     public Invoice createSupplierInvoice(Invoice invoice, UUID actorId, UUID supplierId) {
         // Enforce supplier ID override for security

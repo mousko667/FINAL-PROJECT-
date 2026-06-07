@@ -17,12 +17,12 @@
 ## Critical Context (Always Keep in Mind)
 
 ### What makes this project unique
-1. **No supplier portal** — invoices arrive by email, entered manually by ASSISTANT_COMPTABLE
+1. **Supplier portal exists** — suppliers can self-register, log in, submit invoices, track status, and receive notifications via a dedicated portal. Invoices may also arrive by email and be entered manually by ASSISTANT_COMPTABLE.
 2. **BAP = Bon à Payer** — the core business process, not just a generic workflow
 3. **Department-driven approval** — the department on the invoice determines approval chain
 4. **Dual language** — French is the primary language for OCT users, English secondary
 5. **9 departments** — 6 single-level, 3 dual-level (INFO, INFRA, TECH)
-6. **DAF is always the final approver** regardless of department
+6. **DAF is always the final payment authorisation gate** — issues BON_A_PAYER for ALL departments after departmental approvals (L1/L2) are complete. Distinct from the CFO's role as L1 approver for Finance dept.
 
 ### Sensitive design decisions already made
 - `InvoiceStatus` enum uses French names (`BROUILLON`, `SOUMIS`, etc.) stored in DB as strings
@@ -49,7 +49,25 @@
 
 ## Known Issues / Blockers
 
-*(Append issues here as they are discovered)*
+### Implementation Gaps (from OCT_System_Briefing.md §4.3 — see TASKS.md Phase 10)
+
+1. **GAP 1 — OCR not implemented 🔴 Critical**
+   Apache Tika is present but only does MIME detection. Tess4J must be added.
+   Fix: Add Tess4J dependency, implement `OcrService`. See TASKS.md Phase 10-A.
+
+2. **GAP 2 — JWT uses HS256 instead of RS256 🟠 High**
+   JJWT 0.12.6 configured with symmetric shared secret. Must change to RSA-2048 asymmetric.
+   Fix: Update `JwtService` to use RS256. See TASKS.md Phase 10-B.
+
+3. **GAP 3 — GitHub Actions CI pipeline missing 🟡 Medium**
+   No `.github/workflows/ci.yml` exists.
+   Fix: Create CI pipeline. See TASKS.md Phase 10-C.
+
+4. **GAP 4 — TLS 1.3 not explicitly configured in Spring Boot 🟡 Medium**
+   TLS only at infrastructure level. Fix: Add `server.ssl` config in `application-prod.yml`. See TASKS.md Phase 10-D.
+
+5. **GAP 5 — OWASP ZAP security scan not implemented 🟡 Medium**
+   No automated security scan in CI. Fix: Add ZAP baseline scan to CI pipeline. See TASKS.md Phase 10-E.
 
 ---
 
@@ -438,12 +456,12 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 ## Critical Context (Always Keep in Mind)
 
 ### What makes this project unique
-1. **No supplier portal** — invoices arrive by email, entered manually by ASSISTANT_COMPTABLE
+1. **Supplier portal exists** — suppliers can self-register, log in, submit invoices, track status, and receive notifications via a dedicated portal. Invoices may also arrive by email and be entered manually by ASSISTANT_COMPTABLE.
 2. **BAP = Bon à Payer** — the core business process, not just a generic workflow
 3. **Department-driven approval** — the department on the invoice determines approval chain
 4. **Dual language** — French is the primary language for OCT users, English secondary
 5. **9 departments** — 6 single-level, 3 dual-level (INFO, INFRA, TECH)
-6. **DAF is always the final approver** regardless of department
+6. **DAF is always the final payment authorisation gate** — issues BON_A_PAYER for ALL departments after departmental approvals (L1/L2) are complete. Distinct from the CFO's role as L1 approver for Finance dept.
 
 ### Sensitive design decisions already made
 - `InvoiceStatus` enum uses French names (`BROUILLON`, `SOUMIS`, etc.) stored in DB as strings
@@ -470,7 +488,25 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 
 ## Known Issues / Blockers
 
-*(Append issues here as they are discovered)*
+### Implementation Gaps (from OCT_System_Briefing.md §4.3 — see TASKS.md Phase 10)
+
+1. **GAP 1 — OCR not implemented 🔴 Critical**
+   Apache Tika is present but only does MIME detection. Tess4J must be added.
+   Fix: Add Tess4J dependency, implement `OcrService`. See TASKS.md Phase 10-A.
+
+2. **GAP 2 — JWT uses HS256 instead of RS256 🟠 High**
+   JJWT 0.12.6 configured with symmetric shared secret. Must change to RSA-2048 asymmetric.
+   Fix: Update `JwtService` to use RS256. See TASKS.md Phase 10-B.
+
+3. **GAP 3 — GitHub Actions CI pipeline missing 🟡 Medium**
+   No `.github/workflows/ci.yml` exists.
+   Fix: Create CI pipeline. See TASKS.md Phase 10-C.
+
+4. **GAP 4 — TLS 1.3 not explicitly configured in Spring Boot 🟡 Medium**
+   TLS only at infrastructure level. Fix: Add `server.ssl` config in `application-prod.yml`. See TASKS.md Phase 10-D.
+
+5. **GAP 5 — OWASP ZAP security scan not implemented 🟡 Medium**
+   No automated security scan in CI. Fix: Add ZAP baseline scan to CI pipeline. See TASKS.md Phase 10-E.
 
 ---
 
@@ -896,7 +932,7 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 ## Session Checkpoint
 **Date:** 2026-04-17
 **Last completed task:** P9-70
-**Phase:** 9G � Dashboard & Reporting Enhancements (Module 2, 11)
+**Phase:** 9G � Dashboard & Reporting Enhancements (Module 2, 11)
 **Next task:** P9-71
 **Branch:** main
 **Last commit:** 6c8502e
@@ -907,7 +943,7 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 ## Session Checkpoint
 **Date:** 2026-04-17
 **Last completed task:** P9-70
-**Phase:** 9G � Dashboard & Reporting Enhancements (Module 2, 11)
+**Phase:** 9G � Dashboard & Reporting Enhancements (Module 2, 11)
 **Next task:** P9-71
 **Branch:** main
 **Last commit:** 6c8502e
@@ -918,7 +954,7 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 ## Session Checkpoint
 **Date:** 2026-04-18
 **Last completed task:** P9-71
-**Phase:** 9G � Dashboard & Reporting Enhancements (Module 2, 11)
+**Phase:** 9G � Dashboard & Reporting Enhancements (Module 2, 11)
 **Next task:** P9-72
 **Branch:** main
 **Last commit:** 9881987
@@ -929,7 +965,7 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 ## Session Checkpoint
 **Date:** 2026-04-18
 **Last completed task:** P9-72
-**Phase:** 9G � Dashboard & Reporting Enhancements (Module 2, 11)
+**Phase:** 9G � Dashboard & Reporting Enhancements (Module 2, 11)
 **Next task:** P9-73
 **Branch:** main
 **Last commit:** 5af05bd
@@ -948,3 +984,27 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 - **Tests**: All 8 new test methods pass (bottleneck endpoint with ADMIN/DAF/AUDITEUR access, supplier performance with same roles, extended KPI fields validation)
 - **Status**: ? Complete, 0 test failures, commit d476b42 created
 - **Next**: Phase 9G complete - all dashboard & reporting enhancements implemented
+
+## Session Checkpoint: Test Stabilization
+- **Task**: System stabilization
+- **Changes**: Fixed constraint violations by passing UserID correctly to the statemachine in InvoiceController, updated ThreeWayMatchingService algorithm to correctly calculate quantity amount variance, updated override to avoid Unique Constraint violations, and seeded proper test configs.
+- **Tests**: All 202 tests pass successfully with 0 failures.
+- **Status**: ? Complete, commit b7513d9 created.
+- **Next**: Await further instructions.
+
+## Session Checkpoint: Frontend Phase 9A Complete
+- **Tasks**: FE9A-01 through FE9A-08
+- **Phase**: Frontend 9A - Supplier Management UI
+- **Branch**: main
+- **Last commit**: 3611234 (pushed)
+- **Changes**:
+  - FE9A-01: Created /frontend/src/api/suppliers.ts with 10 React Query hooks (useSuppliers, useSupplier, useCreateSupplier, useUpdateSupplier, useActivateSupplier, useSuspendSupplier, useDeleteSupplier, useSupplierDocuments, useUploadSupplierDocument, useSupplierPerformance)
+  - FE9A-02: Created SupplierStatusBadge component (PENDING_VERIFICATION=yellow, ACTIVE=green, SUSPENDED=red)
+  - FE9A-03: Created SuppliersPage (/admin/suppliers) with search, status filter, pagination, role-gated action buttons
+  - FE9A-04: Created SupplierDetailPage (/admin/suppliers/:id) with Details/Documents/Performance tabs
+  - FE9A-05: Created SupplierFormPage with React Hook Form + Zod for create/edit (bank_details write-only)
+  - FE9A-06: Integrated document upload (type dropdown + file picker) into SupplierDetailPage DOCUMENTS tab
+  - FE9A-07: Added supplier i18n keys to fr.json and en.json (status, fields, actions, tabs, documents, performance)
+  - FE9A-08: Wired /admin/suppliers routes in AppRoutes.tsx; added Suppliers link to Sidebar (ROLE_ADMIN only)
+- **Build**: 0 errors, all chunks produced
+- **Next**: Await next phase instructions

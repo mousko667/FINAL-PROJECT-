@@ -46,16 +46,28 @@ public class AuditLoggingFilter extends OncePerRequestFilter {
                     String ipAddress = resolveClientIp(request);
                     String userAgent = request.getHeader("User-Agent");
 
-                    String action = method + " " + uri + " -> " + status;
-                    String details = "{\"duration_ms\":" + duration + "}";
+                    String action = classifyAction(method, uri);
+                    String details = "{\"duration_ms\":" + duration + ", \"method\":\"" + method + "\", \"status\":" + status + "}";
 
-                    auditService.logAction(userId, "HTTP_REQUEST", uri, action, null, details, ipAddress, userAgent);
+                    auditService.logAction(userId, action, uri, method + " " + uri + " -> " + status, null, details, ipAddress, userAgent);
                 } catch (Exception ex) {
                     // Audit persistence failure must never affect the response
                     log.warn("Failed to persist HTTP audit log entry for {} {}: {}", method, uri, ex.getMessage());
                 }
             }
         }
+    }
+
+    private String classifyAction(String method, String uri) {
+        if (uri.contains("/invoices") || uri.contains("/payments")
+                || uri.contains("/approvals") || uri.contains("/workflow")) {
+            return "FINANCIAL_ACTION";
+        }
+        if (uri.contains("/auth") || uri.contains("/users")
+                || uri.contains("/integrations") || uri.contains("/admin")) {
+            return "SYSTEM_ACTION";
+        }
+        return "HTTP_REQUEST";
     }
 
     private UUID resolveUserId(HttpServletRequest request) {

@@ -131,11 +131,14 @@ F) State machine error    → Re-read docs/WORKFLOW.md §3 (State Machine)
 
 Priority order for resolving uncertainty:
 
-1. `docs/WORKFLOW.md` — authoritative business rules
-2. `docs/PRD.md` — what the system should do
-3. `docs/MEMORY.md` — previously resolved decisions
-4. The OCT workflow Excel file (`Workflow_validation_BAP.xlsx`) — original source
-5. Ask the developer (if all else unclear)
+1. `docs/OCT_System_Briefing.md` — the single source of truth for the entire system
+2. `docs/WORKFLOW.md` — authoritative business rules for the BAP workflow specifically
+3. `docs/PRD.md` — product requirements (aligned with the Briefing as of last update)
+4. `docs/MEMORY.md` — previously resolved decisions
+5. The OCT workflow Excel file (`Workflow_validation_BAP.xlsx`) — original source
+6. Ask the developer (if all else unclear)
+
+**Never guess on business rules.** An incorrect workflow implementation is worse than a missing feature.
 
 **Never guess on business rules.** An incorrect workflow implementation is worse than a missing feature.
 

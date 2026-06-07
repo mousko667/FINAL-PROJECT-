@@ -20,24 +20,26 @@ Owendo Container Terminal (OCT) processes supplier invoices manually across 9 de
 
 ## 2. Solution
 
-A **web-based internal system** that digitizes the entire invoice lifecycle from the moment the accounting assistant receives a supplier email to the final archiving after payment.
+A **web-based system** that digitizes the entire invoice lifecycle — from supplier invoice submission through validation, multi-level departmental approval, CFO payment authorisation, payment recording, and final archiving.
 
-Suppliers are **external** and interact with OCT by email only. They have **no access to the system**.
+Suppliers are **external companies and individuals** who interact with OCT via a dedicated supplier portal. They can register, log in, submit invoices, track status, and receive notifications. Internal staff (AA, approvers, CFO, Admin) manage the full BAP workflow.
 
 ---
 
 ## 3. Users & Roles
 
-| Role (FR) | Role (EN) | Description |
-|---|---|---|
-| Assistant Comptable | Accounting Assistant | Receives supplier emails, enters invoices into the system, initiates the BAP workflow |
-| Validateur N1 | Level 1 Approver | Department head — first approval gate |
-| Validateur N2 | Level 2 Approver | Director — second approval gate (only for 3 departments) |
-| DAF / Directeur Financier | Finance Director | Gives the final "Bon à Payer" authorization |
-| Administrateur | System Administrator | Manages users, roles, departments, system config |
-| Auditeur | Auditor | Read-only access to all invoices, audit logs, and reports |
+There are exactly **six roles** in this system. No more, no less.
 
-> **Note:** There is no "Supplier" role. Suppliers never log into the system.
+| Role (FR) | Role (EN) | Spring Role Code | Description |
+|---|---|---|---|
+| Fournisseur | Supplier | `ROLE_SUPPLIER` | External company/individual. Submits invoices via the supplier portal, tracks status, receives notifications. Account activated by the Accounting Assistant. MFA not required. |
+| Assistant Comptable | Accounting Assistant | `ROLE_ASSISTANT_COMPTABLE` | Receives and validates invoices, initiates the BAP workflow, manages suppliers, records payments. MFA mandatory. |
+| Validateur N1 | Level 1 Approver | `ROLE_VALIDATEUR_N1_{DEPT}` | Department head — first approval gate for their department. MFA mandatory. |
+| Validateur N2 | Level 2 Approver | `ROLE_VALIDATEUR_N2_{DEPT}` | Director — second approval gate (only for IT, Infrastructure, Workshop). MFA mandatory. |
+| DAF (Directeur Administratif et Financier) | CFO (Chief Financial Officer) | `ROLE_DAF` | Level 1 approver for Finance department invoices AND final payment authorisation (Bon à Payer) for ALL departments. Access to financial audit trail. MFA mandatory. |
+| Administrateur | Administrator | `ROLE_ADMIN` | Manages users, roles, departments, system configuration, and system/security audit trail. Zero access to financial data. MFA mandatory. |
+
+> **Note on staff accounts:** Internal staff accounts (all roles except Supplier) are created by the Administrator. There is no self-registration for staff. Suppliers may self-register and are then activated by the Accounting Assistant.
 
 ---
 
@@ -68,8 +70,10 @@ Suppliers are **external** and interact with OCT by email only. They have **no a
 - SHA-256 integrity check on all documents
 
 ### Module 5 — Audit & Conformité (Audit & Compliance)
-- Immutable audit log of every action (who, what, when, from which IP)
+- Immutable audit log of every action (who, what, when, from which IP) — append-only, no UPDATE or DELETE ever permitted
 - Complete status history per invoice
+- **Financial audit trail** (invoice submissions, validation results, approval/rejection decisions, payment changes) → accessible to **CFO (DAF) only**
+- **System/security audit trail** (user logins, role changes, integration events, security incidents) → accessible to **Administrator only**
 - Compliance reports exportable as PDF
 
 ### Module 6 — Sécurité & Contrôle d'Accès (Security & Access Control)
@@ -87,33 +91,39 @@ Suppliers are **external** and interact with OCT by email only. They have **no a
 
 ## 5. Invoice Status Lifecycle
 
-| Status (FR) | Status (EN) | Description |
+The database stores statuses as **French enum values** (DB column values). English labels are for display only.
+
+| French (DB value) | English (Display) | Description |
 |---|---|---|
-| BROUILLON | DRAFT | Entered but not yet submitted |
-| SOUMIS | SUBMITTED | Submitted for review, awaiting assignment |
-| EN_VALIDATION_N1 | UNDER_REVIEW_L1 | Under review by Level 1 approver |
-| EN_VALIDATION_N2 | UNDER_REVIEW_L2 | Under review by Level 2 approver |
-| VALIDE | VALIDATED | All approvals collected |
-| BON_A_PAYER | APPROVED | Finance director authorized payment |
-| PAYE | PAID | Payment recorded |
-| ARCHIVE | ARCHIVED | Final state — stored for compliance |
-| REJETE | REJECTED | Rejected at any stage — reason mandatory |
+| `BROUILLON` | Draft | Created but not yet submitted |
+| `SOUMIS` | Submitted | Submitted — pending AA validation and three-way matching |
+| `EN_VALIDATION_N1` | Under Review — L1 | Assigned to Level 1 approver |
+| `EN_VALIDATION_N2` | Under Review — L2 | Assigned to Level 2 approver (IT/Infrastructure/Workshop only) |
+| `VALIDE` | Validated | All departmental approvals obtained |
+| `BON_A_PAYER` | Authorised to Pay | CFO/DAF has issued final payment authorisation (applies to all departments) |
+| `PAYE` | Paid | Payment recorded by Accounting Assistant |
+| `ARCHIVE` | Archived | Final state — stored for compliance (automatic) |
+| `REJETE` | Rejected | Rejected at any stage — reason mandatory — supplier may resubmit |
+
+**Rejection points:** Validation (AA), Level 1 approval, Level 2 approval (IT/Infra/Workshop only), and CFO Bon à Payer. All four trigger supplier notification and allow resubmission.
 
 ---
 
 ## 6. Department → Approval Mapping
 
-| Department | Code | Approver N1 | Approver N2 |
-|---|---|---|---|
-| Direction des Ressources Humaines | DRH | DRH | — |
-| Direction Générale | DG | DG | — |
-| Finance | FIN | DAF | — |
-| Informatique | INFO | RSI | DSI |
-| Terminal | TERM | DEX | — |
-| Communication & RSE | COM | Resp. Com | — |
-| QHSSE | QHSSE | Resp. QHSSE | — |
-| Infrastructure | INFRA | Resp. INFRA | Directeur INFRA |
-| Atelier / Direction Technique | TECH | Resp. Atelier | Directeur Technique |
+The Accounting Assistant (Assistant comptable) is the **initiator** for all departments. The DAF (CFO) issues the final **Bon à Payer** for all departments after departmental approvals are complete.
+
+| Department (EN) | Department (FR) | Code | Level 1 Approver | Level 2 Approver |
+|---|---|---|---|---|
+| Human Resources | Direction des Ressources Humaines | `DRH` | HR Director (DRH) | — |
+| General Management | Direction Générale | `DG` | General Manager (DG) | — |
+| Finance | Finance | `FIN` | CFO (DAF) | — |
+| Information Technology | Informatique | `INFO` | IT Manager (RSI) | CIO (DSI) |
+| Terminal Operations | Terminal | `TERM` | Terminal Manager (DEX) | — |
+| Communication & CSR | Communication & RSE | `COM` | Com. Manager (Resp. Com) | — |
+| QHSSE | QHSSE | `QHSSE` | QHSSE Manager (Resp. QHSSE) | — |
+| Infrastructure | Direction des Infrastructures | `INFRA` | Infra. Manager (Resp. INFRA) | Infra. Director (Directeur INFRA) |
+| Workshop & Technical | Direction Technique | `TECH` | Workshop Manager (Resp. Atelier) | Technical Director (Directeur Technique) |
 
 ---
 
@@ -134,9 +144,11 @@ Suppliers are **external** and interact with OCT by email only. They have **no a
 
 ## 8. Out of Scope
 
-- Supplier portal or supplier login
-- Notifications to suppliers
-- ERP or accounting software integration (future phase)
-- Mobile application (future phase)
+- Replacing or migrating OCT's existing ERP system
+- Initiating or executing banking transactions (payment tracking only — the system does NOT initiate payments)
+- Bulk migration of historical paper-based invoice records
+- Native mobile applications (system is mobile-responsive web only)
 - Electronic signature (future phase)
-- Automatic bank transfer initiation
+- Live integration testing with production banking or ERP systems during the project period
+- Payroll or HR financial processes (supplier invoices only)
+- AI or ML components beyond OCR-assisted data extraction

@@ -31,17 +31,15 @@ export default function ArchivePage() {
     queryKey: ['archive', search, deptFilter, fromDate, toDate, page],
     queryFn: async () => {
       const params: Record<string, string | number> = {
-        status: 'ARCHIVE',
         page,
         size: 20,
-        sort: 'createdAt,desc',
       }
-      if (search) params.search = search
+      if (search) params.keyword = search
       if (deptFilter) params.department = deptFilter
-      if (fromDate) params.fromDate = fromDate
-      if (toDate) params.toDate = toDate
+      if (fromDate) params.from = fromDate + 'T00:00:00Z'
+      if (toDate) params.to = toDate + 'T23:59:59Z'
       const { data } = await apiClient.get<{ data: { content: ArchivedInvoice[]; totalElements: number; totalPages: number } }>(
-        '/invoices', { params }
+        '/invoices/archive', { params }
       )
       return data.data
     },

@@ -4,6 +4,9 @@ import com.oct.invoicesystem.domain.audit.dto.AuditLogDTO;
 import com.oct.invoicesystem.domain.audit.service.AuditService;
 import com.oct.invoicesystem.shared.response.ApiResponse;
 import com.oct.invoicesystem.shared.response.PagedResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -28,6 +31,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/audit-logs")
 @RequiredArgsConstructor
+@Tag(name = "Audit Logs", description = "Journal d'audit système (Admin) et financier (DAF)")
+@SecurityRequirement(name = "bearerAuth")
 public class AuditController {
 
     private final AuditService auditService;
@@ -51,6 +56,7 @@ public class AuditController {
      */
     @GetMapping("/system")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Journal système", description = "Événements de sécurité et d'administration (ADMIN uniquement)")
     public ApiResponse<PagedResponse<AuditLogDTO>> getSystemLogs(
             @RequestParam(required = false) UUID userId,
             @RequestParam(required = false) String entityType,
@@ -70,6 +76,7 @@ public class AuditController {
      */
     @GetMapping("/financial")
     @PreAuthorize("hasRole('DAF')")
+    @Operation(summary = "Journal financier", description = "Événements de facturation et paiement (DAF uniquement)")
     public ApiResponse<PagedResponse<AuditLogDTO>> getFinancialLogs(
             @RequestParam(required = false) UUID userId,
             @RequestParam(required = false) String entityType,
@@ -90,6 +97,7 @@ public class AuditController {
      */
     @GetMapping
     @PreAuthorize("hasRole('ADMIN') or hasRole('DAF')")
+    @Operation(summary = "Recherche combinée", description = "Recherche dans les logs autorisés pour le rôle courant")
     public ApiResponse<PagedResponse<AuditLogDTO>> searchLogs(
             @RequestParam(required = false) UUID userId,
             @RequestParam(required = false) String entityType,

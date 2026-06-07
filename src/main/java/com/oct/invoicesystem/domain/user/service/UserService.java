@@ -10,6 +10,7 @@ import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.domain.user.model.UserRole;
 import com.oct.invoicesystem.domain.user.repository.RoleRepository;
 import com.oct.invoicesystem.domain.user.repository.UserRepository;
+import com.oct.invoicesystem.domain.audit.service.AuditService;
 import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 import com.oct.invoicesystem.shared.exception.ValidationException;
 import com.oct.invoicesystem.shared.response.PagedResponse;
@@ -36,6 +37,7 @@ public class UserService {
     private final RoleRepository roleRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final AuditService auditService;
 
     @Transactional(readOnly = true)
     public PagedResponse<UserDTO> getUsers(int page, int size, String sort) {
@@ -179,7 +181,9 @@ public class UserService {
         if (firstName != null) user.setFirstName(firstName);
         if (lastName != null) user.setLastName(lastName);
         if (preferredLang != null) user.setPreferredLang(preferredLang);
-        return userRepository.save(user);
+        User saved = userRepository.save(user);
+        auditService.logAction(userId, "USER", userId.toString(), "PROFILE_UPDATE", null, null, null, null);
+        return saved;
     }
 
     @Transactional

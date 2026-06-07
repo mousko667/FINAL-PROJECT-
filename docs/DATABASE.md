@@ -17,6 +17,15 @@ V9__create_notifications.sql
 V10__create_payments.sql
 V11__create_audit_logs.sql
 V12__add_indexes.sql
+...
+V30__remove_webhook_secret_encrypted.sql
+V31__fix_finance_approver_and_remove_auditeur.sql
+V32__seed_test_users_all_roles.sql
+V33__remove_phantom_roles.sql
+V34__fix_users_is_active.sql
+V35__encrypt_invoice_bank_details.sql
+V39__create_active_sessions.sql
+V40__create_approval_delegations.sql
 ```
 
 ---
@@ -411,3 +420,51 @@ matching_status     VARCHAR(20)                          -- MATCHED|PARTIAL|MISM
 8. `supplier.bank_details` — always encrypted via `@Convert(EncryptionAttributeConverter)`
 9. `users.mfa_secret` — always encrypted; never returned in any DTO
 10. `invoices.matching_status` — set by `ThreeWayMatchingService`, never by controller directly
+
+---
+
+## New Tables (T6 — Sessions & Delegations)
+
+### active_sessions (V39)
+```sql
+id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
+user_id         UUID NOT NULL REFERENCES users(id)
+refresh_token   VARCHAR(500) NOT NULL UNIQUE
+ip_address      VARCHAR(50)
+user_agent      TEXT
+created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+expires_at      TIMESTAMPTZ NOT NULL
+revoked         BOOLEAN NOT NULL DEFAULT FALSE
+revoked_at      TIMESTAMPTZ
+
+-- Indexes
+CREATE INDEX idx_active_sessions_user    ON active_sessions(user_id) WHERE revoked = FALSE;
+CREATE INDEX idx_active_sessions_expires ON active_sessions(expires_at) WHERE revoked = FALSE;
+```
+
+### approval_delegations (V40)
+```sql
+id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
+delegator_id    UUID NOT NULL REFERENCES users(id)
+delegatee_id    UUID NOT NULL REFERENCES users(id)
+department_code VARCHAR(20) NOT NULL
+from_date       DATE NOT NULL
+to_date         DATE NOT NULL
+reason          TEXT
+created_by      UUID NOT NULL REFERENCES users(id)
+created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+revoked         BOOLEAN NOT NULL DEFAULT FALSE
+revoked_at      TIMESTAMPTZ
+CONSTRAINT chk_delegation_dates CHECK (to_date >= from_date)
+CONSTRAINT chk_no_self_delegation CHECK (delegator_id <> delegatee_id)
+
+-- Indexes
+CREATE INDEX idx_delegations_delegatee ON approval_delegations(delegatee_id)
+    WHERE revoked = FALSE AND to_date >= CURRENT_DATE;
+CREATE INDEX idx_delegations_dept ON approval_delegations(department_code)
+    WHERE revoked = FALSE AND to_date >= CURRENT_DATE;
+```
+
+## Constraints & Rules (T6 additions)
+11. `active_sessions` — `revoked` must be set to TRUE on logout/token rotation; never delete rows
+12. `approval_delegations` — `delegator_id <> delegatee_id` enforced by DB constraint; `to_date >= from_date` enforced by DB constraint
