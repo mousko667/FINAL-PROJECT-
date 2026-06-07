@@ -12,6 +12,7 @@ import com.oct.invoicesystem.domain.user.repository.UserRepository;
 import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 import com.oct.invoicesystem.shared.exception.ValidationException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -19,12 +20,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -115,11 +118,33 @@ class UserServiceTest {
         UUID id = user.getId();
         when(userRepository.findById(id)).thenReturn(Optional.of(user));
         when(userRepository.save(user)).thenReturn(user);
-        
+
         userService.activateUser(id, false);
-        
+
         assertFalse(user.isActive());
         assertNotNull(user.getDeletedAt());
         verify(userRepository).save(user);
+    }
+
+    @Test
+    @DisplayName("isAccountNonLocked: retourne false si lockedUntil est dans le futur")
+    void isAccountNonLocked_lockedUntilInFuture_returnsFalse() {
+        User user = User.builder()
+                .username("testuser")
+                .active(true)
+                .lockedUntil(Instant.now().plusSeconds(600))
+                .build();
+        assertThat(user.isAccountNonLocked()).isFalse();
+    }
+
+    @Test
+    @DisplayName("isAccountNonLocked: retourne true si lockedUntil est dans le passé")
+    void isAccountNonLocked_lockedUntilInPast_returnsTrue() {
+        User user = User.builder()
+                .username("testuser")
+                .active(true)
+                .lockedUntil(Instant.now().minusSeconds(600))
+                .build();
+        assertThat(user.isAccountNonLocked()).isTrue();
     }
 }

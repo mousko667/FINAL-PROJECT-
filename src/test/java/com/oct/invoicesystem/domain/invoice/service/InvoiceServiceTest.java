@@ -22,6 +22,9 @@ import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.junit.jupiter.api.DisplayName;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -148,5 +151,15 @@ class InvoiceServiceTest {
 
         assertThrows(ValidationException.class, () -> invoiceService.createInvoice(invoice, actorId));
         verify(invoiceRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("supplierBankDetails: le champ doit être annoté @Convert pour le chiffrement AES-256")
+    void supplierBankDetails_hasEncryptionConverter() throws Exception {
+        java.lang.reflect.Field field = Invoice.class.getDeclaredField("supplierBankDetails");
+        jakarta.persistence.Convert convertAnnotation = field.getAnnotation(jakarta.persistence.Convert.class);
+        assertThat(convertAnnotation).isNotNull();
+        assertThat(convertAnnotation.converter())
+                .isEqualTo(com.oct.invoicesystem.shared.util.EncryptionAttributeConverter.class);
     }
 }

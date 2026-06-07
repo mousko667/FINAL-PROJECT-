@@ -3,8 +3,10 @@ package com.oct.invoicesystem.domain.invoice.model;
 import com.oct.invoicesystem.domain.department.model.Department;
 import com.oct.invoicesystem.domain.supplier.model.Supplier;
 import com.oct.invoicesystem.domain.user.model.User;
+import com.oct.invoicesystem.shared.util.EncryptionAttributeConverter;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.FetchType;
@@ -74,7 +76,8 @@ public class Invoice {
     @Column(name = "supplier_tax_id", length = 100)
     private String supplierTaxId;
 
-    @Column(name = "supplier_bank_details")
+    @Convert(converter = EncryptionAttributeConverter.class)
+    @Column(name = "supplier_bank_details", columnDefinition = "TEXT")
     private String supplierBankDetails;
 
     @Column(nullable = false, precision = 15, scale = 2)

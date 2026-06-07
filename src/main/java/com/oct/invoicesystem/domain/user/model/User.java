@@ -29,6 +29,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashSet;
@@ -68,9 +69,18 @@ public class User implements UserDetails {
     @Column(name = "preferred_lang", length = 2, columnDefinition = "varchar(2) default 'fr'")
     private String preferredLang;
 
+    @Column(name = "employee_id", length = 100)
+    private String employeeId;
+
+    @Column(name = "department_id")
+    private UUID departmentId;
+
+    @Column(name = "approval_limit", precision = 15, scale = 2)
+    private BigDecimal approvalLimit;
+
     @Column(name = "is_active", nullable = false)
     @Builder.Default
-    private boolean isActive = true;
+    private boolean active = true;
 
     @CreatedDate
     @Column(name = "created_at", updatable = false, nullable = false)
@@ -116,6 +126,12 @@ public class User implements UserDetails {
     @Column(name = "email_verification_token_expiry")
     private Instant emailVerificationTokenExpiry;
 
+    @Column(name = "password_reset_token")
+    private String passwordResetToken;
+
+    @Column(name = "password_reset_token_expiry")
+    private Instant passwordResetTokenExpiry;
+
     @PrePersist
     public void prePersist() {
         if (preferredLang == null) {
@@ -149,7 +165,8 @@ public class User implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return isActive;
+        if (!active) return false;
+        return lockedUntil == null || Instant.now().isAfter(lockedUntil);
     }
 
     @Override
@@ -159,6 +176,6 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return isActive && deletedAt == null;
+        return active && deletedAt == null;
     }
 }
