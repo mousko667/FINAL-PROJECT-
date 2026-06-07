@@ -197,6 +197,7 @@ public class InvoiceService {
         return historyRepository.findHistoryDTOsByInvoiceId(invoiceId);
     }
 
+    @Transactional(readOnly = true)
     public void validateDocumentPresent(UUID invoiceId) {
         if (invoiceDocumentRepository.findByInvoiceId(invoiceId).isEmpty()) {
             throw new ValidationException("error.invoice.no_document");
