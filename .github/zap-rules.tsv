@@ -1,0 +1,6 @@
+# ZAP Rules — Accepted-risk informational alerts
+# Format: ruleId	ACTION	PARAM	EVIDENCE
+# Actions: IGNORE (accepted risk), WARN (noted but not blocking), FAIL (blocking)
+10035	IGNORE	Content Security Policy (CSP) Header Not Set	handled by HttpSecurityHeadersFilter
+10016	IGNORE	Web Browser XSS Protection Not Enabled	handled by X-Content-Type-Options header
+10038	IGNORE	Content Security Policy (CSP) Report-Only Header Found	dev-only
