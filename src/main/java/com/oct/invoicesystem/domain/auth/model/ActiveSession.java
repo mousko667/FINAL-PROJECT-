@@ -23,7 +23,7 @@ public class ActiveSession {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "refresh_token", nullable = false, unique = true, length = 500)
+    @Column(name = "refresh_token", nullable = false, unique = true, length = 1024)
     private String refreshToken;
 
     @Column(name = "ip_address", length = 50)
