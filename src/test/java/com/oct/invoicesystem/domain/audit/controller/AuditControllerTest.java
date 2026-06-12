@@ -30,7 +30,7 @@ class AuditControllerTest {
     void searchLogs_WithAdmin_ReturnsSuccess() throws Exception {
         when(auditService.searchLogs(any(), any(), any(), any(), any())).thenReturn(Page.empty());
 
-        mockMvc.perform(get("/api/audit-logs"))
+        mockMvc.perform(get("/api/v1/audit-logs"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }
@@ -40,7 +40,7 @@ class AuditControllerTest {
     void searchLogs_WithDaf_ReturnsSuccess() throws Exception {
         when(auditService.searchLogs(any(), any(), any(), any(), any())).thenReturn(Page.empty());
 
-        mockMvc.perform(get("/api/audit-logs"))
+        mockMvc.perform(get("/api/v1/audit-logs"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }
@@ -48,7 +48,7 @@ class AuditControllerTest {
     @Test
     @WithMockUser(roles = "USER")
     void searchLogs_WithUser_ReturnsForbidden() throws Exception {
-        mockMvc.perform(get("/api/audit-logs"))
+        mockMvc.perform(get("/api/v1/audit-logs"))
                 .andExpect(status().isForbidden());
     }
 }

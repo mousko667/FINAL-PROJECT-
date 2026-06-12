@@ -260,6 +260,20 @@
 
 ---
 
+## PROBLÈMES RÉSOLUS — AUDIT 2026-06-11/12 (Correction Cycle, Phase 11)
+
+### [PROB-021] `/audit-logs/system` et `/audit-logs/financial` toujours vides — allow-lists d'actions ne correspondaient à aucune valeur réellement écrite
+- **Catégorie :** Backend
+- **Sévérité :** 🔴 Critique (REQ-17)
+- **Découvert :** 2026-06-12 — Audit complet (Phase 6, Module 10)
+- **Symptôme :** `GET /api/v1/audit-logs/system` (ADMIN) et `GET /api/v1/audit-logs/financial` (DAF) renvoient toujours 0 résultat, quel que soit le volume réel de la table `audit_logs`.
+- **Cause racine :** Double désalignement. (1) `AuditController.SYSTEM_ACTIONS`/`FINANCIAL_ACTIONS` filtrent sur la colonne `action` avec des valeurs métier (`LOGIN`, `INVOICE_CREATE`, `APPROVE`...), mais (2) `AuditLoggingFilter` (seul écrivain pour le trafic HTTP normal) écrivait `"FINANCIAL_ACTION"`/`"SYSTEM_ACTION"`/`"HTTP_REQUEST"` dans la colonne **`entityType`** (pas `action`), et une chaîne libre `"METHOD URI -> STATUS"` (ex. `"POST /api/v1/invoices -> 201"`) dans `action`. Aucune valeur écrite par le filtre ne correspondait à aucune entrée des deux listes — les deux endpoints étaient structurellement morts pour tout le trafic HTTP. Cela explique aussi pourquoi PROB-005 (2026-06-06) avait dû contourner le problème en pointant les pages frontend vers `/audit-logs` (sans filtre) plutôt que de corriger le filtre lui-même — **ce contournement reste en place côté frontend** (les deux pages utilisent toujours `/audit-logs`), mais les endpoints filtrés sont maintenant fonctionnels pour un usage futur respectant le scoping par rôle (`/system` = ADMIN uniquement, `/financial` = DAF uniquement) — contrairement à `/audit-logs` qui renvoie les mêmes données aux deux rôles.
+- **Solution appliquée :** `AuditLoggingFilter.classifyAction()` renvoie maintenant `"HTTP_REQUEST_FINANCIAL"` / `"HTTP_REQUEST_SYSTEM"` / `"HTTP_REQUEST"` dans le paramètre `action` (nouvelle méthode séparée de `classifyEntityType()` qui conserve `"FINANCIAL_ACTION"`/`"SYSTEM_ACTION"`/`"HTTP_REQUEST"` dans `entityType`). `AuditController.SYSTEM_ACTIONS`/`FINANCIAL_ACTIONS` incluent désormais ces deux nouvelles valeurs (+ `"PROFILE_UPDATE"`, déjà émis par `UserService.java:185` mais absent de `SYSTEM_ACTIONS`).
+- **Règle préventive :** Quand un filtre HTTP générique et un contrôleur de recherche partagent un "vocabulaire" d'actions via une colonne DB, ce vocabulaire DOIT être vérifié par un test qui exerce les DEUX côtés (écriture par le filtre + lecture filtrée par le contrôleur/service), pas seulement chacun isolément. Un test qui mocke `AuditService` dans `AuditLoggingFilterTest` ET un test qui exerce `searchLogsWithActionFilter` avec les valeurs réellement produites par le filtre sont tous deux nécessaires.
+- **Fichiers modifiés :** `AuditLoggingFilter.java`, `AuditController.java`, `AuditLoggingFilterTest.java` (créé), `AuditServiceTest.java`, `AuditControllerTest.java` (chemin `/api/audit-logs` → `/api/v1/audit-logs`, 3 tests préexistants en échec depuis BASELINE.md, corrigés au passage)
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :

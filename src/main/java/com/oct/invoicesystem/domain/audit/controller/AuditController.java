@@ -39,13 +39,13 @@ public class AuditController {
 
     // System/security audit trail — Administrator only
     private static final List<String> SYSTEM_ACTIONS = List.of(
-            "HTTP_REQUEST", "LOGIN", "LOGOUT", "ROLE_CHANGE", "USER_CREATE",
-            "USER_UPDATE", "USER_DELETE", "INTEGRATION", "SECURITY", "CONFIG_CHANGE"
+            "HTTP_REQUEST", "HTTP_REQUEST_SYSTEM", "LOGIN", "LOGOUT", "ROLE_CHANGE", "USER_CREATE",
+            "USER_UPDATE", "USER_DELETE", "PROFILE_UPDATE", "INTEGRATION", "SECURITY", "CONFIG_CHANGE"
     );
 
     // Financial audit trail — CFO (DAF) only
     private static final List<String> FINANCIAL_ACTIONS = List.of(
-            "INVOICE_CREATE", "INVOICE_SUBMIT", "INVOICE_UPDATE", "INVOICE_DELETE",
+            "HTTP_REQUEST_FINANCIAL", "INVOICE_CREATE", "INVOICE_SUBMIT", "INVOICE_UPDATE", "INVOICE_DELETE",
             "APPROVE", "REJECT", "BON_A_PAYER", "PAYMENT", "MATCHING", "ARCHIVE",
             "MATCHING_OVERRIDE", "RESUBMIT"
     );

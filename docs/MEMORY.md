@@ -1008,3 +1008,25 @@ After each completed task, append a `## Session Checkpoint` block here **before*
   - FE9A-08: Wired /admin/suppliers routes in AppRoutes.tsx; added Suppliers link to Sidebar (ROLE_ADMIN only)
 - **Build**: 0 errors, all chunks produced
 - **Next**: Await next phase instructions
+
+## Session Checkpoint
+**Date:** 2026-06-12
+**Last completed task:** P11-01
+**Phase:** Phase 11 — Audit Correction Cycle (sub-phase P11-A)
+**Next task:** P11-02
+**Branch:** main
+**Last commit:** 7edaef5 (pre-fix; this task's commit not yet created)
+**Notes:** Fixed REQ-17/PROB-021 — `/audit-logs/system` and `/audit-logs/financial` were
+structurally returning zero rows because `AuditLoggingFilter` wrote action values
+("FINANCIAL_ACTION"/"SYSTEM_ACTION"/"HTTP_REQUEST" into entityType, free-form
+"METHOD URI -> STATUS" into action) that matched neither AuditController's
+SYSTEM_ACTIONS nor FINANCIAL_ACTIONS allow-lists. Filter now writes
+"HTTP_REQUEST_FINANCIAL"/"HTTP_REQUEST_SYSTEM"/"HTTP_REQUEST" into `action` via a new
+classifyAction() (separate from classifyEntityType()); both allow-lists updated to
+include these plus "PROFILE_UPDATE". Also fixed 3 pre-existing AuditControllerTest
+failures (stale `/api/audit-logs` path, BASELINE.md-documented). New
+AuditLoggingFilterTest (4 tests) + new AuditServiceTest case. All 13 audit-area tests
+pass. Frontend `AdminAuditPage.tsx`/`FinancialAuditPage.tsx` still use unfiltered
+`/audit-logs` (PROB-005 workaround, left as-is — not part of REQ-17's scope).
+docs/TASKS.md Phase 11 (53 tasks, P11-A..K) and docs/audit/PLAN-CORRECTIONS.md written
+this session — full correction-cycle plan for remaining 52 tasks.

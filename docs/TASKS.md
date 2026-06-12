@@ -559,3 +559,229 @@ Supplier performance reports return correct metrics. All tests pass.
 **Phase 10 Exit Criteria:** All 5 gaps from `OCT_System_Briefing.md §4.3` resolved.
 OCR implemented. JWT uses RS256. CI pipeline runs. TLS 1.3 configured. OWASP ZAP scan integrated.
 `./mvnw test` — 0 failures. Final system is production-ready and compliant with all project requirements.
+
+---
+
+## Phase 11 — Audit Correction Cycle
+*Goal: Resolve all 35 actionable findings from `docs/audit/ISSUES.md` (2026-06-11/12 audit cycle).
+Sequencing rationale and decisions for every sub-phase are in `docs/audit/PLAN-CORRECTIONS.md`.*
+
+### P11-A — Audit Log Dead Code 🔴 Critical
+
+- [x] **P11-01** Fix `AuditController`'s `/audit-logs/system` and `/audit-logs/financial`
+      endpoints (REQ-17): extend `AuditLoggingFilter.classifyAction()` so it actually
+      produces entries matching `SYSTEM_ACTIONS`/`FINANCIAL_ACTIONS`, so both endpoints
+      return non-empty results for realistic traffic. Add a test asserting non-empty results.
+      — Done 2026-06-12: see PROB-021 in `docs/KNOWN_ISSUES_REGISTRY.md`.
+
+**P11-A Exit Criteria:** `/audit-logs/system` and `/audit-logs/financial` return real data;
+`FinancialAuditPage.tsx` displays entries.
+
+---
+
+### P11-B — Security Fixes 🟠 High
+
+- [ ] **P11-02** Fix `SupplierPortalController` profile endpoint (P2-02): map `Supplier` →
+      `SupplierResponse` instead of returning the raw entity, so `bankDetails` is never
+      serialized. Add integration test asserting `bankDetails`/`bank_details` absent from JSON.
+- [ ] **P11-03** Fix `AuditLoggingFilter.resolveUserId()` (REQ-18): extract the authenticated
+      user's ID from `SecurityContext` instead of hardcoded `null`. Add test asserting new
+      audit log entries from authenticated requests have non-null `user_id`.
+
+**P11-B Exit Criteria:** No JPA entity with `bankDetails` ever leaves the API; audit logs
+record the acting user for authenticated requests.
+
+---
+
+### P11-C — Performance Fixes 🟠 High
+
+- [ ] **P11-04** Paginate `GET /api/v1/purchase-orders` without `supplierId` (P3-01): use
+      `Pageable`/`Page<T>`, return `PagedResponse<PurchaseOrderResponse>`.
+- [ ] **P11-05** Add Flyway migration `V42__add_invoices_supplier_id_index.sql` (P3-02):
+      `CREATE INDEX idx_invoices_supplier_id ON invoices(supplier_id)`.
+- [ ] **P11-06** Fix `WebhookService` delivery timeouts/retry (P3-04): wire
+      `deliveryTimeoutSeconds` into a `RestTemplate` `ClientHttpRequestFactory` with
+      connect/read timeouts; replace blocking `Thread.sleep` retry with a non-blocking
+      scheduled retry, preserving the 5s/25s/125s backoff contract from CLAUDE.md §9.
+
+**P11-C Exit Criteria:** Purchase orders list is paginated; `invoices.supplier_id` is
+indexed; webhook delivery no longer blocks a thread/DB connection for up to 755s.
+
+---
+
+### P11-D — Controller → Service Layer Refactor 🟠 High
+
+- [ ] **P11-07** Refactor `AdminSessionController` (P1-05): create
+      `AdminSessionService`, move repository access out of the controller.
+- [ ] **P11-08** Refactor `IntegrationStatusController` (P1-05): create
+      `IntegrationStatusService`, move repository access out of the controller.
+- [ ] **P11-09** Refactor `WebhookController` (P1-05): move direct repository access
+      into the existing `WebhookService`.
+- [ ] **P11-10** Refactor `DelegationController` (P1-05): move direct repository access
+      into the existing `DelegationService`.
+- [ ] **P11-11** Refactor `InvoiceDocumentController` (P1-05): move direct repository
+      access into the existing document service.
+
+**P11-D Exit Criteria:** Zero controllers inject a `*Repository` directly
+(`grep -rn "Repository" src/main/java/**/controller/*.java` shows only DTO/service types).
+
+---
+
+### P11-E — Docker/Infra Cleanup 🟠 High
+
+- [ ] **P11-12** Remove `docker-compose.yml`'s orphaned `postgres` service (lines 13-33)
+      and `postgres_data` volume (P5-01, Option B — confirmed 2026-06-12).
+- [ ] **P11-13** Fix `MINIO_SECRET_KEY` default mismatch (P5-02): change
+      `docker-compose.yml:66`'s `${MINIO_SECRET_KEY:-dany}` to `${MINIO_SECRET_KEY:-dany1234}`.
+- [ ] **P11-14** Add `docs/ARCHITECTURE.md §4.3` prerequisite documentation: host-native
+      PostgreSQL 18 (port 5433, db `oct_invoice`) must be running before `docker-compose up`.
+
+**P11-E Exit Criteria:** `docker compose config` shows no `postgres` service; a fresh clone
+with `.env` unset for `MINIO_SECRET_KEY` still has `minio_init` succeed; ARCHITECTURE.md
+documents the host-Postgres prerequisite.
+
+---
+
+### P11-F — IAM / Permission Gaps 🟠 High
+
+- [ ] **P11-15** Add data-sensitivity classification to financial records (REQ-23 item 1):
+      new enum + column via Flyway migration; surface in relevant list/detail views.
+- [ ] **P11-16** Add bulk user import/export (CSV) (REQ-23 item 2): new
+      `UserController` endpoint(s) + `AdminUsersPage.tsx` UI.
+- [ ] **P11-17** Add self-service access-request workflow (REQ-23 item 3): new entity +
+      approval-lite flow for users requesting role/department access changes.
+- [ ] **P11-18** Add visual permission-matrix editor (REQ-23 item 4): frontend grid over
+      the existing `PUT /{id}/roles` endpoint.
+
+**P11-F Exit Criteria:** All 4 sub-items implemented, tested, and added to
+`docs/REQUIREMENTS-MATRIX.md` as newly-implemented.
+
+---
+
+### P11-G — Documentation Corrections 🟡 Medium
+
+- [ ] **P11-19** Fix package names in `docs/ARCHITECTURE.md` §2/§10 (P1-01):
+      `matching`→`purchasing`, `integration`→`webhook`, `reporting`→`report`; add 6
+      missing packages.
+- [ ] **P11-20** Rewrite `docs/ARCHITECTURE.md` §4.1 "Known Implementation Gaps" table (P1-02):
+      all 8 entries are stale/resolved.
+- [ ] **P11-21** Redraw `docs/ARCHITECTURE.md` §5 security filter chain diagram (P1-03):
+      add 3 missing filters, correct relative order, fix CORS placement.
+- [ ] **P11-22** Add "Inter-domain Dependencies" subsection to `docs/ARCHITECTURE.md` §2
+      (P1-06): document the `invoice`↔`purchasing` bidirectional dependency.
+- [ ] **P11-23** Replace `ApprovalController.getApprovalSteps`'s `List<Map<String,Object>>`
+      return type (P1-07) with a typed `ApprovalStepResponse` DTO.
+- [ ] **P11-24** Document the Flyway V36-V38 gap (P3-03): add a note to
+      `docs/ARCHITECTURE.md` migration history explaining V35→V39 is intentional.
+
+**P11-G Exit Criteria:** `docs/ARCHITECTURE.md` accurately reflects the current codebase
+for §2, §4.1, §5, §10, and migration history; `ApprovalController` returns a typed DTO.
+
+---
+
+### P11-H — i18n Sweep 🟡 Medium
+
+- [ ] **P11-25** Add missing `supplier.register.*` keys (13) to `en.json`/`fr.json` (P4-01).
+- [ ] **P11-26** Add missing `supplier.verify.*` keys (5) to `en.json`/`fr.json` (P4-01).
+- [ ] **P11-27** Add missing `supplier.tracking.*` keys (8) to `en.json`/`fr.json` (P4-01).
+- [ ] **P11-28** Add missing `supplier.portal.*` keys (3) to `en.json`/`fr.json` (P4-01).
+- [ ] **P11-29** Add missing `mfa.*` keys (16) to `en.json`/`fr.json` (P4-01).
+- [ ] **P11-30** Add missing `payments.*` keys (7) to `en.json`/`fr.json` (P4-01).
+- [ ] **P11-31** Add missing `archive.*` keys (6) to `en.json`/`fr.json` (P4-01).
+- [ ] **P11-32** Add missing `auth.*` keys incl. password-strength indicator (6) to
+      `en.json`/`fr.json` (P4-01).
+- [ ] **P11-33** Add missing `grn.*` keys (6) to `en.json`/`fr.json` (P4-01).
+- [ ] **P11-34** Add missing `invoice.*` keys (6) to `en.json`/`fr.json` (P4-01).
+- [ ] **P11-35** Add missing `dashboard.*` keys (4) to `en.json`/`fr.json` (P4-01).
+- [ ] **P11-36** Add missing `admin.*` keys (3) to `en.json`/`fr.json` (P4-01).
+- [ ] **P11-37** Add missing `nav.*`, `register.*`, `notifications.*`, `profile.*` keys
+      (7 total) to `en.json`/`fr.json` (P4-01).
+- [ ] **P11-38** Add full `t()` coverage to `ForgotPasswordPage.tsx`/`ResetPasswordPage.tsx`
+      (REQ-01) — currently zero `t()` calls, requires NEW keys in both locale files.
+- [ ] **P11-39** Add `alt={t('mfa.qrCodeAlt', ...)}` to the MFA QR `<img>` (P4-04) — new
+      95th i18n key in `en.json`/`fr.json`.
+
+**P11-H Exit Criteria:** Node.js diff script (per `PHASE4-FRONTEND.md` methodology) shows
+0 `t()` calls with keys missing from either locale file; both locale files remain in
+perfect key-parity.
+
+---
+
+### P11-I — Frontend Correctness Fixes 🟡 Medium
+
+- [ ] **P11-40** Wire `SecuritySettingsPage.tsx`'s security-policy form to a real backend
+      (REQ-02): new `SecurityPolicyController`/`SecurityPolicy` entity+table, actually
+      enforced by `MfaSetupEnforcementFilter`/`RateLimitingFilter`/password validation.
+      MFA-required toggle and min-password-length wire to enforcement points; session-timeout
+      and max-login-attempts read/write the existing `active_sessions` TTL and
+      account-lock-after-5 settings instead of local `useState`. Remove the "simulation only"
+      banner text.
+- [ ] **P11-41** Fix `LoginPage.tsx` to branch on HTTP 423 (`account.locked`) (REQ-03):
+      show a distinct, translated "account locked, contact admin" message instead of the
+      generic invalid-credentials text.
+- [ ] **P11-42** Wire validator/manager dashboard KPI tiles "Traitées ce mois" and
+      "Approuvées" (REQ-04) to `reportService.getKpis`, scoped to the validator's role,
+      replacing the `—` placeholders.
+- [ ] **P11-43** Add the missing `onClick` handler to `ArchivePage.tsx:150-152`'s
+      "Download PDF" button (REQ-15), reusing the download logic from
+      `InvoiceDetailPage.tsx`.
+
+**P11-I Exit Criteria:** No page contains a fake/simulation-only form, a dead button, or
+a static `—` KPI placeholder where a real value is available.
+
+---
+
+### P11-J — Backend-Complete / Frontend-Absent UIs 🟡 Medium
+
+- [ ] **P11-44** Build Approval Delegation UI (P4-02): new section in `ProfilePage.tsx`
+      (or dedicated page) — list active delegations, create form (target user + date
+      range), revoke button. Uses `DelegationController`'s existing 3 endpoints.
+- [ ] **P11-45** Build MatchingConfig UI (REQ-08): admin page to view/edit
+      `matching_config` tolerance thresholds.
+- [ ] **P11-46** Build Remittance Advice UI (REQ-11): page/section to view & download
+      remittance advices for processed payments.
+- [ ] **P11-47** Build Webhooks/Integration Status UI (REQ-22): new admin page wrapping
+      `WebhookController` (register/list/update/delete, delivery log) and
+      `IntegrationStatusController` (integration health). Depends on P11-08/P11-09
+      (service-layer refactor) landing first.
+
+**P11-J Exit Criteria:** All 4 backends have a corresponding, reachable frontend page
+with nav entry and i18n coverage.
+
+---
+
+### P11-K — Larger Feature Builds 🟡 Medium
+
+- [ ] **P11-48** Build bulk/multi-file invoice upload (REQ-05): new endpoint accepting
+      multiple files + frontend multi-select upload UI.
+- [ ] **P11-49** Correct `ArchivePage.tsx:175`'s misleading SHA-256/retention-policy text
+      (REQ-14, partial scope per `PLAN-CORRECTIONS.md` §5) — log the deferred
+      re-verify-on-download and retention-policy job to `docs/KNOWN_ISSUES_REGISTRY.md`.
+- [ ] **P11-50** Add append-only `document_access_log` table + logging hook in
+      `InvoiceDocumentController.download()` (REQ-16, partial scope) — log deferred
+      versioning/viewer to `docs/KNOWN_ISSUES_REGISTRY.md`.
+- [ ] **P11-51** Add an auto-refreshing "recent activity" panel to `AdminAuditPage.tsx`
+      (REQ-19, partial scope) — log deferred statistical/ML anomaly detection to
+      `docs/KNOWN_ISSUES_REGISTRY.md`.
+- [ ] **P11-52** Add `Department.budget` column via Flyway (REQ-20) + a budget-vs-actual
+      comparison report (REQ-21, partial scope) — log deferred report builder,
+      scheduling, distribution, and executive-summary items to
+      `docs/KNOWN_ISSUES_REGISTRY.md`.
+- [ ] **P11-53** Add encryption-status indicator widget + security-health dashboard
+      (REQ-24, partial scope — 2 of 8 items: encryption coverage, MFA adoption %,
+      login-failure trends, `webhookDeliverySuccessRate`) — log deferred backup status,
+      privacy-policy tracking, incident reporting, SOX/IFRS checklist, and compliance
+      calendar to `docs/KNOWN_ISSUES_REGISTRY.md`.
+
+**P11-K Exit Criteria:** All 6 tasks delivered to their stated partial/full scope; every
+deferred remainder has a corresponding `docs/KNOWN_ISSUES_REGISTRY.md` entry per the
+Living Documentation Rule (CLAUDE.md §12).
+
+---
+
+**Phase 11 Exit Criteria:** All 53 `P11-NN` tasks resolved or honestly left `[ ]` with
+their severity intact (no silent TODOs). `./mvnw test` — 0 failures. Frontend builds
+without TS errors. None of CLAUDE.md §3's 10 absolute rules violated by any new code.
+All deferred-scope items logged in `docs/KNOWN_ISSUES_REGISTRY.md`. This checklist is
+executed by Phase 10 of the audit cycle (`docs/audit/PLAN-CORRECTIONS.md`); once complete,
+the audit cycle proceeds to its own Phase 11 (project documentation updates).

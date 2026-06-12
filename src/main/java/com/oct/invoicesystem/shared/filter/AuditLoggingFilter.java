@@ -46,10 +46,11 @@ public class AuditLoggingFilter extends OncePerRequestFilter {
                     String ipAddress = resolveClientIp(request);
                     String userAgent = request.getHeader("User-Agent");
 
-                    String action = classifyAction(method, uri);
+                    String entityType = classifyEntityType(uri);
+                    String action = classifyAction(uri);
                     String details = "{\"duration_ms\":" + duration + ", \"method\":\"" + method + "\", \"status\":" + status + "}";
 
-                    auditService.logAction(userId, action, uri, method + " " + uri + " -> " + status, null, details, ipAddress, userAgent);
+                    auditService.logAction(userId, entityType, uri, action, null, details, ipAddress, userAgent);
                 } catch (Exception ex) {
                     // Audit persistence failure must never affect the response
                     log.warn("Failed to persist HTTP audit log entry for {} {}: {}", method, uri, ex.getMessage());
@@ -58,7 +59,24 @@ public class AuditLoggingFilter extends OncePerRequestFilter {
         }
     }
 
-    private String classifyAction(String method, String uri) {
+    /**
+     * Classifies the request into an audit action recognized by {@code AuditController}'s
+     * SYSTEM_ACTIONS / FINANCIAL_ACTIONS allow-lists, so HTTP-originated audit entries are
+     * actually retrievable via {@code GET /api/v1/audit-logs/system} and {@code /financial}.
+     */
+    private String classifyAction(String uri) {
+        if (uri.contains("/invoices") || uri.contains("/payments")
+                || uri.contains("/approvals") || uri.contains("/workflow")) {
+            return "HTTP_REQUEST_FINANCIAL";
+        }
+        if (uri.contains("/auth") || uri.contains("/users")
+                || uri.contains("/integrations") || uri.contains("/admin")) {
+            return "HTTP_REQUEST_SYSTEM";
+        }
+        return "HTTP_REQUEST";
+    }
+
+    private String classifyEntityType(String uri) {
         if (uri.contains("/invoices") || uri.contains("/payments")
                 || uri.contains("/approvals") || uri.contains("/workflow")) {
             return "FINANCIAL_ACTION";

@@ -110,4 +110,34 @@ class AuditServiceTest {
         Page<AuditLogDTO> result = auditService.searchLogs(UUID.randomUUID(), "INVOICE", "123", "CREATE", pr);
         assertNotNull(result);
     }
+
+    /**
+     * Regression test for REQ-17: an HTTP-originated audit entry for a financial endpoint
+     * (action="HTTP_REQUEST_FINANCIAL", written by AuditLoggingFilter) must be retrievable
+     * via searchLogsWithActionFilter when FINANCIAL_ACTIONS (AuditController's allow-list)
+     * is passed as the allowed-actions set.
+     */
+    @Test
+    void searchLogsWithActionFilter_WithHttpRequestFinancialAction_IsReturned() {
+        PageRequest pr = PageRequest.of(0, 10);
+        AuditLog entry = AuditLog.builder()
+                .entityType("FINANCIAL_ACTION")
+                .entityId("/api/v1/invoices")
+                .action("HTTP_REQUEST_FINANCIAL")
+                .build();
+
+        when(auditLogRepository.findAll(any(Specification.class), eq(pr)))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(java.util.List.of(entry)));
+
+        java.util.List<String> financialActions = java.util.List.of(
+                "HTTP_REQUEST_FINANCIAL", "INVOICE_CREATE", "INVOICE_SUBMIT", "INVOICE_UPDATE", "INVOICE_DELETE",
+                "APPROVE", "REJECT", "BON_A_PAYER", "PAYMENT", "MATCHING", "ARCHIVE",
+                "MATCHING_OVERRIDE", "RESUBMIT");
+
+        Page<AuditLogDTO> result = auditService.searchLogsWithActionFilter(
+                null, null, null, null, financialActions, pr);
+
+        assertEquals(1, result.getTotalElements());
+        assertEquals("HTTP_REQUEST_FINANCIAL", result.getContent().get(0).action());
+    }
 }
