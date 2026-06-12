@@ -178,7 +178,9 @@ class SupplierPortalIntegrationTest {
                         .header("Authorization", authHeader))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.companyName").value("Test Supplier Co"));
+                .andExpect(jsonPath("$.data.companyName").value("Test Supplier Co"))
+                .andExpect(jsonPath("$.data.bankDetails").doesNotExist())
+                .andExpect(jsonPath("$.data.bank_details").doesNotExist());
     }
 
     @Test

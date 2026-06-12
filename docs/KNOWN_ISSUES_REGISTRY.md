@@ -272,6 +272,16 @@
 - **Règle préventive :** Quand un filtre HTTP générique et un contrôleur de recherche partagent un "vocabulaire" d'actions via une colonne DB, ce vocabulaire DOIT être vérifié par un test qui exerce les DEUX côtés (écriture par le filtre + lecture filtrée par le contrôleur/service), pas seulement chacun isolément. Un test qui mocke `AuditService` dans `AuditLoggingFilterTest` ET un test qui exerce `searchLogsWithActionFilter` avec les valeurs réellement produites par le filtre sont tous deux nécessaires.
 - **Fichiers modifiés :** `AuditLoggingFilter.java`, `AuditController.java`, `AuditLoggingFilterTest.java` (créé), `AuditServiceTest.java`, `AuditControllerTest.java` (chemin `/api/audit-logs` → `/api/v1/audit-logs`, 3 tests préexistants en échec depuis BASELINE.md, corrigés au passage)
 
+### [PROB-022] `GET /api/v1/supplier/profile` exposait l'entité JPA `Supplier` complète, incluant `bankDetails` chiffré
+- **Catégorie :** Backend / Sécurité
+- **Sévérité :** 🟠 Élevée (P2-02)
+- **Découvert :** 2026-06-12 — Audit complet (Phase 2, Module 8)
+- **Symptôme :** `SupplierPortalController.getProfile()` retournait `ApiResponse<Supplier>` (l'entité JPA brute) au lieu d'un DTO. Le champ `bankDetails` (déchiffré automatiquement par `EncryptionAttributeConverter` lors de la lecture JPA) apparaissait donc dans la réponse JSON de `GET /api/v1/supplier/profile` — violation de CLAUDE.md §3 ("never expose JPA entities directly") et exposition d'une donnée sensible déchiffrée à l'utilisateur final.
+- **Cause racine :** `getProfile()` appelait `supplierService.findEntityById(supplierId)` (retourne `Supplier`) au lieu de `supplierService.getSupplier(supplierId)` (retourne `SupplierResponse`, déjà utilisé par `updateProfile()` et par `SupplierController` pour les mêmes données). Le mapping DTO existait déjà — seul `getProfile()` ne l'utilisait pas.
+- **Solution appliquée :** `getProfile()` retourne maintenant `ApiResponse<SupplierResponse>` via `supplierService.getSupplier(supplierId)` (même DTO que `PUT /profile`, qui n'inclut pas `bankDetails` — `SupplierMapper.toResponse()` l'ignore déjà via `unmappedTargetPolicy = IGNORE`). Le frontend (`SupplierProfilePage.tsx`) traitait déjà `bankDetails` comme write-only ("Leave blank to keep the current bank details unchanged") — aucun changement frontend nécessaire, le comportement existant était anticipé pour ce DTO.
+- **Règle préventive :** Toute méthode de contrôleur dont la signature de retour est une entité `@Entity` (`ApiResponse<EntityName>`) est un signal d'alerte — vérifier si un DTO + mapper équivalent existe déjà avant d'en créer un nouveau.
+- **Fichiers modifiés :** `SupplierPortalController.java` (`getProfile()`), `SupplierPortalIntegrationTest.java` (ajout d'assertions `bankDetails`/`bank_details` absent du JSON dans `fullSupplierFlow_IntegrationTest`)
+
 ---
 
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER

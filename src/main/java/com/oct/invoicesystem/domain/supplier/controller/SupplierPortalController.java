@@ -146,10 +146,10 @@ public class SupplierPortalController {
 
     @GetMapping("/profile")
     @Operation(summary = "Get supplier profile", description = "Returns the supplier's own profile")
-    public ResponseEntity<ApiResponse<Supplier>> getProfile(Authentication authentication) {
+    public ResponseEntity<ApiResponse<SupplierResponse>> getProfile(Authentication authentication) {
         UUID supplierId = getSupplierId(authentication);
-        Supplier supplier = supplierService.findEntityById(supplierId);
-        return ResponseEntity.ok(ApiResponse.success(supplier));
+        SupplierResponse response = supplierService.getSupplier(supplierId);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @PutMapping("/profile")

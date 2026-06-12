@@ -1011,22 +1011,24 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 
 ## Session Checkpoint
 **Date:** 2026-06-12
-**Last completed task:** P11-01
-**Phase:** Phase 11 — Audit Correction Cycle (sub-phase P11-A)
-**Next task:** P11-02
+**Last completed task:** P11-02
+**Phase:** Phase 11 — Audit Correction Cycle (sub-phase P11-B)
+**Next task:** P11-03
 **Branch:** main
-**Last commit:** 7edaef5 (pre-fix; this task's commit not yet created)
-**Notes:** Fixed REQ-17/PROB-021 — `/audit-logs/system` and `/audit-logs/financial` were
-structurally returning zero rows because `AuditLoggingFilter` wrote action values
-("FINANCIAL_ACTION"/"SYSTEM_ACTION"/"HTTP_REQUEST" into entityType, free-form
-"METHOD URI -> STATUS" into action) that matched neither AuditController's
-SYSTEM_ACTIONS nor FINANCIAL_ACTIONS allow-lists. Filter now writes
-"HTTP_REQUEST_FINANCIAL"/"HTTP_REQUEST_SYSTEM"/"HTTP_REQUEST" into `action` via a new
-classifyAction() (separate from classifyEntityType()); both allow-lists updated to
-include these plus "PROFILE_UPDATE". Also fixed 3 pre-existing AuditControllerTest
-failures (stale `/api/audit-logs` path, BASELINE.md-documented). New
-AuditLoggingFilterTest (4 tests) + new AuditServiceTest case. All 13 audit-area tests
-pass. Frontend `AdminAuditPage.tsx`/`FinancialAuditPage.tsx` still use unfiltered
-`/audit-logs` (PROB-005 workaround, left as-is — not part of REQ-17's scope).
-docs/TASKS.md Phase 11 (53 tasks, P11-A..K) and docs/audit/PLAN-CORRECTIONS.md written
-this session — full correction-cycle plan for remaining 52 tasks.
+**Last commit:** 0dd49eb (P11-01; P11-02 not yet committed)
+**Notes:** P11-01 (REQ-17/PROB-021, audit log endpoints returning empty) — done, see prior
+checkpoint entry. P11-02 (P2-02/PROB-022): `SupplierPortalController.getProfile()` returned
+the raw `Supplier` JPA entity (`ApiResponse<Supplier>`), leaking decrypted `bankDetails`
+in `GET /api/v1/supplier/profile`. Fixed by switching to `supplierService.getSupplier(id)`
+→ `SupplierResponse` (same DTO `PUT /profile` already used; `SupplierMapper.toResponse()`
+already excludes `bankDetails` via `unmappedTargetPolicy=IGNORE`). Added assertions in
+`SupplierPortalIntegrationTest.fullSupplierFlow_IntegrationTest` (step 8) that
+`bankDetails`/`bank_details` are absent from the profile JSON. Frontend
+`SupplierProfilePage.tsx` needed no change — it already treated `bankDetails` as
+write-only. All 4 SupplierPortalIntegrationTest tests pass.
+Full suite (`mvnw test`) run after P11-01: 257 tests, 25 failures + 2 errors (down from
+baseline's 252/29+2=31) — the 27 remaining failures are ALL pre-existing per BASELINE.md
+§3 (ApprovalControllerTest, ApprovalServiceTest, InvoiceControllerTest,
+InvoicePerformanceTest, NotificationControllerTest, PaymentControllerTest,
+ReportControllerTest, StateMachineTransitionExhaustiveTest, UserServiceTest) — each is
+its own P11 task in sub-phases P11-C..K. No new failures introduced by P11-01/02.

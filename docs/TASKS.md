@@ -581,9 +581,10 @@ Sequencing rationale and decisions for every sub-phase are in `docs/audit/PLAN-C
 
 ### P11-B — Security Fixes 🟠 High
 
-- [ ] **P11-02** Fix `SupplierPortalController` profile endpoint (P2-02): map `Supplier` →
+- [x] **P11-02** Fix `SupplierPortalController` profile endpoint (P2-02): map `Supplier` →
       `SupplierResponse` instead of returning the raw entity, so `bankDetails` is never
       serialized. Add integration test asserting `bankDetails`/`bank_details` absent from JSON.
+      — Done 2026-06-12: see PROB-022 in `docs/KNOWN_ISSUES_REGISTRY.md`.
 - [ ] **P11-03** Fix `AuditLoggingFilter.resolveUserId()` (REQ-18): extract the authenticated
       user's ID from `SecurityContext` instead of hardcoded `null`. Add test asserting new
       audit log entries from authenticated requests have non-null `user_id`.
