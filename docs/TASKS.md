@@ -585,12 +585,18 @@ Sequencing rationale and decisions for every sub-phase are in `docs/audit/PLAN-C
       `SupplierResponse` instead of returning the raw entity, so `bankDetails` is never
       serialized. Add integration test asserting `bankDetails`/`bank_details` absent from JSON.
       — Done 2026-06-12: see PROB-022 in `docs/KNOWN_ISSUES_REGISTRY.md`.
-- [ ] **P11-03** Fix `AuditLoggingFilter.resolveUserId()` (REQ-18): extract the authenticated
+- [x] **P11-03** Fix `AuditLoggingFilter.resolveUserId()` (REQ-18): extract the authenticated
       user's ID from `SecurityContext` instead of hardcoded `null`. Add test asserting new
       audit log entries from authenticated requests have non-null `user_id`.
+      — Done 2026-06-12: see PROB-023 in `docs/KNOWN_ISSUES_REGISTRY.md`. Fixing this surfaced a
+      regression (`audit_logs.user_id` FK now populated, breaking `ApprovalControllerTest.cleanDb()`'s
+      `userRepository.deleteAll()`) — resolved via `@OnDelete(action = OnDeleteAction.SET_NULL)` on
+      `AuditLog.user` + `V42__audit_logs_user_fk_on_delete_set_null.sql`; see PROB-024.
 
 **P11-B Exit Criteria:** No JPA entity with `bankDetails` ever leaves the API; audit logs
-record the acting user for authenticated requests.
+record the acting user for authenticated requests. — MET 2026-06-12 (P11-02, P11-03). Full
+`mvnw test` run: 258 tests, 25 failures + 2 errors = 27, identical to the post-P11-01 set, all
+pre-existing per `docs/audit/BASELINE.md`.
 
 ---
 

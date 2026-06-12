@@ -1011,24 +1011,40 @@ After each completed task, append a `## Session Checkpoint` block here **before*
 
 ## Session Checkpoint
 **Date:** 2026-06-12
-**Last completed task:** P11-02
-**Phase:** Phase 11 — Audit Correction Cycle (sub-phase P11-B)
-**Next task:** P11-03
+**Last completed task:** P11-03
+**Phase:** Phase 11 — Audit Correction Cycle (P11-B COMPLETE, exit criteria met)
+**Next task:** P11-04 (sub-phase P11-C)
 **Branch:** main
-**Last commit:** 0dd49eb (P11-01; P11-02 not yet committed)
-**Notes:** P11-01 (REQ-17/PROB-021, audit log endpoints returning empty) — done, see prior
-checkpoint entry. P11-02 (P2-02/PROB-022): `SupplierPortalController.getProfile()` returned
-the raw `Supplier` JPA entity (`ApiResponse<Supplier>`), leaking decrypted `bankDetails`
-in `GET /api/v1/supplier/profile`. Fixed by switching to `supplierService.getSupplier(id)`
-→ `SupplierResponse` (same DTO `PUT /profile` already used; `SupplierMapper.toResponse()`
-already excludes `bankDetails` via `unmappedTargetPolicy=IGNORE`). Added assertions in
-`SupplierPortalIntegrationTest.fullSupplierFlow_IntegrationTest` (step 8) that
-`bankDetails`/`bank_details` are absent from the profile JSON. Frontend
-`SupplierProfilePage.tsx` needed no change — it already treated `bankDetails` as
-write-only. All 4 SupplierPortalIntegrationTest tests pass.
-Full suite (`mvnw test`) run after P11-01: 257 tests, 25 failures + 2 errors (down from
-baseline's 252/29+2=31) — the 27 remaining failures are ALL pre-existing per BASELINE.md
-§3 (ApprovalControllerTest, ApprovalServiceTest, InvoiceControllerTest,
+**Last commit:** fa6f76e (P11-02; P11-03 + AuditLog/V42 fix committed this checkpoint)
+**Notes:** P11-01 (REQ-17/PROB-021) and P11-02 (P2-02/PROB-022) — done, see prior
+checkpoint entries. P11-03 (REQ-18/PROB-023): `AuditLoggingFilter.resolveUserId()` was
+hardcoded `return null`. Fixed by reading
+`SecurityContextHolder.getContext().getAuthentication().getPrincipal()` — since
+`User implements UserDetails` and `JwtAuthenticationFilter` runs before
+`AuditLoggingFilter` (both relative to `UsernamePasswordAuthenticationFilter`), the
+principal IS the `User` entity with `getId()` already in memory, no extra DB call. Added
+`AuditLoggingFilterTest.doFilter_OnAuthenticatedRequest_LogsActingUserId` (5th test) +
+`@AfterEach SecurityContextHolder.clearContext()`. All 5 AuditLoggingFilterTest pass.
+
+PROB-024 (regression found by full suite run after P11-03): populating `audit_logs.user_id`
+caused `ApprovalControllerTest.cleanDb()` (`userRepository.deleteAll()`) to throw
+`DataIntegrityViolationException` on the `audit_logs.user_id → users.id` FK — 3 of
+`ApprovalControllerTest`'s 4 pre-existing failures became `setUp()` errors instead
+(27 → 28 total). Root cause: `AuditLog.user` (`@ManyToOne @JoinColumn(name = "user_id")`)
+had no `ON DELETE` action, so Hibernate generated `NO ACTION` even in the test
+`ddl-auto: create-drop` schema (Flyway migrations are not the source of truth for test
+schema). Fixed with `@OnDelete(action = OnDeleteAction.SET_NULL)` on `AuditLog.user`
+(org.hibernate.annotations) — consistent with `audit_logs` being append-only (V25): the
+log row is preserved, only the FK reference is nulled when the user is removed. Added
+`V42__audit_logs_user_fk_on_delete_set_null.sql` so production Postgres (Flyway-managed)
+gets the same `ON DELETE SET NULL` behavior.
+
+P11-B Exit Criteria MET: no JPA entity with bankDetails leaves the API; audit logs record
+acting user for authenticated requests.
+Full suite (`mvnw test`) run after P11-03 + PROB-024 fix: **258 tests, 25 failures + 2
+errors = 27**, identical test-name set to the post-P11-01 27, all pre-existing per
+BASELINE.md §3 (ApprovalControllerTest, ApprovalServiceTest, InvoiceControllerTest,
 InvoicePerformanceTest, NotificationControllerTest, PaymentControllerTest,
 ReportControllerTest, StateMachineTransitionExhaustiveTest, UserServiceTest) — each is
-its own P11 task in sub-phases P11-C..K. No new failures introduced by P11-01/02.
+its own P11 task in sub-phases P11-C..K. Confirmed zero new failures. Ready to commit and
+move to P11-04.

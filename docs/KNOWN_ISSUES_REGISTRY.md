@@ -282,6 +282,28 @@
 - **Règle préventive :** Toute méthode de contrôleur dont la signature de retour est une entité `@Entity` (`ApiResponse<EntityName>`) est un signal d'alerte — vérifier si un DTO + mapper équivalent existe déjà avant d'en créer un nouveau.
 - **Fichiers modifiés :** `SupplierPortalController.java` (`getProfile()`), `SupplierPortalIntegrationTest.java` (ajout d'assertions `bankDetails`/`bank_details` absent du JSON dans `fullSupplierFlow_IntegrationTest`)
 
+### [PROB-023] `AuditLoggingFilter.resolveUserId()` retournait toujours `null` — aucune entrée d'audit HTTP n'enregistrait l'utilisateur authentifié
+- **Catégorie :** Backend
+- **Sévérité :** 🟠 Élevée (REQ-18)
+- **Découvert :** 2026-06-12 — Audit complet (Phase 6, Module 10)
+- **Symptôme :** Toute entrée `audit_logs` créée par `AuditLoggingFilter` (trafic HTTP non-GET ou 401/403) avait `user_id = NULL`, même pour des requêtes authentifiées par JWT — impossible de savoir QUI a effectué une action depuis le journal d'audit HTTP.
+- **Cause racine :** `resolveUserId()` retournait `null` de manière inconditionnelle (placeholder laissé par PROB-021/P11-01, commentaire "to avoid a DB call in the filter"). En réalité, `JwtAuthenticationFilter` (`addFilterBefore(..., UsernamePasswordAuthenticationFilter.class)`) s'exécute AVANT `AuditLoggingFilter` (`addFilterAfter(..., UsernamePasswordAuthenticationFilter.class)`) et place dans `SecurityContextHolder` une `Authentication` dont le principal est l'entité `User` elle-même (`User implements UserDetails`, chargée par `CustomUserDetailsService.loadUserByUsername()`). L'UUID était donc déjà disponible en mémoire, sans appel DB supplémentaire — le commentaire d'origine était une fausse hypothèse.
+- **Solution appliquée :** `resolveUserId()` lit `SecurityContextHolder.getContext().getAuthentication().getPrincipal()`, et si c'est une instance de `User` (cas authentifié), retourne `user.getId()` ; sinon `null` (requêtes anonymes). Aucun appel DB ajouté.
+- **Règle préventive :** Avant d'écrire "to avoid a DB call" comme justification pour ne pas résoudre une donnée, vérifier si la donnée est déjà présente dans le contexte de sécurité/principal — `User implements UserDetails` rend `getId()` gratuit dans tout filtre exécuté après `JwtAuthenticationFilter`.
+- **Fichiers modifiés :** `AuditLoggingFilter.java` (`resolveUserId()`), `AuditLoggingFilterTest.java` (nouveau test `doFilter_OnAuthenticatedRequest_LogsActingUserId`, + `@AfterEach` pour nettoyer `SecurityContextHolder`)
+
+---
+
+### [PROB-024] Régression introduite par PROB-023 : `ApprovalControllerTest.cleanDb()` violait la FK `audit_logs.user_id → users.id`
+- **Catégorie :** Backend / Tests
+- **Sévérité :** 🟠 Élevée (régression P11-03)
+- **Découvert :** 2026-06-12 — suite complète `mvnw test` exécutée après PROB-023, immédiatement avant le commit
+- **Symptôme :** Après la correction de PROB-023, `AuditLoggingFilter` écrit désormais un `user_id` réel (non-null) dans `audit_logs` pour toute requête HTTP authentifiée non-GET (y compris celles exécutées pendant `@BeforeEach setUp()` des tests d'intégration). `ApprovalControllerTest.cleanDb()` appelle `userRepository.deleteAll()` (ligne 306) sans purger au préalable les lignes `audit_logs` qui référencent ces utilisateurs, provoquant une `DataIntegrityViolationException` (violation de contrainte FK `fkjs4iimve3y0xssbtve5ysyef0`). Résultat : 3 des 4 tests de `ApprovalControllerTest` passaient de "FAILURE" (échec d'assertion, déjà pré-existant) à "ERROR" (exception dans `setUp()`), portant le total de 27 à 28 échecs/erreurs.
+- **Cause racine :** `audit_logs` est une table append-only (V25 : triggers PostgreSQL interdisant UPDATE/DELETE). La relation `AuditLog.user` (`@ManyToOne @JoinColumn(name = "user_id")`) ne précisait aucune action `ON DELETE`, donc Hibernate générait par défaut une contrainte FK `NO ACTION` — y compris dans le schéma `ddl-auto: create-drop` utilisé par les tests (Flyway n'est pas la source de vérité du schéma de test). Avant PROB-023, `user_id` était toujours `NULL`, donc la FK n'était jamais exercée par `cleanDb()` ; PROB-023 a rendu `user_id` non-null, exposant ce problème latent.
+- **Solution appliquée :** Ajout de `@OnDelete(action = OnDeleteAction.SET_NULL)` (org.hibernate.annotations) sur `AuditLog.user`, afin que la suppression d'un utilisateur mette `audit_logs.user_id` à `NULL` au lieu d'échouer — cohérent avec le caractère append-only de la table (la ligne de log est conservée, seule la référence FK est anonymisée). Migration `V42__audit_logs_user_fk_on_delete_set_null.sql` ajoutée pour appliquer le même comportement en production via Flyway (`ALTER TABLE ... ON DELETE SET NULL`).
+- **Règle préventive :** Toute relation `@ManyToOne` vers `users` (ou toute autre entité supprimable) depuis une table append-only/historique doit explicitement déclarer `@OnDelete(action = OnDeleteAction.SET_NULL)`, sans quoi un changement apparemment indépendant (ex. peupler une colonne FK auparavant toujours `NULL`) peut casser silencieusement les tests d'intégration qui font `deleteAll()` en `@BeforeEach`/`@AfterEach`. Lors de la correction d'un bug "valeur toujours NULL", toujours faire tourner la suite COMPLÈTE (`mvnw test`), pas seulement le test ciblé — un test ciblé ne détecte pas les effets de bord sur d'autres classes de test.
+- **Fichiers modifiés :** `AuditLog.java` (`@OnDelete(action = OnDeleteAction.SET_NULL)` sur le champ `user`), `V42__audit_logs_user_fk_on_delete_set_null.sql` (nouveau)
+
 ---
 
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER

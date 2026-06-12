@@ -1,12 +1,15 @@
 package com.oct.invoicesystem.shared.filter;
 
 import com.oct.invoicesystem.domain.audit.service.AuditService;
+import com.oct.invoicesystem.domain.user.model.User;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -89,8 +92,10 @@ public class AuditLoggingFilter extends OncePerRequestFilter {
     }
 
     private UUID resolveUserId(HttpServletRequest request) {
-        // The principal name is the username; we log it as the entityId rather than resolving
-        // the UUID here to avoid a DB call in the filter. The AuditService handles null userId gracefully.
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof User user) {
+            return user.getId();
+        }
         return null;
     }
 
