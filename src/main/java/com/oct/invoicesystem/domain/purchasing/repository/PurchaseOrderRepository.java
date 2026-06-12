@@ -1,6 +1,8 @@
 package com.oct.invoicesystem.domain.purchasing.repository;
 
 import com.oct.invoicesystem.domain.purchasing.model.PurchaseOrder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -19,4 +21,7 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, UU
 
     @Query("SELECT po FROM PurchaseOrder po WHERE po.id = ?1 AND po.deletedAt IS NULL")
     Optional<PurchaseOrder> findByIdActive(UUID id);
+
+    @Query("SELECT po FROM PurchaseOrder po WHERE po.deletedAt IS NULL")
+    Page<PurchaseOrder> findAllActive(Pageable pageable);
 }

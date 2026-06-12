@@ -15,6 +15,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +26,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.HexFormat;
@@ -42,6 +44,7 @@ public class WebhookService {
     private final WebhookDeliveryRepository deliveryRepository;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+    private final TaskScheduler taskScheduler;
 
     @Value("${webhook.delivery.timeout.seconds:5}")
     private int deliveryTimeoutSeconds;
@@ -127,25 +130,14 @@ public class WebhookService {
 
     /**
      * Retry logic with exponential backoff.
+     * Retries are scheduled via TaskScheduler instead of Thread.sleep so that
+     * no thread/DB connection is held for the duration of the backoff.
      */
     private void deliverWithRetry(Webhook webhook, String eventType, String payloadJson, int attemptNumber) {
         if (attemptNumber >= MAX_RETRIES) {
             log.warn("Webhook {} failed after {} retries for event {}", webhook.getId(), MAX_RETRIES, eventType);
             recordDeliveryFailure(webhook, eventType, payloadJson, null, MAX_RETRIES, null);
             return;
-        }
-
-        // Delay before retry (except first attempt)
-        if (attemptNumber > 0) {
-            int delayMs = RETRY_DELAYS_MS[attemptNumber - 1];
-            try {
-                Thread.sleep(delayMs);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                log.warn("Webhook retry sleep interrupted for webhook {}", webhook.getId());
-                recordDeliveryFailure(webhook, eventType, payloadJson, null, attemptNumber + 1, null);
-                return;
-            }
         }
 
         try {
@@ -157,7 +149,7 @@ public class WebhookService {
 
             HttpEntity<String> request = new HttpEntity<>(payloadJson, headers);
 
-            // Send with timeout
+            // Send with timeout (connect/read timeouts wired via WebConfig)
             var response = restTemplate.exchange(webhook.getUrl(), HttpMethod.POST, request, String.class);
             int statusCode = response.getStatusCode().value();
 
@@ -166,12 +158,30 @@ public class WebhookService {
                 recordDeliverySuccess(webhook, eventType, payloadJson, statusCode, attemptNumber + 1);
             } else {
                 log.warn("Webhook {} returned non-2xx status {} from {}", webhook.getId(), statusCode, webhook.getUrl());
-                deliverWithRetry(webhook, eventType, payloadJson, attemptNumber + 1);
+                scheduleRetry(webhook, eventType, payloadJson, attemptNumber + 1);
             }
         } catch (RestClientException e) {
             log.warn("Webhook {} delivery failed (attempt {}) to {}: {}", webhook.getId(), attemptNumber + 1, webhook.getUrl(), e.getMessage());
-            deliverWithRetry(webhook, eventType, payloadJson, attemptNumber + 1);
+            scheduleRetry(webhook, eventType, payloadJson, attemptNumber + 1);
         }
+    }
+
+    /**
+     * Schedule the next delivery attempt after the backoff delay for attemptNumber,
+     * without blocking the current thread.
+     */
+    private void scheduleRetry(Webhook webhook, String eventType, String payloadJson, int attemptNumber) {
+        if (attemptNumber >= MAX_RETRIES) {
+            log.warn("Webhook {} failed after {} retries for event {}", webhook.getId(), MAX_RETRIES, eventType);
+            recordDeliveryFailure(webhook, eventType, payloadJson, null, MAX_RETRIES, null);
+            return;
+        }
+
+        int delayMs = RETRY_DELAYS_MS[attemptNumber - 1];
+        taskScheduler.schedule(
+                () -> deliverWithRetry(webhook, eventType, payloadJson, attemptNumber),
+                Instant.now().plus(Duration.ofMillis(delayMs))
+        );
     }
 
     /**

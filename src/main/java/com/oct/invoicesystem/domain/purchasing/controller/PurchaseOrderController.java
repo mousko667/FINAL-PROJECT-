@@ -11,12 +11,16 @@ import com.oct.invoicesystem.domain.purchasing.model.PurchaseOrderStatus;
 import com.oct.invoicesystem.domain.purchasing.service.PurchaseOrderService;
 import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.shared.response.ApiResponse;
+import com.oct.invoicesystem.shared.response.PagedResponse;
 import com.oct.invoicesystem.shared.util.SecurityHelper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -90,15 +94,30 @@ public class PurchaseOrderController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE', 'DAF')")
     @Operation(summary = "List purchase orders", description = "Lists purchase orders, optionally filtered by supplier")
-    public ResponseEntity<ApiResponse<List<PurchaseOrderDTO>>> listPurchaseOrders(
-            @RequestParam(required = false) UUID supplierId) {
-        List<PurchaseOrder> pos = supplierId != null
-                ? purchaseOrderService.listBySupplier(supplierId)
-                : purchaseOrderService.listAll();
-        List<PurchaseOrderDTO> dtos = pos.stream()
-                .map(purchaseOrderMapper::toPurchaseOrderDTO)
-                .toList();
-        return ResponseEntity.ok(ApiResponse.success(dtos));
+    public ResponseEntity<ApiResponse<PagedResponse<PurchaseOrderDTO>>> listPurchaseOrders(
+            @RequestParam(required = false) UUID supplierId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        if (supplierId != null) {
+            List<PurchaseOrderDTO> dtos = purchaseOrderService.listBySupplier(supplierId).stream()
+                    .map(purchaseOrderMapper::toPurchaseOrderDTO)
+                    .toList();
+            return ResponseEntity.ok(ApiResponse.success(
+                    PagedResponse.<PurchaseOrderDTO>builder()
+                            .content(dtos)
+                            .page(0)
+                            .size(dtos.size())
+                            .totalElements(dtos.size())
+                            .totalPages(1)
+                            .last(true)
+                            .build()
+            ));
+        }
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<PurchaseOrderDTO> dtoPage = purchaseOrderService.listAll(pageable)
+                .map(purchaseOrderMapper::toPurchaseOrderDTO);
+        return ResponseEntity.ok(ApiResponse.success(PagedResponse.of(dtoPage)));
     }
 
     @PutMapping("/{id}")

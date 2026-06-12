@@ -15,8 +15,13 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Instant;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -38,6 +43,12 @@ class WebhookServiceTest {
 
     @Mock
     private RestTemplate restTemplate;
+
+    @Mock
+    private TaskScheduler taskScheduler;
+
+    @Mock
+    private ObjectMapper objectMapper;
 
     private User testUser;
     private Webhook testWebhook;
@@ -181,6 +192,45 @@ class WebhookServiceTest {
         assertEquals(responseStatus, saved.getResponseStatus());
         assertTrue(saved.getSuccess());
         assertEquals(attemptCount, saved.getAttemptCount());
+    }
+
+    @Test
+    @DisplayName("Should schedule a non-blocking retry with 5s backoff instead of blocking the calling thread")
+    void testDeliverWebhook_OnFailure_SchedulesRetryWithoutBlocking() throws Exception {
+        when(objectMapper.writeValueAsString(any())).thenReturn("{\"id\":\"123\"}");
+        when(restTemplate.exchange(anyString(), any(), any(), eq(String.class)))
+                .thenThrow(new ResourceAccessException("Connection timed out"));
+
+        long start = System.nanoTime();
+        webhookService.deliverWebhook(testWebhook, "INVOICE_SUBMITTED", Map.of("id", "123"));
+        long elapsedMs = (System.nanoTime() - start) / 1_000_000;
+
+        // No Thread.sleep: the call returns immediately instead of blocking for the 5s backoff.
+        assertTrue(elapsedMs < 1000, "deliverWebhook should not block for the retry backoff, took " + elapsedMs + "ms");
+
+        // The retry is scheduled via TaskScheduler with the 5s (first retry) backoff delay.
+        ArgumentCaptor<Instant> timeCaptor = ArgumentCaptor.forClass(Instant.class);
+        verify(taskScheduler).schedule(any(Runnable.class), timeCaptor.capture());
+        long delayMs = timeCaptor.getValue().toEpochMilli() - Instant.now().toEpochMilli();
+        assertTrue(delayMs > 4000 && delayMs <= 5000, "First retry should be scheduled ~5s out, was " + delayMs + "ms");
+
+        // Delivery outcome is not recorded yet: it depends on the (not-yet-run) scheduled retry.
+        verify(deliveryRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should record success without scheduling a retry when delivery succeeds on first attempt")
+    void testDeliverWebhook_OnSuccess_DoesNotScheduleRetry() throws Exception {
+        when(objectMapper.writeValueAsString(any())).thenReturn("{\"id\":\"123\"}");
+        ResponseEntity<String> okResponse = new ResponseEntity<>("OK", HttpStatusCode.valueOf(200));
+        when(restTemplate.exchange(anyString(), any(), any(), eq(String.class))).thenReturn(okResponse);
+
+        webhookService.deliverWebhook(testWebhook, "INVOICE_SUBMITTED", Map.of("id", "123"));
+
+        verify(taskScheduler, never()).schedule(any(Runnable.class), any(Instant.class));
+        ArgumentCaptor<WebhookDelivery> captor = ArgumentCaptor.forClass(WebhookDelivery.class);
+        verify(deliveryRepository).save(captor.capture());
+        assertTrue(captor.getValue().getSuccess());
     }
 
     @Test

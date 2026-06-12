@@ -306,6 +306,42 @@
 
 ---
 
+### [PROB-025] `GET /api/v1/purchase-orders` (sans `supplierId`) retournait TOUTES les commandes, non paginées, alors que le frontend attendait déjà une réponse paginée
+- **Catégorie :** Backend / Performance + Contrat API
+- **Sévérité :** 🟡 Moyenne (P3-01)
+- **Découvert :** 2026-06-12 — Audit Phase 3 (performance & données)
+- **Symptôme :** `PurchaseOrderService.listAll()` appelait `purchaseOrderRepository.findAll()` (toutes les lignes, y compris soft-deleted) et `PurchaseOrderController.listPurchaseOrders` renvoyait `ApiResponse<List<PurchaseOrderDTO>>` brut. `frontend/src/pages/PurchaseOrdersPage.tsx` appelle pourtant déjà `GET /purchase-orders?page=&size=20` et lit `data.data.content`/`totalPages`/`totalElements` — un contrat déjà attendu côté frontend mais jamais implémenté côté backend, donc `data?.content` était `undefined` et la liste ne s'affichait jamais en pratique pour les volumes réels.
+- **Cause racine :** Le endpoint a été implémenté avant que le frontend ne soit aligné sur un contrat paginé (`PagedResponse<T>`), et n'a jamais été mis à jour quand `PurchaseOrdersPage.tsx` a commencé à attendre ce contrat. De plus, `findAll()` n'excluait pas les enregistrements soft-deleted (`deletedAt IS NOT NULL`).
+- **Solution appliquée :** Nouvelle méthode `PurchaseOrderRepository.findAllActive(Pageable)` (`WHERE po.deletedAt IS NULL`, paginée). `PurchaseOrderService.listAll(Pageable)` délègue à cette méthode. `PurchaseOrderController.listPurchaseOrders` accepte désormais `page`/`size` (défauts `0`/`20`) et renvoie `ApiResponse<PagedResponse<PurchaseOrderDTO>>` via `PagedResponse.of(Page<T>)`. La branche `supplierId != null` (filtre non paginé existant, `listBySupplier`) est conservée mais enveloppée dans un `PagedResponse` à une seule page, pour garder un contrat de réponse homogène quel que soit le chemin.
+- **Règle préventive :** Quand le frontend attend déjà un contrat (`{content, totalElements, totalPages, last}`) pour un endpoint, vérifier que le backend le produit réellement — un mismatch silencieux de ce type ne casse aucun test backend existant (aucun test ne couvrait `GET /purchase-orders` sans `supplierId`) mais casse la fonctionnalité en usage réel. Tout nouveau endpoint de liste doit utiliser `Pageable`/`PagedResponse<T>` dès le départ, jamais `List<T>` brut.
+- **Fichiers modifiés :** `PurchaseOrderRepository.java` (nouvelle méthode `findAllActive(Pageable)`), `PurchaseOrderService.java` (`listAll(Pageable)`), `PurchaseOrderController.java` (`listPurchaseOrders` paginé), `PurchaseOrderControllerTest.java` (nouveau fichier — 3 tests : liste paginée sans `supplierId`, liste avec `supplierId`, 403 pour rôle non autorisé)
+
+---
+
+### [PROB-026] `invoices.supplier_id` sans index malgré 4+ requêtes filtrant sur cette colonne
+- **Catégorie :** Backend / Performance / Base de données
+- **Sévérité :** 🟡 Moyenne (P3-02)
+- **Découvert :** 2026-06-12 — Audit Phase 3 (performance & données)
+- **Symptôme :** `V14__update_invoices_supplier_fk.sql` ajoute la colonne `invoices.supplier_id` (FK vers `suppliers`) mais sans index associé. `InvoiceRepository` filtre sur `i.supplier.id = :supplierId` dans `findAllWithFilters`, `countInvoicesByStatusForSupplier`, `countInvoicesByMatchingStatusForSupplier` et `findNextExpectedPaymentDateForSupplier` — toutes ces requêtes (notamment le tableau de bord du portail fournisseur, rendu accessible par P11-02/PROB-022) effectuent un scan complet de `invoices` sans index.
+- **Cause racine :** Oubli lors de `V14` — un index a été ajouté pour `users.supplier_id` (`V15`) et `purchase_orders.supplier_id` (`V17`), mais pas pour `invoices.supplier_id`.
+- **Solution appliquée :** Nouvelle migration Flyway `V43__add_invoices_supplier_id_index.sql` : `CREATE INDEX IF NOT EXISTS idx_invoices_supplier_id ON invoices(supplier_id)`. (Numérotée V43, et non V42, car V42 a été utilisé par PROB-024 pour la FK `audit_logs.user_id`.)
+- **Règle préventive :** Toute migration qui ajoute une colonne `*_id` utilisée comme clé étrangère ou comme filtre de requête doit ajouter l'index correspondant dans la même migration (cf. `V15`, `V17`). Note : cette migration n'est pas exercée par `mvnw test` (le profil `test` utilise `ddl-auto: create-drop`, Flyway désactivé — cf. PROB-024) ; elle s'applique uniquement en production/staging via Flyway.
+- **Fichiers modifiés :** `V43__add_invoices_supplier_id_index.sql` (nouveau)
+
+---
+
+### [PROB-027] `WebhookService` : `deliveryTimeoutSeconds` jamais utilisé, `RestTemplate` sans timeout, et retries bloquants via `Thread.sleep` (jusqu'à 755s par livraison)
+- **Catégorie :** Backend / Performance / Fiabilité
+- **Sévérité :** 🟠 Élevée (P3-04)
+- **Découvert :** 2026-06-12 — Audit Phase 3 (performance & données)
+- **Symptôme :** `WebhookService.deliveryTimeoutSeconds` (`@Value("${webhook.delivery.timeout.seconds:5}")`) n'était lu nulle part : `WebConfig.restTemplate()` retournait un `RestTemplate` par défaut (timeout infini). La chaîne de retry (`deliverWithRetry`, jusqu'à `MAX_RETRIES=3`) appelait `Thread.sleep(delayMs)` avec `RETRY_DELAYS_MS = {5000, 25000, 125000}` directement dans la méthode `@Async`/`@Transactional` `deliverWebhook` — au pire cas (timeout infini + 3 sleeps), un thread du pool `Async-*` ET potentiellement une connexion DB transactionnelle pouvaient être bloqués jusqu'à ~755s pour une seule livraison de webhook.
+- **Cause racine :** `deliveryTimeoutSeconds` a été ajouté comme propriété de configuration mais jamais câblé dans un `ClientHttpRequestFactory` ; le retry a été implémenté avec `Thread.sleep` (le moyen le plus simple d'exprimer un backoff) sans tenir compte du fait que la méthode tourne dans le pool `@Async` à taille limitée (`AsyncConfig` : `corePoolSize=5`, `maxPoolSize=10`, `queueCapacity=25`) — un webhook lent/en échec pouvait donc épuiser le pool et retarder toutes les autres livraisons asynchrones (emails, notifications, audit).
+- **Solution appliquée :** (1) `WebConfig` : nouveau bean `ClientHttpRequestFactory` (`SimpleClientHttpRequestFactory`) avec `connectTimeout`/`readTimeout` = `webhook.delivery.timeout.seconds` (×1000ms), injecté dans le `RestTemplate`. (2) `WebhookService` : injection de `TaskScheduler` (bean Spring Boot auto-configuré, `@EnableScheduling` déjà présent dans `AsyncConfig`). La logique de retry est scindée : `deliverWithRetry` effectue UNE tentative ; en cas d'échec/non-2xx, `scheduleRetry` appelle `taskScheduler.schedule(() -> deliverWithRetry(...), Instant.now().plus(delay))` au lieu de `Thread.sleep` — le thread `Async-*` est libéré immédiatement, le backoff 5s/25s/125s est conservé via le scheduler.
+- **Règle préventive :** Dans une méthode `@Async`, ne jamais utiliser `Thread.sleep` pour différer un traitement — cela bloque un thread du pool borné pendant toute la durée du délai. Utiliser `TaskScheduler.schedule(Runnable, Instant)` (ou `ScheduledExecutorService`) pour planifier une exécution future sans bloquer. Tout appel HTTP sortant via `RestTemplate` doit avoir un `ClientHttpRequestFactory` avec timeouts explicites — le défaut Spring est un timeout infini.
+- **Fichiers modifiés :** `WebConfig.java` (nouveau bean `ClientHttpRequestFactory`, `RestTemplate` utilise ce factory), `WebhookService.java` (injection `TaskScheduler`, `deliverWithRetry`/`scheduleRetry` non-bloquants), `WebhookServiceTest.java` (2 nouveaux tests : `testDeliverWebhook_OnFailure_SchedulesRetryWithoutBlocking` vérifie l'absence de blocage + délai ~5s planifié via `TaskScheduler`, `testDeliverWebhook_OnSuccess_DoesNotScheduleRetry` vérifie qu'aucun retry n'est planifié en cas de succès)
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :

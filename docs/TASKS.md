@@ -602,17 +602,34 @@ pre-existing per `docs/audit/BASELINE.md`.
 
 ### P11-C — Performance Fixes 🟠 High
 
-- [ ] **P11-04** Paginate `GET /api/v1/purchase-orders` without `supplierId` (P3-01): use
+- [x] **P11-04** Paginate `GET /api/v1/purchase-orders` without `supplierId` (P3-01): use
       `Pageable`/`Page<T>`, return `PagedResponse<PurchaseOrderResponse>`.
-- [ ] **P11-05** Add Flyway migration `V42__add_invoices_supplier_id_index.sql` (P3-02):
-      `CREATE INDEX idx_invoices_supplier_id ON invoices(supplier_id)`.
-- [ ] **P11-06** Fix `WebhookService` delivery timeouts/retry (P3-04): wire
+      Done 2026-06-12 — see [PROB-025](KNOWN_ISSUES_REGISTRY.md). New
+      `PurchaseOrderRepository.findAllActive(Pageable)`, `PurchaseOrderService.listAll(Pageable)`,
+      `PurchaseOrderController.listPurchaseOrders` now returns
+      `ApiResponse<PagedResponse<PurchaseOrderDTO>>` for both the unfiltered and `supplierId`
+      branches. New `PurchaseOrderControllerTest` (3 tests, all pass). Full suite: 261 tests,
+      25 failures + 2 errors = 27, identical to the post-P11-03/PROB-024 baseline set.
+- [x] **P11-05** Add Flyway migration `V43__add_invoices_supplier_id_index.sql` (P3-02):
+      `CREATE INDEX idx_invoices_supplier_id ON invoices(supplier_id)`. (Renumbered from V42 to
+      V43 — V42 was used by PROB-024's `audit_logs.user_id` FK fix during P11-03.)
+      Done 2026-06-12 — see [PROB-026](KNOWN_ISSUES_REGISTRY.md). Not exercised by `mvnw test`
+      (test profile uses `ddl-auto: create-drop`, Flyway disabled); applies to production/staging.
+- [x] **P11-06** Fix `WebhookService` delivery timeouts/retry (P3-04): wire
       `deliveryTimeoutSeconds` into a `RestTemplate` `ClientHttpRequestFactory` with
       connect/read timeouts; replace blocking `Thread.sleep` retry with a non-blocking
       scheduled retry, preserving the 5s/25s/125s backoff contract from CLAUDE.md §9.
+      Done 2026-06-12 — see [PROB-027](KNOWN_ISSUES_REGISTRY.md). `WebConfig` now provides a
+      `ClientHttpRequestFactory` (connect/read timeout = `webhook.delivery.timeout.seconds`)
+      used by `RestTemplate`. `WebhookService` injects `TaskScheduler` and schedules retries via
+      `taskScheduler.schedule(..., Instant)` instead of `Thread.sleep`. 2 new tests in
+      `WebhookServiceTest` (10 total, all pass).
 
 **P11-C Exit Criteria:** Purchase orders list is paginated; `invoices.supplier_id` is
-indexed; webhook delivery no longer blocks a thread/DB connection for up to 755s.
+indexed; webhook delivery no longer blocks a thread/DB connection for up to 755s. MET
+2026-06-12. Full `mvnw test` run: 263 tests, 25 failures + 2 errors = 27, identical failure/error
+set to the post-P11-03/PROB-024 baseline (verified via diff of sorted test names — zero new
+regressions across P11-04/05/06).
 
 ---
 

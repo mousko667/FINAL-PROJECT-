@@ -1048,3 +1048,62 @@ InvoicePerformanceTest, NotificationControllerTest, PaymentControllerTest,
 ReportControllerTest, StateMachineTransitionExhaustiveTest, UserServiceTest) — each is
 its own P11 task in sub-phases P11-C..K. Confirmed zero new failures. Ready to commit and
 move to P11-04.
+
+## Session Checkpoint
+**Date:** 2026-06-12
+**Last completed task:** P11-06
+**Phase:** Phase 11 — Audit Correction Cycle (P11-C COMPLETE, exit criteria met)
+**Next task:** P11-07 (sub-phase P11-D — Controller → Service Layer Refactor)
+**Branch:** main
+**Last commit:** 061b92f (P11-03 + PROB-024; P11-04/05/06 not yet committed this checkpoint)
+**Notes:**
+
+P11-04 (P3-01/PROB-025): `GET /api/v1/purchase-orders` without `supplierId` returned an
+unpaginated `List<PurchaseOrderDTO>` from `findAll()` (including soft-deleted rows), while
+`frontend/src/pages/PurchaseOrdersPage.tsx` already called the endpoint with
+`page`/`size` params and read `data.content`/`totalPages`/`totalElements` — a pre-existing
+frontend/backend contract mismatch that meant the list never rendered correctly at real
+volumes. Fixed: new `PurchaseOrderRepository.findAllActive(Pageable)`
+(`WHERE po.deletedAt IS NULL`), `PurchaseOrderService.listAll(Pageable)`,
+`PurchaseOrderController.listPurchaseOrders` returns
+`ApiResponse<PagedResponse<PurchaseOrderDTO>>` for both the unfiltered branch (real
+pagination via `PageRequest.of(page, size)`) and the `supplierId` branch (wrapped in a
+single-page `PagedResponse` for contract consistency). New
+`PurchaseOrderControllerTest` (3 tests: paginated list, supplierId-filtered list, 403 for
+unauthorized role) — all pass.
+
+P11-05 (P3-02/PROB-026): `invoices.supplier_id` (added in V14) had no index despite being
+filtered in 4 `InvoiceRepository` queries (incl. supplier-portal dashboard, reachable
+since P11-02/PROB-022). Fixed: `V43__add_invoices_supplier_id_index.sql`
+(`CREATE INDEX IF NOT EXISTS idx_invoices_supplier_id ON invoices(supplier_id)`). Renumbered
+from V42→V43 because V42 was claimed by PROB-024. Not exercised by `mvnw test` (test
+profile disables Flyway, uses `ddl-auto: create-drop` — same situation as PROB-024);
+applies to production/staging only.
+
+P11-06 (P3-04/PROB-027): `WebhookService.deliveryTimeoutSeconds` was read nowhere
+(`RestTemplate` had infinite default timeout), and `deliverWithRetry` used
+`Thread.sleep(5000/25000/125000)` directly inside the `@Async`/`@Transactional`
+`deliverWebhook` — worst case ~755s blocking an `Async-*` pool thread (pool is bounded:
+`corePoolSize=5`, `maxPoolSize=10`, `queueCapacity=25` per `AsyncConfig`), risking
+starvation of other async work (emails, notifications, audit). Fixed: `WebConfig` adds a
+`ClientHttpRequestFactory` bean (`SimpleClientHttpRequestFactory`, connect/read timeout =
+`webhook.delivery.timeout.seconds`×1000ms) wired into the `RestTemplate` bean.
+`WebhookService` now injects `TaskScheduler` (auto-configured by Spring Boot,
+`@EnableScheduling` already present in `AsyncConfig`); `deliverWithRetry` performs one
+attempt, and on failure/non-2xx calls `scheduleRetry`, which uses
+`taskScheduler.schedule(() -> deliverWithRetry(...), Instant.now().plus(delay))` instead
+of `Thread.sleep` — preserves the 5s/25s/125s backoff contract (CLAUDE.md §9) without
+blocking a thread. Added 2 tests to `WebhookServiceTest`
+(`testDeliverWebhook_OnFailure_SchedulesRetryWithoutBlocking`:
+asserts `deliverWebhook` returns in <1s on `RestClientException` and that
+`taskScheduler.schedule` is called with a ~5s-out `Instant`;
+`testDeliverWebhook_OnSuccess_DoesNotScheduleRetry`: asserts no retry is scheduled and
+delivery is recorded as success on first-attempt 2xx). All 10 WebhookServiceTest tests
+pass (was 8); WebhookControllerTest (7 tests, full Spring context) confirms the
+`TaskScheduler`/`ClientHttpRequestFactory` beans resolve correctly.
+
+P11-C Exit Criteria MET 2026-06-12: purchase orders list paginated; `invoices.supplier_id`
+indexed (production); webhook delivery no longer blocks a thread for up to 755s.
+Full suite (`mvnw test`) run after P11-04/05/06: **263 tests, 25 failures + 2 errors = 27**,
+identical failure/error test-name set to the post-P11-03/PROB-024 27 (diffed sorted lists
+— zero new regressions). Ready to commit and move to P11-07 (P11-D).
