@@ -1055,7 +1055,7 @@ move to P11-04.
 **Phase:** Phase 11 — Audit Correction Cycle (P11-C COMPLETE, exit criteria met)
 **Next task:** P11-07 (sub-phase P11-D — Controller → Service Layer Refactor)
 **Branch:** main
-**Last commit:** 061b92f (P11-03 + PROB-024; P11-04/05/06 not yet committed this checkpoint)
+**Last commit:** f83517d (P11-04/05/06 — PROB-025/026/027)
 **Notes:**
 
 P11-04 (P3-01/PROB-025): `GET /api/v1/purchase-orders` without `supplierId` returned an
@@ -1107,3 +1107,35 @@ indexed (production); webhook delivery no longer blocks a thread for up to 755s.
 Full suite (`mvnw test`) run after P11-04/05/06: **263 tests, 25 failures + 2 errors = 27**,
 identical failure/error test-name set to the post-P11-03/PROB-024 27 (diffed sorted lists
 — zero new regressions). Ready to commit and move to P11-07 (P11-D).
+
+## Session Checkpoint
+**Date:** 2026-06-12
+**Last completed task:** P11-07
+**Phase:** Phase 11 — Audit Correction Cycle (sub-phase P11-D — Controller → Service Layer
+Refactor, IN PROGRESS)
+**Next task:** P11-08 (Refactor `IntegrationStatusController`, P1-05)
+**Branch:** main
+**Last commit:** f83517d (P11-04/05/06 — PROB-025/026/027; P11-07 not yet committed this
+checkpoint)
+**Notes:**
+
+P11-07 (P1-05/PROB-028): `AdminSessionController` injected `ActiveSessionRepository`
+directly and built `List<Map<String, Object>>` responses inline — violating "never bypass
+service layer from controller" and partially exposing JPA entity data ad-hoc. Fixed: new
+`record ActiveSessionDTO(UUID id, UUID userId, String username, String ipAddress, Instant
+createdAt, Instant expiresAt)` in `domain/user/dto/` — field names verified to match the
+frontend TS interface `ActiveSession` in `SecuritySettingsPage.tsx` exactly (Jackson
+serializes record accessors 1:1, no frontend change needed). New
+`AdminSessionService` (`domain/auth/service/`, `@Slf4j @Service @RequiredArgsConstructor
+@Transactional`) with `listActiveSessions()` (maps `ActiveSessionRepository.findAllActive
+(Instant.now())` → `List<ActiveSessionDTO>`) and `revokeUserSessions(UUID)` (delegates to
+`sessionRepository.revokeAllForUser`). `AdminSessionController` now depends only on
+`AdminSessionService`. New `AdminSessionControllerTest` (4 tests: list as ADMIN returns
+200 with `ActiveSessionDTO[]` shape, list as non-ADMIN returns 403, revoke as ADMIN
+returns 200 and calls `adminSessionService.revokeUserSessions`, revoke as non-ADMIN
+returns 403) — all 4 pass.
+
+Full suite (`mvnw test`) run after P11-07: **267 tests, 25 failures + 2 errors = 27**
+(267 = 263 + 4 new AdminSessionControllerTest passes), identical failure/error test-name
+set to the post-P11-04/05/06 27 (diffed sorted lists — zero new regressions). Ready to
+commit and move to P11-08.

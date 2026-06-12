@@ -635,8 +635,13 @@ regressions across P11-04/05/06).
 
 ### P11-D — Controller → Service Layer Refactor 🟠 High
 
-- [ ] **P11-07** Refactor `AdminSessionController` (P1-05): create
+- [x] **P11-07** Refactor `AdminSessionController` (P1-05): create
       `AdminSessionService`, move repository access out of the controller.
+      Completed 2026-06-12 (PROB-028). New `ActiveSessionDTO` record (field names
+      match frontend `ActiveSession` interface exactly, no frontend change needed),
+      new `AdminSessionService` (`domain/auth/service/`), controller now depends
+      only on the service. New `AdminSessionControllerTest` (4 tests: list as
+      ADMIN/non-ADMIN, revoke as ADMIN/non-ADMIN) — all pass.
 - [ ] **P11-08** Refactor `IntegrationStatusController` (P1-05): create
       `IntegrationStatusService`, move repository access out of the controller.
 - [ ] **P11-09** Refactor `WebhookController` (P1-05): move direct repository access

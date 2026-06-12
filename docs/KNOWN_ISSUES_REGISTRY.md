@@ -342,6 +342,18 @@
 
 ---
 
+### [PROB-028] `AdminSessionController` injectait `ActiveSessionRepository` directement, bypassant la couche service (violation de la règle absolue P1-05)
+- **Catégorie :** Backend / Architecture
+- **Sévérité :** 🟠 Élevée (P1-05, règle absolue n°1 — "never bypass service layer from controller")
+- **Découvert :** 2026-06-12 — Audit Phase 1 (architecture), sous-phase P11-D
+- **Symptôme :** `AdminSessionController` (`GET /api/v1/admin/sessions`, `DELETE /api/v1/admin/sessions/user/{userId}`) injectait directement `ActiveSessionRepository` et construisait la réponse `listActiveSessions` en mappant manuellement chaque entité `ActiveSession` vers un `Map<String, Object>` brut dans le contrôleur — violant à la fois "never bypass service layer from controller" et "never expose JPA entities directly" (les entités `ActiveSession`/`User` étaient partiellement sérialisées via la map ad-hoc).
+- **Cause racine :** Endpoint d'administration ajouté rapidement (gestion des sessions actives) sans suivre le pattern `Controller → Service → Repository` déjà en place pour les autres modules ; aucune couche service n'existait pour `ActiveSession`.
+- **Solution appliquée :** Nouveau DTO `record ActiveSessionDTO(UUID id, UUID userId, String username, String ipAddress, Instant createdAt, Instant expiresAt)` dans `domain/user/dto/` — les noms de champs correspondent exactement à l'interface TypeScript `ActiveSession` déjà utilisée par `frontend/src/pages/admin/SecuritySettingsPage.tsx` (Jackson sérialise les accesseurs de `record` avec ces noms, donc aucun changement frontend requis). Nouveau service `AdminSessionService` (`domain/auth/service/`) avec `listActiveSessions()` (mappe `ActiveSessionRepository.findAllActive(Instant.now())` vers `List<ActiveSessionDTO>`) et `revokeUserSessions(UUID)` (délègue à `sessionRepository.revokeAllForUser`). `AdminSessionController` ne dépend plus que de `AdminSessionService`.
+- **Règle préventive :** Tout nouveau contrôleur doit dépendre exclusivement d'un service (jamais d'un `*Repository`), et toute méthode de service exposée à un contrôleur doit retourner un DTO (`record` ou classe dédiée), jamais une entité JPA ni une `Map<String, Object>` ad-hoc. Avant de créer un endpoint d'administration "rapide", vérifier s'il existe déjà un service pour l'agrégat concerné ; sinon en créer un, même minimal.
+- **Fichiers modifiés :** `ActiveSessionDTO.java` (nouveau), `AdminSessionService.java` (nouveau), `AdminSessionController.java` (refactorisé pour dépendre de `AdminSessionService`), `AdminSessionControllerTest.java` (nouveau — 4 tests : liste en ADMIN retourne 200 avec le bon shape `ActiveSessionDTO[]`, liste en non-ADMIN retourne 403, révocation en ADMIN retourne 200 et appelle `adminSessionService.revokeUserSessions`, révocation en non-ADMIN retourne 403)
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :
