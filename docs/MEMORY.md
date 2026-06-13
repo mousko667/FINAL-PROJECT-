@@ -1306,20 +1306,30 @@ commit and move to P11-12 (sub-phase P11-E).
 **COMPLETE**)
 **Next task:** first task of P11-F
 **Branch:** main
-**Last commit:** (to be filled after this commit)
+**Last commit:** da8749f (P11-13/P11-14 + PROB-033); `fc0862c` earlier this session (host-Postgres + JWT key pair infra).
 **Notes:**
 
-P11-12/P11-13 (P5-01 Option B / P5-02): a concurrent session already committed the
-`docker-compose.yml` changes in `fc0862c` ("chore(infra): dev backend connects to
-host-Postgres + JWT RSA key pair") — removed the orphaned `postgres` service block and
-`postgres_data` volume, updated the header usage comment to note PostgreSQL is host-native
-(pointing to `docs/ARCHITECTURE.md §4.3`), and fixed `minio_init`'s `MINIO_SECRET_KEY`
-default from `dany` to `dany1234` (matching `minio`'s `MINIO_ROOT_PASSWORD` default).
-`docker compose config` confirms: no `postgres` service remains (only `DB_USER: postgres`,
-a username string), and `MINIO_SECRET_KEY: dany1234` resolves consistently for `minio_init`.
-Note: `backend`'s own `MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-dany}` default still differs
-from `dany1234` — out of scope for P11-13 (which named only the `minio_init` line), tracked
-as a pre-existing inconsistency only relevant if `.env` doesn't set `MINIO_SECRET_KEY`.
+P11-12 (P5-01 Option B): a concurrent session already committed the `docker-compose.yml`
+changes in `fc0862c` ("chore(infra): dev backend connects to host-Postgres + JWT RSA key
+pair") — removed the orphaned `postgres` service block and `postgres_data` volume, and
+updated the header usage comment to note PostgreSQL is host-native (pointing to
+`docs/ARCHITECTURE.md §4.3`). `docker compose config` confirms no `postgres` service
+remains (only `DB_USER: postgres`, a username string).
+
+P11-13 (P5-02, PROB-033): `fc0862c` had fixed `minio_init`'s `MINIO_SECRET_KEY` default
+(`dany` → `dany1234`), but the `backend` service's own `MINIO_SECRET_KEY:
+${MINIO_SECRET_KEY:-dany}` default was never updated and still mismatched `minio`'s
+`MINIO_ROOT_PASSWORD` default (`dany1234`) — on a fresh clone with `.env` unset, the
+backend would fail to authenticate to MinIO. An earlier pass in this session had marked
+P11-13 "done" based on the task description (which named the `minio_init` line, already
+fixed) without re-checking the `backend` line — caught by verifying the file directly.
+Fixed: `backend`'s `MINIO_SECRET_KEY` default changed to `dany1234`, so `minio`,
+`minio_init`, and `backend` now all share the same default. Verified via `docker compose
+--env-file <empty> config`: `MINIO_SECRET_KEY: dany1234` and `MINIO_ROOT_PASSWORD:
+dany1234` resolve identically with `.env` unset. Logged as PROB-033 in
+`docs/KNOWN_ISSUES_REGISTRY.md` (root cause, preventive rule: never mark a task done from
+its description alone — verify the actual file/behavior; for shared compose values, ensure
+every `${VAR:-default}` reference uses the SAME default).
 
 P11-14: added a new "Prerequisite: host-native PostgreSQL (P5-01, Option B — confirmed
 2026-06-12)" subsection at the top of `docs/ARCHITECTURE.md §4.3`, documenting that
@@ -1327,20 +1337,23 @@ P11-14: added a new "Prerequisite: host-native PostgreSQL (P5-01, Option B — c
 already be running on port 5433 with database `oct_invoice` before `docker-compose up`, and
 the `backend` container reaches it via `host.docker.internal:5433` (configured through
 `extra_hosts: host.docker.internal:host-gateway` + `DB_HOST`/`DB_PORT` env vars). Also fixed
-the now-stale "Verify all services healthy" `docker ps` example, which previously listed
-`oct_postgres`: now lists `oct_backend, oct_frontend, oct_minio, oct_minio_init, oct_mailhog`
-and instructs verifying host Postgres separately via `pg_isready -h localhost -p 5433`.
+the now-stale "Verify all services healthy" `docker ps` example (previously listed
+`oct_postgres`): now lists `oct_backend, oct_frontend, oct_minio, oct_minio_init,
+oct_mailhog` and instructs verifying host Postgres separately via `pg_isready -h localhost
+-p 5433`. As part of PROB-033's fix, §9 "Docker Compose Services" table was also corrected:
+`postgres` removed (host-native), `minio_init` added — consistent with §4.3.
 
 **P11-E sub-phase COMPLETE.** Exit criteria verified 2026-06-13: `docker compose config`
-shows no `postgres` service; `MINIO_SECRET_KEY` resolves to `dany1234` for `minio_init`
-with `.env` unset; `docs/ARCHITECTURE.md §4.3` documents the host-Postgres prerequisite.
-No new PROB entry needed — these were pre-planned audit fixes (P5-01/P5-02), not newly
-discovered bugs.
+shows no `postgres` service; `MINIO_SECRET_KEY` resolves to `dany1234` identically for
+`minio`, `minio_init`, and `backend` with `.env` unset; `docs/ARCHITECTURE.md §4.3`
+documents the host-Postgres prerequisite. PROB-033 logged in
+`docs/KNOWN_ISSUES_REGISTRY.md`.
 
-This session's `docker-compose.yml` edits were already covered by concurrent commit
-`fc0862c`, so only `docs/ARCHITECTURE.md` and `docs/TASKS.md` (P11-12/13/14 marked `[x]`
-with notes, P11-E Exit Criteria marked met) plus this checkpoint are committed now. Two
-unrelated pre-existing uncommitted diffs remain in the working tree (`CLAUDE.md` —
-2026-06-06 instruction-file updates already indexed in this file's header; `pom.xml` — adds
+Committed together: `docker-compose.yml` (PROB-033 fix — `backend`'s `MINIO_SECRET_KEY`
+default), `docs/ARCHITECTURE.md` (§4.3 prerequisite subsection + §9 table fix),
+`docs/TASKS.md` (P11-12/13/14 marked `[x]` with corrected notes, P11-E Exit Criteria met),
+`docs/KNOWN_ISSUES_REGISTRY.md` (PROB-033), and this checkpoint. Two unrelated
+pre-existing uncommitted diffs remain in the working tree (`CLAUDE.md` — 2026-06-06
+instruction-file updates already indexed in this file's header; `pom.xml` — adds
 Tess4J/PDFBox dependencies for an OCR feature) — neither belongs to P11-E and both are left
 uncommitted for whichever task/session owns them. Ready to commit and move to P11-F.

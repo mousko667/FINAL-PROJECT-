@@ -733,7 +733,8 @@ imports or injects a `*Repository` (the prior offenders `AdminSessionController`
 **P11-E Exit Criteria:** `docker compose config` shows no `postgres` service; a fresh clone
 with `.env` unset for `MINIO_SECRET_KEY` still has `minio_init` succeed; ARCHITECTURE.md
 documents the host-Postgres prerequisite. ✅ Met 2026-06-13 — verified via `docker compose
-config` (no `postgres` service, `MINIO_SECRET_KEY: dany1234` resolved) and
+config` (no `postgres` service; `MINIO_SECRET_KEY: dany1234` resolves identically for
+`minio`, `minio_init`, and `backend` with `.env` unset, per the PROB-033 correction) and
 `docs/ARCHITECTURE.md §4.3` prerequisite subsection.
 
 ---
