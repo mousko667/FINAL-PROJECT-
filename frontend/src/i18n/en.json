@@ -404,6 +404,23 @@
     "title": "Suppliers",
     "create": "Onboard New Supplier",
     "edit": "Edit Supplier",
+    "register": {
+      "title": "Register as Supplier",
+      "subtitle": "Create your supplier account to submit invoices",
+      "companySection": "Company Information",
+      "accountSection": "Account Credentials",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "passwordMin": "Minimum 8 characters",
+      "confirmPassword": "Confirm Password",
+      "alreadyHaveAccount": "Already have an account?",
+      "submit": "Create Account",
+      "isSupplier": "Are you a supplier?",
+      "linkText": "Register",
+      "error": "Registration failed. Please try again.",
+      "successTitle": "Registration Submitted!",
+      "successMessage": "Check your email to verify your account before logging in."
+    },
     "portal": {
       "dashboard": "My Dashboard",
       "submitted": "Submitted",

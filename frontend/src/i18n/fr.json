@@ -404,6 +404,23 @@
     "title": "Fournisseurs",
     "create": "Enregistrer un fournisseur",
     "edit": "Modifier le fournisseur",
+    "register": {
+      "title": "Inscription fournisseur",
+      "subtitle": "Créez votre compte fournisseur pour soumettre vos factures",
+      "companySection": "Informations sur l'entreprise",
+      "accountSection": "Identifiants du compte",
+      "firstName": "Prénom",
+      "lastName": "Nom",
+      "passwordMin": "Minimum 8 caractères",
+      "confirmPassword": "Confirmer le mot de passe",
+      "alreadyHaveAccount": "Vous avez déjà un compte ?",
+      "submit": "Créer le compte",
+      "isSupplier": "Êtes-vous un fournisseur ?",
+      "linkText": "S'inscrire",
+      "error": "Échec de l'inscription. Veuillez réessayer.",
+      "successTitle": "Inscription soumise !",
+      "successMessage": "Vérifiez votre e-mail pour confirmer votre compte avant de vous connecter."
+    },
     "portal": {
       "dashboard": "Mon tableau de bord",
       "submitted": "Soumises",

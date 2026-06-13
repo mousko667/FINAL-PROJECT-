@@ -825,7 +825,11 @@ returns `List<ApprovalStepResponse>` (P11-23).
 
 ### P11-H — i18n Sweep 🟡 Medium
 
-- [ ] **P11-25** Add missing `supplier.register.*` keys (13) to `en.json`/`fr.json` (P4-01).
+- [x] **P11-25** Add missing `supplier.register.*` keys (13) to `en.json`/`fr.json` (P4-01).
+      Completed 2026-06-13. Added a `supplier.register` block (15 keys — the audit's 13 from
+      `SupplierRegisterPage.tsx` plus `isSupplier`/`linkText` from `LoginPage.tsx`) to both
+      locale files; EN from the source fallbacks, FR composed in the existing formal tone.
+      Parity verified: 433/433 keys, 0 EN-only/FR-only.
 - [ ] **P11-26** Add missing `supplier.verify.*` keys (5) to `en.json`/`fr.json` (P4-01).
 - [ ] **P11-27** Add missing `supplier.tracking.*` keys (8) to `en.json`/`fr.json` (P4-01).
 - [ ] **P11-28** Add missing `supplier.portal.*` keys (3) to `en.json`/`fr.json` (P4-01).
