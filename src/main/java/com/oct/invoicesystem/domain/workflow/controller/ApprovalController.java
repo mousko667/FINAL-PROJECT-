@@ -1,6 +1,7 @@
 package com.oct.invoicesystem.domain.workflow.controller;
 
 import com.oct.invoicesystem.domain.workflow.dto.ApprovalRequest;
+import com.oct.invoicesystem.domain.workflow.dto.ApprovalStepResponse;
 import com.oct.invoicesystem.domain.workflow.dto.RejectRequest;
 import com.oct.invoicesystem.domain.workflow.service.ApprovalService;
 import com.oct.invoicesystem.shared.response.ApiResponse;
@@ -19,7 +20,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -33,7 +33,7 @@ public class ApprovalController {
     @GetMapping("/steps")
     @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER')")
     @Operation(summary = "Get approval steps for an invoice")
-    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getApprovalSteps(
+    public ResponseEntity<ApiResponse<List<ApprovalStepResponse>>> getApprovalSteps(
             @PathVariable UUID invoiceId) {
         return ResponseEntity.ok(ApiResponse.success(approvalService.getApprovalSteps(invoiceId)));
     }

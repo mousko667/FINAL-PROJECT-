@@ -9,6 +9,7 @@ import com.oct.invoicesystem.domain.invoice.statemachine.InvoiceEvent;
 import com.oct.invoicesystem.domain.user.model.Role;
 import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.domain.user.model.UserRole;
+import com.oct.invoicesystem.domain.workflow.dto.ApprovalStepResponse;
 import com.oct.invoicesystem.domain.workflow.model.ApprovalStep;
 import com.oct.invoicesystem.domain.workflow.model.ApprovalStepStatus;
 import com.oct.invoicesystem.domain.workflow.repository.ApprovalStepRepository;
@@ -24,6 +25,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -214,5 +217,66 @@ class ApprovalServiceTest {
         when(invoiceRepository.findByIdAndDeletedAtIsNull(invoice.getId())).thenReturn(Optional.of(invoice));
 
         assertThrows(WorkflowException.class, () -> approvalService.reject(invoice.getId(), "reason"));
+    }
+
+    @Test
+    void getApprovalSteps_mapsEntityFieldsToTypedDto() {
+        UUID invoiceId = UUID.randomUUID();
+        User approver = new User();
+        approver.setUsername("validator");
+        approver.setFirstName("Jean");
+        approver.setLastName("Dupont");
+        Instant deadline = Instant.now().plusSeconds(86_400);
+        Instant actionAt = Instant.now();
+        ApprovalStep step = ApprovalStep.builder()
+                .id(UUID.randomUUID())
+                .stepOrder(1)
+                .stepNameEn("Validation N1")
+                .stepNameFr("Validation N1 (fr)")
+                .departmentCode("INFO")
+                .status(ApprovalStepStatus.APPROVED)
+                .approver(approver)
+                .comments("ok")
+                .deadline(deadline)
+                .actionAt(actionAt)
+                .build();
+        when(approvalStepRepository.findByInvoiceIdOrderByStepOrderAsc(invoiceId)).thenReturn(List.of(step));
+
+        List<ApprovalStepResponse> result = approvalService.getApprovalSteps(invoiceId);
+
+        assertEquals(1, result.size());
+        ApprovalStepResponse r = result.get(0);
+        assertEquals(step.getId(), r.id());
+        assertEquals(1, r.stepOrder());
+        assertEquals("Validation N1", r.stepName());          // mapped from stepNameEn
+        assertEquals("Validation N1 (fr)", r.stepNameFr());
+        assertEquals("INFO", r.departmentCode());
+        assertEquals(ApprovalStepStatus.APPROVED, r.status());
+        assertEquals("validator", r.approverUsername());
+        assertEquals("Jean Dupont", r.approverName());        // first + last concatenated
+        assertEquals("ok", r.comments());
+        assertEquals(deadline, r.deadline());
+        assertEquals(actionAt, r.actionAt());
+    }
+
+    @Test
+    void getApprovalSteps_nullApprover_yieldsNullUsernameAndName() {
+        UUID invoiceId = UUID.randomUUID();
+        ApprovalStep step = ApprovalStep.builder()
+                .id(UUID.randomUUID())
+                .stepOrder(2)
+                .stepNameEn("Validation N2")
+                .stepNameFr("Validation N2 (fr)")
+                .departmentCode("INFO")
+                .status(ApprovalStepStatus.PENDING)
+                .approver(null)
+                .build();
+        when(approvalStepRepository.findByInvoiceIdOrderByStepOrderAsc(invoiceId)).thenReturn(List.of(step));
+
+        List<ApprovalStepResponse> result = approvalService.getApprovalSteps(invoiceId);
+
+        assertNull(result.get(0).approverUsername());
+        assertNull(result.get(0).approverName());
+        assertEquals(ApprovalStepStatus.PENDING, result.get(0).status());
     }
 }

@@ -9,6 +9,7 @@ import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.domain.workflow.model.ApprovalDelegation;
 import com.oct.invoicesystem.domain.workflow.model.ApprovalStep;
 import com.oct.invoicesystem.domain.workflow.model.ApprovalStepStatus;
+import com.oct.invoicesystem.domain.workflow.dto.ApprovalStepResponse;
 import com.oct.invoicesystem.domain.workflow.repository.ApprovalDelegationRepository;
 import com.oct.invoicesystem.domain.workflow.repository.ApprovalStepRepository;
 import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
@@ -24,8 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -142,28 +141,24 @@ public class ApprovalServiceImpl implements ApprovalService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Map<String, Object>> getApprovalSteps(UUID invoiceId) {
-        List<ApprovalStep> steps = approvalStepRepository.findByInvoiceIdOrderByStepOrderAsc(invoiceId);
-        List<Map<String, Object>> result = new ArrayList<>();
-        for (ApprovalStep s : steps) {
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("id", s.getId());
-            m.put("stepOrder", s.getStepOrder());
-            m.put("stepName", s.getStepNameEn());
-            m.put("stepNameFr", s.getStepNameFr());
-            m.put("departmentCode", s.getDepartmentCode());
-            m.put("status", s.getStatus());
-            m.put("approverUsername", s.getApprover() != null ? s.getApprover().getUsername() : null);
-            m.put("approverName", s.getApprover() != null
-                    ? (s.getApprover().getFirstName() + " " + s.getApprover().getLastName()).trim()
-                    : null);
-            m.put("comments", s.getComments());
-            m.put("rejectionReason", s.getRejectionReason());
-            m.put("deadline", s.getDeadline());
-            m.put("actionAt", s.getActionAt());
-            result.add(m);
-        }
-        return result;
+    public List<ApprovalStepResponse> getApprovalSteps(UUID invoiceId) {
+        return approvalStepRepository.findByInvoiceIdOrderByStepOrderAsc(invoiceId).stream()
+                .map(s -> new ApprovalStepResponse(
+                        s.getId(),
+                        s.getStepOrder(),
+                        s.getStepNameEn(),
+                        s.getStepNameFr(),
+                        s.getDepartmentCode(),
+                        s.getStatus(),
+                        s.getApprover() != null ? s.getApprover().getUsername() : null,
+                        s.getApprover() != null
+                                ? (s.getApprover().getFirstName() + " " + s.getApprover().getLastName()).trim()
+                                : null,
+                        s.getComments(),
+                        s.getRejectionReason(),
+                        s.getDeadline(),
+                        s.getActionAt()))
+                .toList();
     }
 
     private ApprovalStep createOrUpdateStep(Invoice invoice, int stepOrder, User approver, String nameFr, String comment, String rejButtonReason, ApprovalStepStatus status) {

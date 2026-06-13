@@ -414,6 +414,18 @@
 
 ---
 
+### [PROB-034] `ApprovalController.getApprovalSteps` exposait un `List<Map<String,Object>>` non typé au lieu d'un DTO (violation de "never return raw maps / always use typed DTOs")
+- **Catégorie :** Backend / Architecture
+- **Sévérité :** 🟡 Mineure (P1-07 — qualité/type-safety, pas de bug fonctionnel)
+- **Découvert :** 2026-06-13 — Audit Phase 1 (architecture), sous-phase P11-G
+- **Symptôme :** `GET /api/v1/invoices/{invoiceId}/workflow/steps` retournait `ApiResponse<List<Map<String,Object>>>` ; `ApprovalServiceImpl.getApprovalSteps` construisait à la main une `LinkedHashMap` de 12 clés par étape. Pas de contrat typé : ni Swagger, ni le compilateur, ni le frontend ne pouvaient vérifier la forme de la réponse.
+- **Cause racine :** Endpoint écrit au plus court (map inline) au lieu d'un record DTO, alors que la convention du projet impose "never returns raw entities — always maps to DTOs".
+- **Solution appliquée :** Nouveau record `ApprovalStepResponse` (12 champs : id, stepOrder, stepName, stepNameFr, departmentCode, status, approverUsername, approverName, comments, rejectionReason, deadline, actionAt) — noms/ordre identiques aux anciennes clés de la map, donc forme JSON inchangée pour le frontend. `ApprovalService` (interface), `ApprovalServiceImpl` (mapping via stream, suppression de `Map`/`LinkedHashMap`/`ArrayList`) et `ApprovalController` retournent désormais la liste typée.
+- **Règle préventive :** Ne jamais retourner `Map<String,Object>` (ni `List<Map<...>>`) d'un service/contrôleur — définir un record DTO. Si la map a des clés stables, c'est déjà un DTO qui s'ignore. Conserver l'ordre/les noms de champs lors de la conversion pour ne pas casser les consommateurs existants.
+- **Fichiers modifiés :** `ApprovalStepResponse.java` (nouveau record), `ApprovalService.java` (signature), `ApprovalServiceImpl.java` (mapping stream), `ApprovalController.java` (type de retour), `ApprovalServiceTest.java` (2 nouveaux tests : `getApprovalSteps_mapsEntityFieldsToTypedDto`, `getApprovalSteps_nullApprover_yieldsNullUsernameAndName`)
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :

@@ -796,8 +796,16 @@ config` (no `postgres` service; `MINIO_SECRET_KEY: dany1234` resolves identicall
       (`ThreeWayMatchingResult`, `ThreeWayMatchingService`) imports `invoice.model.Invoice`/
       `InvoiceItem` — verified by grepping actual imports both directions. Notes it's
       intentional (matching at SUBMIT) and that new cross-domain calls go service→service.
-- [ ] **P11-23** Replace `ApprovalController.getApprovalSteps`'s `List<Map<String,Object>>`
-      return type (P1-07) with a typed `ApprovalStepResponse` DTO.
+- [x] **P11-23** Replace `ApprovalController.getApprovalSteps`'s `List<Map<String,Object>>`
+      return type (P1-07) with a typed `ApprovalStepResponse` DTO. Completed 2026-06-13. New
+      `ApprovalStepResponse` record (12 fields matching the prior map keys exactly, so the JSON
+      shape is unchanged for the frontend). `ApprovalService` interface, `ApprovalServiceImpl`
+      (now maps via a stream, dropping the `Map`/`LinkedHashMap`/`ArrayList` building), and
+      `ApprovalController` all return the typed list. 2 new `ApprovalServiceTest` tests
+      (`getApprovalSteps_mapsEntityFieldsToTypedDto`,
+      `getApprovalSteps_nullApprover_yieldsNullUsernameAndName`) — pass. (The lone
+      `ApprovalServiceTest` failure remaining, `assignReviewer_..._ThrowsAccessDenied`, is the
+      pre-existing baseline failure, unrelated.)
 - [ ] **P11-24** Document the Flyway V36-V38 gap (P3-03): add a note to
       `docs/ARCHITECTURE.md` migration history explaining V35→V39 is intentional.
 
