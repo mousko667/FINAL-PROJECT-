@@ -1,6 +1,7 @@
 package com.oct.invoicesystem.config.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.oct.invoicesystem.domain.auth.service.SecurityPolicyService;
 import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.shared.response.ApiResponse;
 import jakarta.servlet.FilterChain;
@@ -26,6 +27,7 @@ import java.io.IOException;
 public class MfaSetupEnforcementFilter extends OncePerRequestFilter {
 
     private final ObjectMapper objectMapper;
+    private final SecurityPolicyService securityPolicyService;
 
     // In dev profile, allow accounts with mfa_verified=true (even if no secret) to pass through.
     // This lets pre-seeded dev accounts work without going through TOTP setup.
@@ -56,7 +58,10 @@ public class MfaSetupEnforcementFilter extends OncePerRequestFilter {
             trulyVerified = user.isMfaVerified();
         }
 
-        if (!requiresMandatoryMfa(user) || trulyVerified || isAllowedPath(request.getRequestURI())) {
+        // Policy check is last so the `||` short-circuits: the DB read only happens for a
+        // privilege-role user who is not yet verified and not on a setup path (a rare case).
+        if (!requiresMandatoryMfa(user) || trulyVerified || isAllowedPath(request.getRequestURI())
+                || !securityPolicyService.getActivePolicy().getMfaRequired()) {
             filterChain.doFilter(request, response);
             return;
         }

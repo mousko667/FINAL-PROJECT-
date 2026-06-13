@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { Shield, CheckCircle, Clock, Lock, Key, Users, Trash2 } from 'lucide-react'
+import { Shield, CheckCircle, Clock, Lock, Key, Users, Trash2, Loader2, AlertCircle } from 'lucide-react'
 import apiClient from '@/services/apiClient'
 
 interface ActiveSession {
@@ -13,6 +13,14 @@ interface ActiveSession {
   expiresAt: string
 }
 
+interface SecurityPolicy {
+  mfaRequired: boolean
+  sessionTimeoutMinutes: number
+  maxLoginAttempts: number
+  minPasswordLength: number
+  updatedAt: string
+}
+
 export default function SecuritySettingsPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
@@ -21,6 +29,39 @@ export default function SecuritySettingsPage() {
   const [maxAttempts, setMaxAttempts]      = useState(5)
   const [minPassword, setMinPassword]      = useState(8)
   const [saved, setSaved] = useState(false)
+  const [formError, setFormError] = useState('')
+
+  const { data: policy, isLoading: policyLoading } = useQuery<SecurityPolicy>({
+    queryKey: ['security-policy'],
+    queryFn: () => apiClient.get('/api/v1/admin/security-policy').then(r => r.data.data),
+  })
+
+  useEffect(() => {
+    if (policy) {
+      setMfaRequired(policy.mfaRequired)
+      setSessionTimeout(policy.sessionTimeoutMinutes)
+      setMaxAttempts(policy.maxLoginAttempts)
+      setMinPassword(policy.minPasswordLength)
+    }
+  }, [policy])
+
+  const savePolicy = useMutation({
+    mutationFn: () => apiClient.put('/api/v1/admin/security-policy', {
+      mfaRequired,
+      sessionTimeoutMinutes: sessionTimeout,
+      maxLoginAttempts: maxAttempts,
+      minPasswordLength: minPassword,
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['security-policy'] })
+      setSaved(true)
+      setFormError('')
+      setTimeout(() => setSaved(false), 3000)
+    },
+    onError: (err: { response?: { data?: { message?: string } } }) => {
+      setFormError(err?.response?.data?.message ?? t('admin.security.saveError', 'Could not save the security policy.'))
+    },
+  })
 
   const { data: sessions = [], isLoading: sessionsLoading } = useQuery<ActiveSession[]>({
     queryKey: ['admin', 'sessions'],
@@ -34,22 +75,30 @@ export default function SecuritySettingsPage() {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
-    setSaved(true)
-    setTimeout(() => setSaved(false), 3000)
+    setFormError('')
+    savePolicy.mutate()
   }
 
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">{t('admin.security.title')}</h1>
-        <p className="text-sm text-gray-500 mt-1">Configure system-wide security policies.</p>
+        <p className="text-sm text-gray-500 mt-1">{t('admin.security.subtitle', 'Configure system-wide security policies.')}</p>
       </div>
 
       {saved && (
         <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3">
           <CheckCircle className="w-4 h-4" />
-          {t('admin.security.save')} — settings saved (simulation only in this version).
+          {t('admin.security.saved', 'Security policy saved.')}
         </div>
+      )}
+      {formError && (
+        <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+          <AlertCircle className="w-4 h-4" /> {formError}
+        </div>
+      )}
+      {policyLoading && (
+        <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-gray-400" /></div>
       )}
 
       <form onSubmit={handleSave} className="space-y-4">
@@ -83,6 +132,9 @@ export default function SecuritySettingsPage() {
                 className="mt-2 w-32 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
               <span className="ml-2 text-sm text-gray-500">minutes</span>
+              <p className="text-xs text-gray-400 mt-1">
+                {t('admin.security.sessionTimeoutNote', 'Applies to new sign-ins (access-token lifetime). Tokens already issued keep their current expiry.')}
+              </p>
             </div>
           </div>
         </div>
@@ -126,7 +178,12 @@ export default function SecuritySettingsPage() {
         </div>
 
         <div className="flex justify-end pt-2">
-          <button type="submit" className="px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90">
+          <button
+            type="submit"
+            disabled={savePolicy.isPending}
+            className="inline-flex items-center gap-1.5 px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
+          >
+            {savePolicy.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
             {t('admin.security.save')}
           </button>
         </div>

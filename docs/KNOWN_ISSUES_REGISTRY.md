@@ -438,6 +438,18 @@
 
 ---
 
+### [PROB-036] Formulaire de politique de sécurité « simulation only » rendu réel + leçon : un enforcement basé sur une config en base doit avoir un fallback sûr
+- **Catégorie :** Backend / Sécurité
+- **Sévérité :** 🟠 Moyenne (REQ-02 — formulaire factice ; + régression d'auth évitée de justesse)
+- **Découvert :** 2026-06-13 — sous-phase P11-I / P11-40
+- **Symptôme :** `SecuritySettingsPage` affichait un formulaire (MFA requise, timeout de session, max tentatives, longueur min de mot de passe) entièrement en `useState` local, non persisté (`handleSave` ne faisait que `setSaved(true)` + bannière « simulation only »). Aucun des réglages n'était réellement appliqué.
+- **Cause racine :** La page avait été scaffoldée sans backend (pas d'entité/endpoint). Les valeurs réelles étaient codées en dur ailleurs : `AuthService.MAX_FAILED_LOGIN_ATTEMPTS = 5`, MFA par rôle en dur dans `MfaSetupEnforcementFilter`, `@Size(min = 8)` statiques pour les mots de passe.
+- **Solution appliquée :** Nouvelle `SecurityPolicy` (entité singleton + migration `V44`, seedée avec les anciens défauts) + `SecurityPolicyService` + `SecurityPolicyController` (`GET`/`PUT /api/v1/admin/security-policy`, ADMIN). Enforcement réel : `maxLoginAttempts` lu depuis la policy ; `mfaRequired` respecté par le filtre MFA ; `minPasswordLength` validé programmatiquement aux 3 points de définition de mot de passe (création, reset, inscription fournisseur) ; `sessionTimeout` = durée du jeton d'accès à chaque nouvelle connexion (surcharge `JwtService.generateToken`), avec note UI honnête (les jetons déjà émis gardent leur TTL). Frontend recâblé (GET/PUT), bannière « simulation only » retirée.
+- **Leçon / Régression évitée :** Le profil test désactive Flyway (`ddl-auto: create-drop`, pas de seed), donc la table `security_policy` était **vide** en test. La première version de `getActivePolicy()` levait `ResourceNotFoundException` (→ 404) quand aucune ligne active n'existait — ce qui a **cassé l'inscription fournisseur** (`SupplierPortalIntegrationTest` : register → 404, 2 régressions). **Règle préventive :** un point d'enforcement qui lit une configuration en base ne doit JAMAIS casser le flux critique (auth) si la config est absente — il doit retomber sur des défauts sûrs. `getActivePolicy()` retourne désormais des défauts (`orElseGet`) au lieu de lever ; `update()` ne désactive l'ancienne ligne que si elle existe. Vérifier ce fallback sur tout enforcement config-driven.
+- **Fichiers modifiés :** `V44__create_security_policy.sql` (nouveau), `SecurityPolicy.java`, `SecurityPolicyRepository.java`, `SecurityPolicyDTO.java`, `SecurityPolicyUpdateRequest.java`, `SecurityPolicyService.java`, `SecurityPolicyController.java` (nouveaux), `AuthService.java` (maxLoginAttempts + sessionTimeout + validation mot de passe ×2), `MfaSetupEnforcementFilter.java` (mfaRequired), `UserService.java` (validation mot de passe), `JwtService.java` (surcharge expiration), `SecuritySettingsPage.tsx` (GET/PUT), `en.json`/`fr.json` (4 clés `admin.security.*`), `SecurityPolicyServiceTest.java` + `SecurityPolicyControllerTest.java` (nouveaux), `UserServiceTest.java` (mock ajouté)
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :

@@ -327,7 +327,11 @@
       "sessionTimeout": "Délai d'expiration de session (minutes)",
       "maxLoginAttempts": "Tentatives de connexion max",
       "passwordMinLength": "Longueur minimale du mot de passe",
-      "save": "Enregistrer les paramètres"
+      "save": "Enregistrer les paramètres",
+      "subtitle": "Configurez les politiques de sécurité de tout le système.",
+      "saved": "Politique de sécurité enregistrée.",
+      "saveError": "Impossible d'enregistrer la politique de sécurité.",
+      "sessionTimeoutNote": "S'applique aux nouvelles connexions (durée du jeton d'accès). Les jetons déjà émis conservent leur expiration."
     },
     "integrations": {
       "title": "Intégrations & Webhooks",

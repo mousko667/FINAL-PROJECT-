@@ -327,7 +327,11 @@
       "sessionTimeout": "Session Timeout (minutes)",
       "maxLoginAttempts": "Max Failed Login Attempts",
       "passwordMinLength": "Minimum Password Length",
-      "save": "Save Settings"
+      "save": "Save Settings",
+      "subtitle": "Configure system-wide security policies.",
+      "saved": "Security policy saved.",
+      "saveError": "Could not save the security policy.",
+      "sessionTimeoutNote": "Applies to new sign-ins (access-token lifetime). Tokens already issued keep their current expiry."
     },
     "integrations": {
       "title": "Integrations & Webhooks",

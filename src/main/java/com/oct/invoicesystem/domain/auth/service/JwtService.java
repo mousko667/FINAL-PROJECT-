@@ -69,6 +69,11 @@ public class JwtService {
         return buildToken(extraClaims, userDetails, jwtExpirationMs);
     }
 
+    /** Generate an access token with an explicit lifetime (P11-40: session-timeout policy). */
+    public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails, long expirationMs) {
+        return buildToken(extraClaims, userDetails, expirationMs);
+    }
+
     public String generateRefreshToken(UserDetails userDetails) {
         return buildToken(new HashMap<>(), userDetails, refreshExpirationMs);
     }

@@ -1521,3 +1521,36 @@ pages (or wired buttons) over already-existing backend endpoints; each verified 
 Locale files now at 566/566 keys, perfect parity. No backend code changed in P11-45/46/47
 (P11-44 + the P11-42 revision were the backend-touching ones; full suite last green at 291
 tests / 27 baseline after the P11-42 revision `5bbdeff`).
+
+---
+
+## Session Checkpoint
+**Date:** 2026-06-13
+**Last completed task:** P11-40 (the deferred SecurityPolicy backend)
+**Phase:** Phase 11 — Audit Correction Cycle
+**Next task:** the other deferred block, **P11-F** (4 IAM features, P11-15..18) — then P11-K.
+**Branch:** main (backup branch `origin/backup/phase11-2026-06-13` is behind — refresh after this).
+**Last commit:** d5369cc (P11-47); P11-40 + this checkpoint not yet committed.
+**Notes:**
+
+P11-40 (REQ-02 / PROB-036) — the simulation-only SecuritySettingsPage form is now a real,
+enforced `SecurityPolicy`. User chose scope "3 settings real + honest timeout": new entity +
+`V44` migration (singleton, seeded with the old defaults) + service + controller
+(`GET`/`PUT /api/v1/admin/security-policy`, ADMIN). Enforcement: `maxLoginAttempts` from policy
+in `AuthService`; `mfaRequired` honoured by `MfaSetupEnforcementFilter` (policy check last in the
+`||` so the DB read only happens for an unverified privilege-role user); `minPasswordLength`
+validated programmatically at the 3 password-set points (replaced static `@Size`); `sessionTimeout`
+= access-token lifetime on each new sign-in (`JwtService.generateToken` overload), honest UI note
+that already-issued tokens keep their TTL. Frontend recâblé (GET/PUT, simulation banner removed).
+
+**Key lesson (PROB-036):** the test profile disables Flyway (`ddl-auto`, no seed), so
+`security_policy` was empty in tests; the first `getActivePolicy()` threw `ResourceNotFoundException`
+(→404) and broke supplier registration (2 regressions in `SupplierPortalIntegrationTest`). Fixed by
+making `getActivePolicy()` fall back to safe defaults (`orElseGet`) — **an enforcement point reading
+DB config must never break auth when the config is missing.** `update()` only deactivates the old
+row if present.
+
+Verified: full suite **299 tests, 27 baseline failures, zero new regressions**; 8 new tests pass
+(`SecurityPolicyServiceTest` 5, `SecurityPolicyControllerTest` 3); frontend `tsc --noEmit` exit 0;
+locale parity 570/570. Note: SecuritySettingsPage still has some hardcoded descriptive strings
+(pre-existing i18n debt, out of P11-40 scope) — only the new keys were added.

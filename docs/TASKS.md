@@ -890,13 +890,21 @@ from either `en.json`/`fr.json`; both files at **525/525** keys with 0 EN-only/F
 
 ### P11-I — Frontend Correctness Fixes 🟡 Medium
 
-- [ ] **P11-40** Wire `SecuritySettingsPage.tsx`'s security-policy form to a real backend
-      (REQ-02): new `SecurityPolicyController`/`SecurityPolicy` entity+table, actually
-      enforced by `MfaSetupEnforcementFilter`/`RateLimitingFilter`/password validation.
-      MFA-required toggle and min-password-length wire to enforcement points; session-timeout
-      and max-login-attempts read/write the existing `active_sessions` TTL and
-      account-lock-after-5 settings instead of local `useState`. Remove the "simulation only"
-      banner text.
+- [x] **P11-40** Wire `SecuritySettingsPage.tsx`'s security-policy form to a real backend
+      (REQ-02). Completed 2026-06-13 (PROB-036). New `SecurityPolicy` entity + `V44` migration
+      (singleton, seeded with the former hardcoded defaults) + `SecurityPolicyService` +
+      `SecurityPolicyController` (`GET`/`PUT /api/v1/admin/security-policy`, ADMIN). **Enforcement
+      made real:** `AuthService` reads `maxLoginAttempts` from the policy (was a constant);
+      `MfaSetupEnforcementFilter` honours `mfaRequired` (toggle off → no MFA forced);
+      `minPasswordLength` validated programmatically at all 3 password-set points (create user,
+      reset, supplier register) replacing the static `@Size`; `sessionTimeout` sets the
+      access-token lifetime on every new sign-in (`JwtService` overload), with an honest UI note
+      that already-issued tokens keep their TTL (scope chosen by the user). `getActivePolicy()`
+      falls back to safe defaults if no row exists — auth must never break on a missing policy.
+      `SecuritySettingsPage` now loads via GET and saves via PUT; "simulation only" banner removed.
+      Tests: `SecurityPolicyServiceTest` (5), `SecurityPolicyControllerTest` (3), `UserServiceTest`
+      updated. Full suite: **299 tests, 27 baseline failures**, zero new regressions; frontend
+      `tsc --noEmit` exit 0.
 - [x] **P11-41** Fix `LoginPage.tsx` to branch on HTTP 423 (`account.locked`) (REQ-03):
       show a distinct, translated "account locked, contact admin" message instead of the
       generic invalid-credentials text. Completed 2026-06-13. Error display now branches on

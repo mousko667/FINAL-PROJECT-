@@ -11,6 +11,7 @@ import com.oct.invoicesystem.domain.user.model.UserRole;
 import com.oct.invoicesystem.domain.user.repository.RoleRepository;
 import com.oct.invoicesystem.domain.user.repository.UserRepository;
 import com.oct.invoicesystem.domain.audit.service.AuditService;
+import com.oct.invoicesystem.domain.auth.service.SecurityPolicyService;
 import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 import com.oct.invoicesystem.shared.exception.ValidationException;
 import com.oct.invoicesystem.shared.response.PagedResponse;
@@ -38,6 +39,7 @@ public class UserService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final AuditService auditService;
+    private final SecurityPolicyService securityPolicyService;
 
     @Transactional(readOnly = true)
     public PagedResponse<UserDTO> getUsers(int page, int size, String sort) {
@@ -80,6 +82,7 @@ public class UserService {
             throw new ValidationException("Email already exists: " + request.email());
         }
 
+        securityPolicyService.validatePasswordMeetsPolicy(request.password());
         User user = userMapper.toEntity(request);
         user.setPassword(passwordEncoder.encode(request.password()));
         user.setActive(true);

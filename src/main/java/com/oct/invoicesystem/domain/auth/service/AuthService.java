@@ -46,7 +46,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private static final int MAX_FAILED_LOGIN_ATTEMPTS = 5;
     private static final long ACCOUNT_LOCK_MINUTES = 15;
     private static final String ACCOUNT_LOCKED_MESSAGE = "account.locked";
 
@@ -59,6 +58,7 @@ public class AuthService {
     private final MfaService mfaService;
     private final EmailService emailService;
     private final ActiveSessionRepository activeSessionRepository;
+    private final SecurityPolicyService securityPolicyService;
 
     @Value("${app.frontend-url:http://localhost:3000}")
     private String frontendUrl;
@@ -179,6 +179,7 @@ public class AuthService {
         supplier.setStatus(SupplierStatus.PENDING_VERIFICATION);
         supplier = supplierRepository.save(supplier);
 
+        securityPolicyService.validatePasswordMeetsPolicy(request.password());
         String verificationToken = UUID.randomUUID().toString();
         User user = User.builder()
                 .username(request.email())
@@ -253,6 +254,7 @@ public class AuthService {
             throw new com.oct.invoicesystem.shared.exception.ValidationException("Password reset token has expired");
         }
 
+        securityPolicyService.validatePasswordMeetsPolicy(request.newPassword());
         user.setPassword(passwordEncoder.encode(request.newPassword()));
         user.setPasswordResetToken(null);
         user.setPasswordResetTokenExpiry(null);
@@ -305,7 +307,10 @@ public class AuthService {
 
     private LoginResponse buildAuthenticatedLoginResponse(User user, String refreshToken) {
         resetFailedAuthentication(user);
-        String jwt = jwtService.generateToken(buildExtraClaims(user), user);
+        // P11-40: the access token's lifetime is the configured session timeout. Applies to
+        // every newly-issued token (login, refresh, MFA); tokens already issued keep their TTL.
+        long sessionTimeoutMs = securityPolicyService.getActivePolicy().getSessionTimeoutMinutes() * 60_000L;
+        String jwt = jwtService.generateToken(buildExtraClaims(user), user, sessionTimeoutMs);
         // Track active session for admin visibility
         activeSessionRepository.save(ActiveSession.builder()
                 .user(user)
@@ -352,7 +357,7 @@ public class AuthService {
 
     private void registerFailedAuthentication(User user) {
         user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
-        if (user.getFailedLoginAttempts() >= MAX_FAILED_LOGIN_ATTEMPTS) {
+        if (user.getFailedLoginAttempts() >= securityPolicyService.getActivePolicy().getMaxLoginAttempts()) {
             user.setLockedUntil(Instant.now().plus(ACCOUNT_LOCK_MINUTES, ChronoUnit.MINUTES));
             userRepository.save(user);
             throw new AccountLockedException(ACCOUNT_LOCKED_MESSAGE);

@@ -9,6 +9,7 @@ import com.oct.invoicesystem.domain.user.model.Role;
 import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.domain.user.repository.RoleRepository;
 import com.oct.invoicesystem.domain.user.repository.UserRepository;
+import com.oct.invoicesystem.domain.auth.service.SecurityPolicyService;
 import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 import com.oct.invoicesystem.shared.exception.ValidationException;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,6 +47,9 @@ class UserServiceTest {
     
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private SecurityPolicyService securityPolicyService;
 
     @InjectMocks
     private UserService userService;
