@@ -1492,3 +1492,32 @@ backend was the right call for P11-44) and `dashboard.processed` (replaced). Par
 
 Review process note to self: should have grepped for existing `delegation` i18n keys before
 creating `admin.delegations.*` in P11-44 — would have surfaced the dead keys earlier.
+
+---
+
+## Session Checkpoint
+**Date:** 2026-06-13
+**Last completed task:** P11-47 (sub-phase P11-J COMPLETE)
+**Phase:** Phase 11 — Audit Correction Cycle
+**Next task:** P11-K (larger feature builds, P11-48+; REQ-05/14/16/19/20/21/24). **Deferred:**
+P11-40 (SecurityPolicy backend), P11-F (IAM features) — both need a design pass.
+**Branch:** main (backed up to `origin/backup/phase11-2026-06-13`).
+**Last commit:** 31ab6d7 (P11-46); P11-47 + this checkpoint not yet committed.
+**Notes:**
+
+P11-J — Backend-Complete / Frontend-Absent UIs, all 4 done. Pattern throughout: small admin
+pages (or wired buttons) over already-existing backend endpoints; each verified with
+`tsc --noEmit` and locale key-parity.
+- **P11-44** (`cb0ab43`): Approval Delegation admin page (`/admin/delegations`) — closed GAP 6.
+- **P11-45** (`b6c7cc2`): MatchingConfig admin page (`/admin/matching-config`) — view/edit
+  tolerance %, tolerance amount, require-GRN over `GET`/`POST /api/v1/matching-config`.
+- **P11-46** (`31ab6d7`): wired the previously-dead per-payment "Avis" remittance button in
+  `PaymentsPage` → `GET /api/v1/payments/{id}/remittance` (pre-signed URL, opens in new tab).
+- **P11-47** (this commit): extended the existing `IntegrationsPage` (which already had webhook
+  register/list/delete) with the two missing REQ-22 pieces — Integration Health
+  (`GET /integrations/status`) and per-webhook Delivery Log
+  (`GET /integrations/webhooks/{id}/deliveries`).
+
+Locale files now at 566/566 keys, perfect parity. No backend code changed in P11-45/46/47
+(P11-44 + the P11-42 revision were the backend-touching ones; full suite last green at 291
+tests / 27 baseline after the P11-42 revision `5bbdeff`).

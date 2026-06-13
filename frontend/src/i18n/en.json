@@ -338,7 +338,18 @@
       "webhookActive": "Active",
       "test": "Test",
       "delete": "Delete",
-      "noWebhooks": "No webhooks configured."
+      "noWebhooks": "No webhooks configured.",
+      "healthTitle": "Integration Health",
+      "lastDelivery": "Last",
+      "neverDelivered": "No delivery yet",
+      "viewLogs": "Logs",
+      "deliveryLog": "Delivery log",
+      "noDeliveries": "No deliveries recorded for this webhook.",
+      "deliveryEvent": "Event",
+      "deliveryStatus": "HTTP",
+      "deliveryAttempts": "Attempts",
+      "deliveryResult": "Result",
+      "deliveryTime": "Last attempt"
     },
     "delegations": {
       "title": "Approval Delegations",

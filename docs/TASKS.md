@@ -962,13 +962,23 @@ KPI `—` placeholders (P11-42) are fixed. The remaining item is **P11-40** (the
       it in a new tab, with a per-row spinner and a graceful "no remittance available yet"
       banner on error. 1 new key `payments.remittanceError` (parity 555/555). `tsc --noEmit`
       exit 0.
-- [ ] **P11-47** Build Webhooks/Integration Status UI (REQ-22): new admin page wrapping
+- [x] **P11-47** Build Webhooks/Integration Status UI (REQ-22): new admin page wrapping
       `WebhookController` (register/list/update/delete, delivery log) and
       `IntegrationStatusController` (integration health). Depends on P11-08/P11-09
-      (service-layer refactor) landing first.
+      (service-layer refactor) landing first. Completed 2026-06-13. `IntegrationsPage.tsx`
+      (route `/admin/integrations`) already had webhook register/list/delete; **extended** it
+      with the two missing pieces: an **Integration Health** section (`GET /integrations/status`
+      → per-webhook last-delivery success/HTTP/timestamp) and a per-webhook **delivery log**
+      (toggle "Logs" → `GET /integrations/webhooks/{id}/deliveries` → event/HTTP/attempts/result/
+      time table). 11 new `admin.integrations.*` i18n keys (parity 566/566). `tsc --noEmit`
+      exit 0.
 
 **P11-J Exit Criteria:** All 4 backends have a corresponding, reachable frontend page
 with nav entry and i18n coverage.
+✅ Met 2026-06-13 — P11-44 Delegation (`/admin/delegations`), P11-45 MatchingConfig
+(`/admin/matching-config`), P11-46 Remittance (wired in `PaymentsPage`), P11-47 Webhooks +
+Integration health/delivery-log (`/admin/integrations`). All ADMIN-reachable, sidebar/nav
+present, i18n-covered, frontend `tsc --noEmit` clean.
 
 ---
 
