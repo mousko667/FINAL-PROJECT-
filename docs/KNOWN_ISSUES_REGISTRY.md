@@ -354,6 +354,18 @@
 
 ---
 
+### [PROB-029] `IntegrationStatusController` injectait `WebhookRepository` et `WebhookDeliveryRepository` directement, bypassant la couche service (violation de la règle absolue P1-05)
+- **Catégorie :** Backend / Architecture
+- **Sévérité :** 🟠 Élevée (P1-05, règle absolue n°1 — "never bypass service layer from controller")
+- **Découvert :** 2026-06-13 — Audit Phase 1 (architecture), sous-phase P11-D
+- **Symptôme :** `IntegrationStatusController` (`GET /api/v1/integrations/status`) injectait directement `WebhookRepository` et `WebhookDeliveryRepository`, et effectuait lui-même le mapping `Webhook` + dernière `WebhookDelivery` → `WebhookStatusResponse` (méthode privée `mapWebhookToStatus`) — violant "never bypass service layer from controller".
+- **Cause racine :** Endpoint de supervision (santé des intégrations webhook) ajouté directement dans le contrôleur sans passer par `WebhookService`, qui existait déjà pour ce domaine et exposait déjà `getActiveWebhooks()`.
+- **Solution appliquée :** Nouvelle méthode `WebhookService.getIntegrationStatus()` qui encapsule `webhookRepository.findByIsActiveTrue()`, le mapping vers `WebhookStatusResponse` et la consultation de `deliveryRepository.findLatestDeliveryByWebhook(webhook)` (logique déplacée telle quelle depuis le contrôleur, désormais privée au service). `IntegrationStatusController` ne dépend plus que de `WebhookService`.
+- **Règle préventive :** Avant d'ajouter un nouvel endpoint dans un domaine qui possède déjà un service (`WebhookService` pour `domain/webhook`), vérifier si la logique peut être exprimée comme une nouvelle méthode de ce service plutôt que comme un accès direct aux repositories depuis un nouveau contrôleur.
+- **Fichiers modifiés :** `WebhookService.java` (nouvelle méthode `getIntegrationStatus()` + `mapWebhookToStatus()` privée), `IntegrationStatusController.java` (refactorisé pour dépendre de `WebhookService`), `IntegrationStatusControllerTest.java` (nouveau — 2 tests : statut en ADMIN retourne 200 avec le bon shape, statut en non-ADMIN retourne 403), `WebhookServiceTest.java` (2 nouveaux tests : `testGetIntegrationStatus` vérifie le mapping incluant la dernière livraison, `testGetIntegrationStatus_NoDeliveries` vérifie l'absence de champs de livraison quand aucune livraison n'existe)
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :

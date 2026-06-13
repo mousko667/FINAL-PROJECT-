@@ -642,8 +642,15 @@ regressions across P11-04/05/06).
       new `AdminSessionService` (`domain/auth/service/`), controller now depends
       only on the service. New `AdminSessionControllerTest` (4 tests: list as
       ADMIN/non-ADMIN, revoke as ADMIN/non-ADMIN) — all pass.
-- [ ] **P11-08** Refactor `IntegrationStatusController` (P1-05): create
+- [x] **P11-08** Refactor `IntegrationStatusController` (P1-05): create
       `IntegrationStatusService`, move repository access out of the controller.
+      Completed 2026-06-13 (PROB-029). Reused existing `WebhookService` instead of
+      a new service (already covers this domain) — new `getIntegrationStatus()`
+      method encapsulates `WebhookRepository`/`WebhookDeliveryRepository` access
+      and the `Webhook`→`WebhookStatusResponse` mapping. Controller now depends
+      only on `WebhookService`. New `IntegrationStatusControllerTest` (2 tests:
+      ADMIN returns 200 with correct shape, non-ADMIN returns 403) +
+      2 new `WebhookServiceTest` tests for `getIntegrationStatus()` — all pass.
 - [ ] **P11-09** Refactor `WebhookController` (P1-05): move direct repository access
       into the existing `WebhookService`.
 - [ ] **P11-10** Refactor `DelegationController` (P1-05): move direct repository access

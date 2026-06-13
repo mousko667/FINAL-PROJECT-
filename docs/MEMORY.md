@@ -1139,3 +1139,37 @@ Full suite (`mvnw test`) run after P11-07: **267 tests, 25 failures + 2 errors =
 (267 = 263 + 4 new AdminSessionControllerTest passes), identical failure/error test-name
 set to the post-P11-04/05/06 27 (diffed sorted lists — zero new regressions). Ready to
 commit and move to P11-08.
+
+## Session Checkpoint
+**Date:** 2026-06-13
+**Last completed task:** P11-08
+**Phase:** Phase 11 — Audit Correction Cycle (sub-phase P11-D — Controller → Service Layer
+Refactor, IN PROGRESS)
+**Next task:** P11-09 (Refactor `WebhookController`, P1-05)
+**Branch:** main
+**Last commit:** 428adcc (P11-07; P11-08 not yet committed this checkpoint)
+**Notes:**
+
+P11-08 (P1-05/PROB-029): `IntegrationStatusController` injected `WebhookRepository` and
+`WebhookDeliveryRepository` directly and built `WebhookStatusResponse` objects via a
+private `mapWebhookToStatus` method inside the controller — violating "never bypass
+service layer from controller". Fixed by reusing the existing `WebhookService` (already
+covers the webhook domain) rather than creating a new `IntegrationStatusService` as
+hinted in `docs/TASKS.md`'s task description — judgment call documented in PROB-029's
+"Solution appliquée". Added `WebhookService.getIntegrationStatus()` (returns
+`List<WebhookStatusResponse>` from `webhookRepository.findByIsActiveTrue()`, mapped via
+new private `mapWebhookToStatus(Webhook)` which also looks up
+`deliveryRepository.findLatestDeliveryByWebhook(webhook)` to populate
+`lastResponseStatus`/`lastDeliverySuccess`/`lastDeliveredAt` when present).
+`IntegrationStatusController` now depends only on `WebhookService`. New
+`IntegrationStatusControllerTest` (2 tests: ADMIN GET `/api/v1/integrations/status`
+returns 200 with correct `WebhookStatusResponse` shape incl. delivery fields, non-ADMIN
+returns 403) + 2 new `WebhookServiceTest` tests (`testGetIntegrationStatus`: builds
+status with delivery info when a latest delivery exists; `testGetIntegrationStatus_NoDeliveries`:
+`lastResponseStatus`/`lastDeliverySuccess` are null when no delivery exists) — all 4 new
+tests pass.
+
+Full suite (`mvnw test`) run after P11-08: **271 tests, 25 failures + 2 errors = 27**
+(271 = 267 + 4 new tests, all passing), identical failure/error test-name set to the
+post-P11-07 27 (diffed sorted lists — zero new regressions). Ready to commit and move to
+P11-09.

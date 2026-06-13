@@ -3,6 +3,7 @@ package com.oct.invoicesystem.domain.webhook.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oct.invoicesystem.domain.webhook.dto.WebhookCreateRequest;
 import com.oct.invoicesystem.domain.webhook.dto.WebhookResponse;
+import com.oct.invoicesystem.domain.webhook.dto.WebhookStatusResponse;
 import com.oct.invoicesystem.domain.webhook.model.Webhook;
 import com.oct.invoicesystem.domain.webhook.model.WebhookDelivery;
 import com.oct.invoicesystem.domain.webhook.repository.WebhookDeliveryRepository;
@@ -28,11 +29,13 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -111,6 +114,34 @@ public class WebhookService {
      */
     public Webhook getActiveWebhook(UUID webhookId) {
         return webhookRepository.findActiveWebhookById(webhookId);
+    }
+
+    /**
+     * Get integration health status: all active webhooks with their last delivery result.
+     */
+    public List<WebhookStatusResponse> getIntegrationStatus() {
+        return webhookRepository.findByIsActiveTrue().stream()
+                .map(this::mapWebhookToStatus)
+                .collect(Collectors.toList());
+    }
+
+    private WebhookStatusResponse mapWebhookToStatus(Webhook webhook) {
+        WebhookStatusResponse.WebhookStatusResponseBuilder builder = WebhookStatusResponse.builder()
+                .id(webhook.getId())
+                .name(webhook.getName())
+                .url(webhook.getUrl())
+                .events(Arrays.asList(webhook.getEvents().split(",")))
+                .isActive(webhook.getIsActive())
+                .createdAt(webhook.getCreatedAt());
+
+        deliveryRepository.findLatestDeliveryByWebhook(webhook)
+                .ifPresent(latest -> {
+                    builder.lastResponseStatus(latest.getResponseStatus());
+                    builder.lastDeliverySuccess(latest.getSuccess());
+                    builder.lastDeliveredAt(latest.getLastAttemptedAt());
+                });
+
+        return builder.build();
     }
 
     /**

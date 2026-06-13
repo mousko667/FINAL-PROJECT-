@@ -135,6 +135,46 @@ class WebhookServiceTest {
     }
 
     @Test
+    @DisplayName("Should build integration status from active webhooks and their latest delivery")
+    void testGetIntegrationStatus() {
+        WebhookDelivery latestDelivery = WebhookDelivery.builder()
+                .id(UUID.randomUUID())
+                .webhook(testWebhook)
+                .eventType("INVOICE_SUBMITTED")
+                .responseStatus(200)
+                .success(true)
+                .attemptCount(1)
+                .lastAttemptedAt(Instant.now())
+                .build();
+
+        when(webhookRepository.findByIsActiveTrue()).thenReturn(List.of(testWebhook));
+        when(deliveryRepository.findLatestDeliveryByWebhook(testWebhook)).thenReturn(Optional.of(latestDelivery));
+
+        List<com.oct.invoicesystem.domain.webhook.dto.WebhookStatusResponse> result = webhookService.getIntegrationStatus();
+
+        assertEquals(1, result.size());
+        var status = result.get(0);
+        assertEquals(testWebhook.getId(), status.getId());
+        assertEquals(testWebhook.getName(), status.getName());
+        assertEquals(List.of("INVOICE_SUBMITTED", "INVOICE_VALIDATED"), status.getEvents());
+        assertEquals(200, status.getLastResponseStatus());
+        assertTrue(status.getLastDeliverySuccess());
+    }
+
+    @Test
+    @DisplayName("Should build integration status without delivery info when no delivery exists")
+    void testGetIntegrationStatus_NoDeliveries() {
+        when(webhookRepository.findByIsActiveTrue()).thenReturn(List.of(testWebhook));
+        when(deliveryRepository.findLatestDeliveryByWebhook(testWebhook)).thenReturn(Optional.empty());
+
+        List<com.oct.invoicesystem.domain.webhook.dto.WebhookStatusResponse> result = webhookService.getIntegrationStatus();
+
+        assertEquals(1, result.size());
+        assertNull(result.get(0).getLastResponseStatus());
+        assertNull(result.get(0).getLastDeliverySuccess());
+    }
+
+    @Test
     @DisplayName("Should build valid HMAC-SHA256 signature")
     void testBuildSignature() {
         String payload = "{\"event\":\"INVOICE_SUBMITTED\"}";
