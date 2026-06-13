@@ -842,7 +842,9 @@ returns `List<ApprovalStepResponse>` (P11-23).
       Completed 2026-06-13. Added `invoices`/`profile`/`documents` to the existing
       `supplier.portal` block (referenced by `SupplierLayout.tsx`); FR from source, EN composed.
       Parity after P11-26..28: 451/451 keys, 0 EN-only/FR-only.
-- [ ] **P11-29** Add missing `mfa.*` keys (16) to `en.json`/`fr.json` (P4-01).
+- [x] **P11-29** Add missing `mfa.*` keys (16) to `en.json`/`fr.json` (P4-01). Completed
+      2026-06-13. New top-level `mfa` block, 16 keys from `ProfilePage.tsx` (MFA setup section).
+      Source fallbacks were French, so FR from source, EN composed. Parity 467/467.
 - [ ] **P11-30** Add missing `payments.*` keys (7) to `en.json`/`fr.json` (P4-01).
 - [ ] **P11-31** Add missing `archive.*` keys (6) to `en.json`/`fr.json` (P4-01).
 - [ ] **P11-32** Add missing `auth.*` keys incl. password-strength indicator (6) to

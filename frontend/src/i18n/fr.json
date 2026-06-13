@@ -549,5 +549,23 @@
       "rejectionRate": "Taux de rejet",
       "averagePaymentTime": "Délai moyen de paiement"
     }
+  },
+  "mfa": {
+    "invalidOtp": "Code invalide. Vérifiez votre application et réessayez.",
+    "title": "Authentification à deux facteurs (MFA)",
+    "active": "Activé",
+    "requiredNotConfigured": "Requis — non configuré",
+    "inactive": "Désactivé",
+    "mandatory": "La MFA est obligatoire pour votre rôle. Vous devez la configurer avant votre prochaine connexion.",
+    "configuredDesc": "Votre compte est protégé par un code TOTP généré par votre application d'authentification (Google Authenticator, Authy…).",
+    "confirmed": "MFA activée avec succès ! Elle sera requise à votre prochaine connexion.",
+    "setupDesc": "Scannez le QR code avec Google Authenticator, Authy ou toute application TOTP compatible.",
+    "setup": "Configurer la MFA",
+    "scanQr": "1. Scannez le QR code",
+    "scanQrDesc": "Ouvrez votre application d'authentification et scannez ce code.",
+    "manualEntry": "Ou saisissez manuellement la clé :",
+    "enterCode": "2. Entrez le code à 6 chiffres",
+    "confirm": "Confirmer",
+    "reconfigure": "Reconfigurer l'application d'authentification"
   }
 }
