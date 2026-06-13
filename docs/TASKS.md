@@ -781,8 +781,13 @@ config` (no `postgres` service; `MINIO_SECRET_KEY: dany1234` resolves identicall
       (Approval Delegation) remains, and only its **frontend** — backend (V40 + entity +
       service + controller + tests) is complete; no delegation UI exists in `frontend/src`.
       Table rewritten accordingly; intro updated to note the 2026-06-06 version was stale.
-- [ ] **P11-21** Redraw `docs/ARCHITECTURE.md` §5 security filter chain diagram (P1-03):
-      add 3 missing filters, correct relative order, fix CORS placement.
+- [x] **P11-21** Redraw `docs/ARCHITECTURE.md` §5 security filter chain diagram (P1-03):
+      add 3 missing filters, correct relative order, fix CORS placement. Completed 2026-06-13.
+      Verified against `SecurityConfig.java:71-75`: actual chain is `HttpSecurityHeadersFilter`
+      → `RateLimitingFilter` → `JwtAuthenticationFilter` → [UPAF] → `MfaSetupEnforcementFilter`
+      → `AuditLoggingFilter` → authorization. Added the 3 previously-undocumented filters,
+      corrected the order, and removed `CorsFilter` from the chain entirely — CORS is a
+      `WebMvcConfigurer` (MVC layer), not a security filter — with an explanatory note.
 - [ ] **P11-22** Add "Inter-domain Dependencies" subsection to `docs/ARCHITECTURE.md` §2
       (P1-06): document the `invoice`↔`purchasing` bidirectional dependency.
 - [ ] **P11-23** Replace `ApprovalController.getApprovalSteps`'s `List<Map<String,Object>>`

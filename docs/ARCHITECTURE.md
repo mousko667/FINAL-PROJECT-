@@ -252,16 +252,31 @@ docker ps --format "table {{.Names}}\t{{.Status}}"
 
 ## 5. Security Architecture
 
+> Verified against `SecurityConfig.java:71-75` on 2026-06-13 (P11-21 / audit P1-03). The
+> chain is anchored on `UsernamePasswordAuthenticationFilter` (UPAF): three filters are
+> registered `addFilterBefore` it and two `addFilterAfter`. When multiple filters target the
+> same anchor, Spring Security preserves registration order as a stable tie-break.
+>
+> **CORS is NOT part of this filter chain.** It is configured via `CorsConfig implements
+> WebMvcConfigurer` (Spring MVC layer) plus `.cors(cors -> {})` in `SecurityConfig` — separate
+> from the security filter list.
+
 ```
 Request
   ↓
-CorsFilter (allowed origins whitelist)
+HttpSecurityHeadersFilter   (security response headers)        ┐
+  ↓                                                            │ addFilterBefore(UPAF)
+RateLimitingFilter          (throttle / brute-force guard)     │ (registration order)
+  ↓                                                            │
+JwtAuthenticationFilter     (extract + validate Bearer token)  ┘
   ↓
-JwtAuthenticationFilter (extract + validate Bearer token)
+[ UsernamePasswordAuthenticationFilter ]  (anchor)
   ↓
-AuditLoggingFilter (log POST/PUT/PATCH/DELETE actions)
+MfaSetupEnforcementFilter   (force MFA setup where mandatory)   ┐ addFilterAfter(UPAF)
+  ↓                                                            │ (registration order)
+AuditLoggingFilter          (log POST/PUT/PATCH/DELETE actions) ┘
   ↓
-SecurityFilterChain (RBAC rules from SecurityConfig)
+SecurityFilterChain authorization (RBAC rules from SecurityConfig)
   ↓
 @PreAuthorize on controller method (method-level guard)
   ↓
