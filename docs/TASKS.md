@@ -682,11 +682,26 @@ regressions across P11-04/05/06).
       revoke as non-ADMIN → 403) — all pass. New
       `DelegationControllerTest` (6 tests covering create/list/revoke as ADMIN and
       non-ADMIN, plus a 404 case) — all pass.
-- [ ] **P11-11** Refactor `InvoiceDocumentController` (P1-05): move direct repository
-      access into the existing document service.
+- [x] **P11-11** Refactor `InvoiceDocumentController` (P1-05): move direct repository
+      access into the existing document service. Completed 2026-06-13 (PROB-032). Controller
+      injected `UserRepository` and resolved the uploader's id from the authenticated
+      username in a private `getActorId(Authentication)`. Added a username-based overload
+      `InvoiceDocumentService.upload(UUID invoiceId, MultipartFile file, String username)`
+      that resolves the uploader via `userRepository.findByUsername` (throwing
+      `ResourceNotFoundException` if absent) and delegates to the existing UUID-based
+      `upload`. Controller now injects only `InvoiceDocumentService` and passes
+      `authentication.getName()`. `InvoiceDocumentControllerTest` updated (dropped its
+      `@MockBean UserRepository`; service mock now matches `eq("assistant")`);
+      `InvoiceDocumentServiceTest` gained 2 new tests
+      (`uploadByUsername_resolvesUserAndDelegates`,
+      `uploadByUsername_unknownUser_throwsResourceNotFound`) — all pass.
 
 **P11-D Exit Criteria:** Zero controllers inject a `*Repository` directly
 (`grep -rn "Repository" src/main/java/**/controller/*.java` shows only DTO/service types).
+✅ Met 2026-06-13 — verified after P11-11: no `*Controller` under `src/main/java/**/controller/`
+imports or injects a `*Repository` (the prior offenders `AdminSessionController`,
+`IntegrationStatusController`, `WebhookController`, `DelegationController`,
+`InvoiceDocumentController` were all refactored in P11-07..P11-11).
 
 ---
 

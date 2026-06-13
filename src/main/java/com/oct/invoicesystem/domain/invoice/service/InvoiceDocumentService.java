@@ -49,6 +49,24 @@ public class InvoiceDocumentService {
      * @return created invoice document metadata
      * @throws Exception if storage operation fails
      */
+    /**
+     * Resolves the uploader from the authenticated username (lookup moved out of the
+     * controller, P1-05) and delegates to {@link #upload(UUID, MultipartFile, UUID)}.
+     *
+     * @param invoiceId target invoice id
+     * @param file uploaded file
+     * @param username authenticated uploader username
+     * @return created invoice document metadata
+     * @throws ResourceNotFoundException if no user matches the username
+     * @throws Exception if storage operation fails
+     */
+    @Transactional
+    public InvoiceDocument upload(UUID invoiceId, MultipartFile file, String username) throws Exception {
+        User uploader = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
+        return upload(invoiceId, file, uploader.getId());
+    }
+
     @Transactional
     public InvoiceDocument upload(UUID invoiceId, MultipartFile file, UUID actorId) throws Exception {
         Invoice invoice = invoiceRepository.findByIdAndDeletedAtIsNull(invoiceId)

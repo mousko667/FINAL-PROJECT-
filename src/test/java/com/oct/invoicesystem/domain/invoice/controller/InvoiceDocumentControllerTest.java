@@ -4,7 +4,6 @@ import com.oct.invoicesystem.domain.invoice.model.Invoice;
 import com.oct.invoicesystem.domain.invoice.model.InvoiceDocument;
 import com.oct.invoicesystem.domain.invoice.service.InvoiceDocumentService;
 import com.oct.invoicesystem.domain.user.model.User;
-import com.oct.invoicesystem.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -19,7 +18,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -40,21 +38,12 @@ class InvoiceDocumentControllerTest {
     @MockBean
     private InvoiceDocumentService invoiceDocumentService;
 
-    @MockBean
-    private UserRepository userRepository;
-
     @Test
     @WithMockUser(roles = "ASSISTANT_COMPTABLE", username = "assistant")
     void upload_AsAssistant_Returns201() throws Exception {
         UUID invoiceId = UUID.randomUUID();
-        User user = new User();
-        user.setId(UUID.randomUUID());
-        user.setUsername("assistant");
-        user.setPassword("x");
-        user.setActive(true);
-        when(userRepository.findByUsername("assistant")).thenReturn(Optional.of(user));
-        when(invoiceDocumentService.upload(eq(invoiceId), any(MultipartFile.class), eq(user.getId())))
-                .thenReturn(sampleDocument(invoiceId, user.getId()));
+        when(invoiceDocumentService.upload(eq(invoiceId), any(MultipartFile.class), eq("assistant")))
+                .thenReturn(sampleDocument(invoiceId, UUID.randomUUID()));
 
         mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/invoices/{invoiceId}/documents", invoiceId)
                         .file("file", "%PDF-1.4\nsample".getBytes(StandardCharsets.UTF_8)))

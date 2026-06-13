@@ -3,9 +3,6 @@ package com.oct.invoicesystem.domain.invoice.controller;
 import com.oct.invoicesystem.domain.invoice.dto.InvoiceDocumentDTO;
 import com.oct.invoicesystem.domain.invoice.model.InvoiceDocument;
 import com.oct.invoicesystem.domain.invoice.service.InvoiceDocumentService;
-import com.oct.invoicesystem.domain.user.model.User;
-import com.oct.invoicesystem.domain.user.repository.UserRepository;
-import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 import com.oct.invoicesystem.shared.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -35,7 +32,6 @@ import java.util.UUID;
 public class InvoiceDocumentController {
 
     private final InvoiceDocumentService invoiceDocumentService;
-    private final UserRepository userRepository;
 
     @PostMapping
     @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
@@ -44,8 +40,7 @@ public class InvoiceDocumentController {
             @PathVariable UUID invoiceId,
             @RequestParam("file") MultipartFile file,
             Authentication authentication) throws Exception {
-        UUID actorId = getActorId(authentication);
-        InvoiceDocument uploaded = invoiceDocumentService.upload(invoiceId, file, actorId);
+        InvoiceDocument uploaded = invoiceDocumentService.upload(invoiceId, file, authentication.getName());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(toDto(uploaded), "Document uploaded successfully"));
     }
@@ -69,13 +64,6 @@ public class InvoiceDocumentController {
             @PathVariable UUID docId) throws Exception {
         String url = invoiceDocumentService.generateDownloadUrl(invoiceId, docId);
         return ResponseEntity.ok(ApiResponse.success(Map.of("url", url)));
-    }
-
-    private UUID getActorId(Authentication authentication) {
-        String username = authentication.getName();
-        return userRepository.findByUsername(username)
-                .map(User::getId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
     }
 
     private InvoiceDocumentDTO toDto(InvoiceDocument document) {

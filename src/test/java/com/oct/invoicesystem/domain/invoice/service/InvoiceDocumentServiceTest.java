@@ -7,6 +7,7 @@ import com.oct.invoicesystem.domain.invoice.repository.InvoiceRepository;
 import com.oct.invoicesystem.domain.storage.service.MinioStorageService;
 import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.domain.user.repository.UserRepository;
+import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 import com.oct.invoicesystem.shared.exception.ValidationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -108,5 +109,32 @@ class InvoiceDocumentServiceTest {
         when(userRepository.findById(actorId)).thenReturn(Optional.of(user));
 
         assertThrows(ValidationException.class, () -> service.upload(invoiceId, file, actorId));
+    }
+
+    @Test
+    void uploadByUsername_resolvesUserAndDelegates() throws Exception {
+        byte[] pdfBytes = "%PDF-1.4\nsample".getBytes(StandardCharsets.UTF_8);
+        MockMultipartFile file = new MockMultipartFile("file", "invoice.pdf", "application/pdf", pdfBytes);
+
+        when(userRepository.findByUsername("assistant")).thenReturn(Optional.of(user));
+        when(invoiceRepository.findByIdAndDeletedAtIsNull(invoiceId)).thenReturn(Optional.of(invoice));
+        when(userRepository.findById(actorId)).thenReturn(Optional.of(user));
+        when(minioStorageService.upload(any(), any(), eq("application/pdf"))).thenAnswer(i -> i.getArgument(0));
+        when(invoiceDocumentRepository.save(any(InvoiceDocument.class))).thenAnswer(i -> i.getArgument(0));
+
+        InvoiceDocument result = service.upload(invoiceId, file, "assistant");
+
+        assertEquals(actorId, result.getUploadedBy().getId());
+        verify(userRepository).findByUsername("assistant");
+    }
+
+    @Test
+    void uploadByUsername_unknownUser_throwsResourceNotFound() {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "invoice.pdf", "application/pdf",
+                "%PDF-1.4".getBytes(StandardCharsets.UTF_8));
+        when(userRepository.findByUsername("ghost")).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> service.upload(invoiceId, file, "ghost"));
     }
 }

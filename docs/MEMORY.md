@@ -1258,3 +1258,41 @@ passing). Same 9 failing/erroring classes as the post-P11-09 baseline
 `NotificationControllerTest`, `PaymentControllerTest`, `ReportControllerTest`,
 `UserServiceTest`, `ApprovalControllerTest`, `ApprovalServiceTest`) — zero new
 regressions. Ready to commit and move to P11-11.
+
+---
+
+## Session Checkpoint
+**Date:** 2026-06-13
+**Last completed task:** P11-11
+**Phase:** Phase 11 — Audit Correction Cycle (sub-phase P11-D — Controller → Service Layer
+Refactor, **COMPLETE**)
+**Next task:** P11-12 (sub-phase P11-E — Docker/Infra Cleanup: remove orphaned `postgres`
+service from `docker-compose.yml`, Option B host-Postgres)
+**Branch:** main
+**Last commit:** 615c714 (P11-10; P11-11 not yet committed this checkpoint)
+**Notes:**
+
+P11-11 (P1-05/PROB-032): `InvoiceDocumentController` injected `UserRepository` directly and
+used a private `getActorId(Authentication)` (`userRepository.findByUsername(username)
+.map(User::getId).orElseThrow(...)`) to turn the authenticated username into a `UUID`
+before passing it to `invoiceDocumentService.upload(invoiceId, file, actorId)` — repository
+access in the controller. Fixed: new overload `InvoiceDocumentService.upload(UUID invoiceId,
+MultipartFile file, String username)` resolves the uploader via
+`userRepository.findByUsername(username)` (throws `ResourceNotFoundException` if absent),
+then delegates to the existing `upload(UUID, MultipartFile, UUID)` (kept — still used by the
+service tests; `InvoiceDocumentService` already injected `UserRepository`, so no new
+dependency). `InvoiceDocumentController` no longer injects `UserRepository`, dropped
+`getActorId`, and passes `authentication.getName()`. `InvoiceDocumentControllerTest` updated
+(removed `@MockBean UserRepository`; the service mock now matches `eq("assistant")` instead
+of `eq(user.getId())`); `InvoiceDocumentServiceTest` gained 2 new tests
+(`uploadByUsername_resolvesUserAndDelegates`, `uploadByUsername_unknownUser_throwsResourceNotFound`).
+
+**P11-D sub-phase COMPLETE.** Exit criteria verified: no `*Controller` under
+`src/main/java/**/controller/` imports or injects a `*Repository` (the five prior offenders
+`AdminSessionController`, `IntegrationStatusController`, `WebhookController`,
+`DelegationController`, `InvoiceDocumentController` were refactored across P11-07..P11-11).
+
+Full suite (`mvnw test`) run after P11-11: **286 tests, 25 failures + 2 errors = 27**
+(286 = 284 + 2 new InvoiceDocumentServiceTest tests, all passing), identical failure/error
+test-name set to the post-P11-10 27 (diffed sorted lists — zero new regressions). Ready to
+commit and move to P11-12 (sub-phase P11-E).
