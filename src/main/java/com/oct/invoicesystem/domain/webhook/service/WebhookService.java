@@ -2,16 +2,22 @@ package com.oct.invoicesystem.domain.webhook.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oct.invoicesystem.domain.webhook.dto.WebhookCreateRequest;
+import com.oct.invoicesystem.domain.webhook.dto.WebhookDeliveryResponse;
 import com.oct.invoicesystem.domain.webhook.dto.WebhookResponse;
 import com.oct.invoicesystem.domain.webhook.dto.WebhookStatusResponse;
+import com.oct.invoicesystem.domain.webhook.mapper.WebhookMapper;
 import com.oct.invoicesystem.domain.webhook.model.Webhook;
 import com.oct.invoicesystem.domain.webhook.model.WebhookDelivery;
 import com.oct.invoicesystem.domain.webhook.repository.WebhookDeliveryRepository;
 import com.oct.invoicesystem.domain.webhook.repository.WebhookRepository;
 import com.oct.invoicesystem.domain.user.model.User;
+import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
+import com.oct.invoicesystem.shared.response.PagedResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -45,6 +51,7 @@ public class WebhookService {
 
     private final WebhookRepository webhookRepository;
     private final WebhookDeliveryRepository deliveryRepository;
+    private final WebhookMapper webhookMapper;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
     private final TaskScheduler taskScheduler;
@@ -97,7 +104,7 @@ public class WebhookService {
     @Transactional
     public void deactivateWebhook(UUID webhookId) {
         Webhook webhook = webhookRepository.findById(webhookId)
-                .orElseThrow(() -> new IllegalArgumentException("Webhook not found: " + webhookId));
+                .orElseThrow(() -> new ResourceNotFoundException("Webhook not found: " + webhookId));
         webhook.setIsActive(false);
         webhookRepository.save(webhook);
     }
@@ -107,6 +114,36 @@ public class WebhookService {
      */
     public List<Webhook> getActiveWebhooks() {
         return webhookRepository.findByIsActiveTrue();
+    }
+
+    /**
+     * List all active webhooks as response DTOs (secret never included).
+     */
+    public List<WebhookResponse> listActiveWebhooks() {
+        return webhookRepository.findByIsActiveTrue().stream()
+                .map(webhookMapper::toResponseWithoutSecret)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get the paginated delivery log for a webhook.
+     */
+    public PagedResponse<WebhookDeliveryResponse> getDeliveryLog(UUID webhookId, Pageable pageable) {
+        Webhook webhook = webhookRepository.findById(webhookId)
+                .orElseThrow(() -> new ResourceNotFoundException("Webhook not found: " + webhookId));
+
+        Page<WebhookDeliveryResponse> deliveries = deliveryRepository.findByWebhookOrderByCreatedAtDesc(webhook, pageable)
+                .map(d -> WebhookDeliveryResponse.builder()
+                        .id(d.getId())
+                        .eventType(d.getEventType())
+                        .responseStatus(d.getResponseStatus())
+                        .attemptCount(d.getAttemptCount())
+                        .success(d.getSuccess())
+                        .lastAttemptedAt(d.getLastAttemptedAt())
+                        .createdAt(d.getCreatedAt())
+                        .build());
+
+        return PagedResponse.of(deliveries);
     }
 
     /**

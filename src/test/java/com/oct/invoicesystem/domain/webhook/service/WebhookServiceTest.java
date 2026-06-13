@@ -2,11 +2,16 @@ package com.oct.invoicesystem.domain.webhook.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oct.invoicesystem.domain.webhook.dto.WebhookCreateRequest;
+import com.oct.invoicesystem.domain.webhook.dto.WebhookDeliveryResponse;
+import com.oct.invoicesystem.domain.webhook.dto.WebhookResponse;
+import com.oct.invoicesystem.domain.webhook.mapper.WebhookMapper;
 import com.oct.invoicesystem.domain.webhook.model.Webhook;
 import com.oct.invoicesystem.domain.webhook.model.WebhookDelivery;
 import com.oct.invoicesystem.domain.webhook.repository.WebhookDeliveryRepository;
 import com.oct.invoicesystem.domain.webhook.repository.WebhookRepository;
 import com.oct.invoicesystem.domain.user.model.User;
+import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
+import com.oct.invoicesystem.shared.response.PagedResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -15,6 +20,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.TaskScheduler;
@@ -40,6 +47,9 @@ class WebhookServiceTest {
 
     @Mock
     private WebhookDeliveryRepository deliveryRepository;
+
+    @Mock
+    private WebhookMapper webhookMapper;
 
     @Mock
     private RestTemplate restTemplate;
@@ -122,6 +132,17 @@ class WebhookServiceTest {
     }
 
     @Test
+    @DisplayName("Should throw ResourceNotFoundException when deactivating an unknown webhook")
+    void testDeactivateWebhook_NotFound() {
+        UUID unknownId = UUID.randomUUID();
+        when(webhookRepository.findById(unknownId)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> webhookService.deactivateWebhook(unknownId));
+
+        verify(webhookRepository, never()).save(any(Webhook.class));
+    }
+
+    @Test
     @DisplayName("Should retrieve only active webhooks")
     void testGetActiveWebhooks() {
         List<Webhook> webhooks = Arrays.asList(testWebhook);
@@ -132,6 +153,62 @@ class WebhookServiceTest {
         assertEquals(1, result.size());
         assertTrue(result.get(0).getIsActive());
         verify(webhookRepository).findByIsActiveTrue();
+    }
+
+    @Test
+    @DisplayName("Should list active webhooks as response DTOs without secret")
+    void testListActiveWebhooks() {
+        WebhookResponse mapped = WebhookResponse.builder()
+                .id(testWebhook.getId())
+                .name(testWebhook.getName())
+                .url(testWebhook.getUrl())
+                .events(List.of("INVOICE_SUBMITTED", "INVOICE_VALIDATED"))
+                .isActive(true)
+                .build();
+
+        when(webhookRepository.findByIsActiveTrue()).thenReturn(List.of(testWebhook));
+        when(webhookMapper.toResponseWithoutSecret(testWebhook)).thenReturn(mapped);
+
+        List<WebhookResponse> result = webhookService.listActiveWebhooks();
+
+        assertEquals(1, result.size());
+        assertEquals(testWebhook.getName(), result.get(0).getName());
+        assertNull(result.get(0).getSecret());
+    }
+
+    @Test
+    @DisplayName("Should return paginated delivery log for a webhook")
+    void testGetDeliveryLog() {
+        WebhookDelivery delivery = WebhookDelivery.builder()
+                .id(UUID.randomUUID())
+                .webhook(testWebhook)
+                .eventType("INVOICE_SUBMITTED")
+                .responseStatus(200)
+                .success(true)
+                .attemptCount(1)
+                .lastAttemptedAt(Instant.now())
+                .createdAt(Instant.now())
+                .build();
+
+        when(webhookRepository.findById(testWebhook.getId())).thenReturn(Optional.of(testWebhook));
+        when(deliveryRepository.findByWebhookOrderByCreatedAtDesc(eq(testWebhook), any(PageRequest.class)))
+                .thenReturn(new PageImpl<>(List.of(delivery)));
+
+        PagedResponse<WebhookDeliveryResponse> result = webhookService.getDeliveryLog(testWebhook.getId(), PageRequest.of(0, 20));
+
+        assertEquals(1, result.getContent().size());
+        assertEquals("INVOICE_SUBMITTED", result.getContent().get(0).getEventType());
+        assertEquals(200, result.getContent().get(0).getResponseStatus());
+    }
+
+    @Test
+    @DisplayName("Should throw ResourceNotFoundException when getting delivery log for an unknown webhook")
+    void testGetDeliveryLog_NotFound() {
+        UUID unknownId = UUID.randomUUID();
+        when(webhookRepository.findById(unknownId)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> webhookService.getDeliveryLog(unknownId, PageRequest.of(0, 20)));
     }
 
     @Test

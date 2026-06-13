@@ -651,8 +651,18 @@ regressions across P11-04/05/06).
       only on `WebhookService`. New `IntegrationStatusControllerTest` (2 tests:
       ADMIN returns 200 with correct shape, non-ADMIN returns 403) +
       2 new `WebhookServiceTest` tests for `getIntegrationStatus()` — all pass.
-- [ ] **P11-09** Refactor `WebhookController` (P1-05): move direct repository access
-      into the existing `WebhookService`.
+- [x] **P11-09** Refactor `WebhookController` (P1-05): move direct repository access
+      into the existing `WebhookService`. Completed 2026-06-13 (PROB-030). Added
+      `WebhookService.listActiveWebhooks()` (active webhooks → `WebhookResponse` via
+      `WebhookMapper`) and `getDeliveryLog(UUID, Pageable)` (404 check +
+      `WebhookDeliveryRepository.findByWebhookOrderByCreatedAtDesc` →
+      `PagedResponse<WebhookDeliveryResponse>`); `deactivateWebhook` now throws
+      `ResourceNotFoundException` (404) instead of `IllegalArgumentException` (400),
+      preserving the controller's prior 404 behaviour. Controller now depends only on
+      `WebhookService`. `WebhookControllerTest` (7 tests) rewritten to mock
+      `WebhookService` instead of repositories; `WebhookServiceTest` gained 4 new tests
+      (`testDeactivateWebhook_NotFound`, `testListActiveWebhooks`, `testGetDeliveryLog`,
+      `testGetDeliveryLog_NotFound`) — all pass.
 - [ ] **P11-10** Refactor `DelegationController` (P1-05): move direct repository access
       into the existing `DelegationService`.
 - [ ] **P11-11** Refactor `InvoiceDocumentController` (P1-05): move direct repository

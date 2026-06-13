@@ -1173,3 +1173,44 @@ Full suite (`mvnw test`) run after P11-08: **271 tests, 25 failures + 2 errors =
 (271 = 267 + 4 new tests, all passing), identical failure/error test-name set to the
 post-P11-07 27 (diffed sorted lists — zero new regressions). Ready to commit and move to
 P11-09.
+
+## Session Checkpoint
+**Date:** 2026-06-13
+**Last completed task:** P11-09
+**Phase:** Phase 11 — Audit Correction Cycle (sub-phase P11-D — Controller → Service Layer
+Refactor, IN PROGRESS)
+**Next task:** P11-10 (Refactor `DelegationController`, P1-05)
+**Branch:** main
+**Last commit:** 39f1f04 (P11-08; P11-09 not yet committed this checkpoint)
+**Notes:**
+
+P11-09 (P1-05/PROB-030): `WebhookController` injected `WebhookRepository`,
+`WebhookDeliveryRepository` and `WebhookMapper` directly across `listWebhooks()`,
+`deactivateWebhook()` and `getDeliveryLog()`. `deactivateWebhook(UUID)` in the
+controller did a pre-check `webhookRepository.findById(id)` to throw
+`ResourceNotFoundException` (404) before delegating to
+`webhookService.deactivateWebhook(id)` (which itself threw `IllegalArgumentException` →
+400, never reached in practice). `getDeliveryLog` did the same pre-check then called
+`deliveryRepository.findByWebhookOrderByCreatedAtDesc` and built the
+`WebhookDeliveryResponse`/`PagedResponse` inline. Fixed: `WebhookService` gained
+`listActiveWebhooks()` (→ `List<WebhookResponse>`, via `webhookRepository.findByIsActiveTrue()`
++ `webhookMapper.toResponseWithoutSecret`) and `getDeliveryLog(UUID, Pageable)` (→
+`PagedResponse<WebhookDeliveryResponse>`, via 404 lookup + `findByWebhookOrderByCreatedAtDesc`
++ `.map(...)` + `PagedResponse.of(...)`); `deactivateWebhook` now throws
+`ResourceNotFoundException` instead of `IllegalArgumentException` on miss, preserving the
+controller's prior 404 behaviour now that the controller's own pre-check is removed.
+`WebhookService` gained a new `WebhookMapper` constructor dependency.
+`WebhookController` now depends only on `WebhookService`. `WebhookControllerTest` (7
+tests) rewritten to mock `WebhookService` (`listActiveWebhooks`, `deactivateWebhook`,
+`getDeliveryLog`) instead of `WebhookRepository`/`WebhookDeliveryRepository`/`WebhookMapper`
+— `testDeactivateWebhookNotFound` now stubs `webhookService.deactivateWebhook` to throw
+`ResourceNotFoundException` and still asserts 404. `WebhookServiceTest` gained 4 new
+tests: `testDeactivateWebhook_NotFound` (asserts `ResourceNotFoundException`, `save`
+never called), `testListActiveWebhooks` (active webhooks mapped via `webhookMapper`,
+secret null), `testGetDeliveryLog` (paginated mapping of deliveries), `testGetDeliveryLog_NotFound`
+(asserts `ResourceNotFoundException`).
+
+Full suite (`mvnw test`) run after P11-09: **275 tests, 25 failures + 2 errors = 27**
+(275 = 271 + 4 new WebhookServiceTest tests, all passing), identical failure/error
+test-name set to the post-P11-08 27 (diffed sorted lists — zero new regressions). Ready
+to commit and move to P11-10.

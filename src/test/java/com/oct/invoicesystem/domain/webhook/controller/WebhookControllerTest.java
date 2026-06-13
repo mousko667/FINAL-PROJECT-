@@ -2,14 +2,12 @@ package com.oct.invoicesystem.domain.webhook.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oct.invoicesystem.domain.webhook.dto.WebhookCreateRequest;
+import com.oct.invoicesystem.domain.webhook.dto.WebhookDeliveryResponse;
 import com.oct.invoicesystem.domain.webhook.dto.WebhookResponse;
-import com.oct.invoicesystem.domain.webhook.mapper.WebhookMapper;
 import com.oct.invoicesystem.domain.webhook.model.Webhook;
-import com.oct.invoicesystem.domain.webhook.model.WebhookDelivery;
-import com.oct.invoicesystem.domain.webhook.repository.WebhookDeliveryRepository;
-import com.oct.invoicesystem.domain.webhook.repository.WebhookRepository;
 import com.oct.invoicesystem.domain.webhook.service.WebhookService;
 import com.oct.invoicesystem.domain.user.model.User;
+import com.oct.invoicesystem.shared.response.PagedResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -44,15 +42,6 @@ class WebhookControllerTest {
 
     @MockBean
     private WebhookService webhookService;
-
-    @MockBean
-    private WebhookRepository webhookRepository;
-
-    @MockBean
-    private WebhookDeliveryRepository deliveryRepository;
-
-    @MockBean
-    private WebhookMapper webhookMapper;
 
     private User testUser;
     private Webhook testWebhook;
@@ -148,8 +137,7 @@ class WebhookControllerTest {
                 .updatedAt(testWebhook.getUpdatedAt())
                 .build();
 
-        when(webhookRepository.findByIsActiveTrue()).thenReturn(Arrays.asList(testWebhook));
-        when(webhookMapper.toResponseWithoutSecret(any(Webhook.class))).thenReturn(responseWithoutSecret);
+        when(webhookService.listActiveWebhooks()).thenReturn(List.of(responseWithoutSecret));
 
         mockMvc.perform(get("/api/v1/integrations/webhooks")
                 .contentType(MediaType.APPLICATION_JSON))
@@ -157,7 +145,7 @@ class WebhookControllerTest {
                 .andExpect(jsonPath("$.data[0].name").value("Test Webhook"))
                 .andExpect(jsonPath("$.data[0].secret").doesNotExist());
 
-        verify(webhookRepository).findByIsActiveTrue();
+        verify(webhookService).listActiveWebhooks();
     }
 
     @Test
@@ -165,12 +153,10 @@ class WebhookControllerTest {
     @DisplayName("Should deactivate webhook")
     void testDeactivateWebhook() throws Exception {
         UUID webhookId = testWebhook.getId();
-        when(webhookRepository.findById(webhookId)).thenReturn(Optional.of(testWebhook));
 
         mockMvc.perform(delete("/api/v1/integrations/webhooks/" + webhookId))
                 .andExpect(status().isOk());
 
-        verify(webhookRepository).findById(webhookId);
         verify(webhookService).deactivateWebhook(webhookId);
     }
 
@@ -179,7 +165,8 @@ class WebhookControllerTest {
     @DisplayName("Should return 404 when webhook not found")
     void testDeactivateWebhookNotFound() throws Exception {
         UUID webhookId = UUID.randomUUID();
-        when(webhookRepository.findById(webhookId)).thenReturn(Optional.empty());
+        doThrow(new com.oct.invoicesystem.shared.exception.ResourceNotFoundException("Webhook not found: " + webhookId))
+                .when(webhookService).deactivateWebhook(webhookId);
 
         mockMvc.perform(delete("/api/v1/integrations/webhooks/" + webhookId))
                 .andExpect(status().isNotFound());
@@ -190,28 +177,32 @@ class WebhookControllerTest {
     @DisplayName("Should get delivery log for webhook")
     void testGetDeliveryLog() throws Exception {
         UUID webhookId = testWebhook.getId();
-        WebhookDelivery delivery = WebhookDelivery.builder()
+        WebhookDeliveryResponse delivery = WebhookDeliveryResponse.builder()
                 .id(UUID.randomUUID())
-                .webhook(testWebhook)
                 .eventType("INVOICE_SUBMITTED")
-                .payload("{\"invoiceId\":\"123\"}")
                 .responseStatus(200)
                 .success(true)
                 .attemptCount(1)
                 .createdAt(Instant.now())
                 .build();
 
-        when(webhookRepository.findById(webhookId)).thenReturn(Optional.of(testWebhook));
-        
-        org.springframework.data.domain.PageImpl<WebhookDelivery> page = new org.springframework.data.domain.PageImpl<>(Arrays.asList(delivery));
-        when(deliveryRepository.findByWebhookOrderByCreatedAtDesc(eq(testWebhook), any(org.springframework.data.domain.Pageable.class)))
-                .thenReturn(page);
+        PagedResponse<WebhookDeliveryResponse> pagedResponse = PagedResponse.<WebhookDeliveryResponse>builder()
+                .content(List.of(delivery))
+                .page(0)
+                .size(20)
+                .totalElements(1)
+                .totalPages(1)
+                .last(true)
+                .build();
+
+        when(webhookService.getDeliveryLog(eq(webhookId), any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(pagedResponse);
 
         mockMvc.perform(get("/api/v1/integrations/webhooks/" + webhookId + "/deliveries")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
-        verify(webhookRepository).findById(webhookId);
+        verify(webhookService).getDeliveryLog(eq(webhookId), any(org.springframework.data.domain.Pageable.class));
     }
 
     @Test

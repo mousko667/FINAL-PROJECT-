@@ -366,6 +366,18 @@
 
 ---
 
+### [PROB-030] `WebhookController` injectait `WebhookRepository`, `WebhookDeliveryRepository` et `WebhookMapper` directement dans `listWebhooks()`, `deactivateWebhook()` et `getDeliveryLog()`, bypassant la couche service (violation de la règle absolue P1-05)
+- **Catégorie :** Backend / Architecture
+- **Sévérité :** 🟠 Élevée (P1-05, règle absolue n°1 — "never bypass service layer from controller")
+- **Découvert :** 2026-06-13 — Audit Phase 1 (architecture), sous-phase P11-D
+- **Symptôme :** `WebhookController` injectait directement `WebhookRepository`, `WebhookDeliveryRepository` et `WebhookMapper`. `listWebhooks()` appelait `webhookRepository.findByIsActiveTrue()` puis `webhookMapper.toResponseWithoutSecret`. `deactivateWebhook(UUID)` faisait un pré-contrôle `webhookRepository.findById(id)` pour lever un `ResourceNotFoundException` (404) avant de déléguer à `webhookService.deactivateWebhook(id)` (qui levait elle-même un `IllegalArgumentException` → 400, jamais atteint en pratique). `getDeliveryLog(UUID, Pageable)` faisait le même pré-contrôle puis appelait directement `deliveryRepository.findByWebhookOrderByCreatedAtDesc(webhook, pageable)` et construisait à la main la réponse `WebhookDeliveryResponse`/`PagedResponse`.
+- **Cause racine :** Endpoints ajoutés progressivement (P9, webhooks) en réutilisant le pattern le plus rapide (accès direct aux repositories + mapping inline dans le contrôleur) au lieu d'étendre `WebhookService`, qui existait déjà pour ce domaine.
+- **Solution appliquée :** Trois nouvelles méthodes sur `WebhookService` : `listActiveWebhooks()` (retourne `List<WebhookResponse>`, encapsule `webhookRepository.findByIsActiveTrue()` + `webhookMapper.toResponseWithoutSecret`) ; `getDeliveryLog(UUID webhookId, Pageable pageable)` (retourne `PagedResponse<WebhookDeliveryResponse>`, encapsule la recherche du webhook + `deliveryRepository.findByWebhookOrderByCreatedAtDesc` + mapping, via `PagedResponse.of(...)`) ; `deactivateWebhook(UUID)` modifiée pour lever `ResourceNotFoundException` (au lieu de `IllegalArgumentException`) quand le webhook n'existe pas, ce qui préserve le comportement HTTP 404 précédemment assuré par le pré-contrôle du contrôleur. `WebhookService` dépend désormais aussi de `WebhookMapper`. `WebhookController` ne dépend plus que de `WebhookService` ; ses 3 méthodes ne font plus qu'appeler le service et retourner le résultat.
+- **Règle préventive :** Un pré-contrôle `repository.findById(id).orElseThrow(...)` dans un contrôleur, suivi d'un appel à une méthode de service qui refait la même recherche, est un signal de violation P1-05 — la levée de l'exception "not found" doit se faire dans le service, pas dans le contrôleur. Avant d'ajouter une méthode à un contrôleur, vérifier si le service du domaine peut l'exposer directement avec le DTO de sortie déjà construit.
+- **Fichiers modifiés :** `WebhookService.java` (nouvelles méthodes `listActiveWebhooks()`, `getDeliveryLog(UUID, Pageable)` ; `deactivateWebhook` lève désormais `ResourceNotFoundException` ; nouvelle dépendance `WebhookMapper`), `WebhookController.java` (refactorisé pour dépendre uniquement de `WebhookService`), `WebhookControllerTest.java` (4 tests réécrits pour mocker `WebhookService` au lieu des repositories : `testListWebhooks`, `testDeactivateWebhook`, `testDeactivateWebhookNotFound`, `testGetDeliveryLog`), `WebhookServiceTest.java` (4 nouveaux tests : `testDeactivateWebhook_NotFound`, `testListActiveWebhooks`, `testGetDeliveryLog`, `testGetDeliveryLog_NotFound`)
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :
