@@ -61,7 +61,8 @@
       "newPassword": "New password",
       "submit": "Reset password",
       "error": "Invalid or expired reset link."
-    }
+    },
+    "accountLocked": "Your account is locked after too many failed attempts. Please contact an administrator."
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -102,7 +103,9 @@
     "deptMatrix": "Departments & Matrix",
     "manageAccounts": "Manage Accounts",
     "securityLogs": "System Logs",
-    "supplierRegistry": "Supplier Registry"
+    "supplierRegistry": "Supplier Registry",
+    "processed": "Processed",
+    "approved": "Approved"
   },
   "po": {
     "title": "Purchase Orders",

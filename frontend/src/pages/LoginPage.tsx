@@ -112,7 +112,9 @@ export default function LoginPage() {
           {loginMutation.isError && (
             <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 mb-6 text-sm">
               <AlertCircle className="w-4 h-4 shrink-0" />
-              {t('auth.loginError')}
+              {(loginMutation.error as { response?: { status?: number } })?.response?.status === 423
+                ? t('auth.accountLocked', 'Your account is locked after too many failed attempts. Please contact an administrator.')
+                : t('auth.loginError')}
             </div>
           )}
 

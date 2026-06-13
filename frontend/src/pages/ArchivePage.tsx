@@ -26,6 +26,23 @@ export default function ArchivePage() {
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
   const [page, setPage] = useState(0)
+  const [downloadingId, setDownloadingId] = useState<string | null>(null)
+
+  // REQ-15: same download logic as InvoiceDetailPage's "Export PDF".
+  const downloadPdf = async (inv: ArchivedInvoice) => {
+    setDownloadingId(inv.id)
+    try {
+      const res = await apiClient.get(`/invoices/${inv.id}/export/pdf`, { responseType: 'blob' })
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }))
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${inv.referenceNumber}.pdf`
+      a.click()
+      window.URL.revokeObjectURL(url)
+    } finally {
+      setDownloadingId(null)
+    }
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ['archive', search, deptFilter, fromDate, toDate, page],
@@ -147,8 +164,13 @@ export default function ArchivePage() {
                             className="flex items-center gap-1 text-xs text-primary hover:underline">
                             <ExternalLink className="w-3 h-3" /> {t('app.view')}
                           </Link>
-                          <button className="flex items-center gap-1 text-xs text-gray-500 hover:text-primary transition-colors">
-                            <Download className="w-3 h-3" /> PDF
+                          <button
+                            onClick={() => downloadPdf(inv)}
+                            disabled={downloadingId === inv.id}
+                            className="flex items-center gap-1 text-xs text-gray-500 hover:text-primary transition-colors disabled:opacity-50">
+                            {downloadingId === inv.id
+                              ? <Loader2 className="w-3 h-3 animate-spin" />
+                              : <Download className="w-3 h-3" />} PDF
                           </button>
                         </div>
                       </td>

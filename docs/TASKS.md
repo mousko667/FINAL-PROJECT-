@@ -897,18 +897,33 @@ from either `en.json`/`fr.json`; both files at **525/525** keys with 0 EN-only/F
       and max-login-attempts read/write the existing `active_sessions` TTL and
       account-lock-after-5 settings instead of local `useState`. Remove the "simulation only"
       banner text.
-- [ ] **P11-41** Fix `LoginPage.tsx` to branch on HTTP 423 (`account.locked`) (REQ-03):
+- [x] **P11-41** Fix `LoginPage.tsx` to branch on HTTP 423 (`account.locked`) (REQ-03):
       show a distinct, translated "account locked, contact admin" message instead of the
-      generic invalid-credentials text.
-- [ ] **P11-42** Wire validator/manager dashboard KPI tiles "Traitées ce mois" and
+      generic invalid-credentials text. Completed 2026-06-13. Error display now branches on
+      `loginMutation.error.response.status === 423` → `t('auth.accountLocked', ...)` (new key
+      EN+FR), else the generic `auth.loginError`.
+- [x] **P11-42** Wire validator/manager dashboard KPI tiles "Traitées ce mois" and
       "Approuvées" (REQ-04) to `reportService.getKpis`, scoped to the validator's role,
-      replacing the `—` placeholders.
-- [ ] **P11-43** Add the missing `onClick` handler to `ArchivePage.tsx:150-152`'s
+      replacing the `—` placeholders. Completed 2026-06-13. Enabled the `getKpis` query for
+      validators (`canViewKpis` now includes `isValidator`); "Approuvées" → sum of approved
+      statuses (VALIDE+BON_A_PAYER+PAYE+ARCHIVE) from `countByStatus`. NOTE: `getKpis` has **no
+      monthly granularity**, so rather than fabricate a "this month" figure, the other tile was
+      relabelled "Traitées" (`dashboard.processed` key) and wired to total processed (all
+      statuses past SOUMIS). A true "this month" tile would need a new backend KPI field (left
+      for a backend pass). Both labels i18n-ized (`dashboard.processed`/`dashboard.approved`).
+- [x] **P11-43** Add the missing `onClick` handler to `ArchivePage.tsx:150-152`'s
       "Download PDF" button (REQ-15), reusing the download logic from
-      `InvoiceDetailPage.tsx`.
+      `InvoiceDetailPage.tsx`. Completed 2026-06-13. Added a `downloadPdf(inv)` handler
+      (`GET /invoices/{id}/export/pdf` as blob → object URL → anchor click, same as
+      InvoiceDetailPage) with per-row `downloadingId` spinner state. Frontend `tsc --noEmit`
+      exit 0 for all three.
 
 **P11-I Exit Criteria:** No page contains a fake/simulation-only form, a dead button, or
 a static `—` KPI placeholder where a real value is available.
+⚠️ Partially met 2026-06-13 — the dead Archive download button (P11-43) and the static validator
+KPI `—` placeholders (P11-42) are fixed. The remaining item is **P11-40** (the
+`SecuritySettingsPage` simulation-only form), which is **deferred** as a backend feature
+(SecurityPolicy entity/controller/migration + enforcement) for a dedicated design pass.
 
 ---
 

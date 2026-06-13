@@ -61,7 +61,8 @@
       "newPassword": "Nouveau mot de passe",
       "submit": "Réinitialiser",
       "error": "Lien de réinitialisation invalide ou expiré."
-    }
+    },
+    "accountLocked": "Votre compte est verrouillé après trop de tentatives échouées. Veuillez contacter un administrateur."
   },
   "nav": {
     "dashboard": "Tableau de bord",
@@ -102,7 +103,9 @@
     "deptMatrix": "Départements & matrice",
     "manageAccounts": "Gérer les comptes",
     "securityLogs": "Journaux système",
-    "supplierRegistry": "Registre fournisseurs"
+    "supplierRegistry": "Registre fournisseurs",
+    "processed": "Traitées",
+    "approved": "Approuvées"
   },
   "po": {
     "title": "Bons de commande",
