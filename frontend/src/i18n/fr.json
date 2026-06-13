@@ -649,7 +649,8 @@
     "history": "Historique des paiements",
     "total": "paiements",
     "noHistory": "Aucun paiement enregistré",
-    "remittance": "Avis"
+    "remittance": "Avis",
+    "remittanceError": "Aucun avis de paiement n'est disponible pour ce paiement pour le moment."
   },
   "archive": {
     "title": "Archive Numérique",

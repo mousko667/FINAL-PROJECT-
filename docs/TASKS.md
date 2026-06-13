@@ -954,8 +954,14 @@ KPI `—` placeholders (P11-42) are fixed. The remaining item is **P11-40** (the
       and edits tolerance % / tolerance amount / require-GRN via `POST /api/v1/matching-config`
       (ADMIN-only). Client-side validation (0–100 %, amount ≥ 0), shows last-updated. 14
       `admin.matchingConfig.*` i18n keys (parity 554/554). `tsc --noEmit` exit 0.
-- [ ] **P11-46** Build Remittance Advice UI (REQ-11): page/section to view & download
-      remittance advices for processed payments.
+- [x] **P11-46** Build Remittance Advice UI (REQ-11): page/section to view & download
+      remittance advices for processed payments. Completed 2026-06-13. `PaymentsPage.tsx`
+      already had a per-payment "Avis" button in the payment-history table, but it was **dead**
+      (no `onClick`, same pattern as the P11-43 archive button). Wired it: `downloadRemittance`
+      calls `GET /api/v1/payments/{paymentId}/remittance` (returns a pre-signed URL) and opens
+      it in a new tab, with a per-row spinner and a graceful "no remittance available yet"
+      banner on error. 1 new key `payments.remittanceError` (parity 555/555). `tsc --noEmit`
+      exit 0.
 - [ ] **P11-47** Build Webhooks/Integration Status UI (REQ-22): new admin page wrapping
       `WebhookController` (register/list/update/delete, delivery log) and
       `IntegrationStatusController` (integration health). Depends on P11-08/P11-09

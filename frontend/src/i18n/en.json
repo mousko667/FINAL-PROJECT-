@@ -649,7 +649,8 @@
     "history": "Payment History",
     "total": "payments",
     "noHistory": "No payments recorded",
-    "remittance": "Remittance"
+    "remittance": "Remittance",
+    "remittanceError": "No remittance advice is available for this payment yet."
   },
   "archive": {
     "title": "Digital Archive",

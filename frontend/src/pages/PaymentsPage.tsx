@@ -149,6 +149,22 @@ export default function PaymentsPage() {
   const queryClient = useQueryClient()
   const [recordingFor, setRecordingFor] = useState<Invoice | null>(null)
   const [page, setPage] = useState(0)
+  const [remittanceId, setRemittanceId] = useState<string | null>(null)
+  const [remittanceError, setRemittanceError] = useState('')
+
+  // REQ-11: fetch the pre-signed remittance-advice URL and open it.
+  const downloadRemittance = async (paymentId: string) => {
+    setRemittanceId(paymentId)
+    setRemittanceError('')
+    try {
+      const { data } = await apiClient.get<{ data: string }>(`/payments/${paymentId}/remittance`)
+      if (data.data) window.open(data.data, '_blank', 'noopener,noreferrer')
+    } catch {
+      setRemittanceError(t('payments.remittanceError', 'No remittance advice is available for this payment yet.'))
+    } finally {
+      setRemittanceId(null)
+    }
+  }
 
   const { data: payments, isLoading: paymentsLoading } = useQuery({
     queryKey: ['payments', page],
@@ -244,6 +260,10 @@ export default function PaymentsPage() {
             {payments && <span className="ml-auto text-xs text-gray-400">{payments.totalElements} {t('payments.total', 'paiements')}</span>}
           </div>
 
+          {remittanceError && (
+            <p className="px-5 py-2 text-xs text-amber-700 bg-amber-50 border-b border-amber-100">{remittanceError}</p>
+          )}
+
           {paymentsLoading ? (
             <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
           ) : paymentList.length === 0 ? (
@@ -285,8 +305,13 @@ export default function PaymentsPage() {
                         {new Date(p.paymentDate).toLocaleDateString()}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <button className="flex items-center gap-1 text-xs text-gray-500 hover:text-primary transition-colors ml-auto">
-                          <Download className="w-3.5 h-3.5" />
+                        <button
+                          onClick={() => downloadRemittance(p.id)}
+                          disabled={remittanceId === p.id}
+                          className="flex items-center gap-1 text-xs text-gray-500 hover:text-primary transition-colors ml-auto disabled:opacity-50">
+                          {remittanceId === p.id
+                            ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            : <Download className="w-3.5 h-3.5" />}
                           {t('payments.remittance', 'Avis')}
                         </button>
                       </td>
