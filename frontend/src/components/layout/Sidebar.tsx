@@ -20,6 +20,7 @@ import {
   Archive,
   ChevronRight,
   Container,
+  UserCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -172,6 +173,7 @@ export default function Sidebar() {
           <NavItem to="/admin/suppliers" icon={Truck} label={t('nav.suppliers')} />
           <NavItem to="/admin/audit" icon={ScrollText} label={t('nav.auditLog')} />
           <NavItem to="/admin/approval-matrix" icon={GitBranch} label={t('admin.approvalMatrix.title', 'Matrice d\'approbation')} />
+          <NavItem to="/admin/delegations" icon={UserCheck} label={t('admin.delegations.title', 'Délégations')} />
           <NavItem to="/admin/security" icon={Shield} label={t('admin.security.title', 'Sécurité')} />
           <NavItem to="/admin/integrations" icon={Zap} label={t('admin.integrations.title', 'Intégrations')} />
         </RoleGuard>

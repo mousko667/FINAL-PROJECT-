@@ -1430,3 +1430,33 @@ keys, **0 missing** from either locale file; both files at **525/525** keys, 0 E
 frontend `tsc --noEmit` exit 0. Tooling note: `JSON.stringify(JSON.parse(file),null,2)+"\n"` is
 byte-identical to both locale files, so programmatic key additions produce clean minimal diffs —
 reusable for future i18n work.
+
+---
+
+## Session Checkpoint
+**Date:** 2026-06-13
+**Last completed task:** P11-44 (sub-phase P11-I correctness done; P11-J started)
+**Phase:** Phase 11 — Audit Correction Cycle
+**Next task:** P11-45 (MatchingConfig UI), P11-46 (Remittance Advice UI), P11-47 (Webhooks/
+Integration Status UI) — rest of P11-J. **Deferred:** P11-40 (SecurityPolicy backend) and
+P11-F (IAM features) — both need a design pass.
+**Branch:** main (backed up to remote branch `backup/phase11-2026-06-13`; `origin/main`
+intentionally NOT advanced per CLAUDE.md §11 push-at-phase-completion).
+**Last commit:** 3a73073 (P11-41/42/43); P11-44 + this checkpoint not yet committed.
+**Notes:**
+
+Backup: pushed all local `main` commits to `origin backup/phase11-2026-06-13` (work preserved
+off-machine; the direct push to `origin/main` was correctly blocked by policy and left for
+phase completion / PR).
+
+P11-44 (P4-02) — Approval Delegation UI, **closes GAP 6** (the one real remaining gap from
+P11-20). Design decision: a **dedicated admin page**, not the ProfilePage section the task
+suggested as one option — because all 3 `DelegationController` endpoints are `hasRole('ADMIN')`
+and `createDelegation` takes both `delegatorId` and `delegateeId` + `departmentCode`, i.e. it's
+admin-managed, not self-service. New `AdminDelegationsPage.tsx` (route `/admin/delegations`,
+sidebar entry under the admin section, `PageRoleGuard ROLE_ADMIN`): pick a department → list its
+active delegations (`GET /approvals/delegations?departmentCode=`) with a revoke button
+(`DELETE /{id}`), plus a create form (delegator/delegatee selected from `GET /users?size=100`,
+the chosen department, from/to dates, optional reason → `POST`). Client-side validation
+(required fields, delegator≠delegatee, toDate≥fromDate). 21 `admin.delegations.*` keys added to
+both locale files (parity 549/549). `tsc --noEmit` exit 0. ARCHITECTURE.md §4.1 GAP 6 → ✅ Resolved.

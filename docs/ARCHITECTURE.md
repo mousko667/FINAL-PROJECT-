@@ -215,7 +215,7 @@ go service→service (never repository→repository) to keep the boundary explic
 | GAP 3 | GitHub Actions CI pipeline | ✅ **Resolved** — `.github/workflows/ci.yml` exists |
 | GAP 4 | TLS 1.3 in Spring Boot | ✅ **Resolved** — `application.yaml` `server.ssl` sets `protocol/enabled-protocols: TLSv1.3` + PKCS12 keystore |
 | GAP 5 | OWASP ZAP security scan | ✅ **Resolved** — `.github/workflows/security-scan.yml` + `.github/zap-rules.tsv` |
-| GAP 6 | Approval Delegation | ⚠️ **Backend complete, frontend missing** — V40 migration, `ApprovalDelegation` entity, `DelegationService`/`DelegationController` + tests all exist; no delegation UI exists in `frontend/src` (only i18n keys). This is the one real remaining gap (REGRESSION-T6-02; tracked as REQ-23/P4-02 in the audit) |
+| GAP 6 | Approval Delegation | ✅ **Resolved** (2026-06-13, P11-44) — backend was already complete (V40 migration, `ApprovalDelegation` entity, `DelegationService`/`DelegationController` + tests); the missing frontend is now built: `AdminDelegationsPage` (admin-only, route `/admin/delegations`, sidebar entry) lists active delegations per department with revoke, and creates delegations (delegator/delegatee/date-range/reason) over the 3 existing endpoints |
 | GAP 7 | Financial audit sub-typing | ✅ **Resolved** — implemented (T7) |
 | GAP 8 | Archive full-text search | ✅ **Resolved** — implemented (T7) |
 

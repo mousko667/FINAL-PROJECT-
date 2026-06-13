@@ -339,6 +339,29 @@
       "test": "Test",
       "delete": "Delete",
       "noWebhooks": "No webhooks configured."
+    },
+    "delegations": {
+      "title": "Approval Delegations",
+      "subtitle": "Reassign a validator’s approval authority during an absence.",
+      "department": "Department",
+      "selectDepartment": "— Select a department —",
+      "activeTitle": "Active delegations",
+      "empty": "No active delegations for this department.",
+      "delegator": "Delegator",
+      "delegatee": "Delegatee",
+      "period": "Period",
+      "reason": "Reason",
+      "revoke": "Revoke",
+      "createTitle": "Create a delegation",
+      "selectUser": "— Select a user —",
+      "fromDate": "From",
+      "toDate": "To",
+      "reasonPlaceholder": "e.g. annual leave",
+      "create": "Create delegation",
+      "createError": "Could not create the delegation.",
+      "missingFields": "Please fill in department, both users, and the date range.",
+      "sameUser": "The delegator and delegatee must be different users.",
+      "badRange": "The end date must be on or after the start date."
     }
   },
   "profile": {

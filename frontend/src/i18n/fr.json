@@ -339,6 +339,29 @@
       "test": "Tester",
       "delete": "Supprimer",
       "noWebhooks": "Aucun webhook configuré."
+    },
+    "delegations": {
+      "title": "Délégations d'approbation",
+      "subtitle": "Réaffectez l'autorité d'approbation d'un validateur pendant une absence.",
+      "department": "Département",
+      "selectDepartment": "— Sélectionner un département —",
+      "activeTitle": "Délégations actives",
+      "empty": "Aucune délégation active pour ce département.",
+      "delegator": "Délégant",
+      "delegatee": "Délégataire",
+      "period": "Période",
+      "reason": "Motif",
+      "revoke": "Révoquer",
+      "createTitle": "Créer une délégation",
+      "selectUser": "— Sélectionner un utilisateur —",
+      "fromDate": "Du",
+      "toDate": "Au",
+      "reasonPlaceholder": "ex. congés annuels",
+      "create": "Créer la délégation",
+      "createError": "Impossible de créer la délégation.",
+      "missingFields": "Veuillez renseigner le département, les deux utilisateurs et la période.",
+      "sameUser": "Le délégant et le délégataire doivent être différents.",
+      "badRange": "La date de fin doit être postérieure ou égale à la date de début."
     }
   },
   "profile": {

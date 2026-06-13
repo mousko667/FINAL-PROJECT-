@@ -929,9 +929,19 @@ KPI `—` placeholders (P11-42) are fixed. The remaining item is **P11-40** (the
 
 ### P11-J — Backend-Complete / Frontend-Absent UIs 🟡 Medium
 
-- [ ] **P11-44** Build Approval Delegation UI (P4-02): new section in `ProfilePage.tsx`
+- [x] **P11-44** Build Approval Delegation UI (P4-02): new section in `ProfilePage.tsx`
       (or dedicated page) — list active delegations, create form (target user + date
-      range), revoke button. Uses `DelegationController`'s existing 3 endpoints.
+      range), revoke button. Uses `DelegationController`'s existing 3 endpoints. Completed
+      2026-06-13. Chose a **dedicated admin page** (not ProfilePage) because all 3 endpoints
+      are `hasRole('ADMIN')` and the create payload specifies both delegator and delegatee —
+      this is admin-managed, not self-service. New `AdminDelegationsPage.tsx` (route
+      `/admin/delegations`, sidebar entry, `PageRoleGuard ROLE_ADMIN`): department selector →
+      lists active delegations (`GET /approvals/delegations?departmentCode=`) with revoke
+      (`DELETE /{id}`), and a create form (delegator/delegatee from `GET /users`, department,
+      from/to dates, optional reason → `POST`). Client-side guards (same-user, date range,
+      required fields). 21 `admin.delegations.*` i18n keys added (parity 549/549). Frontend
+      `tsc --noEmit` exit 0. **Closes GAP 6** — the one real remaining gap from P11-20
+      (ARCHITECTURE.md §4.1 updated to ✅).
 - [ ] **P11-45** Build MatchingConfig UI (REQ-08): admin page to view/edit
       `matching_config` tolerance thresholds.
 - [ ] **P11-46** Build Remittance Advice UI (REQ-11): page/section to view & download
