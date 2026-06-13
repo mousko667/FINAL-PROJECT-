@@ -1399,3 +1399,34 @@ P11-G — Documentation Corrections (all 6 done, committed per-task):
   the audit's "unknown origin" verdict — traced it: the 2026-06-06 plan reserved V36/V37/V38
   for purchase-orders/GRN/three-way-matching, but those tables already existed as V17/V18/V19,
   so the numbers were skipped. Verified against the actual migration files.
+
+---
+
+## Session Checkpoint
+**Date:** 2026-06-13
+**Last completed task:** P11-39 (sub-phase P11-H COMPLETE)
+**Phase:** Phase 11 — Audit Correction Cycle
+**Next task:** P11-I — Frontend Correctness Fixes (P11-40..43; REQ-02/03/04/15). NOTE: P11-F
+still deferred (revisit after P11-I).
+**Branch:** main
+**Last commit:** 0f892f7 (P11-32/34/35/36/37); P11-38/39 + this checkpoint not yet committed.
+**Notes:**
+
+P11-H — i18n Sweep (all 15 tasks done; P4-01/REQ-01/P4-04). The audit found 94 keys (≈23% of
+`t()` calls) missing from BOTH `en.json`/`fr.json`, all using the `t('key','fallback')` form so a
+single-language fallback displayed regardless of locale. Mechanism: the source fallback supplies
+ONE language (EN for some pages, FR for others — the "mixed" case), I composed the other side in
+the existing formal tone, keeping `en.json`/`fr.json` at perfect key-parity throughout.
+
+Commits: `97c81d1` (P11-25 supplier.register, 15), `f9542a4` (P11-26/27/28 supplier
+verify/tracking/portal), `78e6bb7` (P11-29 mfa, 16), `cdc7481` (P11-30/31/33 payments/archive/grn
+top-level blocks), `0f892f7` (P11-32/34/35/36/37 — 26 keys into existing blocks via a
+round-trip-clean programmatic add), and P11-38/39 (this commit): ForgotPassword/ResetPassword now
+fully `t()`-instrumented (`auth.forgotPassword.*`/`auth.resetPassword.*`/`auth.backToLogin`),
+MFA QR `<img>` alt → `mfa.qrCodeAlt`.
+
+Verification (exit criteria met): an extractor over `frontend/src` finds 426 referenced `t()`
+keys, **0 missing** from either locale file; both files at **525/525** keys, 0 EN-only/FR-only;
+frontend `tsc --noEmit` exit 0. Tooling note: `JSON.stringify(JSON.parse(file),null,2)+"\n"` is
+byte-identical to both locale files, so programmatic key additions produce clean minimal diffs —
+reusable for future i18n work.

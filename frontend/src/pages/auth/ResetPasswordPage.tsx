@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 
 export default function ResetPasswordPage() {
+  const { t } = useTranslation()
   const [searchParams] = useSearchParams()
   const [newPassword, setNewPassword] = useState('')
   const [submitted, setSubmitted] = useState(false)
@@ -17,7 +19,7 @@ export default function ResetPasswordPage() {
       await apiClient.post('/auth/reset-password', { token, newPassword })
       setSubmitted(true)
     } catch {
-      setError('Invalid or expired reset link.')
+      setError(t('auth.resetPassword.error', 'Invalid or expired reset link.'))
     }
   }
 
@@ -25,17 +27,17 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <form onSubmit={submit} className="w-full max-w-md bg-white border rounded-xl p-6 space-y-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Choose a new password</h1>
-          <p className="text-sm text-gray-500 mt-1">Use at least 8 characters.</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('auth.resetPassword.title', 'Choose a new password')}</h1>
+          <p className="text-sm text-gray-500 mt-1">{t('auth.resetPassword.subtitle', 'Use at least 8 characters.')}</p>
         </div>
         {submitted ? (
           <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg p-3">
-            Password reset successful. You can now sign in.
+            {t('auth.resetPassword.success', 'Password reset successful. You can now sign in.')}
           </div>
         ) : (
           <>
             <label className="block text-sm font-medium text-gray-700">
-              New password
+              {t('auth.resetPassword.newPassword', 'New password')}
               <input
                 type="password"
                 required
@@ -47,12 +49,12 @@ export default function ResetPasswordPage() {
             </label>
             {error && <p className="text-sm text-red-600">{error}</p>}
             <button disabled={!token} className="w-full bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50">
-              Reset password
+              {t('auth.resetPassword.submit', 'Reset password')}
             </button>
           </>
         )}
         <Link to="/login" className="block text-center text-sm text-primary hover:underline">
-          Back to login
+          {t('auth.backToLogin', 'Back to login')}
         </Link>
       </form>
     </div>

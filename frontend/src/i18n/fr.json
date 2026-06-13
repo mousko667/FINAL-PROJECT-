@@ -45,6 +45,22 @@
       "good": "Bon",
       "strong": "Fort",
       "hint": "Utilisez des majuscules, des chiffres et des symboles pour renforcer"
+    },
+    "backToLogin": "Retour à la connexion",
+    "forgotPassword": {
+      "title": "Réinitialiser le mot de passe",
+      "subtitle": "Saisissez l'e-mail de votre compte pour recevoir un lien de réinitialisation.",
+      "success": "Si un compte existe pour cet e-mail, un lien de réinitialisation a été envoyé.",
+      "submit": "Envoyer le lien",
+      "error": "Impossible de demander la réinitialisation. Veuillez réessayer."
+    },
+    "resetPassword": {
+      "title": "Choisissez un nouveau mot de passe",
+      "subtitle": "Utilisez au moins 8 caractères.",
+      "success": "Mot de passe réinitialisé. Vous pouvez maintenant vous connecter.",
+      "newPassword": "Nouveau mot de passe",
+      "submit": "Réinitialiser",
+      "error": "Lien de réinitialisation invalide ou expiré."
     }
   },
   "nav": {
@@ -592,7 +608,8 @@
     "manualEntry": "Ou saisissez manuellement la clé :",
     "enterCode": "2. Entrez le code à 6 chiffres",
     "confirm": "Confirmer",
-    "reconfigure": "Reconfigurer l'application d'authentification"
+    "reconfigure": "Reconfigurer l'application d'authentification",
+    "qrCodeAlt": "QR code pour la configuration MFA — scannez-le avec une application d'authentification"
   },
   "payments": {
     "subtitle": "Enregistrez les paiements et consultez l'historique",

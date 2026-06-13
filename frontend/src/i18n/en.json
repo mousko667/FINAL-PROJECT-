@@ -45,6 +45,22 @@
       "good": "Good",
       "strong": "Strong",
       "hint": "Use uppercase, numbers and symbols to strengthen"
+    },
+    "backToLogin": "Back to login",
+    "forgotPassword": {
+      "title": "Reset password",
+      "subtitle": "Enter your account email to receive a reset link.",
+      "success": "If an account exists for this email, a reset link has been sent.",
+      "submit": "Send reset link",
+      "error": "Unable to request password reset. Please try again."
+    },
+    "resetPassword": {
+      "title": "Choose a new password",
+      "subtitle": "Use at least 8 characters.",
+      "success": "Password reset successful. You can now sign in.",
+      "newPassword": "New password",
+      "submit": "Reset password",
+      "error": "Invalid or expired reset link."
     }
   },
   "nav": {
@@ -592,7 +608,8 @@
     "manualEntry": "Or enter the key manually:",
     "enterCode": "2. Enter the 6-digit code",
     "confirm": "Confirm",
-    "reconfigure": "Reconfigure authenticator app"
+    "reconfigure": "Reconfigure authenticator app",
+    "qrCodeAlt": "QR code for MFA setup — scan with an authenticator app"
   },
   "payments": {
     "subtitle": "Record payments and view history",

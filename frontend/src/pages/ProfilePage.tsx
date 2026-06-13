@@ -149,7 +149,7 @@ function MfaSection({ profile }: { profile: StaffProfile }) {
             <div className="flex-shrink-0">
               <img
                 src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(setupData.qrCodeUrl)}&size=160x160&margin=8`}
-                alt="QR Code MFA"
+                alt={t('mfa.qrCodeAlt', 'QR code for MFA setup — scan with an authenticator app')}
                 className="w-40 h-40 border rounded-lg"
               />
             </div>

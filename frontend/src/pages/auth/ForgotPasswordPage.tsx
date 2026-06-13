@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 
 export default function ForgotPasswordPage() {
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
@@ -15,7 +17,7 @@ export default function ForgotPasswordPage() {
       await apiClient.post('/auth/forgot-password', { email })
       setSubmitted(true)
     } catch {
-      setError('Unable to request password reset. Please try again.')
+      setError(t('auth.forgotPassword.error', 'Unable to request password reset. Please try again.'))
     }
   }
 
@@ -23,17 +25,17 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <form onSubmit={submit} className="w-full max-w-md bg-white border rounded-xl p-6 space-y-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Reset password</h1>
-          <p className="text-sm text-gray-500 mt-1">Enter your account email to receive a reset link.</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('auth.forgotPassword.title', 'Reset password')}</h1>
+          <p className="text-sm text-gray-500 mt-1">{t('auth.forgotPassword.subtitle', 'Enter your account email to receive a reset link.')}</p>
         </div>
         {submitted ? (
           <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg p-3">
-            If an account exists for this email, a reset link has been sent.
+            {t('auth.forgotPassword.success', 'If an account exists for this email, a reset link has been sent.')}
           </div>
         ) : (
           <>
             <label className="block text-sm font-medium text-gray-700">
-              Email
+              {t('auth.email', 'Email')}
               <input
                 type="email"
                 required
@@ -44,12 +46,12 @@ export default function ForgotPasswordPage() {
             </label>
             {error && <p className="text-sm text-red-600">{error}</p>}
             <button className="w-full bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium">
-              Send reset link
+              {t('auth.forgotPassword.submit', 'Send reset link')}
             </button>
           </>
         )}
         <Link to="/login" className="block text-center text-sm text-primary hover:underline">
-          Back to login
+          {t('auth.backToLogin', 'Back to login')}
         </Link>
       </form>
     </div>

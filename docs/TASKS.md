@@ -869,14 +869,22 @@ returns `List<ApprovalStepResponse>` (P11-23).
       payments}`, `register.supplierOnly.{title,note}`, `notifications.hint`,
       `profile.staffAssignment`. All 26 keys (P11-32/34/35/36/37) added programmatically;
       verified 0 referenced `t()` keys missing from either file, parity 512/512.
-- [ ] **P11-38** Add full `t()` coverage to `ForgotPasswordPage.tsx`/`ResetPasswordPage.tsx`
-      (REQ-01) — currently zero `t()` calls, requires NEW keys in both locale files.
-- [ ] **P11-39** Add `alt={t('mfa.qrCodeAlt', ...)}` to the MFA QR `<img>` (P4-04) — new
-      95th i18n key in `en.json`/`fr.json`.
+- [x] **P11-38** Add full `t()` coverage to `ForgotPasswordPage.tsx`/`ResetPasswordPage.tsx`
+      (REQ-01) — currently zero `t()` calls, requires NEW keys in both locale files. Completed
+      2026-06-13. Both pages now use `useTranslation`; wrapped every string. New keys:
+      `auth.backToLogin` (shared), `auth.forgotPassword.{title,subtitle,success,submit,error}`,
+      `auth.resetPassword.{title,subtitle,success,newPassword,submit,error}`; the email label
+      reuses `auth.email`. Frontend `tsc --noEmit` passes.
+- [x] **P11-39** Add `alt={t('mfa.qrCodeAlt', ...)}` to the MFA QR `<img>` (P4-04) — new
+      95th i18n key in `en.json`/`fr.json`. Completed 2026-06-13. `ProfilePage.tsx` QR `<img>`
+      `alt` was hardcoded "QR Code MFA"; now `t('mfa.qrCodeAlt', ...)`; key added to both files.
 
 **P11-H Exit Criteria:** Node.js diff script (per `PHASE4-FRONTEND.md` methodology) shows
 0 `t()` calls with keys missing from either locale file; both locale files remain in
 perfect key-parity.
+✅ Met 2026-06-13 — extractor over `frontend/src` shows 426 referenced `t()` keys, **0 missing**
+from either `en.json`/`fr.json`; both files at **525/525** keys with 0 EN-only/FR-only. Frontend
+`tsc --noEmit` exit 0.
 
 ---
 
