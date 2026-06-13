@@ -362,6 +362,22 @@
       "missingFields": "Veuillez renseigner le département, les deux utilisateurs et la période.",
       "sameUser": "Le délégant et le délégataire doivent être différents.",
       "badRange": "La date de fin doit être postérieure ou égale à la date de début."
+    },
+    "matchingConfig": {
+      "title": "Configuration du rapprochement à trois voies",
+      "navTitle": "Rapprochement",
+      "subtitle": "Seuils de tolérance appliqués lors du rapprochement des factures avec les bons de commande et les bons de réception.",
+      "tolerancePercentage": "Tolérance (%)",
+      "tolerancePercentageHint": "Écart en pourcentage maximal autorisé entre les montants de la facture et du bon de commande.",
+      "toleranceAmount": "Tolérance (montant)",
+      "toleranceAmountHint": "Écart de montant absolu maximal autorisé, indépendamment du pourcentage.",
+      "requireGrn": "Exiger un bon de réception (GRN) pour le rapprochement",
+      "save": "Enregistrer la configuration",
+      "saved": "Enregistré",
+      "lastUpdated": "Dernière modification",
+      "saveError": "Impossible d'enregistrer la configuration.",
+      "badPercentage": "Le pourcentage de tolérance doit être compris entre 0 et 100.",
+      "badAmount": "Le montant de tolérance doit être supérieur ou égal à 0."
     }
   },
   "profile": {

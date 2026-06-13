@@ -362,6 +362,22 @@
       "missingFields": "Please fill in department, both users, and the date range.",
       "sameUser": "The delegator and delegatee must be different users.",
       "badRange": "The end date must be on or after the start date."
+    },
+    "matchingConfig": {
+      "title": "Three-Way Matching Configuration",
+      "navTitle": "Matching",
+      "subtitle": "Tolerance thresholds applied when matching invoices against purchase orders and goods receipts.",
+      "tolerancePercentage": "Tolerance (%)",
+      "tolerancePercentageHint": "Maximum percentage difference allowed between invoice and PO amounts.",
+      "toleranceAmount": "Tolerance (amount)",
+      "toleranceAmountHint": "Maximum absolute amount difference allowed, regardless of percentage.",
+      "requireGrn": "Require a Goods Receipt Note (GRN) for matching",
+      "save": "Save configuration",
+      "saved": "Saved",
+      "lastUpdated": "Last updated",
+      "saveError": "Could not save the configuration.",
+      "badPercentage": "Tolerance percentage must be between 0 and 100.",
+      "badAmount": "Tolerance amount must be 0 or greater."
     }
   },
   "profile": {

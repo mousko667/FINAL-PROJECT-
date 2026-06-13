@@ -26,6 +26,7 @@ const AdminDepartmentFormPage = lazy(() => import('@/pages/admin/AdminDepartment
 const AdminAuditPage = lazy(() => import('@/pages/admin/AdminAuditPage'))
 const ApprovalMatrixPage = lazy(() => import('@/pages/admin/ApprovalMatrixPage'))
 const AdminDelegationsPage = lazy(() => import('@/pages/admin/AdminDelegationsPage'))
+const AdminMatchingConfigPage = lazy(() => import('@/pages/admin/AdminMatchingConfigPage'))
 const SecuritySettingsPage = lazy(() => import('@/pages/admin/SecuritySettingsPage'))
 const IntegrationsPage = lazy(() => import('@/pages/admin/IntegrationsPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
@@ -84,6 +85,7 @@ function AppRoutes() {
             <Route path="/admin/audit" element={<AdminAuditPage />} />
             <Route path="/admin/approval-matrix" element={<ApprovalMatrixPage />} />
             <Route path="/admin/delegations" element={<AdminDelegationsPage />} />
+            <Route path="/admin/matching-config" element={<AdminMatchingConfigPage />} />
             <Route path="/admin/security" element={<SecuritySettingsPage />} />
             <Route path="/admin/integrations" element={<IntegrationsPage />} />
             <Route path="/admin/suppliers" element={<SuppliersPage />} />

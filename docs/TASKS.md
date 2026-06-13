@@ -947,8 +947,13 @@ KPI `—` placeholders (P11-42) are fixed. The remaining item is **P11-40** (the
       required fields). 21 `admin.delegations.*` i18n keys added (parity 549/549). Frontend
       `tsc --noEmit` exit 0. **Closes GAP 6** — the one real remaining gap from P11-20
       (ARCHITECTURE.md §4.1 updated to ✅).
-- [ ] **P11-45** Build MatchingConfig UI (REQ-08): admin page to view/edit
-      `matching_config` tolerance thresholds.
+- [x] **P11-45** Build MatchingConfig UI (REQ-08): admin page to view/edit
+      `matching_config` tolerance thresholds. Completed 2026-06-13. New
+      `AdminMatchingConfigPage.tsx` (route `/admin/matching-config`, sidebar entry,
+      `PageRoleGuard ROLE_ADMIN`): loads the active config via `GET /api/v1/matching-config`
+      and edits tolerance % / tolerance amount / require-GRN via `POST /api/v1/matching-config`
+      (ADMIN-only). Client-side validation (0–100 %, amount ≥ 0), shows last-updated. 14
+      `admin.matchingConfig.*` i18n keys (parity 554/554). `tsc --noEmit` exit 0.
 - [ ] **P11-46** Build Remittance Advice UI (REQ-11): page/section to view & download
       remittance advices for processed payments.
 - [ ] **P11-47** Build Webhooks/Integration Status UI (REQ-22): new admin page wrapping

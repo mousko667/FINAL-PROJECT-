@@ -21,6 +21,7 @@ import {
   ChevronRight,
   Container,
   UserCheck,
+  SlidersHorizontal,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -174,6 +175,7 @@ export default function Sidebar() {
           <NavItem to="/admin/audit" icon={ScrollText} label={t('nav.auditLog')} />
           <NavItem to="/admin/approval-matrix" icon={GitBranch} label={t('admin.approvalMatrix.title', 'Matrice d\'approbation')} />
           <NavItem to="/admin/delegations" icon={UserCheck} label={t('admin.delegations.title', 'Délégations')} />
+          <NavItem to="/admin/matching-config" icon={SlidersHorizontal} label={t('admin.matchingConfig.navTitle', 'Rapprochement')} />
           <NavItem to="/admin/security" icon={Shield} label={t('admin.security.title', 'Sécurité')} />
           <NavItem to="/admin/integrations" icon={Zap} label={t('admin.integrations.title', 'Intégrations')} />
         </RoleGuard>
