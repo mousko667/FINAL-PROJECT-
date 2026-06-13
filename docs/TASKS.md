@@ -663,8 +663,25 @@ regressions across P11-04/05/06).
       `WebhookService` instead of repositories; `WebhookServiceTest` gained 4 new tests
       (`testDeactivateWebhook_NotFound`, `testListActiveWebhooks`, `testGetDeliveryLog`,
       `testGetDeliveryLog_NotFound`) — all pass.
-- [ ] **P11-10** Refactor `DelegationController` (P1-05): move direct repository access
-      into the existing `DelegationService`.
+- [x] **P11-10** Refactor `DelegationController` (P1-05): move direct repository access
+      into the existing `DelegationService`. Completed 2026-06-13 (PROB-031). Controller
+      injected `UserRepository` directly and resolved the delegator/delegatee `User`
+      entities itself in `createDelegation`. Added a UUID-based overload
+      `DelegationService.createDelegation(UUID delegatorId, UUID delegateeId, ...)` that
+      resolves both users via `UserRepository` (new service dependency), throwing
+      `ResourceNotFoundException` ("Delegator/Delegatee not found", preserving the prior
+      404 behaviour) before delegating to the existing entity-based overload. Controller
+      now depends only on `DelegationService` + `SecurityHelper`. New typed `DelegationDTO`
+      record replaces the prior inline `Map<String,Object>` responses (superset of the old
+      fields — backward-compatible). `DelegationServiceTest` gained 3 new tests
+      (`createDelegationByIds_valid_resolvesUsersAndPersists`,
+      `createDelegationByIds_delegatorNotFound_throwsResourceNotFound`,
+      `createDelegationByIds_delegateeNotFound_throwsResourceNotFound`); new
+      `DelegationControllerTest` (6 tests: create as ADMIN → 201 with `DelegationDTO`,
+      create as non-ADMIN → 403, unknown user → 404, list active as ADMIN, revoke as ADMIN,
+      revoke as non-ADMIN → 403) — all pass. New
+      `DelegationControllerTest` (6 tests covering create/list/revoke as ADMIN and
+      non-ADMIN, plus a 404 case) — all pass.
 - [ ] **P11-11** Refactor `InvoiceDocumentController` (P1-05): move direct repository
       access into the existing document service.
 

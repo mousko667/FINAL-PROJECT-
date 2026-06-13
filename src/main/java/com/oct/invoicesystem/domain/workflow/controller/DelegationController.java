@@ -1,10 +1,9 @@
 package com.oct.invoicesystem.domain.workflow.controller;
 
 import com.oct.invoicesystem.domain.user.model.User;
-import com.oct.invoicesystem.domain.user.repository.UserRepository;
+import com.oct.invoicesystem.domain.workflow.dto.DelegationDTO;
 import com.oct.invoicesystem.domain.workflow.model.ApprovalDelegation;
 import com.oct.invoicesystem.domain.workflow.service.DelegationService;
-import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 import com.oct.invoicesystem.shared.response.ApiResponse;
 import com.oct.invoicesystem.shared.util.SecurityHelper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,48 +28,48 @@ public class DelegationController {
 
     private final DelegationService delegationService;
     private final SecurityHelper securityHelper;
-    private final UserRepository userRepository;
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Créer une délégation d'approbation")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> createDelegation(
+    public ResponseEntity<ApiResponse<DelegationDTO>> createDelegation(
             @RequestBody Map<String, Object> request,
             Authentication authentication) {
         User admin = securityHelper.currentUser(authentication);
-        User delegator = userRepository.findById(UUID.fromString((String) request.get("delegatorId")))
-                .orElseThrow(() -> new ResourceNotFoundException("Delegator not found"));
-        User delegatee = userRepository.findById(UUID.fromString((String) request.get("delegateeId")))
-                .orElseThrow(() -> new ResourceNotFoundException("Delegatee not found"));
         ApprovalDelegation d = delegationService.createDelegation(
-                delegator, delegatee,
+                UUID.fromString((String) request.get("delegatorId")),
+                UUID.fromString((String) request.get("delegateeId")),
                 (String) request.get("departmentCode"),
                 LocalDate.parse((String) request.get("fromDate")),
                 LocalDate.parse((String) request.get("toDate")),
                 (String) request.get("reason"),
                 admin);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(Map.of("id", d.getId(), "createdAt", d.getCreatedAt())));
+                .body(ApiResponse.success(toDTO(d)));
     }
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Lister les délégations actives par département")
-    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> listDelegations(
+    public ResponseEntity<ApiResponse<List<DelegationDTO>>> listDelegations(
             @RequestParam(required = false) String departmentCode) {
         List<ApprovalDelegation> delegations = departmentCode != null
                 ? delegationService.getActiveDelegationsForDepartment(departmentCode)
                 : List.of();
-        List<Map<String, Object>> result = delegations.stream().map(d -> Map.of(
-                "id", (Object) d.getId(),
-                "delegatorUsername", d.getDelegator().getUsername(),
-                "delegateeUsername", d.getDelegatee().getUsername(),
-                "departmentCode", d.getDepartmentCode(),
-                "fromDate", d.getFromDate().toString(),
-                "toDate", d.getToDate().toString(),
-                "reason", d.getReason() != null ? d.getReason() : ""
-        )).toList();
+        List<DelegationDTO> result = delegations.stream().map(this::toDTO).toList();
         return ResponseEntity.ok(ApiResponse.success(result));
+    }
+
+    private DelegationDTO toDTO(ApprovalDelegation d) {
+        return new DelegationDTO(
+                d.getId(),
+                d.getDelegator().getUsername(),
+                d.getDelegatee().getUsername(),
+                d.getDepartmentCode(),
+                d.getFromDate(),
+                d.getToDate(),
+                d.getReason() != null ? d.getReason() : "",
+                d.getCreatedAt());
     }
 
     @DeleteMapping("/{id}")

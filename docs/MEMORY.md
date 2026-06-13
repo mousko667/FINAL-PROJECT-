@@ -1214,3 +1214,47 @@ Full suite (`mvnw test`) run after P11-09: **275 tests, 25 failures + 2 errors =
 (275 = 271 + 4 new WebhookServiceTest tests, all passing), identical failure/error
 test-name set to the post-P11-08 27 (diffed sorted lists — zero new regressions). Ready
 to commit and move to P11-10.
+
+---
+
+## Session Checkpoint
+**Date:** 2026-06-13
+**Last completed task:** P11-10
+**Phase:** Phase 11 — Audit Correction Cycle (sub-phase P11-D — Controller → Service Layer
+Refactor, IN PROGRESS)
+**Next task:** P11-11 (Refactor `InvoiceDocumentController`, P1-05)
+**Branch:** main
+**Last commit:** fffdab0 (P11-09; P11-10 not yet committed this checkpoint)
+**Notes:**
+
+P11-10 (P1-05/PROB-031): `DelegationController` injected `UserRepository` directly and
+resolved the delegator/delegatee `User` entities itself inside `createDelegation()`
+(`userRepository.findById(delegatorId/delegateeId).orElseThrow(...)`) before calling the
+entity-based `delegationService.createDelegation(delegator, delegatee, ...)` — repository
+access in the controller, violating "never bypass service layer from controller". It also
+built its `createDelegation`/`listDelegations` responses as inline `Map<String,Object>`.
+Fixed: new UUID-based overload `DelegationService.createDelegation(UUID delegatorId,
+UUID delegateeId, String departmentCode, LocalDate fromDate, LocalDate toDate, String
+reason, User createdBy)` resolves both users via `UserRepository` (new service
+dependency), throwing `ResourceNotFoundException` ("Delegator not found" / "Delegatee not
+found", preserving the controller's prior 404 behaviour), then delegates to the existing
+entity-based overload (kept — still used by 3 pre-existing service tests).
+`DelegationController` now depends only on `DelegationService` + `SecurityHelper`, passes
+the raw UUIDs, and returns a new typed `DelegationDTO` record (id, delegatorUsername,
+delegateeUsername, departmentCode, fromDate, toDate, reason, createdAt) that replaces the
+old `Map<String,Object>` responses — a superset of the previous fields, so backward-
+compatible. `DelegationServiceTest` gained 3 new tests
+(`createDelegationByIds_valid_resolvesUsersAndPersists`,
+`createDelegationByIds_delegatorNotFound_throwsResourceNotFound`,
+`createDelegationByIds_delegateeNotFound_throwsResourceNotFound`); a new
+`DelegationControllerTest` (`@SpringBootTest`, 6 tests: create as ADMIN → 201 with
+`DelegationDTO`, create as non-ADMIN → 403, unknown user → 404, list active as ADMIN,
+revoke as ADMIN, revoke as non-ADMIN → 403) was also added — all pass.
+
+Full suite (`mvnw test`) run after the service/DTO/controller refactor: **278 tests,
+25 failures + 2 errors = 27** (278 = 275 + 3 new DelegationServiceTest tests, all
+passing), identical failure/error test-name set to the post-P11-09 27 (diffed sorted
+lists — zero new regressions). The 6-test `DelegationControllerTest` was added after that
+run and verified separately (`mvnw test -Dtest=DelegationControllerTest` → 6/6 pass), so
+the next full run will show 284 tests with the same 27 baseline. Ready to commit and move
+to P11-11.

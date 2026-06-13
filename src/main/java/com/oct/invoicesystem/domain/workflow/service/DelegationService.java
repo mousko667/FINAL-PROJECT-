@@ -1,6 +1,7 @@
 package com.oct.invoicesystem.domain.workflow.service;
 
 import com.oct.invoicesystem.domain.user.model.User;
+import com.oct.invoicesystem.domain.user.repository.UserRepository;
 import com.oct.invoicesystem.domain.workflow.model.ApprovalDelegation;
 import com.oct.invoicesystem.domain.workflow.repository.ApprovalDelegationRepository;
 import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
@@ -21,6 +22,25 @@ import java.util.UUID;
 public class DelegationService {
 
     private final ApprovalDelegationRepository delegationRepository;
+    private final UserRepository userRepository;
+
+    /**
+     * Crée une délégation à partir des identifiants du délégant et du délégataire.
+     * Résout les utilisateurs via {@link UserRepository} (logique déplacée hors du contrôleur,
+     * règle absolue P1-05) avant de déléguer à {@link #createDelegation(User, User, String, LocalDate, LocalDate, String, User)}.
+     *
+     * @throws ResourceNotFoundException si le délégant ou le délégataire n'existe pas
+     */
+    @Transactional
+    public ApprovalDelegation createDelegation(
+            UUID delegatorId, UUID delegateeId, String departmentCode,
+            LocalDate fromDate, LocalDate toDate, String reason, User createdBy) {
+        User delegator = userRepository.findById(delegatorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Delegator not found"));
+        User delegatee = userRepository.findById(delegateeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Delegatee not found"));
+        return createDelegation(delegator, delegatee, departmentCode, fromDate, toDate, reason, createdBy);
+    }
 
     @Transactional
     public ApprovalDelegation createDelegation(
