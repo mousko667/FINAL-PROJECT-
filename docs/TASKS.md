@@ -773,8 +773,14 @@ config` (no `postgres` service; `MINIO_SECRET_KEY: dany1234` resolves identicall
       added). §10's stale "New Domain Modules" tree (which still used `matching`/`integration`)
       replaced with a name-mapping lookup table pointing to §2 as the single source of truth.
       Verified against the actual package listing on disk.
-- [ ] **P11-20** Rewrite `docs/ARCHITECTURE.md` §4.1 "Known Implementation Gaps" table (P1-02):
-      all 8 entries are stale/resolved.
+- [x] **P11-20** Rewrite `docs/ARCHITECTURE.md` §4.1 "Known Implementation Gaps" table (P1-02):
+      all 8 entries are stale/resolved. Completed 2026-06-13. Re-verified each gap against the
+      codebase: GAP 1 (OCR), 2 (JWT RS256), 3 (CI `ci.yml`), 4 (TLS 1.3 in `application.yaml`
+      `server.ssl`), 5 (ZAP `security-scan.yml`+`zap-rules.tsv`), 7 (audit sub-typing), 8
+      (archive search) are all **resolved** — marked ✅ with the proof location. Only GAP 6
+      (Approval Delegation) remains, and only its **frontend** — backend (V40 + entity +
+      service + controller + tests) is complete; no delegation UI exists in `frontend/src`.
+      Table rewritten accordingly; intro updated to note the 2026-06-06 version was stale.
 - [ ] **P11-21** Redraw `docs/ARCHITECTURE.md` §5 security filter chain diagram (P1-03):
       add 3 missing filters, correct relative order, fix CORS placement.
 - [ ] **P11-22** Add "Inter-domain Dependencies" subsection to `docs/ARCHITECTURE.md` §2

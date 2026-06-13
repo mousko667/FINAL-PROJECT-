@@ -179,18 +179,21 @@ com.oct.invoicesystem/
 
 ## 4.1 Known Implementation Gaps
 
-> Last updated: 2026-06-06. Full history and resolutions in `docs/KNOWN_ISSUES_REGISTRY.md`.
+> Last updated: 2026-06-13 (P11-20 / audit P1-02). The original 8-gap table (dated
+> 2026-06-06) was entirely stale: 7 of 8 gaps had since been implemented (T1–T7 cycle,
+> 2026-06-07) but never closed here. Re-verified against the codebase this session — only
+> GAP 6's **frontend** remains open. Full history in `docs/KNOWN_ISSUES_REGISTRY.md`.
 
-| # | Gap | Severity | Status |
-|---|---|---|---|
-| GAP 1 | **OCR not implemented** — Apache Tika (MIME detection only) is present. Tess4J must be added and `OcrService` implemented for invoice field extraction. | 🔴 Critical | ❌ Not implemented |
-| GAP 2 | **JWT uses HS256 instead of RS256** — JJWT 0.12.6 uses symmetric shared secret. Must migrate to RSA-2048 asymmetric (RS256). See PROB-014 in KNOWN_ISSUES_REGISTRY.md. | 🟠 High | ❌ Not implemented |
-| GAP 3 | **GitHub Actions CI pipeline missing** — No `.github/workflows/ci.yml`. Pipeline must: build backend, run tests, build frontend, run Vitest, build Docker images. | 🟡 Medium | ❌ Not implemented |
-| GAP 4 | **TLS 1.3 not configured in Spring Boot** — TLS handled at infra level only. Must configure `server.ssl` in `application-prod.yml`. | 🟡 Medium | ❌ Not implemented |
-| GAP 5 | **OWASP ZAP security scan absent** — No automated security scan in CI. | 🟡 Medium | ❌ Not implemented |
-| GAP 6 | **Approval Delegation not implemented** — No entity, service, endpoint, or UI for approval delegation (absence management). See PROB-016. | 🟠 High | ❌ Not implemented |
-| GAP 7 | **Financial audit sub-typing absent** — All audit logs are of type HTTP_REQUEST. No financial-specific categorization. | 🟡 Medium | ❌ Not implemented |
-| GAP 8 | **Archive full-text search absent** — Archive page only filters by status/dept/date. No keyword search on invoice content. | 🟡 Medium | ❌ Not implemented |
+| # | Gap | Status (re-verified 2026-06-13) |
+|---|---|---|
+| GAP 1 | OCR field extraction | ✅ **Resolved** — Tess4J 5.11.0 + PDFBox 3.0.3 (`pom.xml`), `domain/ocr/OcrService`, `OcrServiceTest` present |
+| GAP 2 | JWT HS256 → RS256 | ✅ **Resolved** — RS256 in place: `JwtService` loads an RSA key pair from `jwt.private-key`/`jwt.public-key` (`application.yaml`) |
+| GAP 3 | GitHub Actions CI pipeline | ✅ **Resolved** — `.github/workflows/ci.yml` exists |
+| GAP 4 | TLS 1.3 in Spring Boot | ✅ **Resolved** — `application.yaml` `server.ssl` sets `protocol/enabled-protocols: TLSv1.3` + PKCS12 keystore |
+| GAP 5 | OWASP ZAP security scan | ✅ **Resolved** — `.github/workflows/security-scan.yml` + `.github/zap-rules.tsv` |
+| GAP 6 | Approval Delegation | ⚠️ **Backend complete, frontend missing** — V40 migration, `ApprovalDelegation` entity, `DelegationService`/`DelegationController` + tests all exist; no delegation UI exists in `frontend/src` (only i18n keys). This is the one real remaining gap (REGRESSION-T6-02; tracked as REQ-23/P4-02 in the audit) |
+| GAP 7 | Financial audit sub-typing | ✅ **Resolved** — implemented (T7) |
+| GAP 8 | Archive full-text search | ✅ **Resolved** — implemented (T7) |
 
 ## 4.2 Resolved Architecture Issues (from KNOWN_ISSUES_REGISTRY.md)
 
