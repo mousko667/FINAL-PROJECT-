@@ -806,11 +806,20 @@ config` (no `postgres` service; `MINIO_SECRET_KEY: dany1234` resolves identicall
       `getApprovalSteps_nullApprover_yieldsNullUsernameAndName`) — pass. (The lone
       `ApprovalServiceTest` failure remaining, `assignReviewer_..._ThrowsAccessDenied`, is the
       pre-existing baseline failure, unrelated.)
-- [ ] **P11-24** Document the Flyway V36-V38 gap (P3-03): add a note to
-      `docs/ARCHITECTURE.md` migration history explaining V35→V39 is intentional.
+- [x] **P11-24** Document the Flyway V36-V38 gap (P3-03): add a note to
+      `docs/ARCHITECTURE.md` migration history explaining V35→V39 is intentional. Completed
+      2026-06-13. New §4.4 records that V36–V38 never existed (no functional impact) and —
+      going beyond the audit's "unknown origin" verdict — traces the real origin: the
+      2026-06-06 plan reserved V36/V37/V38 for purchase-orders/GRN/three-way-matching, but
+      those tables already existed as V17/V18/V19, so the numbers were skipped. Supersedes the
+      unsubstantiated "covered by V17-19" note (now verified against the actual files) and adds
+      a "do not retroactively create V36–V38" instruction.
 
 **P11-G Exit Criteria:** `docs/ARCHITECTURE.md` accurately reflects the current codebase
 for §2, §4.1, §5, §10, and migration history; `ApprovalController` returns a typed DTO.
+✅ Met 2026-06-13 — §2 (P11-19), §4.1 (P11-20), §5 (P11-21), §2.1 inter-domain (P11-22),
+§4.4 migration history (P11-24) all corrected against the codebase; `ApprovalController`
+returns `List<ApprovalStepResponse>` (P11-23).
 
 ---
 

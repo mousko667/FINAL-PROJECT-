@@ -1357,3 +1357,45 @@ pre-existing uncommitted diffs remain in the working tree (`CLAUDE.md` — 2026-
 instruction-file updates already indexed in this file's header; `pom.xml` — adds
 Tess4J/PDFBox dependencies for an OCR feature) — neither belongs to P11-E and both are left
 uncommitted for whichever task/session owns them. Ready to commit and move to P11-F.
+
+---
+
+## Session Checkpoint
+**Date:** 2026-06-13
+**Last completed task:** P11-24 (sub-phase P11-G COMPLETE)
+**Phase:** Phase 11 — Audit Correction Cycle
+**Next task:** P11-H — i18n Sweep (P11-25..39). NOTE: **P11-F was deferred by user decision**
+(net-new IAM features with no PRD/WORKFLOW mandate; independent of everything else) — revisit
+after P11-H/I.
+**Branch:** main
+**Last commit:** 7aa80b9 (P11-23); P11-24 + this checkpoint not yet committed.
+**Notes:**
+
+Stabilisation interlude before P11-G: a parallel session (since closed by the user) had left
+the repo with a non-compiling HEAD — the committed OCR code (`domain/ocr/*`, in `41d4369`)
+imported tess4j/pdfbox but the `pom.xml` declaring those deps was uncommitted. Fixed by
+committing `pom.xml` (`14c3f11`); `mvnw compile` now passes. Also committed the user-authorised
+infra change (`fc0862c`: host-Postgres + JWT key pair).
+
+P11-G — Documentation Corrections (all 6 done, committed per-task):
+- **P11-19** (`c7c77c3`, P1-01): rewrote ARCHITECTURE.md §2 as the complete 15-package tree
+  (renamed reporting→report; added mfa/ocr/purchasing/supplier/webhook + config/security;
+  fixed stale config/ file list); replaced §10's stale matching/integration tree with a
+  name-mapping lookup → §2.
+- **P11-20** (`4055677`, P1-02): rewrote §4.1 gap table — re-verified all 8 against code; 7
+  resolved (OCR, JWT RS256, CI, TLS 1.3, ZAP, audit sub-typing, archive search), only GAP 6
+  (Approval Delegation **frontend**) remains.
+- **P11-21** (`f77590d`, P1-03): redrew §5 filter chain to match `SecurityConfig.java:71-75`
+  (HttpSecurityHeadersFilter → RateLimitingFilter → JwtAuthenticationFilter → [UPAF] →
+  MfaSetupEnforcementFilter → AuditLoggingFilter); removed CorsFilter from the chain (it's a
+  `WebMvcConfigurer`, not a security filter).
+- **P11-22** (`9b6529a`, P1-06): added §2.1 documenting the verified invoice↔purchasing
+  bidirectional dependency (three-way matching).
+- **P11-23** (`7aa80b9`, P1-07/PROB-034): `ApprovalController.getApprovalSteps` now returns a
+  typed `ApprovalStepResponse` record instead of `List<Map<String,Object>>` (field names/order
+  preserved → JSON unchanged). 2 new `ApprovalServiceTest` cases. Full suite: **288 tests,
+  27 baseline failures** (288 = 286 + 2 new), zero new regressions.
+- **P11-24** (this commit, P3-03): added §4.4 documenting the Flyway V36–V38 gap. Went beyond
+  the audit's "unknown origin" verdict — traced it: the 2026-06-06 plan reserved V36/V37/V38
+  for purchase-orders/GRN/three-way-matching, but those tables already existed as V17/V18/V19,
+  so the numbers were skipped. Verified against the actual migration files.

@@ -272,6 +272,26 @@ docker ps --format "table {{.Names}}\t{{.Status}}"
 # e.g. `pg_isready -h localhost -p 5433`)
 ```
 
+## 4.4 Flyway Migration History — the V36–V38 gap (P3-03)
+
+The migration sequence is `V1`…`V35`, then jumps to `V39`, `V40`, … (latest `V43`).
+**`V36`, `V37`, `V38` never existed** — confirmed via
+`git log --all --diff-filter=D --name-only | grep "V3[6-8]__"` (no output: never created,
+never deleted). Flyway does not require contiguous version numbers, so `V35 → V39` applies
+cleanly with **no functional impact**.
+
+**Origin (traced 2026-06-13, P11-24):** the 2026-06-06 correction plan reserved `V36`/`V37`/
+`V38` for the `purchase_orders` / `goods_receipt_notes` / `three_way_matching` migrations.
+But those exact tables had already been created earlier as **`V17__create_purchase_orders`**,
+**`V18__create_goods_receipt_notes`**, and **`V19__create_three_way_matching`** (Phase 9D
+scaffolding), so the reserved `V36–V38` numbers were redundant and simply skipped. (This
+supersedes the earlier, vaguer "covered by V17-19" note, which the audit had flagged as
+unsubstantiated — the connection is now verified against the actual migration files.)
+
+**Do not retroactively create `V36`–`V38`.** Continue numbering forward from the latest
+version. Per the absolute rule, never modify a migration that has already been applied
+(checksum is locked in `flyway_schema_history`; see PROB-009).
+
 ---
 
 ## 5. Security Architecture
