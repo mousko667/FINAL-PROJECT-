@@ -33,14 +33,17 @@ Spring Boot Backend (Modular Monolith)
 com.oct.invoicesystem/
 ├── config/
 │   ├── SecurityConfig.java
-│   ├── JwtConfig.java
 │   ├── CorsConfig.java
-│   ├── MinioConfig.java
-│   ├── MailConfig.java
+│   ├── WebConfig.java
 │   ├── WebSocketConfig.java
 │   ├── StateMachineConfig.java
 │   ├── OpenApiConfig.java
-│   └── AsyncConfig.java          ← @EnableAsync for notification listeners
+│   ├── AsyncConfig.java          ← @EnableAsync for notification listeners
+│   ├── ProdSecretConfigValidator.java
+│   └── security/                 ← extra security filters (registered in the chain)
+│       ├── HttpSecurityHeadersFilter.java
+│       ├── MfaSetupEnforcementFilter.java
+│       └── RateLimitingFilter.java
 │
 ├── domain/
 │   ├── auth/
@@ -83,9 +86,32 @@ com.oct.invoicesystem/
 │   │       → EmailNotificationListener.java, WebSocketNotificationListener.java
 │   │       → PersistNotificationListener.java
 │   │
-│   ├── reporting/
+│   ├── report/                   ← was documented as "reporting/" (wrong)
 │   │   └── {controller, service, dto}/
 │   │       → ReportController.java, ReportService.java
+│   │
+│   ├── supplier/                 ← Phase 9 — supplier portal + self-registration
+│   │   └── {controller, service, repository, model, dto, mapper}/
+│   │       → Supplier.java, SupplierStatus.java, SupplierDocument.java
+│   │
+│   ├── mfa/                      ← Phase 9 — TOTP multi-factor auth
+│   │   └── {service, dto}/
+│   │       → MfaService.java
+│   │
+│   ├── purchasing/               ← Phase 9 — was documented as "matching/" (wrong)
+│   │   └── {controller, service, repository, model, dto}/
+│   │       → PurchaseOrder.java, GoodsReceiptNote.java,
+│   │         ThreeWayMatchingResult.java, MatchingConfig.java
+│   │       → ThreeWayMatchingService.java, PurchaseOrderController.java
+│   │
+│   ├── webhook/                  ← Phase 9 — was documented as "integration/" (wrong)
+│   │   └── {controller, service, repository, model, dto, event, mapper}/
+│   │       → Webhook.java, WebhookDelivery.java
+│   │       → WebhookService.java, WebhookEventPublisher.java
+│   │
+│   ├── ocr/                      ← invoice field extraction (Tess4J + PDFBox)
+│   │   └── {controller, service, dto}/
+│   │       → OcrService.java, OcrController.java, OcrExtractionResult.java
 │   │
 │   └── storage/
 │       └── service/{StorageService (interface), MinioStorageService}.java
@@ -331,31 +357,20 @@ services:
   mailhog:     port 1025/8025 — SMTP test server (dev only)
 ```
 
-## 10.New Domain Modules (Phase 9)
+## 10. Phase 9+ Domain Modules — folded into §2
 
-domain/
-├── supplier/
-│   └── {controller, service, repository, model, dto, mapper}/
-│       → Supplier.java, SupplierStatus.java, SupplierDocument.java
-│       → SupplierService.java, SupplierController.java, SupplierMapper.java
-│
-├── mfa/
-│   └── service/MfaService.java
-│   └── dto/{MfaSetupResponse.java, MfaValidateRequest.java, MfaConfirmRequest.java}
-│
-├── matching/
-│   └── {controller, service, repository, model, dto}/
-│       → PurchaseOrder.java, PurchaseOrderItem.java
-│       → GoodsReceiptNote.java, GoodsReceiptItem.java
-│       → ThreeWayMatchingResult.java, MatchingConfig.java
-│       → ThreeWayMatchingService.java
-│       → PurchaseOrderController.java, MatchingConfigController.java
-│
-└── integration/
-└── {controller, service, repository, model, dto}/
-→ Webhook.java, WebhookDelivery.java
-→ WebhookService.java, WebhookEventPublisher.java
-→ WebhookController.java
+The Phase 9 modules (`supplier`, `mfa`, `purchasing`, `webhook`) and the later `ocr`
+module are now part of the single package tree in **§2** above. This section previously
+listed them separately under names that never matched the code; corrected here as a lookup
+for anyone searching the old names (P1-01):
+
+| Documented name (pre-P11) | Actual package on disk |
+|---|---|
+| `domain/matching/` | `domain/purchasing/` — PurchaseOrder, GoodsReceiptNote, ThreeWayMatchingResult, MatchingConfig, ThreeWayMatchingService, PurchaseOrderController |
+| `domain/integration/` | `domain/webhook/` — Webhook, WebhookDelivery, WebhookService, WebhookEventPublisher, WebhookController |
+| `domain/reporting/` (§2) | `domain/report/` — ReportController, ReportService |
+
+§2 is the authoritative, complete package tree (all 15 `domain/` packages + `config/security/`).
 
 ---
 

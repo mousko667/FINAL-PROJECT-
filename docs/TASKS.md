@@ -741,6 +741,12 @@ config` (no `postgres` service; `MINIO_SECRET_KEY: dany1234` resolves identicall
 
 ### P11-F — IAM / Permission Gaps 🟠 High
 
+> **DEFERRED (2026-06-13, by user decision).** P11-F's 4 items are net-new "enterprise IAM
+> platform" features with no PRD/WORKFLOW mandate (per REQ-23's own audit text) and require
+> design decisions that don't exist yet. Per `PLAN-CORRECTIONS.md`, P11-F is independent of
+> every other sub-phase and can run at any time, so it is deferred until P11-G/H/I (concrete,
+> fully-specified corrections) are done. Revisit with a proper design pass.
+
 - [ ] **P11-15** Add data-sensitivity classification to financial records (REQ-23 item 1):
       new enum + column via Flyway migration; surface in relevant list/detail views.
 - [ ] **P11-16** Add bulk user import/export (CSV) (REQ-23 item 2): new
@@ -757,9 +763,16 @@ config` (no `postgres` service; `MINIO_SECRET_KEY: dany1234` resolves identicall
 
 ### P11-G — Documentation Corrections 🟡 Medium
 
-- [ ] **P11-19** Fix package names in `docs/ARCHITECTURE.md` §2/§10 (P1-01):
+- [x] **P11-19** Fix package names in `docs/ARCHITECTURE.md` §2/§10 (P1-01):
       `matching`→`purchasing`, `integration`→`webhook`, `reporting`→`report`; add 6
-      missing packages.
+      missing packages. Completed 2026-06-13. §2 rewritten as the complete, accurate tree:
+      all 15 `domain/` packages (renamed `reporting`→`report`; added the 6 previously-missing
+      `mfa`, `ocr`, `purchasing`, `supplier`, `webhook`, and `config/security/`), and the
+      stale `config/` file list corrected (`JwtConfig`/`MinioConfig`/`MailConfig` removed —
+      they don't exist; `WebConfig`, `ProdSecretConfigValidator`, `config/security/` filters
+      added). §10's stale "New Domain Modules" tree (which still used `matching`/`integration`)
+      replaced with a name-mapping lookup table pointing to §2 as the single source of truth.
+      Verified against the actual package listing on disk.
 - [ ] **P11-20** Rewrite `docs/ARCHITECTURE.md` §4.1 "Known Implementation Gaps" table (P1-02):
       all 8 entries are stale/resolved.
 - [ ] **P11-21** Redraw `docs/ARCHITECTURE.md` §5 security filter chain diagram (P1-03):
