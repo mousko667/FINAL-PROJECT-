@@ -37,7 +37,15 @@
     "password": "Password",
     "loginButton": "Sign In",
     "loginError": "Invalid credentials",
-    "sessionExpired": "Your session has expired. Please log in again."
+    "sessionExpired": "Your session has expired. Please log in again.",
+    "email": "Email",
+    "passwordStrength": {
+      "weak": "Weak",
+      "fair": "Fair",
+      "good": "Good",
+      "strong": "Strong",
+      "hint": "Use uppercase, numbers and symbols to strengthen"
+    }
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -52,7 +60,10 @@
     "suppliers": "Suppliers",
     "profile": "Profile",
     "financialAudit": "Financial Audit",
-    "purchaseOrders": "Purchase Orders"
+    "purchaseOrders": "Purchase Orders",
+    "archive": "Archive",
+    "goodsReceipts": "Goods Receipts",
+    "payments": "Payments"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -71,7 +82,11 @@
     "validatorQueue": "Your Approval Queue",
     "validatorQueueSub": "Invoices pending your decision.",
     "welcomeSupplier": "Welcome to your Supplier Portal",
-    "supplierNote": "Track your invoices, submit new ones, and receive payment notifications from this dashboard."
+    "supplierNote": "Track your invoices, submit new ones, and receive payment notifications from this dashboard.",
+    "deptMatrix": "Departments & Matrix",
+    "manageAccounts": "Manage Accounts",
+    "securityLogs": "System Logs",
+    "supplierRegistry": "Supplier Registry"
   },
   "po": {
     "title": "Purchase Orders",
@@ -158,7 +173,13 @@
     "paymentDate": "Payment Date",
     "paymentReference": "Payment Reference",
     "noDocuments": "No documents attached",
-    "uploadDocument": "Attach Document"
+    "uploadDocument": "Attach Document",
+    "exportPdf": "Export to PDF",
+    "noStepsYet": "No approval steps recorded yet.",
+    "overdue": "OVERDUE",
+    "stepApproved": "Approved",
+    "stepPending": "Pending",
+    "stepRejected": "Rejected"
   },
   "status": {
     "BROUILLON": "Draft",
@@ -257,7 +278,10 @@
       "create": "Create Department",
       "name": "Name",
       "code": "Code",
-      "budget": "Budget"
+      "budget": "Budget",
+      "currency": "Currency",
+      "matrixNote": "To edit approval chains, use the Approval Matrix.",
+      "subtitle": "OCT departments and BAP approval chains"
     },
     "audit": {
       "title": "System & Security Audit Log",
@@ -314,13 +338,15 @@
     "save": "Save Changes",
     "saved": "Profile updated successfully.",
     "french": "French",
-    "english": "English"
+    "english": "English",
+    "staffAssignment": "Assignment"
   },
   "notifications": {
     "title": "Notifications",
     "markAllRead": "Mark all as read",
     "noNotifications": "No notifications",
-    "unread": "unread"
+    "unread": "unread",
+    "hint": "Click a notification to mark it as read."
   },
   "ocr": {
     "dropHere": "Drop your invoice here",
@@ -592,5 +618,11 @@
     "grnNumber": "GRN No.",
     "receivedDate": "Received Date",
     "empty": "No goods receipt notes recorded"
+  },
+  "register": {
+    "supplierOnly": {
+      "title": "Supplier portal registration",
+      "note": "This form is for external suppliers only. OCT staff accounts are created by the System Administrator — contact your IT department for access."
+    }
   }
 }

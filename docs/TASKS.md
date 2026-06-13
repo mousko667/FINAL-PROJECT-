@@ -851,16 +851,24 @@ returns `List<ApprovalStepResponse>` (P11-23).
 - [x] **P11-31** Add missing `archive.*` keys (6) to `en.json`/`fr.json` (P4-01). Completed
       2026-06-13. New top-level `archive` block, 6 keys from `ArchivePage.tsx` (FR fallbacks →
       FR from source, EN composed).
-- [ ] **P11-32** Add missing `auth.*` keys incl. password-strength indicator (6) to
-      `en.json`/`fr.json` (P4-01).
+- [x] **P11-32** Add missing `auth.*` keys incl. password-strength indicator (6) to
+      `en.json`/`fr.json` (P4-01). Completed 2026-06-13. `auth.email` + `auth.passwordStrength.*`
+      (weak/fair/good/strong/hint). Added programmatically (round-trip-clean JSON), parity held.
 - [x] **P11-33** Add missing `grn.*` keys (6) to `en.json`/`fr.json` (P4-01). Completed
       2026-06-13. New top-level `grn` block, 6 keys from `GoodsReceiptsPage.tsx` (FR fallbacks →
       FR from source, EN composed). Parity after P11-30/31/33: 486/486.
-- [ ] **P11-34** Add missing `invoice.*` keys (6) to `en.json`/`fr.json` (P4-01).
-- [ ] **P11-35** Add missing `dashboard.*` keys (4) to `en.json`/`fr.json` (P4-01).
-- [ ] **P11-36** Add missing `admin.*` keys (3) to `en.json`/`fr.json` (P4-01).
-- [ ] **P11-37** Add missing `nav.*`, `register.*`, `notifications.*`, `profile.*` keys
-      (7 total) to `en.json`/`fr.json` (P4-01).
+- [x] **P11-34** Add missing `invoice.*` keys (6) to `en.json`/`fr.json` (P4-01). Completed
+      2026-06-13. `exportPdf`, `noStepsYet`, `overdue`, `stepApproved`, `stepPending`,
+      `stepRejected` (FR fallbacks → FR from source, EN composed).
+- [x] **P11-35** Add missing `dashboard.*` keys (4) to `en.json`/`fr.json` (P4-01). Completed
+      2026-06-13. `deptMatrix`, `manageAccounts`, `securityLogs`, `supplierRegistry`.
+- [x] **P11-36** Add missing `admin.*` keys (3) to `en.json`/`fr.json` (P4-01). Completed
+      2026-06-13. `admin.departments.{currency,matrixNote,subtitle}`.
+- [x] **P11-37** Add missing `nav.*`, `register.*`, `notifications.*`, `profile.*` keys
+      (7 total) to `en.json`/`fr.json` (P4-01). Completed 2026-06-13. `nav.{archive,goodsReceipts,
+      payments}`, `register.supplierOnly.{title,note}`, `notifications.hint`,
+      `profile.staffAssignment`. All 26 keys (P11-32/34/35/36/37) added programmatically;
+      verified 0 referenced `t()` keys missing from either file, parity 512/512.
 - [ ] **P11-38** Add full `t()` coverage to `ForgotPasswordPage.tsx`/`ResetPasswordPage.tsx`
       (REQ-01) — currently zero `t()` calls, requires NEW keys in both locale files.
 - [ ] **P11-39** Add `alt={t('mfa.qrCodeAlt', ...)}` to the MFA QR `<img>` (P4-04) — new

@@ -37,7 +37,15 @@
     "password": "Mot de passe",
     "loginButton": "Se connecter",
     "loginError": "Identifiants incorrects",
-    "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter."
+    "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
+    "email": "E-mail",
+    "passwordStrength": {
+      "weak": "Faible",
+      "fair": "Moyen",
+      "good": "Bon",
+      "strong": "Fort",
+      "hint": "Utilisez des majuscules, des chiffres et des symboles pour renforcer"
+    }
   },
   "nav": {
     "dashboard": "Tableau de bord",
@@ -52,7 +60,10 @@
     "suppliers": "Fournisseurs",
     "profile": "Profil",
     "financialAudit": "Audit Financier",
-    "purchaseOrders": "Bons de Commande"
+    "purchaseOrders": "Bons de Commande",
+    "archive": "Archive",
+    "goodsReceipts": "Bons de Réception",
+    "payments": "Paiements"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -71,7 +82,11 @@
     "validatorQueue": "Votre file d'approbation",
     "validatorQueueSub": "Factures en attente de votre décision.",
     "welcomeSupplier": "Bienvenue sur votre portail fournisseur",
-    "supplierNote": "Suivez vos factures, soumettez-en de nouvelles et recevez des notifications de paiement depuis ce tableau de bord."
+    "supplierNote": "Suivez vos factures, soumettez-en de nouvelles et recevez des notifications de paiement depuis ce tableau de bord.",
+    "deptMatrix": "Départements & matrice",
+    "manageAccounts": "Gérer les comptes",
+    "securityLogs": "Journaux système",
+    "supplierRegistry": "Registre fournisseurs"
   },
   "po": {
     "title": "Bons de commande",
@@ -158,7 +173,13 @@
     "paymentDate": "Date de paiement",
     "paymentReference": "Référence de paiement",
     "noDocuments": "Aucun document joint",
-    "uploadDocument": "Joindre un document"
+    "uploadDocument": "Joindre un document",
+    "exportPdf": "Exporter en PDF",
+    "noStepsYet": "Aucune étape d'approbation enregistrée.",
+    "overdue": "DÉPASSÉ",
+    "stepApproved": "Approuvé",
+    "stepPending": "En attente",
+    "stepRejected": "Rejeté"
   },
   "status": {
     "BROUILLON": "Brouillon",
@@ -257,7 +278,10 @@
       "create": "Créer un département",
       "name": "Nom",
       "code": "Code",
-      "budget": "Budget"
+      "budget": "Budget",
+      "currency": "Devise",
+      "matrixNote": "Pour modifier les chaînes d'approbation, utilisez la Matrice d'approbation.",
+      "subtitle": "Départements OCT et chaînes d'approbation BAP"
     },
     "audit": {
       "title": "Journal d'audit système",
@@ -314,13 +338,15 @@
     "save": "Enregistrer les modifications",
     "saved": "Profil mis à jour avec succès.",
     "french": "Français",
-    "english": "Anglais"
+    "english": "Anglais",
+    "staffAssignment": "Affectation"
   },
   "notifications": {
     "title": "Notifications",
     "markAllRead": "Tout marquer comme lu",
     "noNotifications": "Aucune notification",
-    "unread": "non lu(s)"
+    "unread": "non lu(s)",
+    "hint": "Cliquez sur une notification pour la marquer comme lue."
   },
   "ocr": {
     "dropHere": "Déposez votre facture ici",
@@ -592,5 +618,11 @@
     "grnNumber": "N° GRN",
     "receivedDate": "Date de réception",
     "empty": "Aucun bon de réception enregistré"
+  },
+  "register": {
+    "supplierOnly": {
+      "title": "Inscription au portail fournisseur",
+      "note": "Ce formulaire est réservé aux fournisseurs externes. Les comptes du personnel OCT sont créés par l'administrateur système — contactez votre service informatique pour obtenir un accès."
+    }
   }
 }
