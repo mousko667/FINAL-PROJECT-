@@ -450,6 +450,20 @@
 
 ---
 
+### [PROB-037] Durcissement P11-40 (suite à self-review) : timeout de session réel, MFA-off effectif, fallback sans masquage, i18n 100%
+- **Catégorie :** Backend / Frontend / Sécurité
+- **Sévérité :** 🟠 Moyenne (corrections de comportement de sécurité suite à revue)
+- **Découvert :** 2026-06-13 — passe de revue de P11-40 (à la demande de l'utilisateur)
+- **Symptôme / décisions :** La première version de P11-40 (PROB-036) laissait 3 comportements discutables, corrigés ici :
+  1. **Timeout de session non réel** : le timeout ne faisait que fixer la durée du jeton d'accès, mais le refresh token (7 j) prolongeait tout silencieusement → l'utilisateur n'était jamais déconnecté. **Corrigé** en vrai timeout d'**inactivité** : (serveur) `ActiveSession.expiresAt = now + timeout` au login ; au `/auth/refresh`, la session doit exister et ne pas être expirée/révoquée sinon `401 session.expired` ; sliding (l'expiry est repoussé à chaque refresh) ; (frontend) hook `useSessionTimeout` qui déconnecte précisément après `timeout` d'inactivité et rafraîchit proactivement (à mi-parcours) tant que l'utilisateur est actif, gardant la session serveur vivante. Le timeout est exposé dans `LoginResponse` (`session_timeout_minutes`).
+  2. **« MFA requise » off ne désactivait pas la MFA existante** : seul le *forçage du setup* était désactivé. **Corrigé** : le login conditionne les DEUX blocs MFA (setup + OTP) sur `policy.mfaRequired` — off ⇒ aucun OTP demandé même pour les comptes MFA configurés. Réversible (secrets jamais effacés).
+  3. **Fallback aux défauts masquant une config manquante** : `getActivePolicy()` retournait *silencieusement* des défauts. **Corrigé** sans masquage : un `@EventListener(ApplicationReadyEvent)` (`ensureDefaultPolicyExists`) seede une policy par défaut au démarrage si aucune n'existe (+ WARNING) — c'est le mécanisme principal (en prod la policy existe donc toujours). `getActivePolicy()` retombe sur les défauts **en loggant un WARNING** (jamais en silence) — filet de sécurité pour ne pas casser l'auth si la ligne est absente au moment d'une lecture (cas du profil test où `ddl-auto: create-drop` recrée le schéma entre contextes partagés et vide la table). `updated_by` rendu nullable (entité + migration `V45`) pour le seed système sans auteur. `update()` ne désactive l'ancienne ligne que si elle existe.
+- **Règle préventive :** Un « timeout de session » doit réellement déconnecter (inactivité côté serveur + frontend), pas seulement raccourcir un jeton qu'un refresh prolonge. Un toggle de sécurité (MFA on/off) doit s'appliquer au comportement runtime (login), pas seulement au provisioning. Une config critique manquante se seede au démarrage avec un WARNING — jamais un fallback muet.
+- **Tests / vérif :** `SecurityPolicyServiceTest` (auto-seed), `SecurityPolicyIntegrationTest` (PUT round-trip + versioning réels en base ; refresh refusé après expiration de session → 401). i18n : `SecuritySettingsPage` 100% bilingue (20 clés), parité 585/585. Frontend `tsc --noEmit` + `npm run build` OK.
+- **Fichiers modifiés :** `SecurityPolicy.java` (updated_by nullable), `V45__security_policy_updated_by_nullable.sql` (nouveau), `SecurityPolicyService.java` (strict + ensureDefaultPolicyExists), `AuthService.java` (timeout d'inactivité au login + refresh, MFA conditionnée), `JwtService.java`, `LoginResponse.java` (session_timeout_minutes), `SecuritySettingsPage.tsx` (GET/PUT + i18n), `authSlice.ts`, `LoginPage.tsx`, `useSessionTimeout.ts` (nouveau hook), `App.tsx`, `apiClient.ts`, `en.json`/`fr.json`, `SecurityPolicyServiceTest.java`, `SecurityPolicyIntegrationTest.java` (nouveau)
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :

@@ -7,6 +7,7 @@ import com.oct.invoicesystem.domain.auth.dto.PasswordResetRequest;
 import com.oct.invoicesystem.domain.auth.dto.RefreshTokenRequest;
 import com.oct.invoicesystem.domain.auth.dto.SupplierRegistrationRequest;
 import com.oct.invoicesystem.domain.auth.model.ActiveSession;
+import com.oct.invoicesystem.domain.auth.model.SecurityPolicy;
 import com.oct.invoicesystem.domain.auth.repository.ActiveSessionRepository;
 import com.oct.invoicesystem.domain.mfa.dto.MfaConfirmRequest;
 import com.oct.invoicesystem.domain.mfa.dto.MfaSetupResponse;
@@ -91,7 +92,12 @@ public class AuthService {
 
         user = findUserByUsername(user != null ? user.getUsername() : request.getUsername());
 
-        if (requiresMandatoryMfaSetup(user)) {
+        // P11-40 #2: when the policy's MFA requirement is OFF, neither force MFA setup nor
+        // prompt for the OTP — even for accounts that have MFA configured. Reversible: turning
+        // the toggle back on re-applies it (secrets are never erased).
+        boolean policyRequiresMfa = securityPolicyService.getActivePolicy().getMfaRequired();
+
+        if (policyRequiresMfa && requiresMandatoryMfaSetup(user)) {
             return LoginResponse.builder()
                     .mfaSetupRequired(true)
                     .accessToken(jwtService.generateToken(buildExtraClaims(user), user))
@@ -103,7 +109,7 @@ public class AuthService {
                     .build();
         }
 
-        if (user.isMfaEnabled() && user.isMfaVerified()) {
+        if (policyRequiresMfa && user.isMfaEnabled() && user.isMfaVerified()) {
             return LoginResponse.builder()
                     .mfaRequired(true)
                     .preAuthToken(jwtService.generatePreAuthToken(buildExtraClaims(user), user))
@@ -115,26 +121,41 @@ public class AuthService {
 
     public LoginResponse refresh(RefreshTokenRequest request) {
         String username = jwtService.extractUsername(request.getRefreshToken());
-        if (username != null) {
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-            
-            if (jwtService.isTokenValid(request.getRefreshToken(), user)) {
-                if (requiresMandatoryMfaSetup(user)) {
-                    return LoginResponse.builder()
-                            .mfaSetupRequired(true)
-                            .accessToken(jwtService.generateToken(buildExtraClaims(user), user))
-                            .userId(user.getId())
-                            .username(user.getUsername())
-                            .firstName(user.getFirstName())
-                            .lastName(user.getLastName())
-                            .roles(user.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()))
-                            .build();
-                }
-                return buildAuthenticatedLoginResponse(user, request.getRefreshToken());
-            }
+        if (username == null) {
+            throw new UnauthorizedException("Invalid refresh token");
         }
-        throw new RuntimeException("Invalid refresh token");
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UnauthorizedException("Invalid refresh token"));
+        if (!jwtService.isTokenValid(request.getRefreshToken(), user)) {
+            throw new UnauthorizedException("Invalid refresh token");
+        }
+
+        // P11-40 #1: enforce the inactivity timeout. The active session must still exist and
+        // not be expired/revoked — otherwise the user was idle past the timeout (or was
+        // revoked) and must re-authenticate (401 → the frontend signs them out).
+        ActiveSession session = activeSessionRepository.findByRefreshToken(request.getRefreshToken())
+                .orElseThrow(() -> new UnauthorizedException("session.expired"));
+        if (session.isRevoked() || session.getExpiresAt().isBefore(Instant.now())) {
+            throw new UnauthorizedException("session.expired");
+        }
+
+        SecurityPolicy policy = securityPolicyService.getActivePolicy();
+        if (policy.getMfaRequired() && requiresMandatoryMfaSetup(user)) {
+            return LoginResponse.builder()
+                    .mfaSetupRequired(true)
+                    .accessToken(jwtService.generateToken(buildExtraClaims(user), user))
+                    .userId(user.getId())
+                    .username(user.getUsername())
+                    .firstName(user.getFirstName())
+                    .lastName(user.getLastName())
+                    .roles(user.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()))
+                    .build();
+        }
+
+        // Slide the inactivity window forward and re-issue an access token.
+        session.setExpiresAt(Instant.now().plus(policy.getSessionTimeoutMinutes(), ChronoUnit.MINUTES));
+        activeSessionRepository.save(session);
+        return buildLoginResponse(user, request.getRefreshToken(), policy.getSessionTimeoutMinutes());
     }
 
     @Transactional
@@ -301,25 +322,30 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
+    /** Login: start a fresh active session that expires after the inactivity timeout. */
     private LoginResponse buildAuthenticatedLoginResponse(User user) {
-        return buildAuthenticatedLoginResponse(user, jwtService.generateRefreshToken(user));
-    }
-
-    private LoginResponse buildAuthenticatedLoginResponse(User user, String refreshToken) {
         resetFailedAuthentication(user);
-        // P11-40: the access token's lifetime is the configured session timeout. Applies to
-        // every newly-issued token (login, refresh, MFA); tokens already issued keep their TTL.
-        long sessionTimeoutMs = securityPolicyService.getActivePolicy().getSessionTimeoutMinutes() * 60_000L;
-        String jwt = jwtService.generateToken(buildExtraClaims(user), user, sessionTimeoutMs);
-        // Track active session for admin visibility
+        SecurityPolicy policy = securityPolicyService.getActivePolicy();
+        String refreshToken = jwtService.generateRefreshToken(user);
+        // P11-40 #1: the active session expires after the configured inactivity timeout.
         activeSessionRepository.save(ActiveSession.builder()
                 .user(user)
                 .refreshToken(refreshToken)
-                .expiresAt(Instant.now().plusMillis(refreshExpirationMs))
+                .expiresAt(Instant.now().plus(policy.getSessionTimeoutMinutes(), ChronoUnit.MINUTES))
                 .build());
+        return buildLoginResponse(user, refreshToken, policy.getSessionTimeoutMinutes());
+    }
+
+    /**
+     * Builds the login response with a fresh access token whose lifetime is the session
+     * timeout, and surfaces the timeout so the frontend can run an idle-logout timer.
+     */
+    private LoginResponse buildLoginResponse(User user, String refreshToken, int sessionTimeoutMinutes) {
+        String accessToken = jwtService.generateToken(buildExtraClaims(user), user, sessionTimeoutMinutes * 60_000L);
         return LoginResponse.builder()
-                .accessToken(jwt)
+                .accessToken(accessToken)
                 .refreshToken(refreshToken)
+                .sessionTimeoutMinutes(sessionTimeoutMinutes)
                 .userId(user.getId())
                 .username(user.getUsername())
                 .firstName(user.getFirstName())

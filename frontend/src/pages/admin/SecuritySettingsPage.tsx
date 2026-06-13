@@ -22,7 +22,8 @@ interface SecurityPolicy {
 }
 
 export default function SecuritySettingsPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const dateLocale = i18n.language === 'en' ? 'en-GB' : 'fr-FR'
   const queryClient = useQueryClient()
   const [mfaRequired, setMfaRequired]     = useState(true)
   const [sessionTimeout, setSessionTimeout] = useState(60)
@@ -108,7 +109,7 @@ export default function SecuritySettingsPage() {
             <Shield className="w-5 h-5 text-primary mt-0.5" />
             <div className="flex-1">
               <h2 className="font-semibold text-gray-900">{t('admin.security.mfaPolicy')}</h2>
-              <p className="text-sm text-gray-500 mt-0.5">TOTP-based two-factor authentication for all staff accounts.</p>
+              <p className="text-sm text-gray-500 mt-0.5">{t('admin.security.mfaDesc', 'TOTP-based two-factor authentication for all staff accounts.')}</p>
               <label className="flex items-center gap-3 mt-3 cursor-pointer">
                 <input type="checkbox" checked={mfaRequired} onChange={e => setMfaRequired(e.target.checked)} className="w-4 h-4 accent-primary" />
                 <span className="text-sm font-medium text-gray-700">{t('admin.security.mfaRequired')}</span>
@@ -123,7 +124,7 @@ export default function SecuritySettingsPage() {
             <Clock className="w-5 h-5 text-primary mt-0.5" />
             <div className="flex-1">
               <h2 className="font-semibold text-gray-900">{t('admin.security.sessionTimeout')}</h2>
-              <p className="text-sm text-gray-500 mt-0.5">Idle sessions are terminated after this many minutes.</p>
+              <p className="text-sm text-gray-500 mt-0.5">{t('admin.security.sessionTimeoutDesc', 'Idle sessions are terminated after this many minutes.')}</p>
               <input
                 type="number"
                 value={sessionTimeout}
@@ -131,7 +132,7 @@ export default function SecuritySettingsPage() {
                 min={5} max={480}
                 className="mt-2 w-32 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
-              <span className="ml-2 text-sm text-gray-500">minutes</span>
+              <span className="ml-2 text-sm text-gray-500">{t('admin.security.minutes', 'minutes')}</span>
               <p className="text-xs text-gray-400 mt-1">
                 {t('admin.security.sessionTimeoutNote', 'Applies to new sign-ins (access-token lifetime). Tokens already issued keep their current expiry.')}
               </p>
@@ -145,7 +146,7 @@ export default function SecuritySettingsPage() {
             <Lock className="w-5 h-5 text-primary mt-0.5" />
             <div className="flex-1">
               <h2 className="font-semibold text-gray-900">{t('admin.security.maxLoginAttempts')}</h2>
-              <p className="text-sm text-gray-500 mt-0.5">Account is locked after this many consecutive failures.</p>
+              <p className="text-sm text-gray-500 mt-0.5">{t('admin.security.maxLoginAttemptsDesc', 'Account is locked after this many consecutive failures.')}</p>
               <input
                 type="number"
                 value={maxAttempts}
@@ -153,7 +154,7 @@ export default function SecuritySettingsPage() {
                 min={3} max={10}
                 className="mt-2 w-24 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
-              <span className="ml-2 text-sm text-gray-500">attempts</span>
+              <span className="ml-2 text-sm text-gray-500">{t('admin.security.attempts', 'attempts')}</span>
             </div>
           </div>
         </div>
@@ -164,7 +165,7 @@ export default function SecuritySettingsPage() {
             <Key className="w-5 h-5 text-primary mt-0.5" />
             <div className="flex-1">
               <h2 className="font-semibold text-gray-900">{t('admin.security.passwordMinLength')}</h2>
-              <p className="text-sm text-gray-500 mt-0.5">Minimum number of characters required for all passwords.</p>
+              <p className="text-sm text-gray-500 mt-0.5">{t('admin.security.passwordMinLengthDesc', 'Minimum number of characters required for all passwords.')}</p>
               <input
                 type="number"
                 value={minPassword}
@@ -172,7 +173,7 @@ export default function SecuritySettingsPage() {
                 min={8} max={32}
                 className="mt-2 w-24 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
-              <span className="ml-2 text-sm text-gray-500">characters</span>
+              <span className="ml-2 text-sm text-gray-500">{t('admin.security.characters', 'characters')}</span>
             </div>
           </div>
         </div>
@@ -193,22 +194,22 @@ export default function SecuritySettingsPage() {
       <div className="bg-white rounded-xl border p-5">
         <div className="flex items-center gap-3 mb-4">
           <Users className="w-5 h-5 text-primary" />
-          <h2 className="font-semibold text-gray-900">Sessions actives</h2>
+          <h2 className="font-semibold text-gray-900">{t('admin.security.activeSessions', 'Active sessions')}</h2>
         </div>
         {sessionsLoading ? (
-          <p className="text-sm text-gray-500">Chargement...</p>
+          <p className="text-sm text-gray-500">{t('app.loading')}</p>
         ) : sessions.length === 0 ? (
-          <p className="text-sm text-gray-500">Aucune session active.</p>
+          <p className="text-sm text-gray-500">{t('admin.security.noActiveSessions', 'No active sessions.')}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs text-gray-500 border-b">
-                  <th className="pb-2 pr-4">Utilisateur</th>
-                  <th className="pb-2 pr-4">IP</th>
-                  <th className="pb-2 pr-4">Créée le</th>
-                  <th className="pb-2 pr-4">Expire le</th>
-                  <th className="pb-2">Action</th>
+                  <th className="pb-2 pr-4">{t('admin.security.sessionUser', 'User')}</th>
+                  <th className="pb-2 pr-4">{t('admin.security.sessionIp', 'IP')}</th>
+                  <th className="pb-2 pr-4">{t('admin.security.sessionCreated', 'Created')}</th>
+                  <th className="pb-2 pr-4">{t('admin.security.sessionExpires', 'Expires')}</th>
+                  <th className="pb-2">{t('admin.security.sessionAction', 'Action')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -216,8 +217,8 @@ export default function SecuritySettingsPage() {
                   <tr key={s.id} className="border-b last:border-0">
                     <td className="py-2 pr-4 font-medium text-gray-900">{s.username}</td>
                     <td className="py-2 pr-4 text-gray-500">{s.ipAddress ?? '—'}</td>
-                    <td className="py-2 pr-4 text-gray-500">{new Date(s.createdAt).toLocaleString('fr-FR')}</td>
-                    <td className="py-2 pr-4 text-gray-500">{new Date(s.expiresAt).toLocaleString('fr-FR')}</td>
+                    <td className="py-2 pr-4 text-gray-500">{new Date(s.createdAt).toLocaleString(dateLocale)}</td>
+                    <td className="py-2 pr-4 text-gray-500">{new Date(s.expiresAt).toLocaleString(dateLocale)}</td>
                     <td className="py-2">
                       <button
                         onClick={() => revokeSession.mutate(s.userId)}
@@ -225,7 +226,7 @@ export default function SecuritySettingsPage() {
                         className="flex items-center gap-1 text-xs text-red-600 hover:text-red-800 disabled:opacity-50"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
-                        Révoquer
+                        {t('admin.security.revoke', 'Revoke')}
                       </button>
                     </td>
                   </tr>

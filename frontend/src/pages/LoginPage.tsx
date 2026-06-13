@@ -23,6 +23,7 @@ interface LoginResponse {
     userId: string
     username: string
     roles: string[]
+    session_timeout_minutes?: number
   }
 }
 
@@ -43,7 +44,7 @@ export default function LoginPage() {
     mutationFn: (data: LoginFormData) =>
       apiClient.post<LoginResponse>('/auth/login', data),
     onSuccess: (response) => {
-      const { accessToken, refreshToken, userId, username, roles } = response.data.data
+      const { accessToken, refreshToken, userId, username, roles, session_timeout_minutes } = response.data.data
       dispatch(
         setCredentials({
           user: {
@@ -54,6 +55,7 @@ export default function LoginPage() {
           },
           accessToken,
           refreshToken,
+          sessionTimeoutMinutes: session_timeout_minutes ?? null,
         })
       )
       if (roles.includes('ROLE_SUPPLIER')) {

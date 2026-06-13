@@ -1554,3 +1554,45 @@ Verified: full suite **299 tests, 27 baseline failures, zero new regressions**; 
 (`SecurityPolicyServiceTest` 5, `SecurityPolicyControllerTest` 3); frontend `tsc --noEmit` exit 0;
 locale parity 570/570. Note: SecuritySettingsPage still has some hardcoded descriptive strings
 (pre-existing i18n debt, out of P11-40 scope) — only the new keys were added.
+
+---
+
+## Session Checkpoint
+**Date:** 2026-06-13
+**Last completed task:** P11-40 HARDENING (post-review, the 6 user-requested corrections)
+**Phase:** Phase 11 — Audit Correction Cycle
+**Next task:** the other deferred block, **P11-F** (4 IAM features); then P11-K.
+**Branch:** main (refresh backup branch after this).
+**Last commit:** efb5eac (P11-40 base); the hardening + this checkpoint not yet committed.
+**Notes:**
+
+P11-40 hardening (PROB-037) — addressed the 6 review points the user raised. All validated by a
+full backend run: **303 tests, 27 baseline failures, zero regressions**; frontend `tsc --noEmit`
++ `npm run build` OK; locale parity 585/585.
+
+1. **Real inactivity timeout** (#1). Server: `ActiveSession.expiresAt = now + timeout` at login;
+   `/auth/refresh` rejects (401 `session.expired`) when the session is missing/expired/revoked, and
+   slides it forward otherwise (the old refresh-creates-a-new-session bug is fixed — it now extends
+   the existing one). `LoginResponse` carries `session_timeout_minutes`. Frontend: new
+   `useSessionTimeout` hook (mounted in `App` inside the Router) signs the user out after inactivity
+   and proactively refreshes at half the timeout while active (keeps the server session alive); the
+   axios interceptor already handles the rejected-refresh case. `authSlice` stores the timeout.
+2. **MFA-off is effective** (#2). The login conditions BOTH MFA branches (setup + OTP) on
+   `policy.mfaRequired`; off ⇒ no OTP even for MFA-configured accounts. Reversible (secrets kept).
+3. left as-is per the user (double @Size + programmatic password validation can't conflict).
+4. **No silent masking** (#4). Startup `@EventListener` seeds a default policy (+WARNING);
+   `getActivePolicy()` falls back to defaults **with a WARNING** (not silent) — needed because the
+   test profile (`ddl-auto: create-drop`, Flyway off) recreates the schema between shared contexts,
+   wiping the seeded row. `updated_by` nullable (`V45` migration). `update()` only deactivates an
+   existing row.
+5. **Integration tests** (#5): `SecurityPolicyIntegrationTest` — real PUT DB round-trip + single
+   active row (versioning); login → expire session → refresh rejected (401). (Manual UI run still
+   pending — needs the full host-Postgres/MinIO stack; the production frontend build passes.)
+6. **100% bilingual** SecuritySettingsPage (#6): all hardcoded strings i18n-ized (descriptions,
+   sessions table, units), localized date format. 20 `admin.security.*` keys, parity 585/585.
+
+Debugging note: a transient `t9_en_validation_n1_to_rejete` FK-violation "regression" was actually
+flakiness — my integration test threw at login (404, when getActivePolicy was strict) and left the
+transaction in a bad state, perturbing test order/isolation. The fallback-with-warning removed the
+throw and the flaky failure disappeared. Lesson: a new @SpringBootTest that errors mid-flow can
+surface latent cross-test isolation issues.

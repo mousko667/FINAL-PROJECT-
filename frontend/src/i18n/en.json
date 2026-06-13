@@ -331,7 +331,22 @@
       "subtitle": "Configure system-wide security policies.",
       "saved": "Security policy saved.",
       "saveError": "Could not save the security policy.",
-      "sessionTimeoutNote": "Applies to new sign-ins (access-token lifetime). Tokens already issued keep their current expiry."
+      "sessionTimeoutNote": "The user is automatically signed out after this period of inactivity.",
+      "mfaDesc": "TOTP-based two-factor authentication for all staff accounts.",
+      "sessionTimeoutDesc": "Idle sessions are terminated after this many minutes.",
+      "minutes": "minutes",
+      "maxLoginAttemptsDesc": "Account is locked after this many consecutive failures.",
+      "attempts": "attempts",
+      "passwordMinLengthDesc": "Minimum number of characters required for all passwords.",
+      "characters": "characters",
+      "activeSessions": "Active sessions",
+      "noActiveSessions": "No active sessions.",
+      "sessionUser": "User",
+      "sessionIp": "IP",
+      "sessionCreated": "Created",
+      "sessionExpires": "Expires",
+      "sessionAction": "Action",
+      "revoke": "Revoke"
     },
     "integrations": {
       "title": "Integrations & Webhooks",

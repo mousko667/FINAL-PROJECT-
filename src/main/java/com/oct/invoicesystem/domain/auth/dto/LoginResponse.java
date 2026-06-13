@@ -24,6 +24,10 @@ public class LoginResponse {
     private String lastName;
     private List<String> roles;
 
+    /** Inactivity timeout in minutes — the frontend signs the user out after this idle period. */
+    @JsonProperty("session_timeout_minutes")
+    private Integer sessionTimeoutMinutes;
+
     @JsonProperty("mfa_required")
     private Boolean mfaRequired;
 

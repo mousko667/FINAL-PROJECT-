@@ -57,6 +57,29 @@ class SecurityPolicyServiceTest {
     }
 
     @Test
+    void ensureDefaultPolicyExists_whenNone_seedsDefaults() {
+        when(securityPolicyRepository.findByIsActiveTrue()).thenReturn(Optional.empty());
+        when(securityPolicyRepository.save(any(SecurityPolicy.class))).thenAnswer(i -> i.getArgument(0));
+
+        securityPolicyService.ensureDefaultPolicyExists();
+
+        ArgumentCaptor<SecurityPolicy> captor = ArgumentCaptor.forClass(SecurityPolicy.class);
+        verify(securityPolicyRepository).save(captor.capture());
+        SecurityPolicy seeded = captor.getValue();
+        assertThat(seeded.getIsActive()).isTrue();
+        assertThat(seeded.getMfaRequired()).isTrue();
+        assertThat(seeded.getMinPasswordLength()).isEqualTo(8);
+        assertThat(seeded.getUpdatedBy()).isNull();
+    }
+
+    @Test
+    void ensureDefaultPolicyExists_whenPresent_doesNothing() {
+        when(securityPolicyRepository.findByIsActiveTrue()).thenReturn(Optional.of(active()));
+        securityPolicyService.ensureDefaultPolicyExists();
+        verify(securityPolicyRepository, org.mockito.Mockito.never()).save(any());
+    }
+
+    @Test
     void update_deactivatesOldAndInsertsNewActive() {
         SecurityPolicy old = active();
         when(securityPolicyRepository.findByIsActiveTrue()).thenReturn(Optional.of(old));

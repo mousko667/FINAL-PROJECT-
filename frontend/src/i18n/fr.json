@@ -331,7 +331,22 @@
       "subtitle": "Configurez les politiques de sécurité de tout le système.",
       "saved": "Politique de sécurité enregistrée.",
       "saveError": "Impossible d'enregistrer la politique de sécurité.",
-      "sessionTimeoutNote": "S'applique aux nouvelles connexions (durée du jeton d'accès). Les jetons déjà émis conservent leur expiration."
+      "sessionTimeoutNote": "L'utilisateur est automatiquement déconnecté après cette durée d'inactivité.",
+      "mfaDesc": "Authentification à deux facteurs (TOTP) pour tous les comptes du personnel.",
+      "sessionTimeoutDesc": "Les sessions inactives sont fermées après ce nombre de minutes.",
+      "minutes": "minutes",
+      "maxLoginAttemptsDesc": "Le compte est verrouillé après ce nombre d'échecs consécutifs.",
+      "attempts": "tentatives",
+      "passwordMinLengthDesc": "Nombre minimum de caractères requis pour tous les mots de passe.",
+      "characters": "caractères",
+      "activeSessions": "Sessions actives",
+      "noActiveSessions": "Aucune session active.",
+      "sessionUser": "Utilisateur",
+      "sessionIp": "IP",
+      "sessionCreated": "Créée le",
+      "sessionExpires": "Expire le",
+      "sessionAction": "Action",
+      "revoke": "Révoquer"
     },
     "integrations": {
       "title": "Intégrations & Webhooks",

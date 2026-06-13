@@ -6,6 +6,8 @@ import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.shared.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,23 +28,47 @@ public class SecurityPolicyService {
     private final SecurityPolicyRepository securityPolicyRepository;
 
     /**
-     * Returns the active policy, or safe defaults if none exists. Never throws — the
-     * enforcement points (login, MFA, password) must not break authentication just because
-     * the policy row is missing (e.g. tests with Flyway disabled, or a fresh install).
+     * Returns the active policy, or safe defaults if none exists — but **logs a WARNING** so the
+     * missing config is surfaced, never silently masked (P11-40 #4). In practice the row always
+     * exists because {@link #ensureDefaultPolicyExists()} seeds it at startup; the fallback only
+     * guards an enforcement path from breaking auth if the row is somehow absent at read time.
      */
     @Transactional(readOnly = true)
     public SecurityPolicy getActivePolicy() {
-        return securityPolicyRepository.findByIsActiveTrue().orElseGet(SecurityPolicyService::defaultPolicy);
+        return securityPolicyRepository.findByIsActiveTrue().orElseGet(() -> {
+            log.warn("No active SecurityPolicy found — using safe defaults for this read. "
+                    + "Configure it under Admin → Security.");
+            return defaultPolicy();
+        });
     }
 
     private static SecurityPolicy defaultPolicy() {
         return SecurityPolicy.builder()
-                .mfaRequired(true)
-                .sessionTimeoutMinutes(60)
-                .maxLoginAttempts(5)
-                .minPasswordLength(8)
-                .isActive(true)
-                .build();
+                .mfaRequired(true).sessionTimeoutMinutes(60)
+                .maxLoginAttempts(5).minPasswordLength(8)
+                .isActive(true).build();
+    }
+
+    /**
+     * Guarantees a security policy exists. Runs once the app is ready: if no active row exists
+     * (fresh install, or test profile with Flyway disabled), seed safe defaults and log a
+     * WARNING so the missing-config situation is surfaced, never silently masked.
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    public void ensureDefaultPolicyExists() {
+        if (securityPolicyRepository.findByIsActiveTrue().isEmpty()) {
+            log.warn("No active SecurityPolicy found — seeding system defaults "
+                    + "(mfaRequired=true, sessionTimeout=60min, maxLoginAttempts=5, minPasswordLength=8). "
+                    + "Configure it under Admin → Security.");
+            securityPolicyRepository.save(SecurityPolicy.builder()
+                    .mfaRequired(true)
+                    .sessionTimeoutMinutes(60)
+                    .maxLoginAttempts(5)
+                    .minPasswordLength(8)
+                    .isActive(true)
+                    .updatedBy(null)
+                    .build());
+        }
     }
 
     /**

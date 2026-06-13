@@ -17,6 +17,7 @@ interface AuthState {
   accessToken: string | null
   refreshToken: string | null
   isAuthenticated: boolean
+  sessionTimeoutMinutes: number | null
 }
 
 function loadUser(): AuthUser | null {
@@ -33,6 +34,7 @@ const initialState: AuthState = {
   accessToken: localStorage.getItem('accessToken'),
   refreshToken: localStorage.getItem('refreshToken'),
   isAuthenticated: !!localStorage.getItem('accessToken'),
+  sessionTimeoutMinutes: Number(localStorage.getItem('sessionTimeoutMinutes')) || null,
 }
 
 const authSlice = createSlice({
@@ -45,6 +47,7 @@ const authSlice = createSlice({
         user: AuthUser
         accessToken: string
         refreshToken: string
+        sessionTimeoutMinutes?: number | null
       }>
     ) => {
       state.user = action.payload.user
@@ -54,6 +57,11 @@ const authSlice = createSlice({
       localStorage.setItem('accessToken', action.payload.accessToken)
       localStorage.setItem('refreshToken', action.payload.refreshToken)
       localStorage.setItem('user', JSON.stringify(action.payload.user))
+      // Only set on login (the /profile rehydrate doesn't carry it; keep the stored value).
+      if (action.payload.sessionTimeoutMinutes != null) {
+        state.sessionTimeoutMinutes = action.payload.sessionTimeoutMinutes
+        localStorage.setItem('sessionTimeoutMinutes', String(action.payload.sessionTimeoutMinutes))
+      }
     },
     updateToken: (state, action: PayloadAction<string>) => {
       state.accessToken = action.payload
@@ -64,8 +72,10 @@ const authSlice = createSlice({
       state.accessToken = null
       state.refreshToken = null
       state.isAuthenticated = false
+      state.sessionTimeoutMinutes = null
       localStorage.removeItem('accessToken')
       localStorage.removeItem('refreshToken')
+      localStorage.removeItem('sessionTimeoutMinutes')
       localStorage.removeItem('user')
     },
   },

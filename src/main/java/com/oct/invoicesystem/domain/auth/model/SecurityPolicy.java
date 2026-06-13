@@ -60,8 +60,10 @@ public class SecurityPolicy {
     @Builder.Default
     private Boolean isActive = true;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "updated_by", nullable = false)
+    // Nullable: a system-seeded default policy (created at startup if none exists) has no
+    // human author. A policy saved via the admin UI always has updatedBy set.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "updated_by")
     private User updatedBy;
 
     @LastModifiedDate

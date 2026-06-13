@@ -7,6 +7,7 @@ import { setCredentials, logout } from '@/store/slices/authSlice'
 import AppRoutes from './AppRoutes'
 import '@/i18n'
 import apiClient from '@/services/apiClient'
+import { useSessionTimeout } from '@/hooks/useSessionTimeout'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -68,12 +69,19 @@ function AuthRehydrator({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+// Mounts the inactivity-timeout watcher inside the Router (needs useNavigate + the store).
+function SessionTimeoutManager() {
+  useSessionTimeout()
+  return null
+}
+
 function App() {
   return (
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <AuthRehydrator>
+            <SessionTimeoutManager />
             <AppRoutes />
           </AuthRehydrator>
         </BrowserRouter>

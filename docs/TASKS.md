@@ -905,6 +905,18 @@ from either `en.json`/`fr.json`; both files at **525/525** keys with 0 EN-only/F
       Tests: `SecurityPolicyServiceTest` (5), `SecurityPolicyControllerTest` (3), `UserServiceTest`
       updated. Full suite: **299 tests, 27 baseline failures**, zero new regressions; frontend
       `tsc --noEmit` exit 0.
+      **Hardening (2026-06-13, post-review — PROB-037):** addressed 6 review points: (1) the
+      session timeout is now a **real inactivity timeout** — server-side `ActiveSession` expiry +
+      `/auth/refresh` rejection when expired (sliding), and a frontend `useSessionTimeout` hook
+      that signs the user out after inactivity and proactively refreshes while active;
+      `LoginResponse` exposes `session_timeout_minutes`. (2) `mfaRequired=false` now also skips the
+      OTP at login for accounts that already have MFA (reversible). (4) a startup `@EventListener`
+      seeds a default policy if none exists (WARNING) and `getActivePolicy()` falls back to
+      defaults **with a WARNING** (never silent masking) — `updated_by` nullable (`V45`). (5) added `SecurityPolicyIntegrationTest`
+      (real PUT round-trip + versioning; refresh-after-expiry → 401). (6) `SecuritySettingsPage`
+      now **100% bilingual** (20 keys, parity 585/585). (#3 left as-is per the user.) Full suite:
+      **303 tests, 27 baseline failures**, zero new regressions; frontend `tsc --noEmit` + `npm run
+      build` OK. (Manual UI run pending — needs the full host-Postgres/MinIO stack.)
 - [x] **P11-41** Fix `LoginPage.tsx` to branch on HTTP 423 (`account.locked`) (REQ-03):
       show a distinct, translated "account locked, contact admin" message instead of the
       generic invalid-credentials text. Completed 2026-06-13. Error display now branches on
