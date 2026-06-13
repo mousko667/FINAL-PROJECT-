@@ -567,5 +567,30 @@
     "enterCode": "2. Entrez le code à 6 chiffres",
     "confirm": "Confirmer",
     "reconfigure": "Reconfigurer l'application d'authentification"
+  },
+  "payments": {
+    "subtitle": "Enregistrez les paiements et consultez l'historique",
+    "awaitingPayment": "Factures Bon à Payer — en attente de règlement",
+    "noPending": "Aucune facture en attente de paiement",
+    "history": "Historique des paiements",
+    "total": "paiements",
+    "noHistory": "Aucun paiement enregistré",
+    "remittance": "Avis"
+  },
+  "archive": {
+    "title": "Archive Numérique",
+    "subtitle": "Toutes les factures archivées — recherche et téléchargement",
+    "searchPlaceholder": "Rechercher par référence, fournisseur, description...",
+    "noResults": "Aucun document ne correspond à vos critères de recherche.",
+    "empty": "Aucune facture archivée pour le moment.",
+    "retentionNote": "Les documents archivés sont conservés 10 ans conformément à la politique de rétention OCT. SHA-256 vérifié à chaque téléchargement."
+  },
+  "grn": {
+    "title": "Bons de Réception (GRN)",
+    "subtitle": "Enregistrez les marchandises reçues liées aux bons de commande",
+    "create": "Nouveau GRN",
+    "grnNumber": "N° GRN",
+    "receivedDate": "Date de réception",
+    "empty": "Aucun bon de réception enregistré"
   }
 }

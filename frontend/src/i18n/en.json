@@ -567,5 +567,30 @@
     "enterCode": "2. Enter the 6-digit code",
     "confirm": "Confirm",
     "reconfigure": "Reconfigure authenticator app"
+  },
+  "payments": {
+    "subtitle": "Record payments and view history",
+    "awaitingPayment": "Approved-for-payment invoices — awaiting settlement",
+    "noPending": "No invoices awaiting payment",
+    "history": "Payment History",
+    "total": "payments",
+    "noHistory": "No payments recorded",
+    "remittance": "Remittance"
+  },
+  "archive": {
+    "title": "Digital Archive",
+    "subtitle": "All archived invoices — search and download",
+    "searchPlaceholder": "Search by reference, supplier, description...",
+    "noResults": "No document matches your search criteria.",
+    "empty": "No archived invoices yet.",
+    "retentionNote": "Archived documents are retained for 10 years in accordance with the OCT retention policy. SHA-256 verified on every download."
+  },
+  "grn": {
+    "title": "Goods Receipt Notes (GRN)",
+    "subtitle": "Record goods received against purchase orders",
+    "create": "New GRN",
+    "grnNumber": "GRN No.",
+    "receivedDate": "Received Date",
+    "empty": "No goods receipt notes recorded"
   }
 }

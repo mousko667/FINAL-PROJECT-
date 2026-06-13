@@ -845,11 +845,17 @@ returns `List<ApprovalStepResponse>` (P11-23).
 - [x] **P11-29** Add missing `mfa.*` keys (16) to `en.json`/`fr.json` (P4-01). Completed
       2026-06-13. New top-level `mfa` block, 16 keys from `ProfilePage.tsx` (MFA setup section).
       Source fallbacks were French, so FR from source, EN composed. Parity 467/467.
-- [ ] **P11-30** Add missing `payments.*` keys (7) to `en.json`/`fr.json` (P4-01).
-- [ ] **P11-31** Add missing `archive.*` keys (6) to `en.json`/`fr.json` (P4-01).
+- [x] **P11-30** Add missing `payments.*` keys (7) to `en.json`/`fr.json` (P4-01). Completed
+      2026-06-13. New top-level `payments` block, 7 keys from `PaymentsPage.tsx` (FR fallbacks →
+      FR from source, EN composed).
+- [x] **P11-31** Add missing `archive.*` keys (6) to `en.json`/`fr.json` (P4-01). Completed
+      2026-06-13. New top-level `archive` block, 6 keys from `ArchivePage.tsx` (FR fallbacks →
+      FR from source, EN composed).
 - [ ] **P11-32** Add missing `auth.*` keys incl. password-strength indicator (6) to
       `en.json`/`fr.json` (P4-01).
-- [ ] **P11-33** Add missing `grn.*` keys (6) to `en.json`/`fr.json` (P4-01).
+- [x] **P11-33** Add missing `grn.*` keys (6) to `en.json`/`fr.json` (P4-01). Completed
+      2026-06-13. New top-level `grn` block, 6 keys from `GoodsReceiptsPage.tsx` (FR fallbacks →
+      FR from source, EN composed). Parity after P11-30/31/33: 486/486.
 - [ ] **P11-34** Add missing `invoice.*` keys (6) to `en.json`/`fr.json` (P4-01).
 - [ ] **P11-35** Add missing `dashboard.*` keys (4) to `en.json`/`fr.json` (P4-01).
 - [ ] **P11-36** Add missing `admin.*` keys (3) to `en.json`/`fr.json` (P4-01).
