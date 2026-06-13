@@ -1251,10 +1251,10 @@ compatible. `DelegationServiceTest` gained 3 new tests
 `DelegationDTO`, create as non-ADMIN → 403, unknown user → 404, list active as ADMIN,
 revoke as ADMIN, revoke as non-ADMIN → 403) was also added — all pass.
 
-Full suite (`mvnw test`) run after the service/DTO/controller refactor: **278 tests,
-25 failures + 2 errors = 27** (278 = 275 + 3 new DelegationServiceTest tests, all
-passing), identical failure/error test-name set to the post-P11-09 27 (diffed sorted
-lists — zero new regressions). The 6-test `DelegationControllerTest` was added after that
-run and verified separately (`mvnw test -Dtest=DelegationControllerTest` → 6/6 pass), so
-the next full run will show 284 tests with the same 27 baseline. Ready to commit and move
-to P11-11.
+Full suite (`mvnw test`) re-run after adding `DelegationControllerTest`: **284 tests,
+25 failures + 2 errors = 27** (284 = 278 + 6 new DelegationControllerTest tests, all
+passing). Same 9 failing/erroring classes as the post-P11-09 baseline
+(`InvoiceControllerTest`, `InvoicePerformanceTest`, `StateMachineTransitionExhaustiveTest`,
+`NotificationControllerTest`, `PaymentControllerTest`, `ReportControllerTest`,
+`UserServiceTest`, `ApprovalControllerTest`, `ApprovalServiceTest`) — zero new
+regressions. Ready to commit and move to P11-11.
