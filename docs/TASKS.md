@@ -830,9 +830,18 @@ returns `List<ApprovalStepResponse>` (P11-23).
       `SupplierRegisterPage.tsx` plus `isSupplier`/`linkText` from `LoginPage.tsx`) to both
       locale files; EN from the source fallbacks, FR composed in the existing formal tone.
       Parity verified: 433/433 keys, 0 EN-only/FR-only.
-- [ ] **P11-26** Add missing `supplier.verify.*` keys (5) to `en.json`/`fr.json` (P4-01).
-- [ ] **P11-27** Add missing `supplier.tracking.*` keys (8) to `en.json`/`fr.json` (P4-01).
-- [ ] **P11-28** Add missing `supplier.portal.*` keys (3) to `en.json`/`fr.json` (P4-01).
+- [x] **P11-26** Add missing `supplier.verify.*` keys (5) to `en.json`/`fr.json` (P4-01).
+      Completed 2026-06-13. New `supplier.verify` block, 6 keys (verifying, successTitle,
+      successMessage, errorTitle, errorMessage, retryRegister) from `EmailVerificationPage.tsx`;
+      EN from fallbacks, FR composed.
+- [x] **P11-27** Add missing `supplier.tracking.*` keys (8) to `en.json`/`fr.json` (P4-01).
+      Completed 2026-06-13. New `supplier.tracking` block, 9 keys incl. nested `step.*`
+      (submitted/validation/approved/paid) + title/subtitle/draft/rejectionReason/progress from
+      `SupplierInvoicesPage.tsx`. Source fallbacks were French here, so FR from source, EN composed.
+- [x] **P11-28** Add missing `supplier.portal.*` keys (3) to `en.json`/`fr.json` (P4-01).
+      Completed 2026-06-13. Added `invoices`/`profile`/`documents` to the existing
+      `supplier.portal` block (referenced by `SupplierLayout.tsx`); FR from source, EN composed.
+      Parity after P11-26..28: 451/451 keys, 0 EN-only/FR-only.
 - [ ] **P11-29** Add missing `mfa.*` keys (16) to `en.json`/`fr.json` (P4-01).
 - [ ] **P11-30** Add missing `payments.*` keys (7) to `en.json`/`fr.json` (P4-01).
 - [ ] **P11-31** Add missing `archive.*` keys (6) to `en.json`/`fr.json` (P4-01).

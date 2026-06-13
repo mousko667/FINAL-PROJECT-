@@ -421,6 +421,27 @@
       "successTitle": "Registration Submitted!",
       "successMessage": "Check your email to verify your account before logging in."
     },
+    "verify": {
+      "verifying": "Verifying your email…",
+      "successTitle": "Email Verified!",
+      "successMessage": "Your email has been verified. You can now log in.",
+      "errorTitle": "Verification Failed",
+      "errorMessage": "Invalid or expired token. Please request a new verification email.",
+      "retryRegister": "Register again"
+    },
+    "tracking": {
+      "title": "Invoice Tracking",
+      "subtitle": "Track your invoice status in real time",
+      "draft": "Draft — not yet submitted",
+      "rejectionReason": "Rejection Reason",
+      "progress": "Validation Progress",
+      "step": {
+        "submitted": "Submitted",
+        "validation": "Validation",
+        "approved": "Approved",
+        "paid": "Paid"
+      }
+    },
     "portal": {
       "dashboard": "My Dashboard",
       "submitted": "Submitted",
@@ -434,7 +455,10 @@
       "submitInvoice": "Submit Invoice",
       "viewInvoices": "My Invoices",
       "myDocuments": "My Documents",
-      "myProfile": "My Profile"
+      "myProfile": "My Profile",
+      "invoices": "My Invoices",
+      "profile": "My Profile",
+      "documents": "My Documents"
     },
     "invoice": {
       "submit": {

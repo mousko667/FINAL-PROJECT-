@@ -421,6 +421,27 @@
       "successTitle": "Inscription soumise !",
       "successMessage": "Vérifiez votre e-mail pour confirmer votre compte avant de vous connecter."
     },
+    "verify": {
+      "verifying": "Vérification de votre e-mail…",
+      "successTitle": "E-mail vérifié !",
+      "successMessage": "Votre e-mail a été vérifié. Vous pouvez maintenant vous connecter.",
+      "errorTitle": "Échec de la vérification",
+      "errorMessage": "Jeton invalide ou expiré. Veuillez demander un nouvel e-mail de vérification.",
+      "retryRegister": "S'inscrire à nouveau"
+    },
+    "tracking": {
+      "title": "Suivi de facture",
+      "subtitle": "Suivez le statut de vos factures en temps réel",
+      "draft": "Brouillon — non encore soumis",
+      "rejectionReason": "Motif du rejet",
+      "progress": "Progression de la validation",
+      "step": {
+        "submitted": "Soumis",
+        "validation": "Validation",
+        "approved": "Approuvé",
+        "paid": "Payé"
+      }
+    },
     "portal": {
       "dashboard": "Mon tableau de bord",
       "submitted": "Soumises",
@@ -434,7 +455,10 @@
       "submitInvoice": "Soumettre une facture",
       "viewInvoices": "Mes factures",
       "myDocuments": "Mes documents",
-      "myProfile": "Mon profil"
+      "myProfile": "Mon profil",
+      "invoices": "Mes Factures",
+      "profile": "Mon Profil",
+      "documents": "Mes Documents"
     },
     "invoice": {
       "submit": {
