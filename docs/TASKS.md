@@ -788,8 +788,14 @@ config` (no `postgres` service; `MINIO_SECRET_KEY: dany1234` resolves identicall
       → `AuditLoggingFilter` → authorization. Added the 3 previously-undocumented filters,
       corrected the order, and removed `CorsFilter` from the chain entirely — CORS is a
       `WebMvcConfigurer` (MVC layer), not a security filter — with an explanatory note.
-- [ ] **P11-22** Add "Inter-domain Dependencies" subsection to `docs/ARCHITECTURE.md` §2
-      (P1-06): document the `invoice`↔`purchasing` bidirectional dependency.
+- [x] **P11-22** Add "Inter-domain Dependencies" subsection to `docs/ARCHITECTURE.md` §2
+      (P1-06): document the `invoice`↔`purchasing` bidirectional dependency. Completed
+      2026-06-13. New §2.1 documents the verified cycle: `invoice` (`InvoiceController`,
+      `InvoiceService`, `InvoiceStateMachineServiceImpl`) imports purchasing's
+      `ThreeWayMatchingService`/repositories/DTOs, and `purchasing`
+      (`ThreeWayMatchingResult`, `ThreeWayMatchingService`) imports `invoice.model.Invoice`/
+      `InvoiceItem` — verified by grepping actual imports both directions. Notes it's
+      intentional (matching at SUBMIT) and that new cross-domain calls go service→service.
 - [ ] **P11-23** Replace `ApprovalController.getApprovalSteps`'s `List<Map<String,Object>>`
       return type (P1-07) with a typed `ApprovalStepResponse` DTO.
 - [ ] **P11-24** Document the Flyway V36-V38 gap (P3-03): add a note to

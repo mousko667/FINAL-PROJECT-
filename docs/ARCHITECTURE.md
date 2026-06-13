@@ -127,6 +127,30 @@ com.oct.invoicesystem/
     └── mapper/{InvoiceMapper, UserMapper, DepartmentMapper}.java  ← MapStruct
 ```
 
+### 2.1 Inter-domain Dependencies (P1-06)
+
+Most `domain/` packages depend only on `shared/`. The one notable exception is a
+**bidirectional dependency between `invoice` and `purchasing`** (three-way matching),
+verified against imports on 2026-06-13:
+
+```
+invoice  ──────────────▶  purchasing
+  InvoiceController, InvoiceService, InvoiceStateMachineServiceImpl import
+  purchasing's ThreeWayMatchingService, PurchaseOrderRepository,
+  GoodsReceiptNoteRepository, ThreeWayMatchingResult(Repository),
+  MatchingStatus, MatchingResultDTO, MatchingOverrideRequest
+
+purchasing  ───────────▶  invoice
+  ThreeWayMatchingResult (entity) references invoice.model.Invoice (FK);
+  ThreeWayMatchingService matches against invoice.model.Invoice / InvoiceItem
+```
+
+This cycle is intentional and reflects the domain reality (an invoice is matched against
+its PO/GRN at submission, and a matching result belongs to an invoice). It is the reason
+`InvoiceStateMachineServiceImpl` lives in `invoice` but calls into `purchasing` on the
+`SUBMIT` transition. No other domain-to-domain cycles exist; new cross-domain calls should
+go service→service (never repository→repository) to keep the boundary explicit.
+
 ---
 
 ## 3. Layer Rules (Strict)
