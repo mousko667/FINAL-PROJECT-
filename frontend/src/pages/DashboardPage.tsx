@@ -81,13 +81,23 @@ export default function DashboardPage() {
   const isAA       = roles.includes('ROLE_ASSISTANT_COMPTABLE')
   const isDaf      = roles.includes('ROLE_DAF')
   const isValidator = roles.some(r => r.startsWith('ROLE_VALIDATEUR_N1_') || r.startsWith('ROLE_VALIDATEUR_N2_'))
-  const canViewKpis = isAA || isDaf || isValidator
+  const canViewKpis = isAA || isDaf
 
   const { data: kpi, isLoading: kpiLoading } = useQuery({
     queryKey: ['kpis'],
     queryFn: reportService.getKpis,
     enabled: canViewKpis,
     retry: false,
+  })
+
+  // REQ-04: validator's own dashboard stats (approved total, processed this month).
+  const { data: validatorStats, isLoading: validatorStatsLoading } = useQuery({
+    queryKey: ['my-validator-stats'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<{ data: { approvedTotal: number; processedThisMonth: number } }>('/workflow/my-stats')
+      return data.data
+    },
+    enabled: isValidator,
   })
 
   const { data: pendingQueue } = useQuery({
@@ -242,16 +252,6 @@ export default function DashboardPage() {
   // ── VALIDATOR (N1/N2) ──────────────────────────────────────────────────────
   if (isValidator) {
     const queue = pendingQueue?.content ?? []
-    // REQ-04: wire the two "—" placeholder tiles to real values from getKpis.
-    // getKpis has no monthly granularity, so "Traitées ce mois" is shown as total
-    // "Traitées" (processed = past SOUMIS) rather than fabricating a monthly figure.
-    const cbs = kpi?.countByStatus ?? {}
-    const approvedCount = kpi
-      ? (cbs.VALIDE ?? 0) + (cbs.BON_A_PAYER ?? 0) + (cbs.PAYE ?? 0) + (cbs.ARCHIVE ?? 0)
-      : undefined
-    const processedCount = kpi
-      ? Object.entries(cbs).reduce((sum, [st, n]) => (st === 'BROUILLON' || st === 'SOUMIS' ? sum : sum + n), 0)
-      : undefined
     return (
       <div className="space-y-6 page-enter">
         <div>
@@ -265,11 +265,11 @@ export default function DashboardPage() {
             <p className="text-xs text-gray-500 mt-1">En attente de ma validation</p>
           </div>
           <div className="bg-white rounded-xl border p-5 text-center">
-            <p className="text-3xl font-bold text-gray-900">{kpiLoading ? '…' : (processedCount ?? '—')}</p>
-            <p className="text-xs text-gray-500 mt-1">{t('dashboard.processed', 'Traitées')}</p>
+            <p className="text-3xl font-bold text-gray-900">{validatorStatsLoading ? '…' : (validatorStats?.processedThisMonth ?? '—')}</p>
+            <p className="text-xs text-gray-500 mt-1">{t('dashboard.processedThisMonth', 'Traitées ce mois')}</p>
           </div>
           <div className="bg-white rounded-xl border p-5 text-center">
-            <p className="text-3xl font-bold text-green-600">{kpiLoading ? '…' : (approvedCount ?? '—')}</p>
+            <p className="text-3xl font-bold text-green-600">{validatorStatsLoading ? '…' : (validatorStats?.approvedTotal ?? '—')}</p>
             <p className="text-xs text-gray-500 mt-1">{t('dashboard.approved', 'Approuvées')}</p>
           </div>
         </div>

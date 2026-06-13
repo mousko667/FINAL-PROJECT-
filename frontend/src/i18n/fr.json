@@ -104,8 +104,8 @@
     "manageAccounts": "Gérer les comptes",
     "securityLogs": "Journaux système",
     "supplierRegistry": "Registre fournisseurs",
-    "processed": "Traitées",
-    "approved": "Approuvées"
+    "approved": "Approuvées",
+    "processedThisMonth": "Traitées ce mois"
   },
   "po": {
     "title": "Bons de commande",
@@ -432,17 +432,6 @@
     "daysAgo": "{{n}}j",
     "overdue": "⚠ Retard",
     "review": "Voir",
-    "delegate": "Déléguer",
-    "delegation": {
-      "title": "Déléguer l'autorité d'approbation",
-      "to": "Déléguer à",
-      "from": "Du",
-      "until": "Au",
-      "reason": "Motif (optionnel)",
-      "save": "Définir la délégation",
-      "active": "Délégation active",
-      "none": "Aucune délégation active"
-    },
     "roleLabel": {
       "n1": "Factures en attente de votre validation N1",
       "n2": "Factures en attente de votre validation N2",

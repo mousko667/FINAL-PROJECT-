@@ -426,6 +426,18 @@
 
 ---
 
+### [PROB-035] Tuiles KPI du tableau de bord validateur affichant des chiffres GLOBAUX sous des libellés personnels (correction trompeuse) + clés i18n mortes de délégation
+- **Catégorie :** Frontend / Backend / Qualité des données
+- **Sévérité :** 🟡 Moyenne (REQ-04 — donnée trompeuse présentée à l'utilisateur)
+- **Découvert :** 2026-06-13 — passe de revue (self-review) après P11-42
+- **Symptôme :** Le premier correctif de P11-42 a remplacé les placeholders `—` des tuiles "Traitées ce mois"/"Approuvées" du dashboard validateur par des valeurs dérivées de `reportService.getKpis` — mais `getKpis` renvoie des agrégats **système (globaux)**, sans dimension par-validateur ni mensuelle. Résultat : des chiffres globaux affichés sous des tuiles d'apparence personnelle. C'est sans doute **pire** que le `—` d'origine (un `—` dit honnêtement « pas de donnée » ; un nombre global déguisé en métrique personnelle est activement faux). La sémantique « ce mois » avait aussi été abandonnée (relabel "Traitées") faute de donnée mensuelle.
+- **Cause racine :** « Câbler à `getKpis` » a été pris au pied de la lettre alors que `getKpis` n'a ni scoping par utilisateur ni granularité mensuelle ; la tuile a été remplie avec la seule donnée disponible (globale) au lieu de créer la donnée réellement demandée.
+- **Solution appliquée :** Nouvel endpoint **scopé validateur** : `ApprovalStepRepository.countByApproverIdAndStatus` + `countByApproverIdAndStatusInAndActionAtGreaterThanEqual` ; `ApprovalService.getValidatorStats(UUID approverId)` → `ValidatorStatsResponse(approvedTotal, processedThisMonth)` (approuvées par CET approbateur, toutes périodes ; traitées = APPROVED+REJECTED depuis le 1er du mois) ; exposé via `GET /api/v1/workflow/my-stats` (nouveau `ValidatorStatsController`, dépend uniquement du service — P1-05). Le dashboard interroge `/workflow/my-stats` (uniquement pour les validateurs ; `canViewKpis` ramené à AA/DAF) et restaure le libellé honnête "Traitées ce mois". **Nettoyage associé :** suppression de 9 clés i18n mortes — `approvals.delegation.*` (title/to/from/until/reason/save/active/none) + `approvals.delegate` — vestiges d'un design « délégation self-service » jamais construit (le backend est admin-only, cf. P11-44) — et de `dashboard.processed` (remplacée par `dashboard.processedThisMonth`).
+- **Règle préventive :** Ne jamais remplir une tuile « métrique personnelle » avec une donnée globale faute de mieux — soit on crée la donnée scopée, soit on étiquette explicitement la portée, soit on laisse vide. Une « correction » qui rend une valeur trompeuse est pire que le placeholder honnête. Vérifier la portée réelle (par-utilisateur ? mensuelle ?) d'un endpoint avant de l'utiliser pour une tuile contextuelle.
+- **Fichiers modifiés :** `ApprovalStepRepository.java` (2 méthodes de comptage), `ApprovalService.java`/`ApprovalServiceImpl.java` (`getValidatorStats`), `ValidatorStatsResponse.java` (nouveau record), `ValidatorStatsController.java` (nouveau), `DashboardPage.tsx` (query `/workflow/my-stats`, tuiles recâblées, `canViewKpis` corrigé), `en.json`/`fr.json` (`dashboard.processedThisMonth` ajoutée ; `dashboard.processed` + `approvals.delegation.*` + `approvals.delegate` supprimées), `ApprovalServiceTest.java` (+1 test), `ValidatorStatsControllerTest.java` (nouveau, 2 tests)
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :

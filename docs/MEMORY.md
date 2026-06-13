@@ -1460,3 +1460,35 @@ active delegations (`GET /approvals/delegations?departmentCode=`) with a revoke 
 the chosen department, from/to dates, optional reason → `POST`). Client-side validation
 (required fields, delegator≠delegatee, toDate≥fromDate). 21 `admin.delegations.*` keys added to
 both locale files (parity 549/549). `tsc --noEmit` exit 0. ARCHITECTURE.md §4.1 GAP 6 → ✅ Resolved.
+
+---
+
+## Session Checkpoint
+**Date:** 2026-06-13
+**Last completed task:** Self-review follow-ups (P11-42 proper fix + dead-key cleanup)
+**Phase:** Phase 11 — Audit Correction Cycle
+**Next task:** rest of P11-J (P11-45 MatchingConfig UI, P11-46 Remittance Advice UI, P11-47
+Webhooks/Integration Status UI). **Deferred:** P11-40, P11-F.
+**Branch:** main (backed up to `origin/backup/phase11-2026-06-13`).
+**Last commit:** cb0ab43 (P11-44); the review follow-ups + this checkpoint not yet committed.
+**Notes:**
+
+Did a review pass on the session's work at the user's request. The composed French (~67
+strings, P11-H + P11-44) checked out clean. Two findings → both fixed this commit:
+
+1. **P11-42 was showing GLOBAL KPIs under personal validator tiles** (PROB-035) — misleading,
+arguably worse than the original `—`. Replaced with a real validator-scoped backend:
+`ApprovalStepRepository` count methods (`countByApproverIdAndStatus`,
+`...StatusInAndActionAtGreaterThanEqual`) → `ApprovalService.getValidatorStats(UUID)` →
+`ValidatorStatsResponse(approvedTotal, processedThisMonth)`, exposed at
+`GET /api/v1/workflow/my-stats` (new `ValidatorStatsController`, P1-05-clean, non-supplier
+auth). Dashboard now queries it (validators only; `canViewKpis` back to AA/DAF) and the honest
+"Traitées ce mois" label is restored (`dashboard.processedThisMonth`). Full suite: **291 tests,
+27 baseline failures** (291 = 288 + 3 new), zero regressions; frontend `tsc --noEmit` exit 0.
+
+2. **9 dead i18n keys removed** — `approvals.delegation.*` + `approvals.delegate` (vestiges of an
+abandoned self-service delegation design; 0 usages — their existence confirmed the admin-only
+backend was the right call for P11-44) and `dashboard.processed` (replaced). Parity 540/540.
+
+Review process note to self: should have grepped for existing `delegation` i18n keys before
+creating `admin.delegations.*` in P11-44 — would have surfaced the dead keys earlier.

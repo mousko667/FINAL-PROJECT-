@@ -104,8 +104,8 @@
     "manageAccounts": "Manage Accounts",
     "securityLogs": "System Logs",
     "supplierRegistry": "Supplier Registry",
-    "processed": "Processed",
-    "approved": "Approved"
+    "approved": "Approved",
+    "processedThisMonth": "Processed this month"
   },
   "po": {
     "title": "Purchase Orders",
@@ -432,17 +432,6 @@
     "daysAgo": "{{n}}d ago",
     "overdue": "⚠ Overdue",
     "review": "Review",
-    "delegate": "Delegate",
-    "delegation": {
-      "title": "Delegate Approval Authority",
-      "to": "Delegate to",
-      "from": "From",
-      "until": "Until",
-      "reason": "Reason (optional)",
-      "save": "Set Delegation",
-      "active": "Delegation Active",
-      "none": "No active delegation"
-    },
     "roleLabel": {
       "n1": "Invoices awaiting your Level 1 approval",
       "n2": "Invoices awaiting your Level 2 approval",

@@ -903,14 +903,19 @@ from either `en.json`/`fr.json`; both files at **525/525** keys with 0 EN-only/F
       `loginMutation.error.response.status === 423` → `t('auth.accountLocked', ...)` (new key
       EN+FR), else the generic `auth.loginError`.
 - [x] **P11-42** Wire validator/manager dashboard KPI tiles "Traitées ce mois" and
-      "Approuvées" (REQ-04) to `reportService.getKpis`, scoped to the validator's role,
-      replacing the `—` placeholders. Completed 2026-06-13. Enabled the `getKpis` query for
-      validators (`canViewKpis` now includes `isValidator`); "Approuvées" → sum of approved
-      statuses (VALIDE+BON_A_PAYER+PAYE+ARCHIVE) from `countByStatus`. NOTE: `getKpis` has **no
-      monthly granularity**, so rather than fabricate a "this month" figure, the other tile was
-      relabelled "Traitées" (`dashboard.processed` key) and wired to total processed (all
-      statuses past SOUMIS). A true "this month" tile would need a new backend KPI field (left
-      for a backend pass). Both labels i18n-ized (`dashboard.processed`/`dashboard.approved`).
+      "Approuvées" (REQ-04) to a **validator-scoped** endpoint, replacing the `—` placeholders.
+      Completed 2026-06-13 (PROB-035). **Revised after self-review:** the first pass wired the
+      tiles to the global `getKpis` (system-wide counts shown under a validator's *personal*
+      tiles — misleading, arguably worse than `—`). Replaced with a real scoped backend:
+      `ApprovalStepRepository.countByApproverIdAndStatus` +
+      `...AndStatusInAndActionAtGreaterThanEqual`, `ApprovalService.getValidatorStats(UUID)`
+      (returns `ValidatorStatsResponse` — `approvedTotal` all-time, `processedThisMonth` =
+      APPROVED+REJECTED since the 1st of the month), exposed at `GET /api/v1/workflow/my-stats`
+      via a new `ValidatorStatsController` (P1-05-clean; `@PreAuthorize isAuthenticated() and
+      !hasRole('SUPPLIER')`). Dashboard now queries `/workflow/my-stats` (only for validators;
+      `canViewKpis` reverted to AA/DAF), restoring the honest "ce mois" label
+      (`dashboard.processedThisMonth`). Tests: `getValidatorStats` service test +
+      `ValidatorStatsControllerTest` (200 for validator, 403 for supplier).
 - [x] **P11-43** Add the missing `onClick` handler to `ArchivePage.tsx:150-152`'s
       "Download PDF" button (REQ-15), reusing the download logic from
       `InvoiceDetailPage.tsx`. Completed 2026-06-13. Added a `downloadPdf(inv)` handler

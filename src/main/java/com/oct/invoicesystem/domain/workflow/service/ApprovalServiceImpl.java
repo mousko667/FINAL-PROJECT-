@@ -10,6 +10,7 @@ import com.oct.invoicesystem.domain.workflow.model.ApprovalDelegation;
 import com.oct.invoicesystem.domain.workflow.model.ApprovalStep;
 import com.oct.invoicesystem.domain.workflow.model.ApprovalStepStatus;
 import com.oct.invoicesystem.domain.workflow.dto.ApprovalStepResponse;
+import com.oct.invoicesystem.domain.workflow.dto.ValidatorStatsResponse;
 import com.oct.invoicesystem.domain.workflow.repository.ApprovalDelegationRepository;
 import com.oct.invoicesystem.domain.workflow.repository.ApprovalStepRepository;
 import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -159,6 +161,17 @@ public class ApprovalServiceImpl implements ApprovalService {
                         s.getDeadline(),
                         s.getActionAt()))
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ValidatorStatsResponse getValidatorStats(UUID approverId) {
+        long approvedTotal = approvalStepRepository.countByApproverIdAndStatus(approverId, ApprovalStepStatus.APPROVED);
+        Instant startOfMonth = LocalDate.now().withDayOfMonth(1)
+                .atStartOfDay(ZoneId.systemDefault()).toInstant();
+        long processedThisMonth = approvalStepRepository.countByApproverIdAndStatusInAndActionAtGreaterThanEqual(
+                approverId, List.of(ApprovalStepStatus.APPROVED, ApprovalStepStatus.REJECTED), startOfMonth);
+        return new ValidatorStatsResponse(approvedTotal, processedThisMonth);
     }
 
     private ApprovalStep createOrUpdateStep(Invoice invoice, int stepOrder, User approver, String nameFr, String comment, String rejButtonReason, ApprovalStepStatus status) {

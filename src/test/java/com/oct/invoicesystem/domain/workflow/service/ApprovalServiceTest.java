@@ -10,6 +10,7 @@ import com.oct.invoicesystem.domain.user.model.Role;
 import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.domain.user.model.UserRole;
 import com.oct.invoicesystem.domain.workflow.dto.ApprovalStepResponse;
+import com.oct.invoicesystem.domain.workflow.dto.ValidatorStatsResponse;
 import com.oct.invoicesystem.domain.workflow.model.ApprovalStep;
 import com.oct.invoicesystem.domain.workflow.model.ApprovalStepStatus;
 import com.oct.invoicesystem.domain.workflow.repository.ApprovalStepRepository;
@@ -257,6 +258,20 @@ class ApprovalServiceTest {
         assertEquals("ok", r.comments());
         assertEquals(deadline, r.deadline());
         assertEquals(actionAt, r.actionAt());
+    }
+
+    @Test
+    void getValidatorStats_countsApprovedTotalAndProcessedThisMonth() {
+        UUID approverId = UUID.randomUUID();
+        when(approvalStepRepository.countByApproverIdAndStatus(approverId, ApprovalStepStatus.APPROVED))
+                .thenReturn(7L);
+        when(approvalStepRepository.countByApproverIdAndStatusInAndActionAtGreaterThanEqual(
+                eq(approverId), any(), any())).thenReturn(3L);
+
+        ValidatorStatsResponse stats = approvalService.getValidatorStats(approverId);
+
+        assertEquals(7L, stats.approvedTotal());
+        assertEquals(3L, stats.processedThisMonth());
     }
 
     @Test

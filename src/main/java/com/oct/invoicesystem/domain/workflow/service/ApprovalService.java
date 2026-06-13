@@ -1,6 +1,7 @@
 package com.oct.invoicesystem.domain.workflow.service;
 
 import com.oct.invoicesystem.domain.workflow.dto.ApprovalStepResponse;
+import com.oct.invoicesystem.domain.workflow.dto.ValidatorStatsResponse;
 
 import java.util.List;
 import java.util.UUID;
@@ -12,4 +13,5 @@ public interface ApprovalService {
     void bonAPayer(UUID invoiceId, String comment);
     void reject(UUID invoiceId, String rejectionReason);
     List<ApprovalStepResponse> getApprovalSteps(UUID invoiceId);
+    ValidatorStatsResponse getValidatorStats(UUID approverId);
 }
