@@ -707,16 +707,34 @@ imports or injects a `*Repository` (the prior offenders `AdminSessionController`
 
 ### P11-E — Docker/Infra Cleanup 🟠 High
 
-- [ ] **P11-12** Remove `docker-compose.yml`'s orphaned `postgres` service (lines 13-33)
-      and `postgres_data` volume (P5-01, Option B — confirmed 2026-06-12).
-- [ ] **P11-13** Fix `MINIO_SECRET_KEY` default mismatch (P5-02): change
-      `docker-compose.yml:66`'s `${MINIO_SECRET_KEY:-dany}` to `${MINIO_SECRET_KEY:-dany1234}`.
-- [ ] **P11-14** Add `docs/ARCHITECTURE.md §4.3` prerequisite documentation: host-native
+- [x] **P11-12** Remove `docker-compose.yml`'s orphaned `postgres` service (lines 13-33)
+      and `postgres_data` volume (P5-01, Option B — confirmed 2026-06-12). Completed
+      2026-06-13. Removed the `postgres` service block and `postgres_data` volume entry;
+      updated the file's header usage comment to note PostgreSQL is host-native and point
+      to `docs/ARCHITECTURE.md §4.3`. `docker compose config` confirms no `postgres`
+      service remains (only `DB_USER: postgres`, the database username).
+- [x] **P11-13** Fix `MINIO_SECRET_KEY` default mismatch (P5-02): change the `backend`
+      service's `${MINIO_SECRET_KEY:-dany}` to `${MINIO_SECRET_KEY:-dany1234}`.
+      Completed 2026-06-13 (PROB-033). **Correction:** an earlier pass had marked this done
+      and described the change as being on `minio_init`, but the actual offending default —
+      the `backend` service's `MINIO_SECRET_KEY` (`dany`) — was never changed and still
+      mismatched the `minio` server's `MINIO_ROOT_PASSWORD` default (`dany1234`). Caught by
+      verifying against the file rather than the checkbox. Now all three (`minio`,
+      `minio_init`, `backend`) default to `dany1234`; verified via
+      `docker compose --env-file <empty> config` → `MINIO_SECRET_KEY: dany1234` and
+      `MINIO_ROOT_PASSWORD: dany1234` resolve identically with `.env` unset.
+- [x] **P11-14** Add `docs/ARCHITECTURE.md §4.3` prerequisite documentation: host-native
       PostgreSQL 18 (port 5433, db `oct_invoice`) must be running before `docker-compose up`.
+      Completed 2026-06-13. New "Prerequisite: host-native PostgreSQL" subsection added at
+      the top of §4.3; the stale "Verify all services healthy" `docker ps` example (which
+      listed `oct_postgres`) updated to list the current compose services and to verify
+      host Postgres separately via `pg_isready -h localhost -p 5433`.
 
 **P11-E Exit Criteria:** `docker compose config` shows no `postgres` service; a fresh clone
 with `.env` unset for `MINIO_SECRET_KEY` still has `minio_init` succeed; ARCHITECTURE.md
-documents the host-Postgres prerequisite.
+documents the host-Postgres prerequisite. ✅ Met 2026-06-13 — verified via `docker compose
+config` (no `postgres` service, `MINIO_SECRET_KEY: dany1234` resolved) and
+`docs/ARCHITECTURE.md §4.3` prerequisite subsection.
 
 ---
 

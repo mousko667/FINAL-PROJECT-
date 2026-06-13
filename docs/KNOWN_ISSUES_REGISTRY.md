@@ -402,6 +402,18 @@
 
 ---
 
+### [PROB-033] Défaut `MINIO_SECRET_KEY` du service `backend` (`dany`) incohérent avec le mot de passe du serveur MinIO (`dany1234`) — et tâche P11-13 marquée « faite » alors que le correctif n'était pas appliqué
+- **Catégorie :** Infrastructure / Docker
+- **Sévérité :** 🟠 Élevée (P5-02 — la stack ne s'authentifie pas à MinIO sur un clone neuf)
+- **Découvert :** 2026-06-13 — Audit Phase 1, sous-phase P11-E (P11-13)
+- **Symptôme :** Dans `docker-compose.yml`, le service `minio` (`MINIO_ROOT_PASSWORD`) et `minio_init` (`mc alias set`) avaient pour défaut `${MINIO_SECRET_KEY:-dany1234}`, mais le service `backend` avait `${MINIO_SECRET_KEY:-dany}`. Sur un clone neuf sans `MINIO_SECRET_KEY` défini dans `.env`, le backend tentait de s'authentifier à MinIO avec `dany` alors que le serveur attend `dany1234` → échec d'accès au stockage objet. Aggravant : `docs/TASKS.md` marquait déjà P11-13 `[x]` « Completed » en décrivant à tort le changement comme portant sur `minio_init`, alors que la ligne fautive (`backend`) n'avait jamais été modifiée.
+- **Cause racine :** (1) Le défaut du backend n'avait pas été aligné lors d'un changement antérieur des défauts MinIO. (2) La case P11-13 avait été cochée sur la foi de la description plutôt que sur la vérification du fichier réel — exactement le piège que la règle d'audit « distrust everything, verify by execution, not by reading » vise à éviter. La résolution locale `docker compose config` affichait `dany1234` uniquement parce qu'un `.env` local fournissait la valeur, masquant le défaut.
+- **Solution appliquée :** Défaut du service `backend` changé de `${MINIO_SECRET_KEY:-dany}` à `${MINIO_SECRET_KEY:-dany1234}`. Les trois emplacements (`minio`, `minio_init`, `backend`) ont désormais le même défaut. Vérifié par exécution avec `.env` neutralisé : `docker compose --env-file <vide> config` → `MINIO_SECRET_KEY: dany1234` et `MINIO_ROOT_PASSWORD: dany1234` résolvent à l'identique. Note de tâche P11-13 corrigée dans `docs/TASKS.md` pour décrire le vrai changement.
+- **Règle préventive :** Ne jamais cocher une tâche sur la base de sa description — vérifier le fichier/comportement réel. Pour les valeurs partagées entre services compose (mots de passe, clés), définir le défaut une seule fois ou s'assurer que tous les `${VAR:-defaut}` portent le MÊME défaut. Vérifier les défauts avec `.env` neutralisé (`--env-file` vide), pas avec l'environnement local qui peut masquer l'incohérence.
+- **Fichiers modifiés :** `docker-compose.yml` (défaut `MINIO_SECRET_KEY` du backend → `dany1234`), `docs/TASKS.md` (note P11-13 corrigée), `docs/ARCHITECTURE.md` (§9 « Docker Compose Services » : `postgres` retiré de la liste car host-native, `minio_init` ajouté — cohérence avec §4.3, P11-14)
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :

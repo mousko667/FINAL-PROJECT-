@@ -181,6 +181,21 @@ com.oct.invoicesystem/
 
 ## 4.3 Deployment Procedures (verified 2026-06-06)
 
+### Prerequisite: host-native PostgreSQL (P5-01, Option B — confirmed 2026-06-12)
+
+`docker-compose.yml` does **not** manage PostgreSQL. A host-native PostgreSQL 18
+instance must already be running before `docker-compose up`, listening on
+**port 5433** with database **`oct_invoice`** (user `postgres`). The `backend`
+container connects to it via `host.docker.internal:5433` (configured through
+`extra_hosts: host.docker.internal:host-gateway` and the `DB_HOST`/`DB_PORT`
+environment variables, both overridable via `.env`).
+
+This applies to local dev and to any fresh clone — `docker-compose up -d` alone
+will not provision a database. Start/verify the host Postgres instance first
+(e.g. as a native Windows service or a separately-managed container), then run
+`./mvnw flyway:migrate` (or let the app's Flyway integration migrate on startup)
+against `oct_invoice` before starting `docker-compose`.
+
 ### Frontend deploy (no image rebuild)
 ```bash
 npm run build
@@ -199,7 +214,9 @@ docker restart oct_backend
 ### Verify all services healthy
 ```bash
 docker ps --format "table {{.Names}}\t{{.Status}}"
-# Expected: oct_backend, oct_frontend, oct_postgres, oct_minio, oct_mailhog — all Up
+# Expected: oct_backend, oct_frontend, oct_minio, oct_minio_init, oct_mailhog — all Up
+# (PostgreSQL is host-native, not a docker-compose service — verify separately,
+# e.g. `pg_isready -h localhost -p 5433`)
 ```
 
 ---
@@ -306,11 +323,12 @@ validation.rejection_reason.required = Le motif de rejet est obligatoire
 
 ```yaml
 services:
-  postgres:    port 5432 — PostgreSQL 18
+  # PostgreSQL is host-native (port 5433, db oct_invoice) — NOT a compose service (see §4.3)
   minio:       port 9000/9001 — MinIO object storage
-  backend:     port 8080 — Spring Boot app
+  minio_init:  one-shot — creates the MinIO bucket, then exits
+  backend:     port 8080 — Spring Boot app (connects to host Postgres via host.docker.internal:5433)
   frontend:    port 3000 — React app (nginx in prod)
-  mailhog:     port 8025 — SMTP test server (dev only)
+  mailhog:     port 1025/8025 — SMTP test server (dev only)
 ```
 
 ## 10.New Domain Modules (Phase 9)
