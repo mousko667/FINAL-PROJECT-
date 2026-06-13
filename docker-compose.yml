@@ -2,35 +2,15 @@
 #  OCT Invoice System — Docker Compose
 #  Usage:
 #    Start all services:   docker-compose up -d
-#    Backend + DB only:    docker-compose up -d postgres minio mailhog
+#    Note: PostgreSQL is NOT managed by this file — a host-native
+#    PostgreSQL 18 instance (port 5433, db oct_invoice) must already
+#    be running. See docs/ARCHITECTURE.md §4.3.
 #    View logs:            docker-compose logs -f backend
 #    Stop all:             docker-compose down
 #    Full reset (data too):docker-compose down -v
 # ============================================================
 
 services:
-
-  # ── PostgreSQL 18 ─────────────────────────────────────────
-  postgres:
-    image: postgres:18-alpine
-    container_name: oct_postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${DB_NAME:-oct_invoice_dev}
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-dany}
-      PGDATA: /var/lib/postgresql/data/pgdata
-    ports:
-      - "${DB_PORT:-5432}:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-oct_invoice_dev}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - oct_network
 
   # ── MinIO (Object Storage) ────────────────────────────────
   minio:
@@ -63,7 +43,7 @@ services:
         condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      mc alias set local http://minio:9000 ${MINIO_ACCESS_KEY:-MinIO} ${MINIO_SECRET_KEY:-dany};
+      mc alias set local http://minio:9000 ${MINIO_ACCESS_KEY:-MinIO} ${MINIO_SECRET_KEY:-dany1234};
       mc mb --ignore-existing local/${MINIO_BUCKET:-oct-invoices};
       mc anonymous set none local/${MINIO_BUCKET:-oct-invoices};
       echo 'MinIO bucket ready.';
@@ -90,20 +70,23 @@ services:
       target: runtime
     container_name: oct_backend
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "${APP_PORT:-8080}:8080"
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: ${DB_NAME:-oct_invoice_dev}
+      DB_HOST: ${DB_HOST:-host.docker.internal}
+      DB_PORT: ${DB_PORT:-5433}
+      DB_NAME: ${DB_NAME:-oct_invoice}
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-dany}
       MINIO_ENDPOINT: http://minio:9000
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-MinIO}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-dany}
       MINIO_BUCKET: ${MINIO_BUCKET:-oct-invoices}
-      JWT_SECRET: ${JWT_SECRET}
+      JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
       JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-86400000}
       JWT_REFRESH_EXPIRATION_MS: ${JWT_REFRESH_EXPIRATION_MS:-604800000}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
@@ -114,8 +97,6 @@ services:
       MAIL_FROM: ${MAIL_FROM:-noreply@oct.local}
       MAIL_FROM_NAME: ${MAIL_FROM_NAME:-OCT Invoice System}
     depends_on:
-      postgres:
-        condition: service_healthy
       minio:
         condition: service_healthy
       minio_init:
@@ -152,7 +133,5 @@ networks:
     driver: bridge
 
 volumes:
-  postgres_data:
-    driver: local
   minio_data:
     driver: local
