@@ -1,7 +1,11 @@
 package com.oct.invoicesystem.domain.invoice.service;
 
+import com.oct.invoicesystem.domain.invoice.dto.BulkUploadResultDTO;
+import com.oct.invoicesystem.domain.invoice.dto.InvoiceDocumentDTO;
+import com.oct.invoicesystem.domain.invoice.model.DocumentAccessLog;
 import com.oct.invoicesystem.domain.invoice.model.Invoice;
 import com.oct.invoicesystem.domain.invoice.model.InvoiceDocument;
+import com.oct.invoicesystem.domain.invoice.repository.DocumentAccessLogRepository;
 import com.oct.invoicesystem.domain.invoice.repository.InvoiceDocumentRepository;
 import com.oct.invoicesystem.domain.invoice.repository.InvoiceRepository;
 import com.oct.invoicesystem.domain.storage.service.MinioStorageService;
@@ -17,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Set;
@@ -36,6 +41,7 @@ public class InvoiceDocumentService {
 
     private final InvoiceRepository invoiceRepository;
     private final InvoiceDocumentRepository invoiceDocumentRepository;
+    private final DocumentAccessLogRepository documentAccessLogRepository;
     private final UserRepository userRepository;
     private final MinioStorageService minioStorageService;
     private final Tika tika = new Tika();
@@ -96,6 +102,63 @@ public class InvoiceDocumentService {
     }
 
     /**
+     * Bulk-uploads multiple documents to one invoice (P11-48 / REQ-05). Each file is validated and
+     * stored independently: valid files are persisted and returned, invalid ones (bad type, oversize,
+     * unreadable) are skipped and reported per-file — valid files are NOT rolled back when others fail.
+     *
+     * <p>The invoice and uploader are resolved once up front (a missing invoice/user fails the whole
+     * batch). Each file is then delegated to {@link #upload(UUID, MultipartFile, UUID)}, whose own
+     * {@code @Transactional} commits that file's row before the next is attempted.
+     *
+     * @param invoiceId target invoice id
+     * @param files uploaded files (must be non-empty)
+     * @param username authenticated uploader username
+     * @return per-file outcome report
+     * @throws ValidationException if the file list is empty
+     * @throws ResourceNotFoundException if the invoice or uploader does not exist
+     */
+    public BulkUploadResultDTO uploadMultiple(UUID invoiceId, List<MultipartFile> files, String username) {
+        if (files == null || files.isEmpty()) {
+            throw new ValidationException("At least one file is required");
+        }
+        // Resolve once: a bad invoice/user is a batch-level error, not a per-file one.
+        User uploader = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
+        invoiceRepository.findByIdAndDeletedAtIsNull(invoiceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Invoice not found with id: " + invoiceId));
+
+        List<InvoiceDocumentDTO> uploaded = new ArrayList<>();
+        List<BulkUploadResultDTO.FileError> errors = new ArrayList<>();
+
+        for (MultipartFile file : files) {
+            String filename = file == null ? null : file.getOriginalFilename();
+            try {
+                InvoiceDocument document = upload(invoiceId, file, uploader.getId());
+                uploaded.add(toDto(document));
+            } catch (ValidationException ex) {
+                errors.add(new BulkUploadResultDTO.FileError(filename, ex.getMessage()));
+            } catch (Exception ex) {
+                errors.add(new BulkUploadResultDTO.FileError(filename, "Upload failed: " + ex.getMessage()));
+            }
+        }
+
+        return new BulkUploadResultDTO(files.size(), uploaded.size(), errors.size(), uploaded, errors);
+    }
+
+    private InvoiceDocumentDTO toDto(InvoiceDocument document) {
+        return new InvoiceDocumentDTO(
+                document.getId(),
+                document.getInvoice() != null ? document.getInvoice().getId() : null,
+                document.getOriginalFilename(),
+                document.getFileType(),
+                document.getFileSizeBytes(),
+                document.getChecksumSha256(),
+                document.getUploadedBy() != null ? document.getUploadedBy().getId() : null,
+                document.getUploadedAt()
+        );
+    }
+
+    /**
      * Lists all documents attached to an invoice.
      *
      * @param invoiceId invoice id
@@ -118,6 +181,39 @@ public class InvoiceDocumentService {
     public String generateDownloadUrl(UUID invoiceId, UUID documentId) throws Exception {
         InvoiceDocument document = invoiceDocumentRepository.findByIdAndInvoiceId(documentId, invoiceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Document not found with id: " + documentId));
+        return minioStorageService.generateDownloadUrl(document.getMinioObjectKey());
+    }
+
+    /**
+     * Generates a pre-signed download URL AND records an append-only access-log entry
+     * (P11-50 / REQ-16). The access log captures who downloaded which document, when, and from
+     * where — a tamper-evident trail distinct from the generic HTTP audit log.
+     *
+     * @param invoiceId invoice id
+     * @param documentId document id
+     * @param username authenticated accessor username (may be null/unknown)
+     * @param ipAddress requester IP (nullable)
+     * @param userAgent requester user-agent (nullable)
+     * @return pre-signed URL
+     * @throws Exception if URL generation fails
+     */
+    @Transactional
+    public String generateDownloadUrlAndLog(UUID invoiceId, UUID documentId, String username,
+                                            String ipAddress, String userAgent) throws Exception {
+        InvoiceDocument document = invoiceDocumentRepository.findByIdAndInvoiceId(documentId, invoiceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Document not found with id: " + documentId));
+
+        User accessor = username == null ? null : userRepository.findByUsername(username).orElse(null);
+
+        documentAccessLogRepository.save(DocumentAccessLog.builder()
+                .document(document)
+                .invoiceId(invoiceId)
+                .accessedBy(accessor)
+                .action("DOWNLOAD")
+                .ipAddress(ipAddress)
+                .userAgent(userAgent)
+                .build());
+
         return minioStorageService.generateDownloadUrl(document.getMinioObjectKey());
     }
 

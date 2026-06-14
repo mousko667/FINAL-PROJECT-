@@ -195,6 +195,13 @@
     "details": "Détails de la facture",
     "timeline": "Parcours d'approbation",
     "documents": "Documents",
+    "bulkUpload": {
+      "title": "Ajout de documents en masse",
+      "subtitle": "Sélectionnez plusieurs fichiers à joindre à cette facture en une seule fois.",
+      "submit": "Téléverser {{count}} fichier(s)",
+      "report": "{{uploaded}} téléversé(s), {{failed}} échec(s) sur {{total}}.",
+      "error": "Le téléversement a échoué. Réessayez."
+    },
     "lineItems": "Lignes de facturation",
     "submit": "Soumettre pour validation",
     "validate": "Valider",
@@ -737,7 +744,7 @@
     "searchPlaceholder": "Rechercher par référence, fournisseur, description...",
     "noResults": "Aucun document ne correspond à vos critères de recherche.",
     "empty": "Aucune facture archivée pour le moment.",
-    "retentionNote": "Les documents archivés sont conservés 10 ans conformément à la politique de rétention OCT. SHA-256 vérifié à chaque téléchargement."
+    "retentionNote": "Une empreinte SHA-256 est calculée et enregistrée au téléversement de chaque document (référence d'intégrité). La politique de rétention OCT vise une conservation de 10 ans."
   },
   "grn": {
     "title": "Bons de Réception (GRN)",

@@ -79,7 +79,8 @@ class InvoiceDocumentControllerTest {
     void download_AsAdmin_Returns200() throws Exception {
         UUID invoiceId = UUID.randomUUID();
         UUID docId = UUID.randomUUID();
-        when(invoiceDocumentService.generateDownloadUrl(invoiceId, docId))
+        // P11-50: download now records an access-log entry via generateDownloadUrlAndLog.
+        when(invoiceDocumentService.generateDownloadUrlAndLog(eq(invoiceId), eq(docId), any(), any(), any()))
                 .thenReturn("http://localhost:9000/mock-url");
 
         mockMvc.perform(get("/api/v1/invoices/{invoiceId}/documents/{docId}/download", invoiceId, docId))

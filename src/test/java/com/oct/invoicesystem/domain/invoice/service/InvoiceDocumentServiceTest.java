@@ -1,5 +1,6 @@
 package com.oct.invoicesystem.domain.invoice.service;
 
+import com.oct.invoicesystem.domain.invoice.dto.BulkUploadResultDTO;
 import com.oct.invoicesystem.domain.invoice.model.Invoice;
 import com.oct.invoicesystem.domain.invoice.model.InvoiceDocument;
 import com.oct.invoicesystem.domain.invoice.repository.InvoiceDocumentRepository;
@@ -41,6 +42,8 @@ class InvoiceDocumentServiceTest {
     private UserRepository userRepository;
     @Mock
     private MinioStorageService minioStorageService;
+    @Mock
+    private com.oct.invoicesystem.domain.invoice.repository.DocumentAccessLogRepository documentAccessLogRepository;
 
     @InjectMocks
     private InvoiceDocumentService service;
@@ -136,5 +139,58 @@ class InvoiceDocumentServiceTest {
         when(userRepository.findByUsername("ghost")).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> service.upload(invoiceId, file, "ghost"));
+    }
+
+    @Test
+    void uploadMultiple_storesValidFilesAndReportsInvalidOnes() throws Exception {
+        MockMultipartFile good1 = new MockMultipartFile("files", "a.pdf", "application/pdf",
+                "%PDF-1.4\nA".getBytes(StandardCharsets.UTF_8));
+        MockMultipartFile bad = new MockMultipartFile("files", "note.txt", "text/plain",
+                "hello".getBytes(StandardCharsets.UTF_8));
+        MockMultipartFile good2 = new MockMultipartFile("files", "b.pdf", "application/pdf",
+                "%PDF-1.4\nB".getBytes(StandardCharsets.UTF_8));
+
+        when(userRepository.findByUsername("assistant")).thenReturn(Optional.of(user));
+        when(invoiceRepository.findByIdAndDeletedAtIsNull(invoiceId)).thenReturn(Optional.of(invoice));
+        when(userRepository.findById(actorId)).thenReturn(Optional.of(user));
+        when(minioStorageService.upload(any(), any(), eq("application/pdf"))).thenAnswer(i -> i.getArgument(0));
+        when(invoiceDocumentRepository.save(any(InvoiceDocument.class))).thenAnswer(i -> i.getArgument(0));
+
+        BulkUploadResultDTO result = service.uploadMultiple(
+                invoiceId, java.util.List.of(good1, bad, good2), "assistant");
+
+        assertEquals(3, result.totalFiles());
+        assertEquals(2, result.uploaded());
+        assertEquals(1, result.failed());
+        assertEquals(2, result.documents().size());
+        assertEquals(1, result.errors().size());
+        assertEquals("note.txt", result.errors().get(0).filename());
+    }
+
+    @Test
+    void uploadMultiple_emptyList_throwsValidation() {
+        assertThrows(ValidationException.class,
+                () -> service.uploadMultiple(invoiceId, java.util.List.of(), "assistant"));
+    }
+
+    @Test
+    void generateDownloadUrlAndLog_writesAccessLogEntry() throws Exception {
+        UUID docId = UUID.randomUUID();
+        InvoiceDocument doc = InvoiceDocument.builder()
+                .id(docId).invoice(invoice).minioObjectKey("invoices/k").build();
+        when(invoiceDocumentRepository.findByIdAndInvoiceId(docId, invoiceId)).thenReturn(Optional.of(doc));
+        when(minioStorageService.generateDownloadUrl("invoices/k")).thenReturn("https://signed-url");
+        when(userRepository.findByUsername("assistant")).thenReturn(Optional.of(user));
+
+        String url = service.generateDownloadUrlAndLog(invoiceId, docId, "assistant", "10.0.0.1", "JUnit");
+
+        assertEquals("https://signed-url", url);
+        org.mockito.ArgumentCaptor<com.oct.invoicesystem.domain.invoice.model.DocumentAccessLog> captor =
+                org.mockito.ArgumentCaptor.forClass(com.oct.invoicesystem.domain.invoice.model.DocumentAccessLog.class);
+        verify(documentAccessLogRepository).save(captor.capture());
+        assertEquals(invoiceId, captor.getValue().getInvoiceId());
+        assertEquals("DOWNLOAD", captor.getValue().getAction());
+        assertEquals(user.getId(), captor.getValue().getAccessedBy().getId());
+        assertEquals("10.0.0.1", captor.getValue().getIpAddress());
     }
 }

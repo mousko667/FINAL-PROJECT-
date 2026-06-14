@@ -194,7 +194,7 @@ export default function ArchivePage() {
 
         <p className="text-xs text-gray-400">
           <FileText className="w-3.5 h-3.5 inline mr-1" />
-          {t('archive.retentionNote', 'Les documents archivés sont conservés 10 ans conformément à la politique de rétention OCT. SHA-256 vérifié à chaque téléchargement.')}
+          {t('archive.retentionNote', 'Une empreinte SHA-256 est calculée et enregistrée au téléversement de chaque document (référence d\'intégrité). La politique de rétention OCT vise une conservation de 10 ans.')}
         </p>
       </div>
     </PageRoleGuard>

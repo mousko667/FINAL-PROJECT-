@@ -7,6 +7,7 @@ import apiClient from '@/services/apiClient'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { InvoiceTimeline } from '@/components/invoice/InvoiceTimeline'
 import { InvoiceActionPanel } from '@/components/invoice/InvoiceActionPanel'
+import { BulkDocumentUpload } from '@/components/invoice/BulkDocumentUpload'
 import { useAppSelector } from '@/store/hooks'
 import { Loader2, ArrowLeft, Download, CheckCircle, XCircle, AlertTriangle, MinusCircle, Clock, User, FileDown, Lock } from 'lucide-react'
 
@@ -465,6 +466,11 @@ export default function InvoiceDetailPage() {
                 ))}
               </ul>
             </div>
+          )}
+
+          {/* P11-48: bulk multi-file document upload (Assistant Comptable only) */}
+          {roles.includes('ROLE_ASSISTANT_COMPTABLE') && id && (
+            <BulkDocumentUpload invoiceId={id} />
           )}
         </div>
 

@@ -216,6 +216,42 @@
 
 ---
 
+### [PROB-042] Ré-vérification SHA-256 au téléchargement — non implémentée (P11-49, REQ-14)
+- **Catégorie :** Backend / Sécurité
+- **Sévérité :** 🟡 Mineur
+- **Statut :** ❌ Non implémenté (scope partiel P11-49 assumé)
+- **Description :** Le SHA-256 d'un document est calculé et persisté au téléversement (`InvoiceDocumentService.computeSha256`), mais il n'est jamais recalculé/comparé au moment du téléchargement. Le texte de `ArchivePage` affirmait à tort « SHA-256 vérifié à chaque téléchargement » — corrigé en P11-49 pour ne décrire que le comportement réel (empreinte calculée + stockée au téléversement).
+- **Solution recommandée :** Dans `InvoiceDocumentService.generateDownloadUrl()` (ou un proxy de téléchargement côté backend), re-télécharger l'objet depuis MinIO, recalculer le SHA-256 et le comparer à `checksumSha256` stocké ; logguer/bloquer en cas de divergence (corruption ou altération).
+
+---
+
+### [PROB-043] Politique de rétention 10 ans — non automatisée (P11-49, REQ-14)
+- **Catégorie :** Backend
+- **Sévérité :** 🟡 Mineur
+- **Statut :** ❌ Non implémenté (scope partiel P11-49 assumé)
+- **Description :** La « conservation 10 ans » est une politique documentaire, mais aucun job n'applique de cycle de vie (pas de purge/archivage froid/verrou légal automatisés). Le texte `ArchivePage` laissait entendre une application active — corrigé en P11-49 pour formuler un objectif de politique, pas une garantie technique.
+- **Solution recommandée :** Tâche planifiée (`@Scheduled`) parcourant les documents au-delà de la période de rétention, avec règle de conservation/légal-hold configurable, et transition de stockage (ou suppression) tracée dans l'audit.
+
+---
+
+### [PROB-044] Versioning de documents — non implémenté (P11-50, REQ-16)
+- **Catégorie :** Backend
+- **Sévérité :** 🟡 Mineur
+- **Statut :** ❌ Non implémenté (scope partiel P11-50 assumé)
+- **Description :** P11-50 a livré la traçabilité d'accès (`document_access_log` append-only + hook dans `download()`), mais pas le versioning : re-téléverser un document écrase/ajoute sans historique de versions ni numéro de révision.
+- **Solution recommandée :** Ajouter `version` + `superseded_by`/`previous_version_id` sur `invoice_documents` (ou une table `document_versions`), conserver chaque révision dans MinIO sous une clé distincte, et exposer l'historique des versions au détail de la facture.
+
+---
+
+### [PROB-045] Visionneuse de documents in-app — non implémentée (P11-50, REQ-16)
+- **Catégorie :** Frontend
+- **Sévérité :** 🟡 Mineur
+- **Statut :** ❌ Non implémenté (scope partiel P11-50 assumé)
+- **Description :** Les documents se téléchargent via une URL pré-signée (ouverture/nouvel onglet) ; il n'existe pas de visionneuse intégrée (aperçu PDF/image dans l'application) ni de prévisualisation inline.
+- **Solution recommandée :** Composant visionneuse (ex. `react-pdf` pour les PDF, `<img>` pour les images) chargeant l'URL pré-signée dans une modale, avec pagination PDF et zoom.
+
+---
+
 ## PROBLÈMES RÉSOLUS — AUDIT 2026-06-07 (Sécurité)
 
 ### [PROB-017] User.isAccountNonLocked() ignorait lockedUntil

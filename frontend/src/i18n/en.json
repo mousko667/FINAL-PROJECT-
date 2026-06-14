@@ -195,6 +195,13 @@
     "details": "Invoice Details",
     "timeline": "Approval Timeline",
     "documents": "Documents",
+    "bulkUpload": {
+      "title": "Bulk document upload",
+      "subtitle": "Select multiple files to attach to this invoice in one go.",
+      "submit": "Upload {{count}} file(s)",
+      "report": "{{uploaded}} uploaded, {{failed}} failed of {{total}}.",
+      "error": "Upload failed. Please try again."
+    },
     "lineItems": "Line Items",
     "submit": "Submit for Validation",
     "validate": "Validate",
@@ -737,7 +744,7 @@
     "searchPlaceholder": "Search by reference, supplier, description...",
     "noResults": "No document matches your search criteria.",
     "empty": "No archived invoices yet.",
-    "retentionNote": "Archived documents are retained for 10 years in accordance with the OCT retention policy. SHA-256 verified on every download."
+    "retentionNote": "A SHA-256 checksum is computed and stored when each document is uploaded (integrity reference). The OCT retention policy targets a 10-year retention period."
   },
   "grn": {
     "title": "Goods Receipt Notes (GRN)",
