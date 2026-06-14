@@ -1639,3 +1639,22 @@ flush NPE), undetected because UserControllerTest mocks the service; added UserS
 Design decisions confirmed by user for P11-18: per-row explicit Save button; strictly ADMIN access.
 Standing rule reaffirmed: ROLE_ADMIN must NOT access financial data (separation of duties).
 WS /ws/info 401 console spam is pre-existing noise (STOMP handshake), unrelated to these changes.
+
+## Session Checkpoint
+**Date:** 2026-06-14
+**Last completed task:** P11-16 (bulk user CSV import/export) + PROB-041 fix — suite GREEN 312/0/0
+**Phase:** Phase 11 — Audit Correction Cycle (P11-F, IAM gaps)
+**Next task:** P11-15 (data-sensitivity classification) — next P11-F item
+**Branch:** main (committing P11-16 now)
+**Last commit:** e6f5280 (P11-18) — P11-16 commit follows
+**Notes:** P11-16 done. GET /users/export/csv (ADMIN, no passwords), POST /users/import/csv (ADMIN,
+multipart, CREATE-ONLY). New UserCsvService (hand-rolled RFC-4180 parser/escaper — no CSV lib added,
+POI is present but unused here) + UserImportResultDTO (per-row errors, 1-based line numbers matching
+the file). Design (user-confirmed): duplicates rejected+reported (no upsert); each created user gets
+a random undisclosed password → must use forgot-password. AdminUsersPage got an Export/Import toolbar
++ report modal; i18n admin.users.* (parity 600/600). 4 UserCsvServiceTest. Runtime-verified via
+Playwright (export 200/text-csv/no-leak; import report created/failed with exact line numbers; UI
+toolbar + modal). PROB-041: export threw LazyInitializationException on User.userRoles (no @Transactional);
+fixed with @Transactional(readOnly=true) — a @Transactional test masked it, runtime caught it.
+Note: runtime import created test users csvtest1 + uitest1 in the DEV DB (no usable password) — harmless,
+can be deleted from the UI. 2 P11-F items left: P11-15, P11-17.

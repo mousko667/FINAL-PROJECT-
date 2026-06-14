@@ -749,8 +749,19 @@ config` (no `postgres` service; `MINIO_SECRET_KEY: dany1234` resolves identicall
 
 - [ ] **P11-15** Add data-sensitivity classification to financial records (REQ-23 item 1):
       new enum + column via Flyway migration; surface in relevant list/detail views.
-- [ ] **P11-16** Add bulk user import/export (CSV) (REQ-23 item 2): new
-      `UserController` endpoint(s) + `AdminUsersPage.tsx` UI.
+- [x] **P11-16** Add bulk user import/export (CSV) (REQ-23 item 2): new
+      `UserController` endpoint(s) + `AdminUsersPage.tsx` UI. Completed 2026-06-14.
+      `GET /api/v1/users/export/csv` (ADMIN, no passwords) + `POST /api/v1/users/import/csv`
+      (ADMIN, multipart, create-only). New `UserCsvService` (RFC-4180 parser/escaper, no extra
+      lib) + `UserImportResultDTO` (per-row error report with 1-based line numbers). Import is
+      create-only: duplicate username/email rows are rejected and reported (valid rows still
+      imported); each created user gets a random undisclosed password and must use the
+      forgot-password flow. `AdminUsersPage` gained an Export/Import toolbar + import-report modal.
+      i18n `admin.users.*` (FR/EN, parity 600/600). 4 `UserCsvServiceTest` (import outcomes,
+      missing-field reporting, export round-trip with no password leak, quoted-field parsing).
+      Runtime-verified via Playwright (export 200 text/csv no password leak; import report
+      created/failed with exact line numbers; UI toolbar + modal). Found+fixed a
+      LazyInitializationException in export (added `@Transactional(readOnly=true)`). Suite GREEN 312/0/0.
 - [ ] **P11-17** Add self-service access-request workflow (REQ-23 item 3): new entity +
       approval-lite flow for users requesting role/department access changes.
 - [x] **P11-18** Add visual permission-matrix editor (REQ-23 item 4): frontend grid over

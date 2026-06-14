@@ -1,10 +1,126 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import apiClient from '@/services/apiClient'
 import type { ApiResponse, PagedResponse } from '@/types/invoice'
-import { Loader2, Plus, Pencil, LockOpen, UserCheck, UserX } from 'lucide-react'
+import { Loader2, Plus, Pencil, LockOpen, UserCheck, UserX, Download, Upload, X, AlertCircle, CheckCircle } from 'lucide-react'
+
+interface ImportRowError { line: number; username: string; message: string }
+interface ImportResult { totalRows: number; created: number; failed: number; errors: ImportRowError[] }
+
+/** Export/import toolbar for bulk user CSV (P11-16). */
+function CsvToolbar() {
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [report, setReport] = useState<ImportResult | null>(null)
+  const [exporting, setExporting] = useState(false)
+
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      // Authenticated blob download (apiClient attaches the JWT), then trigger a browser save.
+      const res = await apiClient.get('/users/export/csv', { responseType: 'blob' })
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'text/csv' }))
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'users_export.csv'
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.URL.revokeObjectURL(url)
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const importMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const form = new FormData()
+      form.append('file', file)
+      const { data } = await apiClient.post<ApiResponse<ImportResult>>('/users/import/csv', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      return data.data
+    },
+    onSuccess: (result) => {
+      setReport(result)
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+    },
+  })
+
+  const onFileChosen = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) importMutation.mutate(file)
+    e.target.value = '' // allow re-importing the same file
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <button
+        onClick={handleExport}
+        disabled={exporting}
+        className="flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+      >
+        {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+        {t('admin.users.exportCsv')}
+      </button>
+      <button
+        onClick={() => fileInputRef.current?.click()}
+        disabled={importMutation.isPending}
+        className="flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+      >
+        {importMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+        {t('admin.users.importCsv')}
+      </button>
+      <input ref={fileInputRef} type="file" accept=".csv,text/csv" className="hidden" onChange={onFileChosen} />
+
+      {report && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+          <div className="bg-white rounded-xl shadow-lg max-w-lg w-full max-h-[80vh] overflow-auto">
+            <div className="flex items-center justify-between px-5 py-3 border-b">
+              <h2 className="font-semibold text-gray-900">{t('admin.users.importReportTitle')}</h2>
+              <button onClick={() => setReport(null)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-3">
+              <div className="flex items-center gap-4 text-sm">
+                <span className="inline-flex items-center gap-1.5 text-green-700">
+                  <CheckCircle className="w-4 h-4" /> {t('admin.users.importCreated')}: {report.created}
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-red-600">
+                  <AlertCircle className="w-4 h-4" /> {t('admin.users.importFailed')}: {report.failed}
+                </span>
+              </div>
+              {report.errors.length > 0 && (
+                <table className="w-full text-xs border-collapse">
+                  <thead>
+                    <tr className="text-left text-gray-500 border-b">
+                      <th className="py-1 pr-3">{t('admin.users.importLine')}</th>
+                      <th className="py-1 pr-3">{t('admin.users.username')}</th>
+                      <th className="py-1">{t('admin.users.importReason')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.errors.map((err, i) => (
+                      <tr key={i} className="border-b last:border-0">
+                        <td className="py-1 pr-3 text-gray-500">{err.line}</td>
+                        <td className="py-1 pr-3 font-medium text-gray-900">{err.username || '—'}</td>
+                        <td className="py-1 text-red-600">{err.message}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 interface User {
   id: string
@@ -143,13 +259,16 @@ export default function AdminUsersPage() {
           <h1 className="text-2xl font-bold text-gray-900">{t('admin.users.title')}</h1>
           <p className="text-sm text-gray-500 mt-0.5">{data?.totalElements ?? 0} users registered</p>
         </div>
-        <Link
-          to="/admin/users/new"
-          className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 text-sm font-medium transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          {t('admin.users.create')}
-        </Link>
+        <div className="flex items-center gap-2">
+          <CsvToolbar />
+          <Link
+            to="/admin/users/new"
+            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 text-sm font-medium transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            {t('admin.users.create')}
+          </Link>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border overflow-hidden">

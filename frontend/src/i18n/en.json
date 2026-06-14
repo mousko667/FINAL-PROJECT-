@@ -290,7 +290,14 @@
       "unlock": "Unlock Account",
       "resetPassword": "Reset Password",
       "mfaReset": "Reset MFA",
-      "employeeId": "Employee ID"
+      "employeeId": "Employee ID",
+      "exportCsv": "Export CSV",
+      "importCsv": "Import CSV",
+      "importReportTitle": "Import Report",
+      "importCreated": "Created",
+      "importFailed": "Failed",
+      "importLine": "Line",
+      "importReason": "Reason"
     },
     "departments": {
       "title": "Department Management",

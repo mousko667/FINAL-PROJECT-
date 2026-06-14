@@ -290,7 +290,14 @@
       "unlock": "Déverrouiller le compte",
       "resetPassword": "Réinitialiser le mot de passe",
       "mfaReset": "Réinitialiser le MFA",
-      "employeeId": "Matricule"
+      "employeeId": "Matricule",
+      "exportCsv": "Exporter CSV",
+      "importCsv": "Importer CSV",
+      "importReportTitle": "Rapport d'import",
+      "importCreated": "Créés",
+      "importFailed": "Échoués",
+      "importLine": "Ligne",
+      "importReason": "Raison"
     },
     "departments": {
       "title": "Gestion des départements",

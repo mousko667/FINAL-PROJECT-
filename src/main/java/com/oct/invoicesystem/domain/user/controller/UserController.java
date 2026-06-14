@@ -3,7 +3,9 @@ package com.oct.invoicesystem.domain.user.controller;
 import com.oct.invoicesystem.domain.user.dto.AssignRoleRequest;
 import com.oct.invoicesystem.domain.user.dto.UserCreateRequest;
 import com.oct.invoicesystem.domain.user.dto.UserDTO;
+import com.oct.invoicesystem.domain.user.dto.UserImportResultDTO;
 import com.oct.invoicesystem.domain.user.dto.UserUpdateRequest;
+import com.oct.invoicesystem.domain.user.service.UserCsvService;
 import com.oct.invoicesystem.domain.user.service.UserService;
 import com.oct.invoicesystem.shared.response.ApiResponse;
 import com.oct.invoicesystem.shared.response.PagedResponse;
@@ -12,11 +14,17 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.util.UUID;
 
 @RestController
@@ -28,6 +36,7 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService userService;
+    private final UserCsvService userCsvService;
 
     @GetMapping
     @Operation(summary = "List all users", description = "Retrieves a paginated list of users")
@@ -83,5 +92,24 @@ public class UserController {
     public ResponseEntity<ApiResponse<Void>> unlockUser(@PathVariable UUID id) {
         userService.unlockUser(id);
         return ResponseEntity.ok(ApiResponse.success(null, "User account unlocked successfully"));
+    }
+
+    @GetMapping("/export/csv")
+    @Operation(summary = "Export users to CSV", description = "Downloads every user as a CSV file (no passwords)")
+    public ResponseEntity<Resource> exportUsersCsv() {
+        ByteArrayInputStream stream = userCsvService.exportUsersToCsv();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=users_export.csv")
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .body(new InputStreamResource(stream));
+    }
+
+    @PostMapping(value = "/import/csv", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Import users from CSV",
+               description = "Create-only bulk import; returns a per-row result report")
+    public ResponseEntity<ApiResponse<UserImportResultDTO>> importUsersCsv(
+            @RequestParam("file") MultipartFile file) {
+        UserImportResultDTO result = userCsvService.importUsersFromCsv(file);
+        return ResponseEntity.ok(ApiResponse.success(result, "import.completed"));
     }
 }

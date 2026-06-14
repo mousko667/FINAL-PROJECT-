@@ -504,6 +504,18 @@
 
 ---
 
+### [PROB-041] Export CSV des utilisateurs : `LazyInitializationException` en parcourant `User.userRoles` hors session Hibernate
+- **Catégorie :** Backend / Persistence
+- **Sévérité :** 🟠 Moyenne (l'export CSV — P11-16 — renvoyait 500)
+- **Découvert :** 2026-06-14 — vérification runtime de P11-16 (premier appel réel de l'export)
+- **Symptôme :** `GET /api/v1/users/export/csv` → 500 `LazyInitializationException: failed to lazily initialize a collection of role: User.userRoles - no Session` à `UserCsvService.exportUsersToCsv`.
+- **Cause racine :** `exportUsersToCsv` parcourait `u.getUserRoles()` (collection LAZY) **sans transaction** ; la session JPA était déjà fermée au moment de l'itération. Le test unitaire ne l'avait pas attrapé car la classe de test est `@Transactional` (session ouverte pendant tout le test) — un faux négatif classique.
+- **Solution appliquée :** Ajout de `@Transactional(readOnly = true)` sur `exportUsersToCsv` pour garder la session ouverte pendant la sérialisation. (L'import reste **non** transactionnel au niveau méthode : chaque ligne crée son user via `UserService.createUser` qui est déjà `@Transactional`, garantissant l'isolation ligne par ligne — une ligne en échec ne rollback pas les valides.)
+- **Règle préventive :** Toute méthode service qui sérialise des entités en parcourant des associations LAZY (export, mapping manuel) doit être `@Transactional(readOnly = true)`. Attention : un test `@Transactional` masque ce bug — la vérification runtime (hors session) est la vraie preuve (cf. [[verify-runtime-not-snapshot]]).
+- **Fichiers modifiés :** `UserCsvService.java` (`@Transactional(readOnly=true)` sur l'export).
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :
