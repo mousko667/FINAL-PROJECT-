@@ -1596,3 +1596,28 @@ flakiness — my integration test threw at login (404, when getActivePolicy was 
 transaction in a bad state, perturbing test order/isolation. The fallback-with-warning removed the
 throw and the flaky failure disappeared. Lesson: a new @SpringBootTest that errors mid-flow can
 surface latent cross-test isolation issues.
+
+## Session Checkpoint
+**Date:** 2026-06-14
+**Last completed task:** Baseline test stabilisation (PROB-039) + PROB-038 fix — full suite GREEN
+**Phase:** Phase 11 — Audit Correction Cycle
+**Next task:** P11-F (4 deferred IAM net-new features)
+**Branch:** main (uncommitted; about to commit)
+**Last commit:** f16b335 (P11-40 hardening) — this checkpoint precedes the test-stabilisation commit
+**Notes:** The 27 reference failures (25F+2E) were all PRE-EXISTING (confirmed pre-P11-40 via git).
+Investigated and fixed by root cause, not blanket patches (PROB-039), in 5 groups:
+(1) MFA filter blocking privileged test users → `mfaVerified=true` in helpers +
+`enforce-secret-check: false` added to `application-test.yml` (it was only set under the dev
+profile in application.yaml, not test);
+(2) ReportControllerTest RBAC obsolete → rewritten to DAF+ASSISTANT_COMPTABLE only (ADMIN→403,
+AUDITEUR removed) per the user's explicit separation-of-duties rule: ADMIN must NOT access
+financial data — this OVERRIDES API.md which wrongly listed ADMIN;
+(3) Invoice/InvoicePerformance listed as ADMIN (excluded by design) → role changed to DAF;
+(4) StateMachine advanceTo helper used wrong approver for N1 steps → use n1Info;
+(5) ApprovalServiceTest missing @Mock delegationRepository (NPE), UserServiceTest save×2, p3_19 403>400.
+Also fixed a REAL functional gap p3_18 revealed: no staff resubmit endpoint existed (only the
+supplier portal) — added `POST /api/v1/invoices/{id}/resubmit` (ASSISTANT_COMPTABLE, RESUBMIT event);
+i18n keys `action.resubmit.success` already existed.
+Result: **306 tests, 0 failures, 0 errors** (was 303 with 27 failing). New regression baseline = 0.
+Also committing the PROB-038 frontend fix (SecuritySettingsPage `/api/v1` double-prefix → 404),
+verified at runtime earlier. No new baseline failures introduced.

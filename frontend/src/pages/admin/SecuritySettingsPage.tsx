@@ -34,7 +34,7 @@ export default function SecuritySettingsPage() {
 
   const { data: policy, isLoading: policyLoading } = useQuery<SecurityPolicy>({
     queryKey: ['security-policy'],
-    queryFn: () => apiClient.get('/api/v1/admin/security-policy').then(r => r.data.data),
+    queryFn: () => apiClient.get('/admin/security-policy').then(r => r.data.data),
   })
 
   useEffect(() => {
@@ -47,7 +47,7 @@ export default function SecuritySettingsPage() {
   }, [policy])
 
   const savePolicy = useMutation({
-    mutationFn: () => apiClient.put('/api/v1/admin/security-policy', {
+    mutationFn: () => apiClient.put('/admin/security-policy', {
       mfaRequired,
       sessionTimeoutMinutes: sessionTimeout,
       maxLoginAttempts: maxAttempts,
@@ -66,11 +66,11 @@ export default function SecuritySettingsPage() {
 
   const { data: sessions = [], isLoading: sessionsLoading } = useQuery<ActiveSession[]>({
     queryKey: ['admin', 'sessions'],
-    queryFn: () => apiClient.get('/api/v1/admin/sessions').then(r => r.data.data ?? []),
+    queryFn: () => apiClient.get('/admin/sessions').then(r => r.data.data ?? []),
   })
 
   const revokeSession = useMutation({
-    mutationFn: (userId: string) => apiClient.delete(`/api/v1/admin/sessions/user/${userId}`),
+    mutationFn: (userId: string) => apiClient.delete(`/admin/sessions/user/${userId}`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'sessions'] }),
   })
 

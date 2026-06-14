@@ -327,7 +327,6 @@ class StateMachineTransitionExhaustiveTest {
     private Invoice advanceTo(InvoiceStatus target, Department d, User submitter, User approver) {
         Invoice inv = invoice(d);
         UUID sid = submitter.getId();
-        UUID aid = approver.getId();
 
         if (target == InvoiceStatus.BROUILLON) return inv;
 
@@ -335,34 +334,39 @@ class StateMachineTransitionExhaustiveTest {
         sendEvent(inv.getId(), InvoiceEvent.SUBMIT, Map.of(WorkflowExtendedStateKeys.USER_ID, sid));
         if (target == InvoiceStatus.SOUMIS) return inv;
 
-        auth(approver);
-        sendEvent(inv.getId(), InvoiceEvent.ASSIGN_REVIEWER, Map.of(WorkflowExtendedStateKeys.USER_ID, aid));
+        // For a two-level dept the N1 steps (ASSIGN_REVIEWER + VALIDATE_N1) must be performed by
+        // the N1 validator, regardless of which approver the caller ultimately targets (callers
+        // for EN_VALIDATION_N2 / VALIDE / REJETE pass n2Info as `approver`). Use n1Info for N1.
+        boolean twoLevel = d.isRequiresN2();
+        User n1Actor = twoLevel ? n1Info : approver;
+        UUID n1Aid = n1Actor.getId();
+
+        auth(n1Actor);
+        sendEvent(inv.getId(), InvoiceEvent.ASSIGN_REVIEWER, Map.of(WorkflowExtendedStateKeys.USER_ID, n1Aid));
         if (target == InvoiceStatus.EN_VALIDATION_N1) return inv;
 
-        // For two-level dept (INFO) — approver here is n1Info, second approver is n2Info
-        boolean twoLevel = d.isRequiresN2();
         if (twoLevel && target == InvoiceStatus.EN_VALIDATION_N2) {
-            sendEvent(inv.getId(), InvoiceEvent.VALIDATE_N1, Map.of(WorkflowExtendedStateKeys.USER_ID, aid));
+            sendEvent(inv.getId(), InvoiceEvent.VALIDATE_N1, Map.of(WorkflowExtendedStateKeys.USER_ID, n1Aid));
             return inv;
         }
 
         // For REJETE target, stop at the deepest validation state and let the test reject
         if (target == InvoiceStatus.REJETE) {
             if (twoLevel) {
-                sendEvent(inv.getId(), InvoiceEvent.VALIDATE_N1, Map.of(WorkflowExtendedStateKeys.USER_ID, aid));
-                // approver is now n2Info for two-level
+                sendEvent(inv.getId(), InvoiceEvent.VALIDATE_N1, Map.of(WorkflowExtendedStateKeys.USER_ID, n1Aid));
+                // advance into N2 so the test can reject from EN_VALIDATION_N2
                 auth(n2Info);
                 sendEvent(inv.getId(), InvoiceEvent.ASSIGN_REVIEWER, Map.of(WorkflowExtendedStateKeys.USER_ID, n2Info.getId()));
                 sendEvent(inv.getId(), InvoiceEvent.REJECT,
                         Map.of(WorkflowExtendedStateKeys.USER_ID, n2Info.getId(), "rejectionReason", "Auto-reject for test setup"));
             } else {
                 sendEvent(inv.getId(), InvoiceEvent.REJECT,
-                        Map.of(WorkflowExtendedStateKeys.USER_ID, aid, "rejectionReason", "Auto-reject for test setup"));
+                        Map.of(WorkflowExtendedStateKeys.USER_ID, n1Aid, "rejectionReason", "Auto-reject for test setup"));
             }
             return inv;
         }
 
-        sendEvent(inv.getId(), InvoiceEvent.VALIDATE_N1, Map.of(WorkflowExtendedStateKeys.USER_ID, aid));
+        sendEvent(inv.getId(), InvoiceEvent.VALIDATE_N1, Map.of(WorkflowExtendedStateKeys.USER_ID, n1Aid));
         if (twoLevel) {
             auth(n2Info);
             sendEvent(inv.getId(), InvoiceEvent.ASSIGN_REVIEWER, Map.of(WorkflowExtendedStateKeys.USER_ID, n2Info.getId()));

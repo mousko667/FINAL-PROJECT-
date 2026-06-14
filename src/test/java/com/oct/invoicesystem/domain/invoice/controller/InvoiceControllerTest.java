@@ -93,8 +93,10 @@ class InvoiceControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
-    void listInvoices_AsAdmin_Returns200() throws Exception {
+    @WithMockUser(roles = "DAF")
+    void listInvoices_AsAuthorizedRole_Returns200() throws Exception {
+        // ADMIN is intentionally excluded from the invoice list (separation of duties:
+        // admins manage the system, not financial data). DAF is an authorized financial role.
         PagedResponse<Invoice> response = new PagedResponse<>(List.of(sampleInvoice()), 0, 20, 1, 1, true);
         when(invoiceService.listInvoices(any(), any(), any(), any(), any(), any(), anyInt(), anyInt(), anyString()))
                 .thenReturn(response);
@@ -103,6 +105,14 @@ class InvoiceControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.content[0].referenceNumber").value("FAC-2026-00001"));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void listInvoices_AsAdmin_Returns403() throws Exception {
+        // ADMIN must not access the financial invoice list (separation of duties).
+        mockMvc.perform(get("/api/v1/invoices"))
+                .andExpect(status().isForbidden());
     }
 
     @Test

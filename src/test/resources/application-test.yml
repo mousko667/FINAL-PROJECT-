@@ -45,6 +45,12 @@ app:
   jwt:
     secret: test-jwt-secret-key-for-unit-tests-only-not-for-production-use
     expiration: 86400000  # 24 hours in milliseconds
+  # Tests mark privileged users mfaVerified=true without a real TOTP secret. Disable the
+  # secret check (as the dev profile does) so the MfaSetupEnforcementFilter trusts mfaVerified
+  # as-is. MfaIntegrationTest still verifies blocking, because its users have mfaVerified=false.
+  security:
+    mfa:
+      enforce-secret-check: false
 
 # MinIO configuration for tests
 minio:

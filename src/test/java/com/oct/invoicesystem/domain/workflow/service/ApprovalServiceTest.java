@@ -13,6 +13,7 @@ import com.oct.invoicesystem.domain.workflow.dto.ApprovalStepResponse;
 import com.oct.invoicesystem.domain.workflow.dto.ValidatorStatsResponse;
 import com.oct.invoicesystem.domain.workflow.model.ApprovalStep;
 import com.oct.invoicesystem.domain.workflow.model.ApprovalStepStatus;
+import com.oct.invoicesystem.domain.workflow.repository.ApprovalDelegationRepository;
 import com.oct.invoicesystem.domain.workflow.repository.ApprovalStepRepository;
 import com.oct.invoicesystem.shared.exception.WorkflowException;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,6 +50,9 @@ class ApprovalServiceTest {
 
     @Mock
     private InvoiceStateMachineService invoiceStateMachineService;
+
+    @Mock
+    private ApprovalDelegationRepository delegationRepository;
 
     @InjectMocks
     private ApprovalServiceImpl approvalService;
@@ -114,6 +118,8 @@ class ApprovalServiceTest {
     void assignReviewer_WhenSoumis_WithWrongRole_ThrowsAccessDenied() {
         mockSecurityContext("ROLE_WRONG");
         when(invoiceRepository.findByIdAndDeletedAtIsNull(invoice.getId())).thenReturn(Optional.of(invoice));
+        // Wrong role falls through to the delegation lookup; no active delegation → AccessDenied
+        when(delegationRepository.findActiveDelegationsForDelegatee(any(), any())).thenReturn(List.of());
 
         assertThrows(AccessDeniedException.class, () -> approvalService.assignReviewer(invoice.getId()));
     }

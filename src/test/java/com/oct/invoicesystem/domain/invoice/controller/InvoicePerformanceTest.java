@@ -61,7 +61,7 @@ public class InvoicePerformanceTest {
    * Must complete in < 15 seconds
    */
   @Test
-  @WithMockUser(username = "perf_test_user", roles = "ADMIN")
+  @WithMockUser(username = "perf_test_user", roles = "DAF")
   @Transactional
   @DisplayName("Invoice list endpoint should load 10,000 records in < 5 seconds")
   public void testInvoiceListPerformance() throws Exception {
@@ -100,7 +100,7 @@ public class InvoicePerformanceTest {
    * Must complete in < 5 seconds even with filter
    */
   @Test
-  @WithMockUser(username = "perf_test_user", roles = "ADMIN")
+  @WithMockUser(username = "perf_test_user", roles = "DAF")
   @Transactional
   @DisplayName("Invoice list with status filter should complete in < 5 seconds")
   public void testInvoiceListFilterPerformance() throws Exception {

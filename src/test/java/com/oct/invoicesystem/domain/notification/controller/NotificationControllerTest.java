@@ -196,10 +196,14 @@ class NotificationControllerTest {
                 .orElseGet(() -> roleRepository.save(
                         Role.builder().name(roleName).description(roleName).build()));
 
+        // mfaVerified=true so the MfaSetupEnforcementFilter never blocks these notification tests
+        // (ASSISTANT_COMPTABLE and VALIDATEUR_* are mandatory-MFA roles; test profile has
+        // enforce-secret-check=false so no TOTP secret is needed).
         User user = userRepository.save(User.builder()
                 .username(username).email(username + "@oct.ga")
                 .password("$2a$12$dummy").firstName("Test").lastName("User")
-                .active(true).preferredLang("fr").build());
+                .active(true).preferredLang("fr")
+                .mfaEnabled(true).mfaVerified(true).build());
 
         UserRoleId id = new UserRoleId();
         id.setUserId(user.getId());

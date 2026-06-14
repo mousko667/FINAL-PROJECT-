@@ -177,6 +177,16 @@ public class InvoiceController {
         return ResponseEntity.ok(ApiResponse.success(null, "action.submit.success"));
     }
 
+    @PostMapping("/{id}/resubmit")
+    @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
+    @Operation(summary = "Resubmit a rejected invoice",
+               description = "Returns a REJETE invoice to SOUMIS for re-review after correction")
+    public ResponseEntity<ApiResponse<Void>> resubmitInvoice(@PathVariable UUID id, Authentication authentication) {
+        UUID actorId = securityHelper.currentUserId(authentication);
+        invoiceStateMachineService.sendEvent(id, InvoiceEvent.RESUBMIT, java.util.Map.of(WorkflowExtendedStateKeys.USER_ID, actorId));
+        return ResponseEntity.ok(ApiResponse.success(null, "action.resubmit.success"));
+    }
+
     @PostMapping("/{id}/matching/override")
     @PreAuthorize("hasAnyRole('DAF', 'ADMIN')")
     @Operation(summary = "Override three-way matching mismatch",

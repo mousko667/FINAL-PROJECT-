@@ -86,7 +86,9 @@ class UserServiceTest {
         UserDTO result = userService.createUser(createRequest);
         
         assertNotNull(result);
-        verify(userRepository).save(user);
+        // createUser saves twice when roles are present: once to assign the UUID, then again
+        // after attaching the UserRole join entities (UserService.createUser lines 92 & 104).
+        verify(userRepository, times(2)).save(user);
         verify(roleRepository).findByName("ROLE_ADMIN");
     }
 

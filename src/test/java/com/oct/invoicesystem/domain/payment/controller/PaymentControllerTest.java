@@ -111,6 +111,11 @@ class PaymentControllerTest {
         assistant.setPassword(passwordEncoder.encode("Password123!"));
         assistant.setFirstName("Assis");
         assistant.setLastName("Tant");
+        // ASSISTANT_COMPTABLE is a mandatory-MFA role; mark verified so the
+        // MfaSetupEnforcementFilter does not block these payment requests
+        // (test profile: enforce-secret-check=false, so no TOTP secret needed).
+        assistant.setMfaEnabled(true);
+        assistant.setMfaVerified(true);
         assistant = userRepository.save(assistant);
 
         UserRole urAsst = UserRole.builder()

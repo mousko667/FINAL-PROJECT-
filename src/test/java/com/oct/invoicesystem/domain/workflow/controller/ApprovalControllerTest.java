@@ -250,11 +250,12 @@ class ApprovalControllerTest {
                 assistant, new ApprovalRequest("sneaky"))
                 .andExpect(status().isForbidden());
 
-        // N1 trying to do validate-n2 (wrong step, DRH has no N2) → workflow 400/500
-        // We just verify N2 validation by INFO-N1 trying on DRH invoice → wrong role
+        // N1 trying to do validate-n2 → 403: the @PreAuthorize role check (validate-n2 requires a
+        // ROLE_VALIDATEUR_N2_* role) rejects before the workflow logic runs, so authorization (403)
+        // takes precedence over any WorkflowException (400). This is the correct security ordering.
         perform(post("/api/v1/invoices/{id}/workflow/validate-n2", invoice.getId()),
                 n1Drh, new ApprovalRequest("N1 usurping N2"))
-                .andExpect(status().isBadRequest()); // WorkflowException → 400
+                .andExpect(status().isForbidden());
 
         // Advance to VALIDE legitimately
         invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.VALIDATE_N1,
@@ -349,12 +350,13 @@ class ApprovalControllerTest {
                 .preferredLang("fr")
                 .build();
         
-        // For high-privilege roles, set mfaVerified=true to avoid MFA enforcement filter blocking
-        if (requiresMandatoryMfa(roleName)) {
-            user.setMfaEnabled(true);
-            user.setMfaVerified(true);
-        }
-        
+        // Mark every test user as MFA-verified so the MfaSetupEnforcementFilter never blocks
+        // requests in these workflow tests. The filter treats ASSISTANT_COMPTABLE, DAF, ADMIN and
+        // all VALIDATEUR_* roles as mandatory-MFA; setting it unconditionally keeps the helper
+        // correct even if the prod role list changes (test profile: enforce-secret-check=false).
+        user.setMfaEnabled(true);
+        user.setMfaVerified(true);
+
         user = userRepository.save(user);   // user.getId() is now non-null
 
         // Step 2: build UserRole with explicit composite key and add it
@@ -368,13 +370,6 @@ class ApprovalControllerTest {
 
         // Re-fetch fully loaded (with roles eager via @EntityGraph on findByUsername)
         return userRepository.findByUsername(user.getUsername()).orElseThrow();
-    }
-    
-    private boolean requiresMandatoryMfa(String roleName) {
-        return "ROLE_ADMIN".equals(roleName)
-                || "ROLE_DAF".equals(roleName)
-                || roleName.startsWith("ROLE_VALIDATEUR_N1_")
-                || roleName.startsWith("ROLE_VALIDATEUR_N2_");
     }
 
     private Invoice createInvoice(Department dept, User actor) {
