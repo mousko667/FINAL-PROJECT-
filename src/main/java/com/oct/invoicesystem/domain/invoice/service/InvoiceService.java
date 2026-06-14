@@ -106,6 +106,24 @@ public class InvoiceService {
     }
 
     /**
+     * Updates the data-sensitivity classification of an invoice (P11-15). This is metadata, not
+     * invoice content, so it can be reclassified at any workflow status. Role enforcement (DAF or
+     * Assistant Comptable) is applied by the controller's {@code @PreAuthorize}.
+     *
+     * @param invoiceId target invoice id
+     * @param sensitivity the new sensitivity level
+     * @return the updated invoice
+     */
+    @Transactional
+    public Invoice updateDataSensitivity(UUID invoiceId,
+            com.oct.invoicesystem.domain.invoice.model.DataSensitivity sensitivity) {
+        Invoice invoice = invoiceRepository.findByIdAndDeletedAtIsNull(invoiceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Invoice not found with id: " + invoiceId));
+        invoice.setDataSensitivity(sensitivity);
+        return invoiceRepository.save(invoice);
+    }
+
+    /**
      * Soft deletes an invoice by setting deletedAt.
      *
      * @param invoiceId target invoice id

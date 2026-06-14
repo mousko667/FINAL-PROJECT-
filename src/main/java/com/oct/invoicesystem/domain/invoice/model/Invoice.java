@@ -101,6 +101,11 @@ public class Invoice {
     @Builder.Default
     private InvoiceStatus status = InvoiceStatus.BROUILLON;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "data_sensitivity", nullable = false, length = 20)
+    @Builder.Default
+    private DataSensitivity dataSensitivity = DataSensitivity.INTERNAL;
+
     @Version
     @Column(nullable = false)
     @Builder.Default

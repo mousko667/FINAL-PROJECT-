@@ -8,7 +8,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge'
 import { InvoiceTimeline } from '@/components/invoice/InvoiceTimeline'
 import { InvoiceActionPanel } from '@/components/invoice/InvoiceActionPanel'
 import { useAppSelector } from '@/store/hooks'
-import { Loader2, ArrowLeft, Download, CheckCircle, XCircle, AlertTriangle, MinusCircle, Clock, User, FileDown } from 'lucide-react'
+import { Loader2, ArrowLeft, Download, CheckCircle, XCircle, AlertTriangle, MinusCircle, Clock, User, FileDown, Lock } from 'lucide-react'
 
 interface ApprovalStep {
   id: string
@@ -50,6 +50,22 @@ function MatchingBadge({ status }: { status: string }) {
   )
 }
 
+const SENSITIVITY_STYLES: Record<string, string> = {
+  PUBLIC: 'bg-gray-100 text-gray-700',
+  INTERNAL: 'bg-blue-100 text-blue-800',
+  CONFIDENTIAL: 'bg-red-100 text-red-800',
+}
+
+function SensitivityBadge({ level }: { level: string }) {
+  const { t } = useTranslation()
+  const cls = SENSITIVITY_STYLES[level] ?? SENSITIVITY_STYLES.INTERNAL
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${cls}`}>
+      <Lock className="w-3.5 h-3.5" />{t(`sensitivity.${level}`, level)}
+    </span>
+  )
+}
+
 export default function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { t } = useTranslation()
@@ -57,6 +73,8 @@ export default function InvoiceDetailPage() {
   const queryClient = useQueryClient()
   const roles = useAppSelector((s) => s.auth.user?.roles ?? [])
   const canOverride = roles.includes('ROLE_DAF') || roles.includes('ROLE_ADMIN') || roles.includes('ROLE_ASSISTANT_COMPTABLE')
+  // P11-15: only DAF and Assistant Comptable may reclassify an invoice's data sensitivity.
+  const canClassify = roles.includes('ROLE_DAF') || roles.includes('ROLE_ASSISTANT_COMPTABLE')
 
   const [overrideReason, setOverrideReason] = useState('')
   const [showOverrideForm, setShowOverrideForm] = useState(false)
@@ -86,6 +104,13 @@ export default function InvoiceDetailPage() {
     },
     enabled: !!id && !!invoice?.purchaseOrderId,
     retry: false,
+  })
+
+  const sensitivityMutation = useMutation({
+    mutationFn: async (level: string) => {
+      await apiClient.patch(`/invoices/${id}/sensitivity`, { dataSensitivity: level })
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['invoice', id] }),
   })
 
   const overrideMutation = useMutation({
@@ -127,6 +152,7 @@ export default function InvoiceDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          {invoice.dataSensitivity && <SensitivityBadge level={invoice.dataSensitivity} />}
           {invoice.matchingStatus && <MatchingBadge status={invoice.matchingStatus} />}
           <StatusBadge status={invoice.status} className="text-sm px-3 py-1" />
           <button
@@ -186,6 +212,30 @@ export default function InvoiceDetailPage() {
                 </div>
               )}
             </dl>
+          </div>
+
+          {/* Data Sensitivity Classification (P11-15) */}
+          <div className="bg-white rounded-xl border p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 className="font-semibold text-gray-800">{t('sensitivity.title', 'Data Sensitivity')}</h2>
+                <p className="text-sm text-muted-foreground mt-0.5">{t('sensitivity.subtitle', 'Confidentiality level of this financial record.')}</p>
+              </div>
+              {canClassify ? (
+                <select
+                  value={invoice.dataSensitivity ?? 'INTERNAL'}
+                  onChange={(e) => sensitivityMutation.mutate(e.target.value)}
+                  disabled={sensitivityMutation.isPending}
+                  className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+                >
+                  <option value="PUBLIC">{t('sensitivity.PUBLIC', 'Public')}</option>
+                  <option value="INTERNAL">{t('sensitivity.INTERNAL', 'Internal')}</option>
+                  <option value="CONFIDENTIAL">{t('sensitivity.CONFIDENTIAL', 'Confidential')}</option>
+                </select>
+              ) : (
+                <SensitivityBadge level={invoice.dataSensitivity ?? 'INTERNAL'} />
+              )}
+            </div>
           </div>
 
           {/* Three-Way Matching Result */}

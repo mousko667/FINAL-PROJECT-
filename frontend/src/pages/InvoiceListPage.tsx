@@ -6,7 +6,7 @@ import { useAppSelector } from '@/store/hooks'
 import { invoiceService, type InvoiceFilters } from '@/services/invoiceService'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { InvoiceStatus } from '@/types/invoice'
-import { Plus, Search, ChevronLeft, ChevronRight, Loader2, Archive } from 'lucide-react'
+import { Plus, Search, ChevronLeft, ChevronRight, Loader2, Archive, Lock } from 'lucide-react'
 
 const ALL_STATUSES: InvoiceStatus[] = [
   'BROUILLON', 'SOUMIS', 'EN_VALIDATION_N1', 'EN_VALIDATION_N2',
@@ -188,7 +188,14 @@ export default function InvoiceListPage() {
                       className="hover:bg-gray-50 cursor-pointer transition-colors"
                       onClick={() => navigate(`/invoices/${invoice.id}`)}
                     >
-                      <td className="px-4 py-3 font-medium text-primary">{invoice.referenceNumber}</td>
+                      <td className="px-4 py-3 font-medium text-primary">
+                        <span className="inline-flex items-center gap-1.5">
+                          {invoice.dataSensitivity === 'CONFIDENTIAL' && (
+                            <Lock className="w-3.5 h-3.5 text-red-600" aria-label={t('sensitivity.CONFIDENTIAL', 'Confidential')} />
+                          )}
+                          {invoice.referenceNumber}
+                        </span>
+                      </td>
                       <td className="px-4 py-3 text-gray-700">{invoice.supplierName}</td>
                       <td className="px-4 py-3 text-right font-mono">
                         {invoice.amount.toLocaleString()} {invoice.currency}

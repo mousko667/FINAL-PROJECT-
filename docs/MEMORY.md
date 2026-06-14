@@ -1658,3 +1658,21 @@ toolbar + modal). PROB-041: export threw LazyInitializationException on User.use
 fixed with @Transactional(readOnly=true) — a @Transactional test masked it, runtime caught it.
 Note: runtime import created test users csvtest1 + uitest1 in the DEV DB (no usable password) — harmless,
 can be deleted from the UI. 2 P11-F items left: P11-15, P11-17.
+
+## Session Checkpoint
+**Date:** 2026-06-14
+**Last completed task:** P11-15 (data-sensitivity classification) — suite GREEN 316/0/0
+**Phase:** Phase 11 — Audit Correction Cycle (P11-F, IAM gaps)
+**Next task:** P11-17 (self-service access-request workflow) — last P11-F item
+**Branch:** main (committing P11-15 now)
+**Last commit:** b771bfa (CSV formula-injection fix) — P11-15 commit follows
+**Notes:** P11-F now 3/4 done (P11-18, P11-16, P11-15). P11-15: DataSensitivity enum
+(PUBLIC/INTERNAL/CONFIDENTIAL, default INTERNAL) on Invoice via migration V46; exposed in InvoiceDTO
+(MapStruct — but had to fix the one manual new InvoiceDTO(...) in SupplierPortalController + import
+PatchMapping). PATCH /invoices/{id}/sensitivity (DAF+ASSISTANT_COMPTABLE). Frontend: SensitivityBadge
++ classify <select> on detail (read-only badge for others), red lock on CONFIDENTIAL rows in the list.
+i18n sensitivity.* (parity 605/605). 3 InvoiceSensitivityTest. Runtime-verified (default INTERNAL,
+PATCH→CONFIDENTIAL persists via API and via UI select, role 403). Design (user-confirmed): Invoice only,
+3 levels, edit by DAF+Assistant. Also note: a commit security review on P11-16 flagged CSV formula
+injection (=,+,-,@) in the export — fixed (escape() prefixes a quote) + test, committed b771bfa.
+1 P11-F item left: P11-17 (access-request workflow — the biggest, new entity + approval-lite flow).

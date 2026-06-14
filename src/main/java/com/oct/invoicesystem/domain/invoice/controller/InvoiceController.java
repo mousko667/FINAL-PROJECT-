@@ -3,6 +3,7 @@ package com.oct.invoicesystem.domain.invoice.controller;
 import com.oct.invoicesystem.domain.department.model.Department;
 import com.oct.invoicesystem.domain.invoice.dto.InvoiceCreateRequest;
 import com.oct.invoicesystem.domain.invoice.dto.InvoiceDTO;
+import com.oct.invoicesystem.domain.invoice.dto.UpdateSensitivityRequest;
 import com.oct.invoicesystem.domain.invoice.dto.InvoiceUpdateRequest;
 import com.oct.invoicesystem.domain.invoice.mapper.InvoiceMapper;
 import com.oct.invoicesystem.domain.invoice.model.Invoice;
@@ -35,6 +36,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -156,6 +158,17 @@ public class InvoiceController {
         UUID actorId = securityHelper.currentUserId(authentication);
         Invoice updated = invoiceService.updateInvoice(id, toInvoice(request, actorId), actorId);
         return ResponseEntity.ok(ApiResponse.success(invoiceMapper.toDto(updated), "Invoice updated successfully"));
+    }
+
+    @PatchMapping("/{id}/sensitivity")
+    @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
+    @Operation(summary = "Reclassify invoice sensitivity",
+               description = "Sets the data-sensitivity level (PUBLIC/INTERNAL/CONFIDENTIAL) of an invoice")
+    public ResponseEntity<ApiResponse<InvoiceDTO>> updateSensitivity(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateSensitivityRequest request) {
+        Invoice updated = invoiceService.updateDataSensitivity(id, request.dataSensitivity());
+        return ResponseEntity.ok(ApiResponse.success(invoiceMapper.toDto(updated), "Sensitivity updated successfully"));
     }
 
     @DeleteMapping("/{id}")

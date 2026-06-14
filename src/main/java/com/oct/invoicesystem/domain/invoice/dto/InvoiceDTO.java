@@ -1,5 +1,6 @@
 package com.oct.invoicesystem.domain.invoice.dto;
 
+import com.oct.invoicesystem.domain.invoice.model.DataSensitivity;
 import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
 
 import java.math.BigDecimal;
@@ -23,6 +24,7 @@ public record InvoiceDTO(
         LocalDate dueDate,
         String description,
         InvoiceStatus status,
+        DataSensitivity dataSensitivity,
         String matchingStatus,
         Integer version,
         Instant createdAt,

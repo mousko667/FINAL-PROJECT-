@@ -720,5 +720,12 @@
       "title": "Supplier portal registration",
       "note": "This form is for external suppliers only. OCT staff accounts are created by the System Administrator — contact your IT department for access."
     }
+  },
+  "sensitivity": {
+    "title": "Data Sensitivity",
+    "subtitle": "Confidentiality level of this financial record.",
+    "PUBLIC": "Public",
+    "INTERNAL": "Internal",
+    "CONFIDENTIAL": "Confidential"
   }
 }

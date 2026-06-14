@@ -720,5 +720,12 @@
       "title": "Inscription au portail fournisseur",
       "note": "Ce formulaire est réservé aux fournisseurs externes. Les comptes du personnel OCT sont créés par l'administrateur système — contactez votre service informatique pour obtenir un accès."
     }
+  },
+  "sensitivity": {
+    "title": "Sensibilité des données",
+    "subtitle": "Niveau de confidentialité de cette donnée financière.",
+    "PUBLIC": "Public",
+    "INTERNAL": "Interne",
+    "CONFIDENTIAL": "Confidentiel"
   }
 }

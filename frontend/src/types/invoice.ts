@@ -39,6 +39,7 @@ export interface Invoice {
   issueDate: string
   dueDate: string
   status: InvoiceStatus
+  dataSensitivity?: 'PUBLIC' | 'INTERNAL' | 'CONFIDENTIAL'
   matchingStatus?: 'MATCHED' | 'PARTIAL' | 'MISMATCH' | 'OVERRIDDEN' | null
   description?: string
   department?: {

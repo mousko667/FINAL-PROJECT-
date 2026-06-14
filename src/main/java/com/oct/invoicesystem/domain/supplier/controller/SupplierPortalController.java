@@ -294,6 +294,7 @@ public class SupplierPortalController {
                 invoice.getDueDate(),
                 invoice.getDescription(),
                 invoice.getStatus(),
+                invoice.getDataSensitivity(),
                 invoice.getMatchingStatus(),
                 invoice.getVersion(),
                 invoice.getCreatedAt(),

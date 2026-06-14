@@ -747,8 +747,18 @@ config` (no `postgres` service; `MINIO_SECRET_KEY: dany1234` resolves identicall
 > every other sub-phase and can run at any time, so it is deferred until P11-G/H/I (concrete,
 > fully-specified corrections) are done. Revisit with a proper design pass.
 
-- [ ] **P11-15** Add data-sensitivity classification to financial records (REQ-23 item 1):
+- [x] **P11-15** Add data-sensitivity classification to financial records (REQ-23 item 1):
       new enum + column via Flyway migration; surface in relevant list/detail views.
+      Completed 2026-06-14. New `DataSensitivity` enum (PUBLIC/INTERNAL/CONFIDENTIAL, bilingual) on
+      `Invoice` (`@Enumerated(STRING)`, default INTERNAL) via migration `V46`. Exposed in `InvoiceDTO`
+      (MapStruct auto-map; fixed the one manual `new InvoiceDTO(...)` in `SupplierPortalController`).
+      New `PATCH /api/v1/invoices/{id}/sensitivity` (`@PreAuthorize` DAF + ASSISTANT_COMPTABLE) +
+      `UpdateSensitivityRequest`. Frontend: a `SensitivityBadge` + classification `<select>` (edit for
+      DAF/Assistant, read-only badge otherwise) on the invoice detail, and a red lock icon next to the
+      reference in the list for CONFIDENTIAL invoices. i18n `sensitivity.*` (FR/EN, parity 605/605).
+      3 `InvoiceSensitivityTest` (default INTERNAL, PATCH persists as assistant, 403 for unauthorised
+      role). Runtime-verified via Playwright (default INTERNAL, PATCH→CONFIDENTIAL persists, UI select +
+      badge, role gating). Suite GREEN 316/0/0.
 - [x] **P11-16** Add bulk user import/export (CSV) (REQ-23 item 2): new
       `UserController` endpoint(s) + `AdminUsersPage.tsx` UI. Completed 2026-06-14.
       `GET /api/v1/users/export/csv` (ADMIN, no passwords) + `POST /api/v1/users/import/csv`
