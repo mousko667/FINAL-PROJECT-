@@ -30,6 +30,8 @@ const AdminDelegationsPage = lazy(() => import('@/pages/admin/AdminDelegationsPa
 const AdminMatchingConfigPage = lazy(() => import('@/pages/admin/AdminMatchingConfigPage'))
 const SecuritySettingsPage = lazy(() => import('@/pages/admin/SecuritySettingsPage'))
 const IntegrationsPage = lazy(() => import('@/pages/admin/IntegrationsPage'))
+const MyAccessRequestsPage = lazy(() => import('@/pages/MyAccessRequestsPage'))
+const AdminAccessRequestsPage = lazy(() => import('@/pages/admin/AdminAccessRequestsPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 const SuppliersPage = lazy(() => import('@/pages/admin/SuppliersPage'))
 const SupplierDetailPage = lazy(() => import('@/pages/admin/SupplierDetailPage'))
@@ -68,6 +70,7 @@ function AppRoutes() {
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/access-requests" element={<MyAccessRequestsPage />} />
             <Route path="/invoices" element={<InvoiceListPage />} />
             <Route path="/invoices/new" element={<InvoiceCreatePage />} />
             <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
@@ -82,6 +85,7 @@ function AppRoutes() {
             <Route path="/admin/users" element={<AdminUsersPage />} />
             <Route path="/admin/users/new" element={<AdminUserFormPage />} />
             <Route path="/admin/permissions" element={<AdminPermissionMatrixPage />} />
+            <Route path="/admin/access-requests" element={<AdminAccessRequestsPage />} />
             <Route path="/admin/departments" element={<AdminDepartmentsPage />} />
             <Route path="/admin/departments/new" element={<AdminDepartmentFormPage />} />
             <Route path="/admin/audit" element={<AdminAuditPage />} />

@@ -1676,3 +1676,31 @@ PATCH→CONFIDENTIAL persists via API and via UI select, role 403). Design (user
 3 levels, edit by DAF+Assistant. Also note: a commit security review on P11-16 flagged CSV formula
 injection (=,+,-,@) in the export — fixed (escape() prefixes a quote) + test, committed b771bfa.
 1 P11-F item left: P11-17 (access-request workflow — the biggest, new entity + approval-lite flow).
+
+## Session Checkpoint
+**Date:** 2026-06-14
+**Last completed task:** P11-17 (self-service access-request workflow) — suite GREEN 328/0/0
+**Phase:** Phase 11 — Audit Correction Cycle (P11-F **COMPLETE**, 4/4)
+**Next task:** P11-K (Larger Feature Builds, ~lines 1005-1029 of TASKS.md) — the next sub-phase in order
+**Branch:** main (committing P11-17 now)
+**Notes:** New `access` domain: `AccessRequest` entity + `AccessRequestStatus` enum
+(PENDING/APPROVED/REJECTED, bilingual labels like DataSensitivity) via migration V47
+(access_requests: requester_id FK, requested_role, reason, status, reviewed_by FK, review_comment,
+created_at, reviewed_at). Hand-written `AccessRequestMapper` (not MapStruct — DTO flattens
+requester/reviewer into full-name fields). Endpoints: POST /access-requests (staff, !SUPPLIER),
+GET /access-requests/mine (staff), GET /access-requests?status= (ADMIN queue), PATCH
+/access-requests/{id} (ADMIN approve/reject). **Approval grants the requested role** via the
+explicit-UserRoleId composite-key pattern (same as UserService.createUser/assignRoles — PROB-040
+discipline applied proactively, NO new bug). Guards → ValidationException(400): unknown role,
+ROLE_SUPPLIER, already-held role, duplicate PENDING, already-reviewed. Frontend: MyAccessRequestsPage
+(/access-requests, in "Compte" sidebar section, all staff) + AdminAccessRequestsPage
+(/admin/access-requests, in Admin section). Role <select> excludes already-held roles + supplier.
+i18n accessRequests.* (FR/EN parity 633/633). 12 tests (6 service-integration incl. role-grant flush,
+6 controller role-gating). Runtime-verified end-to-end via Playwright: aa (assistant comptable)
+requested DAF→POST 201; admin queue showed it; approve→PATCH 200→"Approuvée"; DB confirmed ROLE_DAF
+added to aa (then reverted aa to ASSISTANT_COMPTABLE only via PUT /users/{id}/roles to keep dev DB
+clean). No PROB logged — clean RED→GREEN. **P11-F exit criteria met** (4/4 implemented, tested,
+added to REQUIREMENTS-MATRIX Module 13 as ✅ COMPLET). Dev-DB test data left: one APPROVED
+access_request row for aa (harmless). NOT committing CLAUDE.md / REQUIREMENTS-MATRIX.md / SCOPE.md /
+audit (not my call). No push (push only at phase completion; Phase 11 needs P11-K too; direct
+origin/main blocked → use origin/backup/phase11-2026-06-13).

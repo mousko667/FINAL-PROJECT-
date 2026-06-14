@@ -82,6 +82,38 @@
     "goodsReceipts": "Goods Receipts",
     "payments": "Payments"
   },
+  "accessRequests": {
+    "navMine": "My Access Requests",
+    "navAdmin": "Access Requests",
+    "myTitle": "My Access Requests",
+    "mySubtitle": "Request an additional role. An administrator will review your request.",
+    "adminTitle": "Access Requests",
+    "adminSubtitle": "Review role requests. Approving automatically grants the role to the requester.",
+    "role": "Role",
+    "selectRole": "Select a role…",
+    "reason": "Reason",
+    "reasonPlaceholder": "Explain why you need this role…",
+    "submit": "Submit Request",
+    "submitError": "Failed to submit the request.",
+    "formIncomplete": "Please select a role and provide a reason.",
+    "myRequests": "My Requests",
+    "noneMine": "You have no access requests.",
+    "noneQueue": "No requests to display.",
+    "requester": "Requester",
+    "statusCol": "Status",
+    "reviewComment": "Comment",
+    "action": "Action",
+    "approve": "Approve",
+    "reject": "Reject",
+    "commentPlaceholder": "Comment (optional)",
+    "reviewedBy": "Reviewed by {{name}}",
+    "filterAll": "All",
+    "status": {
+      "PENDING": "Pending",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected"
+    }
+  },
   "dashboard": {
     "title": "Dashboard",
     "totalInvoices": "Total Invoices",

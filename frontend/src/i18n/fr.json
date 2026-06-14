@@ -82,6 +82,38 @@
     "goodsReceipts": "Bons de Réception",
     "payments": "Paiements"
   },
+  "accessRequests": {
+    "navMine": "Mes demandes d'accès",
+    "navAdmin": "Demandes d'accès",
+    "myTitle": "Mes demandes d'accès",
+    "mySubtitle": "Demandez un rôle supplémentaire. Un administrateur examinera votre demande.",
+    "adminTitle": "Demandes d'accès",
+    "adminSubtitle": "Examinez les demandes de rôle. L'approbation attribue automatiquement le rôle au demandeur.",
+    "role": "Rôle",
+    "selectRole": "Sélectionnez un rôle…",
+    "reason": "Motif",
+    "reasonPlaceholder": "Expliquez pourquoi vous avez besoin de ce rôle…",
+    "submit": "Envoyer la demande",
+    "submitError": "Échec de l'envoi de la demande.",
+    "formIncomplete": "Veuillez sélectionner un rôle et indiquer un motif.",
+    "myRequests": "Mes demandes",
+    "noneMine": "Vous n'avez aucune demande d'accès.",
+    "noneQueue": "Aucune demande à afficher.",
+    "requester": "Demandeur",
+    "statusCol": "Statut",
+    "reviewComment": "Commentaire",
+    "action": "Action",
+    "approve": "Approuver",
+    "reject": "Rejeter",
+    "commentPlaceholder": "Commentaire (facultatif)",
+    "reviewedBy": "Examinée par {{name}}",
+    "filterAll": "Toutes",
+    "status": {
+      "PENDING": "En attente",
+      "APPROVED": "Approuvée",
+      "REJECTED": "Rejetée"
+    }
+  },
   "dashboard": {
     "title": "Tableau de bord",
     "totalInvoices": "Total des factures",

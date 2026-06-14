@@ -165,6 +165,7 @@ export default function Sidebar() {
         {/* Common */}
         <SectionLabel label="Compte" />
         <NavItem to="/notifications" icon={Bell} label={t('nav.notifications', 'Notifications')} />
+        <NavItem to="/access-requests" icon={KeyRound} label={t('accessRequests.navMine', 'Mes demandes d\'accès')} />
         <NavItem to="/profile" icon={UserCircle} label={t('nav.profile', 'Profil')} />
 
         {/* Admin section */}
@@ -172,6 +173,7 @@ export default function Sidebar() {
           <SectionLabel label={t('nav.admin')} />
           <NavItem to="/admin/users" icon={Users} label={t('nav.users')} />
           <NavItem to="/admin/permissions" icon={KeyRound} label={t('admin.permissions.navTitle', 'Matrice des permissions')} />
+          <NavItem to="/admin/access-requests" icon={UserCheck} label={t('accessRequests.navAdmin', 'Demandes d\'accès')} />
           <NavItem to="/admin/departments" icon={Building2} label={t('nav.departments')} />
           <NavItem to="/admin/suppliers" icon={Truck} label={t('nav.suppliers')} />
           <NavItem to="/admin/audit" icon={ScrollText} label={t('nav.auditLog')} />

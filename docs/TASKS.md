@@ -772,8 +772,24 @@ config` (no `postgres` service; `MINIO_SECRET_KEY: dany1234` resolves identicall
       Runtime-verified via Playwright (export 200 text/csv no password leak; import report
       created/failed with exact line numbers; UI toolbar + modal). Found+fixed a
       LazyInitializationException in export (added `@Transactional(readOnly=true)`). Suite GREEN 312/0/0.
-- [ ] **P11-17** Add self-service access-request workflow (REQ-23 item 3): new entity +
-      approval-lite flow for users requesting role/department access changes.
+- [x] **P11-17** Add self-service access-request workflow (REQ-23 item 3): new entity +
+      approval-lite flow for users requesting role/department access changes. Completed 2026-06-14.
+      New `access` domain: `AccessRequest` entity + `AccessRequestStatus` enum
+      (PENDING/APPROVED/REJECTED, bilingual) via migration `V47`. Flow: staff
+      `POST /api/v1/access-requests` (one additional role + reason, created PENDING) →
+      ADMIN `GET /api/v1/access-requests?status=PENDING` (review queue) → ADMIN
+      `PATCH /api/v1/access-requests/{id}` (approve/reject + optional comment). **Approval grants the
+      requested role to the requester** (reuses the explicit-`UserRoleId` composite-key pattern from
+      UserService — PROB-040). Guards: unknown role / ROLE_SUPPLIER / already-held role / duplicate
+      pending → `ValidationException` (400); already-reviewed → 400. Security: create + `/mine` =
+      any authenticated staff (`!hasRole('SUPPLIER')`); queue + review = ADMIN only. Frontend:
+      `MyAccessRequestsPage` (`/access-requests`, request form + own-requests table, in "Compte")
+      and `AdminAccessRequestsPage` (`/admin/access-requests`, status-filtered queue + approve/reject,
+      in Admin). i18n `accessRequests.*` (FR/EN, parity 633/633). 12 tests
+      (`AccessRequestServiceIntegrationTest` ×6 real-DB flush incl. role grant on approval,
+      `AccessRequestControllerTest` ×6 role-gating). Runtime-verified via Playwright end-to-end:
+      POST→201, queue shows request, PATCH approve→200, **DB confirmed `ROLE_DAF` added to `aa`**
+      (then reverted). Suite GREEN 328/0/0.
 - [x] **P11-18** Add visual permission-matrix editor (REQ-23 item 4): frontend grid over
       the existing `PUT /{id}/roles` endpoint. Completed 2026-06-14. New `AdminPermissionMatrixPage`
       (users × roles grid of checkboxes, per-row Save, ADMIN-only) at `/admin/permissions` +
