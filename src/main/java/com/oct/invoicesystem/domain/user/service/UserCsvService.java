@@ -218,9 +218,21 @@ public class UserCsvService {
         return rows;
     }
 
-    /** Escape a value for CSV output (quote if it contains comma, quote, CR or LF). */
+    /**
+     * Escape a value for CSV output: quote if it contains a comma, quote, CR or LF, and defend
+     * against CSV formula injection by prefixing a single quote when the value starts with a
+     * spreadsheet formula trigger ({@code = + - @} or a leading tab/CR). User-controlled fields
+     * (names, email…) are exported, so a value like {@code =cmd|...} must not execute when the
+     * file is opened in Excel/Sheets.
+     */
     static String escape(String value) {
         if (value == null) return "";
+        if (!value.isEmpty()) {
+            char c0 = value.charAt(0);
+            if (c0 == '=' || c0 == '+' || c0 == '-' || c0 == '@' || c0 == '\t' || c0 == '\r') {
+                value = "'" + value;
+            }
+        }
         boolean needsQuote = value.contains(",") || value.contains("\"")
                 || value.contains("\n") || value.contains("\r");
         if (!needsQuote) return value;

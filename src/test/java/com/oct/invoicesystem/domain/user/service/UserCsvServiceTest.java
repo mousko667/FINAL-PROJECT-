@@ -88,6 +88,25 @@ class UserCsvServiceTest {
     }
 
     @Test
+    void export_neutralizesCsvFormulaInjection() {
+        // A username starting with '=' must be neutralised (prefixed with ') so it can't execute
+        // as a formula when the CSV is opened in a spreadsheet.
+        userRepository.save(User.builder()
+                .username("=cmd|'/c calc'!A1").email("evil@oct.test")
+                .password("$2a$12$dummy").firstName("+attack").lastName("@danger")
+                .active(true).preferredLang("fr").build());
+
+        String exported = new String(userCsvService.exportUsersToCsv().readAllBytes(), StandardCharsets.UTF_8);
+
+        // The raw formula-triggering values must not appear unprefixed at a cell boundary.
+        assertThat(exported).doesNotContain(",=cmd").doesNotContain(",+attack").doesNotContain(",@danger");
+        // They are present, but prefixed with a single quote (quoted because of the embedded comma).
+        assertThat(exported).contains("'=cmd");
+        assertThat(exported).contains("'+attack");
+        assertThat(exported).contains("'@danger");
+    }
+
+    @Test
     void csvParser_handlesQuotedFieldsWithCommasAndEscapedQuotes() throws Exception {
         String body = HEADER + "\"quo,ted\",q@oct.test,\"Last\"\"Name\",L,fr,,,,true,\r\n";
         var rows = UserCsvService.parse(new java.io.BufferedReader(new java.io.StringReader(body)));
