@@ -348,6 +348,16 @@
       "sessionAction": "Action",
       "revoke": "Revoke"
     },
+    "permissions": {
+      "navTitle": "Permission Matrix",
+      "title": "Permission Matrix",
+      "subtitle": "Assign roles to users. Tick or untick a role, then Save that row.",
+      "user": "User",
+      "action": "Action",
+      "save": "Save",
+      "saved": "Saved",
+      "saveError": "Save failed"
+    },
     "integrations": {
       "title": "Integrations & Webhooks",
       "subtitle": "Configure connections to external systems and webhook endpoints.",

@@ -153,6 +153,9 @@ public class UserService {
                 Role role = roleRepository.findById(roleId)
                         .orElseThrow(() -> new ResourceNotFoundException("Role not found with id: " + roleId));
                 UserRole userRole = new UserRole();
+                // The @EmbeddedId composite key must be set explicitly, otherwise Hibernate cannot
+                // populate UserRoleId.roleId on flush (NPE / JpaSystemException). Same pattern as createUser.
+                userRole.setId(new com.oct.invoicesystem.domain.user.model.UserRoleId(user.getId(), role.getId()));
                 userRole.setUser(user);
                 userRole.setRole(role);
                 user.getUserRoles().add(userRole);

@@ -348,6 +348,16 @@
       "sessionAction": "Action",
       "revoke": "Révoquer"
     },
+    "permissions": {
+      "navTitle": "Matrice des permissions",
+      "title": "Matrice des permissions",
+      "subtitle": "Attribuez des rôles aux utilisateurs. Cochez ou décochez un rôle, puis enregistrez la ligne.",
+      "user": "Utilisateur",
+      "action": "Action",
+      "save": "Enregistrer",
+      "saved": "Enregistré",
+      "saveError": "Échec de l'enregistrement"
+    },
     "integrations": {
       "title": "Intégrations & Webhooks",
       "subtitle": "Configurez les connexions aux systèmes externes et les points de terminaison webhook.",

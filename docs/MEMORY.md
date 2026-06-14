@@ -1621,3 +1621,21 @@ i18n keys `action.resubmit.success` already existed.
 Result: **306 tests, 0 failures, 0 errors** (was 303 with 27 failing). New regression baseline = 0.
 Also committing the PROB-038 frontend fix (SecuritySettingsPage `/api/v1` double-prefix → 404),
 verified at runtime earlier. No new baseline failures introduced.
+
+## Session Checkpoint
+**Date:** 2026-06-14
+**Last completed task:** P11-18 (permission-matrix editor) + PROB-040 fix — suite GREEN 308/0/0
+**Phase:** Phase 11 — Audit Correction Cycle (P11-F, IAM gaps)
+**Next task:** P11-16 (bulk user CSV import/export) — next P11-F item, simplest→complex order
+**Branch:** main (committing P11-18 now)
+**Last commit:** 5aee4c1 (baseline stabilisation) — P11-18 commit follows
+**Notes:** P11-F is being done one item at a time, design-validated with the user before coding.
+P11-18 done: AdminPermissionMatrixPage (users×roles checkbox grid, per-row Save, ADMIN-only),
+shared constants/roles.ts (AdminUserFormPage refactored to import it), new GET /api/v1/roles
+(RoleController/Service/DTO) needed because PUT /users/{id}/roles takes role UUIDs not names.
+Runtime-verified via Playwright (GET/PUT 200, persistence, FR/EN). Found+fixed PROB-040: a
+PRE-EXISTING 500 in UserService.assignRoles (built UserRole without its UserRoleId @EmbeddedId →
+flush NPE), undetected because UserControllerTest mocks the service; added UserServiceIntegrationTest.
+Design decisions confirmed by user for P11-18: per-row explicit Save button; strictly ADMIN access.
+Standing rule reaffirmed: ROLE_ADMIN must NOT access financial data (separation of duties).
+WS /ws/info 401 console spam is pre-existing noise (STOMP handshake), unrelated to these changes.

@@ -21,6 +21,7 @@ import {
   ChevronRight,
   Container,
   UserCheck,
+  KeyRound,
   SlidersHorizontal,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -170,6 +171,7 @@ export default function Sidebar() {
         <RoleGuard allowedRoles={['ROLE_ADMIN']} fallback={null}>
           <SectionLabel label={t('nav.admin')} />
           <NavItem to="/admin/users" icon={Users} label={t('nav.users')} />
+          <NavItem to="/admin/permissions" icon={KeyRound} label={t('admin.permissions.navTitle', 'Matrice des permissions')} />
           <NavItem to="/admin/departments" icon={Building2} label={t('nav.departments')} />
           <NavItem to="/admin/suppliers" icon={Truck} label={t('nav.suppliers')} />
           <NavItem to="/admin/audit" icon={ScrollText} label={t('nav.auditLog')} />

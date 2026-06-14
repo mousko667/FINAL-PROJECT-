@@ -492,6 +492,18 @@
 
 ---
 
+### [PROB-040] `UserService.assignRoles` créait un `UserRole` sans poser son `@EmbeddedId` (`UserRoleId`) → `PUT /users/{id}/roles` renvoyait 500 (`JpaSystemException` / NPE au flush) — endpoint entièrement cassé, jamais détecté car le seul test mockait le service
+- **Catégorie :** Backend / Persistence
+- **Sévérité :** 🔴 Élevée (l'assignation de rôles via `PUT /users/{id}/roles` était totalement non fonctionnelle en runtime)
+- **Découvert :** 2026-06-14 — vérification runtime de P11-18 (matrice de permissions), premier vrai consommateur de l'endpoint
+- **Symptôme :** Cocher un rôle dans la matrice puis Enregistrer → `PUT /users/{id}/roles` → **500** `{"message":"An unexpected error occurred"}`. Log backend : `JpaSystemException: Could not set value of type [java.util.UUID]: 'UserRoleId.roleId' (setter)` causé par `NullPointerException: Cannot invoke "Object.getClass()" because "o" is null`.
+- **Cause racine :** `assignRoles` construisait `new UserRole()` puis posait seulement `setUser`/`setRole`, **sans jamais poser l'`@EmbeddedId` composite `UserRoleId{userId, roleId}`**. À la sauvegarde, Hibernate tentait de dériver l'id composite et échouait (id null). Tous les autres points d'écriture (`createUser`, helpers de test) posaient explicitement `new UserRoleId(userId, roleId)` ; `assignRoles` était le seul à l'omettre. Non détecté parce que `UserControllerTest` **mocke `UserService`** (`@MockBean` + `doNothing()`), donc le flush JPA réel n'était jamais exercé.
+- **Solution appliquée :** Ajout de `userRole.setId(new UserRoleId(user.getId(), role.getId()))` dans `assignRoles` (même pattern que `createUser`). Vérifié en runtime : `PUT /users/{id}/roles` → **200**, persistance confirmée après rechargement (rôle ajouté + rôles existants préservés). Nouveau test d'intégration `UserServiceIntegrationTest` (`assignRoles_persistsRolesWithCompositeKey`, `assignRoles_replacesExistingRoles`) qui exerce le **vrai** service contre H2 (aurait attrapé le NPE).
+- **Règle préventive :** Pour une entité de jointure à clé composite (`@EmbeddedId`), **toujours** instancier et poser l'`@EmbeddedId` avant de persister — ne jamais compter sur une dérivation implicite via `setUser`/`setRole`. Et : un endpoint dont le test **mocke entièrement la couche service** n'est PAS couvert au niveau persistence ; tout endpoint qui écrit en base a besoin d'au moins un test d'intégration exécutant le vrai service (la vérification runtime « cliquer et observer » l'a révélé ; cf. [[verify-runtime-not-snapshot]]).
+- **Fichiers modifiés :** `UserService.java` (`assignRoles` pose le `UserRoleId`), `UserServiceIntegrationTest.java` (nouveau, 2 tests de non-régression).
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :

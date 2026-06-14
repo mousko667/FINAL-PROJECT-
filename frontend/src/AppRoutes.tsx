@@ -21,6 +21,7 @@ const InvoiceDetailPage = lazy(() => import('@/pages/InvoiceDetailPage'))
 const ReportsPage = lazy(() => import('@/pages/ReportsPage'))
 const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage'))
 const AdminUserFormPage = lazy(() => import('@/pages/admin/AdminUserFormPage'))
+const AdminPermissionMatrixPage = lazy(() => import('@/pages/admin/AdminPermissionMatrixPage'))
 const AdminDepartmentsPage = lazy(() => import('@/pages/admin/AdminDepartmentsPage'))
 const AdminDepartmentFormPage = lazy(() => import('@/pages/admin/AdminDepartmentFormPage'))
 const AdminAuditPage = lazy(() => import('@/pages/admin/AdminAuditPage'))
@@ -80,6 +81,7 @@ function AppRoutes() {
             <Route path="/archive" element={<ArchivePage />} />
             <Route path="/admin/users" element={<AdminUsersPage />} />
             <Route path="/admin/users/new" element={<AdminUserFormPage />} />
+            <Route path="/admin/permissions" element={<AdminPermissionMatrixPage />} />
             <Route path="/admin/departments" element={<AdminDepartmentsPage />} />
             <Route path="/admin/departments/new" element={<AdminDepartmentFormPage />} />
             <Route path="/admin/audit" element={<AdminAuditPage />} />

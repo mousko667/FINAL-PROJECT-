@@ -753,8 +753,16 @@ config` (no `postgres` service; `MINIO_SECRET_KEY: dany1234` resolves identicall
       `UserController` endpoint(s) + `AdminUsersPage.tsx` UI.
 - [ ] **P11-17** Add self-service access-request workflow (REQ-23 item 3): new entity +
       approval-lite flow for users requesting role/department access changes.
-- [ ] **P11-18** Add visual permission-matrix editor (REQ-23 item 4): frontend grid over
-      the existing `PUT /{id}/roles` endpoint.
+- [x] **P11-18** Add visual permission-matrix editor (REQ-23 item 4): frontend grid over
+      the existing `PUT /{id}/roles` endpoint. Completed 2026-06-14. New `AdminPermissionMatrixPage`
+      (users × roles grid of checkboxes, per-row Save, ADMIN-only) at `/admin/permissions` +
+      sidebar entry. Shared `constants/roles.ts` (DRY — AdminUserFormPage now imports it). Added a
+      minimal `GET /api/v1/roles` (RoleController/RoleService/RoleDTO, ADMIN) to resolve role
+      name→UUID, required because `PUT /{id}/roles` takes role UUIDs. i18n `admin.permissions.*`
+      (FR/EN, parity 593/593). Verified at runtime (GET 200, PUT 200, persistence after reload,
+      bilingual). **Found + fixed a pre-existing 500 bug (PROB-040):** `assignRoles` built a
+      `UserRole` without its `UserRoleId` @EmbeddedId → flush NPE; added a `UserServiceIntegrationTest`
+      regression test. Full suite GREEN 308/0/0.
 
 **P11-F Exit Criteria:** All 4 sub-items implemented, tested, and added to
 `docs/REQUIREMENTS-MATRIX.md` as newly-implemented.

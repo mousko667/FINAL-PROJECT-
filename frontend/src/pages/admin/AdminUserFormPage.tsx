@@ -7,32 +7,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import apiClient from '@/services/apiClient'
 import { Loader2, ArrowLeft } from 'lucide-react'
 import type { ApiResponse, PagedResponse } from '@/types/invoice'
-
-// All valid roles in the system (no ROLE_AUDITEUR, no ROLE_VALIDATEUR_N1_FIN)
-const ROLE_OPTIONS = [
-  { value: 'ROLE_ADMIN',                  label: 'Administrator' },
-  { value: 'ROLE_DAF',                    label: 'CFO (Directeur Administratif et Financier)' },
-  { value: 'ROLE_ASSISTANT_COMPTABLE',    label: 'Accounting Assistant (Assistant comptable)' },
-  { value: 'ROLE_VALIDATEUR_N1_DRH',     label: 'HR Director — N1 (DRH)' },
-  { value: 'ROLE_VALIDATEUR_N1_DG',      label: 'General Manager — N1 (DG)' },
-  { value: 'ROLE_VALIDATEUR_N1_INFO',    label: 'IT Manager — N1 (RSI)' },
-  { value: 'ROLE_VALIDATEUR_N2_INFO',    label: 'CIO — N2 (DSI)' },
-  { value: 'ROLE_VALIDATEUR_N1_TERM',    label: 'Terminal Manager — N1 (DEX)' },
-  { value: 'ROLE_VALIDATEUR_N1_COM',     label: 'Communication Manager — N1 (Resp. Com)' },
-  { value: 'ROLE_VALIDATEUR_N1_QHSSE',   label: 'QHSSE Manager — N1 (Resp. QHSSE)' },
-  { value: 'ROLE_VALIDATEUR_N1_INFRA',   label: 'Infrastructure Manager — N1 (Resp. INFRA)' },
-  { value: 'ROLE_VALIDATEUR_N2_INFRA',   label: 'Infrastructure Director — N2 (Directeur INFRA)' },
-  { value: 'ROLE_VALIDATEUR_N1_TECH',    label: 'Workshop Manager — N1 (Resp. Atelier)' },
-  { value: 'ROLE_VALIDATEUR_N2_TECH',    label: 'Technical Director — N2 (Directeur Technique)' },
-]
-
-// Roles that require a department assignment
-const DEPT_REQUIRED_ROLES = new Set([
-  'ROLE_VALIDATEUR_N1_DRH', 'ROLE_VALIDATEUR_N1_DG', 'ROLE_VALIDATEUR_N1_INFO',
-  'ROLE_VALIDATEUR_N2_INFO', 'ROLE_VALIDATEUR_N1_TERM', 'ROLE_VALIDATEUR_N1_COM',
-  'ROLE_VALIDATEUR_N1_QHSSE', 'ROLE_VALIDATEUR_N1_INFRA', 'ROLE_VALIDATEUR_N2_INFRA',
-  'ROLE_VALIDATEUR_N1_TECH', 'ROLE_VALIDATEUR_N2_TECH',
-])
+import { ROLE_OPTIONS, DEPT_REQUIRED_ROLES } from '@/constants/roles'
 
 interface Department { id: string; code: string; nameEn: string; nameFr: string }
 
