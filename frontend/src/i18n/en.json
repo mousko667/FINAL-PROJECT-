@@ -83,6 +83,26 @@
     "goodsReceipts": "Goods Receipts",
     "payments": "Payments"
   },
+  "delegations": {
+    "navMine": "My delegations",
+    "myTitle": "My approval delegations",
+    "mySubtitle": "Delegate your approvals to a colleague while you are away.",
+    "delegatee": "Delegate to",
+    "selectDelegatee": "— Select —",
+    "fromDate": "From",
+    "toDate": "To",
+    "reason": "Reason (optional)",
+    "create": "Create delegation",
+    "createError": "Creation failed.",
+    "incomplete": "Delegate and dates are required.",
+    "department": "Department",
+    "period": "Period",
+    "statusCol": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "revoke": "Revoke",
+    "none": "No delegations."
+  },
   "accessRequests": {
     "navMine": "My Access Requests",
     "navAdmin": "Access Requests",

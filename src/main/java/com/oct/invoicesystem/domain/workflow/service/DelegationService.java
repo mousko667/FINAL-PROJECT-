@@ -23,6 +23,7 @@ public class DelegationService {
 
     private final ApprovalDelegationRepository delegationRepository;
     private final UserRepository userRepository;
+    private final com.oct.invoicesystem.domain.department.repository.DepartmentRepository departmentRepository;
 
     /**
      * Crée une délégation à partir des identifiants du délégant et du délégataire.
@@ -68,6 +69,68 @@ public class DelegationService {
 
     public List<ApprovalDelegation> getActiveDelegationsForDepartment(String departmentCode) {
         return delegationRepository.findActiveDelegationsForDepartment(departmentCode, LocalDate.now());
+    }
+
+    /**
+     * Self-service (M6): the current approver delegates THEIR OWN approvals while absent.
+     * The delegator is the caller; the department defaults to the caller's own department
+     * (an explicit departmentCode may still be passed, e.g. for multi-dept approvers).
+     */
+    @Transactional
+    public ApprovalDelegation createSelfDelegation(
+            User delegator, UUID delegateeId, String departmentCode,
+            LocalDate fromDate, LocalDate toDate, String reason) {
+        User delegatee = userRepository.findById(delegateeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Delegatee not found"));
+        String dept = departmentCode;
+        if (dept == null || dept.isBlank()) {
+            if (delegator.getDepartmentId() == null) {
+                throw new ValidationException("Aucun département associé à votre compte; précisez-en un.");
+            }
+            dept = departmentRepository.findById(delegator.getDepartmentId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Department not found"))
+                    .getCode();
+        }
+        // createdBy = delegator (self-service, no admin involved)
+        return createDelegation(delegator, delegatee, dept, fromDate, toDate, reason, delegator);
+    }
+
+    public List<ApprovalDelegation> getMyDelegations(UUID delegatorId) {
+        return delegationRepository.findByDelegatorIdOrderByCreatedAtDesc(delegatorId);
+    }
+
+    /**
+     * Candidates a delegator can delegate to: active staff (non-supplier), excluding the caller.
+     * Returns {id, username, fullName} maps so an approver can pick a delegatee without needing
+     * the admin-only GET /users.
+     */
+    public List<java.util.Map<String, String>> getEligibleDelegatees(UUID excludeUserId) {
+        return userRepository.findAll().stream()
+                .filter(User::isActive)
+                .filter(u -> u.getSupplier() == null)
+                .filter(u -> !u.getId().equals(excludeUserId))
+                .map(u -> java.util.Map.of(
+                        "id", u.getId().toString(),
+                        "username", u.getUsername(),
+                        "fullName", ((u.getFirstName() == null ? "" : u.getFirstName()) + " "
+                                + (u.getLastName() == null ? "" : u.getLastName())).trim()))
+                .sorted(java.util.Comparator.comparing(m -> m.get("username")))
+                .toList();
+    }
+
+    /**
+     * Revoke a delegation the caller owns (delegator). Prevents revoking someone else's delegation.
+     */
+    @Transactional
+    public void revokeOwnDelegation(UUID delegationId, UUID requesterId) {
+        ApprovalDelegation d = delegationRepository.findById(delegationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Delegation not found: " + delegationId));
+        if (!d.getDelegator().getId().equals(requesterId)) {
+            throw new ValidationException("Vous ne pouvez révoquer que vos propres délégations");
+        }
+        d.setRevoked(true);
+        d.setRevokedAt(Instant.now());
+        delegationRepository.save(d);
     }
 
     @Transactional

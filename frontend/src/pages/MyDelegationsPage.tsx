@@ -1,0 +1,147 @@
+import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
+import apiClient from '@/services/apiClient'
+import { UserCheck, Loader2, Trash2, Plus, AlertCircle } from 'lucide-react'
+
+interface Delegation {
+  id: string
+  delegatorUsername: string
+  delegateeUsername: string
+  departmentCode: string
+  fromDate: string
+  toDate: string
+  reason: string
+}
+
+interface Delegatee { id: string; username: string; fullName: string }
+
+/** M6 — self-service: an approver delegates their own approvals while absent. */
+export default function MyDelegationsPage() {
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const [delegateeId, setDelegateeId] = useState('')
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
+  const [reason, setReason] = useState('')
+  const [formError, setFormError] = useState<string | null>(null)
+
+  const { data: delegations = [], isLoading } = useQuery<Delegation[]>({
+    queryKey: ['my-delegations'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<{ data: Delegation[] }>('/approvals/delegations/mine')
+      return data.data ?? []
+    },
+  })
+
+  const { data: delegatees = [] } = useQuery<Delegatee[]>({
+    queryKey: ['eligible-delegatees'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<{ data: Delegatee[] }>('/approvals/delegations/eligible-delegatees')
+      return data.data ?? []
+    },
+  })
+
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['my-delegations'] })
+
+  const create = useMutation({
+    mutationFn: () => apiClient.post('/approvals/delegations/mine', { delegateeId, fromDate, toDate, reason }),
+    onSuccess: () => { setDelegateeId(''); setFromDate(''); setToDate(''); setReason(''); setFormError(null); invalidate() },
+    onError: (err: { response?: { data?: { message?: string } } }) =>
+      setFormError(err.response?.data?.message ?? t('delegations.createError', 'Échec de la création.')),
+  })
+
+  const revoke = useMutation({
+    mutationFn: (id: string) => apiClient.delete(`/approvals/delegations/mine/${id}`),
+    onSuccess: invalidate,
+  })
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!delegateeId || !fromDate || !toDate) { setFormError(t('delegations.incomplete', 'Délégataire et dates requis.')); return }
+    create.mutate()
+  }
+
+  const inputCls = 'w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
+  const today = new Date().toISOString().slice(0, 10)
+  const isActive = (d: Delegation) => d.fromDate <= today && d.toDate >= today
+
+  return (
+    <div className="space-y-6 max-w-3xl">
+      <div className="flex items-center gap-3">
+        <UserCheck className="w-6 h-6 text-primary" />
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{t('delegations.myTitle', 'Mes délégations d\'approbation')}</h1>
+          <p className="text-sm text-gray-500 mt-1">{t('delegations.mySubtitle', 'Déléguez vos approbations à un collègue pendant votre absence.')}</p>
+        </div>
+      </div>
+
+      <form onSubmit={onSubmit} className="bg-white rounded-xl border p-5 space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('delegations.delegatee', 'Délégataire')}</label>
+            <select value={delegateeId} onChange={e => { setDelegateeId(e.target.value); setFormError(null) }} className={inputCls}>
+              <option value="">{t('delegations.selectDelegatee', '— Sélectionner —')}</option>
+              {delegatees.map(d => <option key={d.id} value={d.id}>{d.fullName || d.username} ({d.username})</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('delegations.fromDate', 'Du')}</label>
+            <input type="date" value={fromDate} onChange={e => { setFromDate(e.target.value); setFormError(null) }} className={inputCls} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('delegations.toDate', 'Au')}</label>
+            <input type="date" value={toDate} onChange={e => { setToDate(e.target.value); setFormError(null) }} className={inputCls} />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('delegations.reason', 'Motif (facultatif)')}</label>
+            <input value={reason} onChange={e => setReason(e.target.value)} className={inputCls} maxLength={255} />
+          </div>
+        </div>
+        {formError && <p className="flex items-center gap-1.5 text-sm text-red-600"><AlertCircle className="w-4 h-4" />{formError}</p>}
+        <button type="submit" disabled={create.isPending}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+          {create.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+          {t('delegations.create', 'Créer la délégation')}
+        </button>
+      </form>
+
+      <div className="bg-white rounded-xl border overflow-hidden">
+        {isLoading ? (
+          <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>
+        ) : delegations.length === 0 ? (
+          <p className="text-sm text-gray-400 py-8 text-center">{t('delegations.none', 'Aucune délégation.')}</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead><tr className="border-b text-left text-gray-500">
+              <th className="px-4 py-2.5 font-medium">{t('delegations.delegatee', 'Délégataire')}</th>
+              <th className="px-4 py-2.5 font-medium">{t('delegations.department', 'Département')}</th>
+              <th className="px-4 py-2.5 font-medium">{t('delegations.period', 'Période')}</th>
+              <th className="px-4 py-2.5 font-medium">{t('delegations.statusCol', 'Statut')}</th>
+              <th className="px-4 py-2.5 font-medium text-right">Actions</th>
+            </tr></thead>
+            <tbody>
+              {delegations.map(d => (
+                <tr key={d.id} className="border-b last:border-0">
+                  <td className="px-4 py-2.5 font-medium text-gray-900">{d.delegateeUsername}</td>
+                  <td className="px-4 py-2.5">{d.departmentCode}</td>
+                  <td className="px-4 py-2.5 text-gray-600">{d.fromDate} → {d.toDate}</td>
+                  <td className="px-4 py-2.5">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${isActive(d) ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'}`}>
+                      {isActive(d) ? t('delegations.active', 'Active') : t('delegations.inactive', 'Inactive')}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2.5 text-right">
+                    <button onClick={() => revoke.mutate(d.id)} className="text-gray-400 hover:text-red-500" title={t('delegations.revoke', 'Révoquer')}>
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  )
+}

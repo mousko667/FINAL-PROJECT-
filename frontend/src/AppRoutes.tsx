@@ -31,6 +31,7 @@ const AdminMatchingConfigPage = lazy(() => import('@/pages/admin/AdminMatchingCo
 const SecuritySettingsPage = lazy(() => import('@/pages/admin/SecuritySettingsPage'))
 const IntegrationsPage = lazy(() => import('@/pages/admin/IntegrationsPage'))
 const MyAccessRequestsPage = lazy(() => import('@/pages/MyAccessRequestsPage'))
+const MyDelegationsPage = lazy(() => import('@/pages/MyDelegationsPage'))
 const AdminAccessRequestsPage = lazy(() => import('@/pages/admin/AdminAccessRequestsPage'))
 const AdminAnnouncementsPage = lazy(() => import('@/pages/admin/AdminAnnouncementsPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
@@ -72,6 +73,7 @@ function AppRoutes() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/access-requests" element={<MyAccessRequestsPage />} />
+            <Route path="/my-delegations" element={<MyDelegationsPage />} />
             <Route path="/invoices" element={<InvoiceListPage />} />
             <Route path="/invoices/new" element={<InvoiceCreatePage />} />
             <Route path="/invoices/:id" element={<InvoiceDetailPage />} />

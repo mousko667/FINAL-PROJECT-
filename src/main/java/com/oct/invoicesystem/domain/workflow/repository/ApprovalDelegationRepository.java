@@ -27,4 +27,7 @@ public interface ApprovalDelegationRepository extends JpaRepository<ApprovalDele
           AND d.toDate >= :today
     """)
     List<ApprovalDelegation> findActiveDelegationsForDelegatee(UUID delegateeId, LocalDate today);
+
+    // Self-service (M6): the current approver's own delegations (active + past), newest first.
+    List<ApprovalDelegation> findByDelegatorIdOrderByCreatedAtDesc(UUID delegatorId);
 }

@@ -83,6 +83,26 @@
     "goodsReceipts": "Bons de Réception",
     "payments": "Paiements"
   },
+  "delegations": {
+    "navMine": "Mes délégations",
+    "myTitle": "Mes délégations d'approbation",
+    "mySubtitle": "Déléguez vos approbations à un collègue pendant votre absence.",
+    "delegatee": "Délégataire",
+    "selectDelegatee": "— Sélectionner —",
+    "fromDate": "Du",
+    "toDate": "Au",
+    "reason": "Motif (facultatif)",
+    "create": "Créer la délégation",
+    "createError": "Échec de la création.",
+    "incomplete": "Délégataire et dates requis.",
+    "department": "Département",
+    "period": "Période",
+    "statusCol": "Statut",
+    "active": "Active",
+    "inactive": "Inactive",
+    "revoke": "Révoquer",
+    "none": "Aucune délégation."
+  },
   "accessRequests": {
     "navMine": "Mes demandes d'accès",
     "navAdmin": "Demandes d'accès",

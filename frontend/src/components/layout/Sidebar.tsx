@@ -135,6 +135,7 @@ export default function Sidebar() {
           'ROLE_VALIDATEUR_N2_TECH',
         ]} fallback={null}>
           <NavItem to="/approvals" icon={ScrollText} label={t('nav.approvals', 'File d\'approbation')} />
+          <NavItem to="/my-delegations" icon={UserCheck} label={t('delegations.navMine', 'Mes délégations')} />
         </RoleGuard>
 
         {/* AA: Suppliers */}
