@@ -35,6 +35,7 @@ const MyDelegationsPage = lazy(() => import('@/pages/MyDelegationsPage'))
 const ReportBuilderPage = lazy(() => import('@/pages/ReportBuilderPage'))
 const AdminAccessRequestsPage = lazy(() => import('@/pages/admin/AdminAccessRequestsPage'))
 const AdminAnnouncementsPage = lazy(() => import('@/pages/admin/AdminAnnouncementsPage'))
+const AdminCompliancePage = lazy(() => import('@/pages/admin/AdminCompliancePage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 const SuppliersPage = lazy(() => import('@/pages/admin/SuppliersPage'))
 const SupplierDetailPage = lazy(() => import('@/pages/admin/SupplierDetailPage'))
@@ -92,6 +93,7 @@ function AppRoutes() {
             <Route path="/admin/permissions" element={<AdminPermissionMatrixPage />} />
             <Route path="/admin/access-requests" element={<AdminAccessRequestsPage />} />
             <Route path="/admin/announcements" element={<AdminAnnouncementsPage />} />
+            <Route path="/admin/compliance" element={<AdminCompliancePage />} />
             <Route path="/admin/departments" element={<AdminDepartmentsPage />} />
             <Route path="/admin/departments/new" element={<AdminDepartmentFormPage />} />
             <Route path="/admin/audit" element={<AdminAuditPage />} />

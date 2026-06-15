@@ -110,6 +110,10 @@
       "MONTHLY": "Mensuel"
     }
   },
+  "privacy": {
+    "prompt": "Veuillez accepter la politique de confidentialité (v{{version}}).",
+    "accept": "Accepter"
+  },
   "delegations": {
     "navMine": "Mes délégations",
     "myTitle": "Mes délégations d'approbation",
@@ -514,6 +518,23 @@
       "active": "Actif",
       "inactive": "Inactif",
       "none": "Aucune annonce."
+    },
+    "compliance": {
+      "navTitle": "Conformité",
+      "title": "Sécurité & Conformité",
+      "subtitle": "Sauvegardes, incidents, checklist SOX/IFRS, calendrier de conformité.",
+      "backup": "Statut de sauvegarde",
+      "recordBackup": "Enregistrer une sauvegarde",
+      "noBackup": "Aucune sauvegarde enregistrée",
+      "incidents": "Incidents de sécurité",
+      "incidentTitle": "Titre de l'incident",
+      "noIncidents": "Aucun incident.",
+      "checklist": "Checklist de conformité (SOX/IFRS)",
+      "checklistLabel": "Élément de contrôle",
+      "noChecklist": "Aucun élément.",
+      "calendar": "Calendrier de conformité",
+      "calendarTitle": "Échéance",
+      "noCalendar": "Aucune échéance."
     },
     "connectors": {
       "title": "Connecteurs d'intégration",

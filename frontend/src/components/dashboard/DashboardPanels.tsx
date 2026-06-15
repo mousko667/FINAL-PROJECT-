@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
-import { Megaphone, AlertTriangle, Info, AlertOctagon } from 'lucide-react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Megaphone, AlertTriangle, Info, AlertOctagon, ShieldCheck } from 'lucide-react'
 
 interface Announcement {
   id: string
@@ -54,6 +55,36 @@ export function DashboardAnnouncements() {
           </div>
         )
       })}
+    </div>
+  )
+}
+
+/** Privacy-policy acceptance prompt (M14) — shown to any user who hasn't accepted the current version. */
+export function PrivacyPolicyBanner() {
+  const { t } = useTranslation()
+  const queryClient = useQueryClient()
+  const { data } = useQuery<{ accepted: boolean; policyVersion: string }>({
+    queryKey: ['privacy-acceptance'],
+    queryFn: async () => (await apiClient.get('/compliance/privacy-acceptance')).data.data,
+    retry: false,
+  })
+  const accept = useMutation({
+    mutationFn: () => apiClient.post('/compliance/privacy-acceptance'),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['privacy-acceptance'] }),
+  })
+
+  if (!data || data.accepted) return null
+
+  return (
+    <div className="flex items-center justify-between gap-3 border border-blue-200 bg-blue-50 text-blue-800 rounded-lg px-4 py-3">
+      <span className="flex items-center gap-2 text-sm">
+        <ShieldCheck className="w-4 h-4 shrink-0" />
+        {t('privacy.prompt', 'Veuillez accepter la politique de confidentialité (v{{version}}).', { version: data.policyVersion })}
+      </span>
+      <button onClick={() => accept.mutate()} disabled={accept.isPending}
+        className="text-sm bg-primary text-primary-foreground px-3 py-1.5 rounded-lg hover:bg-primary/90 disabled:opacity-50 shrink-0">
+        {t('privacy.accept', 'Accepter')}
+      </button>
     </div>
   )
 }

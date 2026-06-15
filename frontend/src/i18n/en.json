@@ -110,6 +110,10 @@
       "MONTHLY": "Monthly"
     }
   },
+  "privacy": {
+    "prompt": "Please accept the privacy policy (v{{version}}).",
+    "accept": "Accept"
+  },
   "delegations": {
     "navMine": "My delegations",
     "myTitle": "My approval delegations",
@@ -514,6 +518,23 @@
       "active": "Active",
       "inactive": "Inactive",
       "none": "No announcements."
+    },
+    "compliance": {
+      "navTitle": "Compliance",
+      "title": "Security & Compliance",
+      "subtitle": "Backups, incidents, SOX/IFRS checklist, compliance calendar.",
+      "backup": "Backup status",
+      "recordBackup": "Record a backup",
+      "noBackup": "No backup recorded",
+      "incidents": "Security incidents",
+      "incidentTitle": "Incident title",
+      "noIncidents": "No incidents.",
+      "checklist": "Compliance checklist (SOX/IFRS)",
+      "checklistLabel": "Control item",
+      "noChecklist": "No items.",
+      "calendar": "Compliance calendar",
+      "calendarTitle": "Deadline",
+      "noCalendar": "No deadlines."
     },
     "connectors": {
       "title": "Integration connectors",

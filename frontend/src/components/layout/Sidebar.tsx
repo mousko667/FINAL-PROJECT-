@@ -24,6 +24,7 @@ import {
   KeyRound,
   SlidersHorizontal,
   Megaphone,
+  ShieldAlert,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -185,6 +186,7 @@ export default function Sidebar() {
           <NavItem to="/admin/delegations" icon={UserCheck} label={t('admin.delegations.title', 'Délégations')} />
           <NavItem to="/admin/matching-config" icon={SlidersHorizontal} label={t('admin.matchingConfig.navTitle', 'Rapprochement')} />
           <NavItem to="/admin/security" icon={Shield} label={t('admin.security.title', 'Sécurité')} />
+          <NavItem to="/admin/compliance" icon={ShieldAlert} label={t('admin.compliance.navTitle', 'Conformité')} />
           <NavItem to="/admin/integrations" icon={Zap} label={t('admin.integrations.title', 'Intégrations')} />
         </RoleGuard>
       </nav>

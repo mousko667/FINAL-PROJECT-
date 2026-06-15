@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { reportService } from '@/services/reportService'
 import apiClient from '@/services/apiClient'
 import { useAppSelector } from '@/store/hooks'
-import { DashboardAnnouncements, BudgetAlerts } from '@/components/dashboard/DashboardPanels'
+import { DashboardAnnouncements, BudgetAlerts, PrivacyPolicyBanner } from '@/components/dashboard/DashboardPanels'
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -337,7 +337,8 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* M2: system announcements (everyone) + budget alerts (DAF/AA) */}
+      {/* M2: system announcements (everyone) + budget alerts (DAF/AA) ; M14: privacy acceptance */}
+      <PrivacyPolicyBanner />
       <DashboardAnnouncements />
       {(isDaf || isAA) && <BudgetAlerts />}
 
