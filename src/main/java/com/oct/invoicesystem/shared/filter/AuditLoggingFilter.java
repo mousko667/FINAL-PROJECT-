@@ -2,6 +2,7 @@ package com.oct.invoicesystem.shared.filter;
 
 import com.oct.invoicesystem.domain.audit.service.AuditService;
 import com.oct.invoicesystem.domain.user.model.User;
+import com.oct.invoicesystem.shared.util.ClientIpResolver;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -46,7 +47,7 @@ public class AuditLoggingFilter extends OncePerRequestFilter {
             if (!method.equalsIgnoreCase("GET") || status == 401 || status == 403) {
                 try {
                     UUID userId = resolveUserId(request);
-                    String ipAddress = resolveClientIp(request);
+                    String ipAddress = ClientIpResolver.resolve(request);
                     String userAgent = request.getHeader("User-Agent");
 
                     String entityType = classifyEntityType(uri);
@@ -99,15 +100,4 @@ public class AuditLoggingFilter extends OncePerRequestFilter {
         return null;
     }
 
-    private String resolveClientIp(HttpServletRequest request) {
-        String xff = request.getHeader("X-Forwarded-For");
-        if (xff != null && !xff.isBlank()) {
-            return xff.split(",")[0].trim();
-        }
-        String xri = request.getHeader("X-Real-IP");
-        if (xri != null && !xri.isBlank()) {
-            return xri;
-        }
-        return request.getRemoteAddr();
-    }
 }

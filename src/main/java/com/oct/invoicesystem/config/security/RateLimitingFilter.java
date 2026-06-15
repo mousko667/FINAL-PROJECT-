@@ -1,5 +1,6 @@
 package com.oct.invoicesystem.config.security;
 
+import com.oct.invoicesystem.shared.util.ClientIpResolver;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.Bucket4j;
@@ -62,18 +63,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
   }
 
   private String getClientIp(HttpServletRequest request) {
-    // Check for X-Forwarded-For header (proxy)
-    String xForwardedFor = request.getHeader("X-Forwarded-For");
-    if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-      return xForwardedFor.split(",")[0].trim();
-    }
-    // Check for X-Real-IP header (common proxy)
-    String xRealIp = request.getHeader("X-Real-IP");
-    if (xRealIp != null && !xRealIp.isEmpty()) {
-      return xRealIp;
-    }
-    // Fall back to remote address
-    return request.getRemoteAddr();
+    return ClientIpResolver.resolve(request);
   }
 
   @Override

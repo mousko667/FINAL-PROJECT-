@@ -354,7 +354,14 @@
       "action": "Action",
       "entity": "Entité",
       "date": "Date",
-      "details": "Détails"
+      "details": "Détails",
+      "recent": {
+        "title": "Activité récente",
+        "live": "En direct",
+        "justNow": "à l'instant",
+        "minutesAgo": "il y a {{count}} min",
+        "hoursAgo": "il y a {{count}} h"
+      }
     },
     "approvalMatrix": {
       "title": "Configuration de la matrice d'approbation",

@@ -252,6 +252,15 @@
 
 ---
 
+### [PROB-046] Détection d'anomalies statistique/ML sur l'audit — non implémentée (P11-51, REQ-19)
+- **Catégorie :** Backend / Analytics
+- **Sévérité :** 🟡 Mineur
+- **Statut :** ❌ Non implémenté (scope partiel P11-51 assumé)
+- **Description :** P11-51 a livré un flux « activité récente » auto-rafraîchi (react-query `refetchInterval`) sur `AdminAuditPage`, mais pas de détection d'anomalies : aucun scoring statistique (pics de connexions échouées, accès hors horaires, volumétrie inhabituelle par utilisateur) ni modèle ML.
+- **Solution recommandée :** Job d'analyse périodique calculant des baselines par utilisateur/action (moyenne + écart-type, ou détection de pics), marquant les écarts > N σ comme anomalies, exposées via un endpoint dédié et surlignées dans le flux d'activité.
+
+---
+
 ## PROBLÈMES RÉSOLUS — AUDIT 2026-06-07 (Sécurité)
 
 ### [PROB-017] User.isAccountNonLocked() ignorait lockedUntil

@@ -14,6 +14,7 @@ import com.oct.invoicesystem.domain.user.repository.UserRepository;
 import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 import com.oct.invoicesystem.shared.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +30,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class InvoiceDocumentService {
 
     private static final long MAX_FILE_SIZE_BYTES = 10L * 1024 * 1024;
@@ -136,9 +138,13 @@ public class InvoiceDocumentService {
                 InvoiceDocument document = upload(invoiceId, file, uploader.getId());
                 uploaded.add(toDto(document));
             } catch (ValidationException ex) {
+                // Authored, user-safe messages (bad type / oversize) — safe to return.
                 errors.add(new BulkUploadResultDTO.FileError(filename, ex.getMessage()));
             } catch (Exception ex) {
-                errors.add(new BulkUploadResultDTO.FileError(filename, "Upload failed: " + ex.getMessage()));
+                // Log the real cause server-side; return a fixed message so internals
+                // (e.g. storage host/port) are never leaked to the API client.
+                log.error("Bulk upload failed for file '{}' on invoice {}", filename, invoiceId, ex);
+                errors.add(new BulkUploadResultDTO.FileError(filename, "Upload failed due to an internal error"));
             }
         }
 

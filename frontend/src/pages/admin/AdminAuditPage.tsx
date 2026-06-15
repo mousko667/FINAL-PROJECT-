@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import type { ApiResponse, PagedResponse } from '@/types/invoice'
-import { Loader2, Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Loader2, Search, ChevronLeft, ChevronRight, Activity } from 'lucide-react'
 
 interface AuditLog {
   id: string
@@ -25,6 +25,76 @@ interface AuditFilters {
   action?: string
   page: number
   size: number
+}
+
+function relativeTime(raw: string | undefined, t: (k: string, o?: object) => string): string {
+  if (!raw) return '—'
+  const d = new Date(raw)
+  if (isNaN(d.getTime())) return raw
+  const secs = Math.max(0, Math.floor((Date.now() - d.getTime()) / 1000))
+  if (secs < 60) return t('admin.audit.recent.justNow')
+  if (secs < 3600) return t('admin.audit.recent.minutesAgo', { count: Math.floor(secs / 60) })
+  if (secs < 86400) return t('admin.audit.recent.hoursAgo', { count: Math.floor(secs / 3600) })
+  return d.toLocaleString()
+}
+
+/**
+ * P11-51 (REQ-19, partial) — live "recent activity" feed. Re-fetches the latest audit entries on
+ * an interval (react-query refetchInterval) so an admin sees activity as it happens, without a
+ * manual reload. Reuses the existing /audit-logs endpoint (newest page, small size).
+ */
+function RecentActivityPanel() {
+  const { t } = useTranslation()
+  const REFRESH_MS = 15000
+
+  const { data, isFetching } = useQuery({
+    queryKey: ['audit-logs-recent'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<ApiResponse<PagedResponse<AuditLog>>>(
+        '/audit-logs', { params: { page: 0, size: 8 } })
+      return data.data
+    },
+    refetchInterval: REFRESH_MS,
+    refetchIntervalInBackground: false,
+  })
+
+  const recent = data?.content ?? []
+
+  return (
+    <div className="bg-white rounded-xl border p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Activity className="w-5 h-5 text-primary" />
+          <h2 className="font-semibold text-gray-800">{t('admin.audit.recent.title')}</h2>
+        </div>
+        <span className="flex items-center gap-1.5 text-xs text-gray-400">
+          <span className={`w-2 h-2 rounded-full ${isFetching ? 'bg-green-500 animate-pulse' : 'bg-green-400'}`} />
+          {t('admin.audit.recent.live')}
+        </span>
+      </div>
+      {recent.length === 0 ? (
+        <p className="text-sm text-gray-400 py-2">{t('app.noData')}</p>
+      ) : (
+        <ul className="divide-y">
+          {recent.map((log) => (
+            <li key={log.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-xs font-mono bg-amber-50 text-amber-700 px-2 py-0.5 rounded border border-amber-100 shrink-0">
+                  {log.action}
+                </span>
+                <span className="text-gray-600 truncate">
+                  {log.performedBy?.username ?? '—'} · {log.entityType}
+                </span>
+              </div>
+              <span className="text-xs text-gray-400 whitespace-nowrap shrink-0">
+                {relativeTime(log.createdAt ?? log.performedAt, t)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
 }
 
 export default function AdminAuditPage() {
@@ -52,6 +122,9 @@ export default function AdminAuditPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">{t('admin.audit.title')}</h1>
+
+      {/* P11-51: live recent-activity feed */}
+      <RecentActivityPanel />
 
       {/* Filters */}
       <div className="bg-white rounded-xl border p-4 flex flex-wrap gap-3">

@@ -8,6 +8,7 @@ import com.oct.invoicesystem.shared.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import com.oct.invoicesystem.shared.util.ClientIpResolver;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -82,9 +83,10 @@ public class InvoiceDocumentController {
             Authentication authentication,
             HttpServletRequest request) throws Exception {
         // P11-50: log who downloaded what, when, and from where (append-only access trail).
+        // Resolve the client IP the same way AuditLoggingFilter/RateLimitingFilter do (XFF-aware).
         String url = invoiceDocumentService.generateDownloadUrlAndLog(
                 invoiceId, docId, authentication.getName(),
-                request.getRemoteAddr(), request.getHeader("User-Agent"));
+                ClientIpResolver.resolve(request), request.getHeader("User-Agent"));
         return ResponseEntity.ok(ApiResponse.success(Map.of("url", url)));
     }
 
