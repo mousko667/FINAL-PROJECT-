@@ -1049,30 +1049,59 @@ present, i18n-covered, frontend `tsc --noEmit` clean.
 
 ### P11-K — Larger Feature Builds 🟡 Medium
 
-- [ ] **P11-48** Build bulk/multi-file invoice upload (REQ-05): new endpoint accepting
-      multiple files + frontend multi-select upload UI.
-- [ ] **P11-49** Correct `ArchivePage.tsx:175`'s misleading SHA-256/retention-policy text
-      (REQ-14, partial scope per `PLAN-CORRECTIONS.md` §5) — log the deferred
-      re-verify-on-download and retention-policy job to `docs/KNOWN_ISSUES_REGISTRY.md`.
-- [ ] **P11-50** Add append-only `document_access_log` table + logging hook in
-      `InvoiceDocumentController.download()` (REQ-16, partial scope) — log deferred
-      versioning/viewer to `docs/KNOWN_ISSUES_REGISTRY.md`.
-- [ ] **P11-51** Add an auto-refreshing "recent activity" panel to `AdminAuditPage.tsx`
-      (REQ-19, partial scope) — log deferred statistical/ML anomaly detection to
-      `docs/KNOWN_ISSUES_REGISTRY.md`.
-- [ ] **P11-52** Add `Department.budget` column via Flyway (REQ-20) + a budget-vs-actual
-      comparison report (REQ-21, partial scope) — log deferred report builder,
-      scheduling, distribution, and executive-summary items to
-      `docs/KNOWN_ISSUES_REGISTRY.md`.
-- [ ] **P11-53** Add encryption-status indicator widget + security-health dashboard
-      (REQ-24, partial scope — 2 of 8 items: encryption coverage, MFA adoption %,
-      login-failure trends, `webhookDeliverySuccessRate`) — log deferred backup status,
-      privacy-policy tracking, incident reporting, SOX/IFRS checklist, and compliance
-      calendar to `docs/KNOWN_ISSUES_REGISTRY.md`.
+- [x] **P11-48** Build bulk/multi-file invoice upload (REQ-05): new endpoint accepting
+      multiple files + frontend multi-select upload UI. Completed 2026-06-15.
+      `POST /api/v1/invoices/{id}/documents/bulk` (ASSISTANT_COMPTABLE, multipart, `files`)
+      delegates per-file to the existing `upload(...)` and returns a per-file report
+      (`BulkUploadResultDTO`: uploaded list + per-file errors with reason) — valid files are
+      stored even when others fail (not all-or-nothing; same philosophy as the CSV import).
+      Frontend `BulkDocumentUpload` component (reuses `DocumentUploader`) wired into the invoice
+      detail page. i18n `invoice.bulkUpload.*`. 2 `InvoiceDocumentServiceTest` cases. Runtime: 201
+      with correct report (MIME rejection + per-file isolation) — happy-path storage covered by the
+      mocked-MinIO unit test (Docker/MinIO unavailable in-session).
+- [x] **P11-49** Correct `ArchivePage.tsx`'s misleading SHA-256/retention-policy text
+      (REQ-14, partial scope per `PLAN-CORRECTIONS.md` §5). Completed 2026-06-15.
+      `archive.retentionNote` (FR/EN + tsx fallback) rewritten to state only the truth: a SHA-256
+      checksum is computed+stored at upload (integrity reference); 10-year retention is a policy
+      target, not auto-enforced. Deferred re-verify-on-download (**PROB-042**) and automated
+      retention job (**PROB-043**) logged to `docs/KNOWN_ISSUES_REGISTRY.md`.
+- [x] **P11-50** Add append-only `document_access_log` table + logging hook in
+      `InvoiceDocumentController.download()` (REQ-16, partial scope). Completed 2026-06-15.
+      Migration `V48` (table + append-only triggers reusing V25's `prevent_append_only_mutation()`),
+      `DocumentAccessLog` entity + repository. `download()` now calls `generateDownloadUrlAndLog`
+      recording who/what/when/where (IP via shared `ClientIpResolver`). Deferred versioning
+      (**PROB-044**) and in-app viewer (**PROB-045**) logged. 1 `InvoiceDocumentServiceTest` case.
+- [x] **P11-51** Add an auto-refreshing "recent activity" panel to `AdminAuditPage.tsx`
+      (REQ-19, partial scope). Completed 2026-06-15. Live feed (react-query `refetchInterval` 15s)
+      over the existing `/audit-logs` endpoint, relative timestamps + live indicator. Deferred
+      statistical/ML anomaly detection (**PROB-046**) logged. i18n `admin.audit.recent.*`.
+      Runtime-verified (panel renders with 8 live entries + "En direct").
+- [x] **P11-52** Add `Department.budget` column via Flyway (REQ-20) + a budget-vs-actual
+      comparison report (REQ-21, partial scope). Completed 2026-06-15. Migration `V49`
+      (`departments.budget` NUMERIC(15,2) nullable), exposed in `DepartmentDTO` + settable via the
+      department update endpoint. `GET /api/v1/reports/budget-vs-actual` (DAF + ASSISTANT_COMPTABLE):
+      per-department budget vs committed spend (sum excluding BROUILLON/REJETE), variance,
+      utilization %. New `BudgetVsActualDTO`; "Budget vs Actual" section on `ReportsPage`. i18n
+      `reports.budget*`. Deferred report-builder/scheduling/distribution/executive-summary
+      (**PROB-047**) logged. 1 `ReportServiceTest` case. Runtime-verified: PUT budget 200+persists,
+      report 200 (assistant) / 403 (admin — separation of duties).
+- [x] **P11-53** Add encryption-status indicator widget + security-health dashboard
+      (REQ-24, partial scope — 2 of 8 items). Completed 2026-06-15. `GET /api/v1/admin/security-health`
+      (ADMIN): at-rest encryption coverage, MFA adoption %, login-failure trend (locked accounts +
+      failed attempts), webhook delivery success rate (7d). New `SecurityHealthService` +
+      `SecurityHealthDTO` + controller; count queries on `UserRepository` / `InvoiceRepository`.
+      "Security health" metrics panel on `SecuritySettingsPage`. i18n `admin.security.health.*`.
+      Deferred backup status / privacy-policy / incident reporting / SOX-IFRS checklist / compliance
+      calendar (**PROB-048**) logged. 2 `SecurityHealthServiceTest` cases. Runtime-verified: 200
+      (admin, all metrics) / 403 (assistant).
 
 **P11-K Exit Criteria:** All 6 tasks delivered to their stated partial/full scope; every
 deferred remainder has a corresponding `docs/KNOWN_ISSUES_REGISTRY.md` entry per the
 Living Documentation Rule (CLAUDE.md §12).
+✅ Met 2026-06-15 — P11-48 bulk upload, P11-49 archive text fix, P11-50 access log (V48),
+P11-51 recent-activity panel, P11-52 budget-vs-actual (V49), P11-53 security-health dashboard.
+All deferred remainders logged as PROB-042 … PROB-048. Backend suite GREEN 334/0/0; frontend
+`tsc --noEmit` clean; i18n FR/EN parity 661/661.
 
 ---
 

@@ -1704,3 +1704,38 @@ added to REQUIREMENTS-MATRIX Module 13 as ✅ COMPLET). Dev-DB test data left: o
 access_request row for aa (harmless). NOT committing CLAUDE.md / REQUIREMENTS-MATRIX.md / SCOPE.md /
 audit (not my call). No push (push only at phase completion; Phase 11 needs P11-K too; direct
 origin/main blocked → use origin/backup/phase11-2026-06-13).
+
+## Session Checkpoint
+**Date:** 2026-06-15
+**Last completed task:** P11-K (Larger Feature Builds) — **all 6 done**, suite GREEN 334/0/0
+**Phase:** Phase 11 — Audit Correction Cycle (P11-K **COMPLETE**)
+**Status:** With P11-F + P11-K both complete, **Phase 11 is functionally finished** (all 53 P11-NN
+items resolved or honestly logged). Next: verify the Phase 11 exit criteria as a whole, then the
+push decision (see below).
+**Commits on main (this session):**
+- `cda3744` P11-48 bulk upload + P11-49 archive text + P11-50 access log (V48)
+- `410a8d8` P11-51 recent-activity panel + security-review fixes (ClientIpResolver, no raw-exception leak)
+- `<P11-52 sha>` department budget (V49) + budget-vs-actual report
+- `<P11-53 sha>` security-health dashboard
+- `<docs sha>` TASKS.md P11-K closure
+**What P11-K delivered (all REQ partial-scope as specified):**
+- P11-48 (REQ-05): `POST /invoices/{id}/documents/bulk` + per-file report + `BulkDocumentUpload`.
+- P11-49 (REQ-14): corrected misleading SHA-256/retention text in ArchivePage (3 places).
+- P11-50 (REQ-16): append-only `document_access_log` (V48) + `download()` hook + `ClientIpResolver`.
+- P11-51 (REQ-19): live recent-activity panel on AdminAuditPage (react-query refetchInterval).
+- P11-52 (REQ-20/21): `departments.budget` (V49) + `GET /reports/budget-vs-actual` (DAF+ASSISTANT).
+- P11-53 (REQ-24): `GET /admin/security-health` (ADMIN) + SecuritySettingsPage panel.
+**Deferred remainders logged:** PROB-042…PROB-048 in KNOWN_ISSUES_REGISTRY (re-verify-on-download,
+retention job, doc versioning, in-app viewer, ML anomaly detection, advanced report builder,
+6/8 REQ-24 compliance items).
+**Migrations added:** V47 (P11-17 access_requests), V48 (document_access_log), V49 (departments.budget).
+Highest PROB now 048. i18n FR/EN parity 661/661. Frontend `tsc --noEmit` clean.
+**Security review (background) on cda3744:** 2 MEDIUM, both fixed in 410a8d8 (client-IP parity via
+shared ClientIpResolver; bulk-upload generic catch no longer leaks raw exception messages).
+**Caveats (honest):** P11-48 happy-path file storage not live-verified (Docker/MinIO down in-session)
+— covered by mocked-MinIO unit test. P11-53 UI panel not re-verified in browser (stuck Playwright
+file-chooser modal session) — backend live-verified (200 admin / 403 assistant) + frontend tsc/i18n clean.
+Dev-DB test data left: 5,000,000 budget on dept COM (update endpoint is non-null-merge, can't null via API).
+**NOT committed (not my call):** CLAUDE.md, docs/REQUIREMENTS-MATRIX.md (updated but untracked),
+docs/SCOPE.md, docs/audit/. **Push decision pending** — push only at phase completion; direct
+origin/main blocked → route via origin/backup/phase11-2026-06-13. ASK the user before pushing.
