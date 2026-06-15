@@ -468,10 +468,13 @@ class StateMachineTransitionExhaustiveTest {
     }
 
     private void cleanDb() {
-        jdbcTemplate.execute("DELETE FROM notifications");
         approvalStepRepository.deleteAll();
         historyRepository.deleteAll();
         documentRepository.deleteAll();
+        // Async (@Async) notification events from rejection/approval transitions can land slightly
+        // after the transition returns. Delete notifications LAST — right before invoices — so any
+        // late insert is cleared and the notifications→invoices FK can't be violated on teardown.
+        jdbcTemplate.execute("DELETE FROM notifications");
         invoiceRepository.deleteAll();
         userRepository.deleteAll();
         roleRepository.deleteAll();

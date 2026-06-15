@@ -515,6 +515,15 @@
       "inactive": "Inactive",
       "none": "No announcements."
     },
+    "connectors": {
+      "title": "Integration connectors",
+      "subtitle": "Connect external systems (ERP, accounting, banking, DMS). The MOCK type simulates a connection.",
+      "name": "Name",
+      "endpoint": "Endpoint (URL, optional for MOCK)",
+      "status": "Status",
+      "test": "Test",
+      "none": "No connectors."
+    },
     "integrations": {
       "title": "Integrations & Webhooks",
       "subtitle": "Configure connections to external systems and webhook endpoints.",

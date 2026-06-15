@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import { Loader2, Plus, Trash2, Zap, CheckCircle, XCircle, Activity, ScrollText } from 'lucide-react'
+import { IntegrationConnectors } from '@/components/admin/IntegrationConnectors'
 
 interface Webhook {
   id: string
@@ -104,6 +105,9 @@ export default function IntegrationsPage() {
           <Plus className="w-4 h-4" /> {t('admin.integrations.addWebhook')}
         </button>
       </div>
+
+      {/* M12: configurable integration connectors */}
+      <IntegrationConnectors />
 
       {/* Integration health */}
       {(status?.length ?? 0) > 0 && (

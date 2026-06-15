@@ -515,6 +515,15 @@
       "inactive": "Inactif",
       "none": "Aucune annonce."
     },
+    "connectors": {
+      "title": "Connecteurs d'intégration",
+      "subtitle": "Connectez des systèmes externes (ERP, comptabilité, banque, GED). Le type MOCK simule une connexion.",
+      "name": "Nom",
+      "endpoint": "Endpoint (URL, optionnel pour MOCK)",
+      "status": "Statut",
+      "test": "Tester",
+      "none": "Aucun connecteur."
+    },
     "integrations": {
       "title": "Intégrations & Webhooks",
       "subtitle": "Configurez les connexions aux systèmes externes et les points de terminaison webhook.",
