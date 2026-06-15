@@ -383,6 +383,18 @@
     },
     "security": {
       "title": "Security Settings",
+      "health": {
+        "title": "Security health",
+        "encryption": "Encryption at rest",
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "encryptedRecords": "{{count}} encrypted record(s)",
+        "mfaAdoption": "MFA adoption",
+        "loginFailures": "Locked accounts",
+        "failedAttempts": "{{count}} failed attempt(s)",
+        "webhookSuccess": "Webhook success",
+        "last7Days": "Last 7 days"
+      },
       "mfaPolicy": "MFA Policy",
       "mfaRequired": "MFA required for all staff roles",
       "sessionTimeout": "Session Timeout (minutes)",

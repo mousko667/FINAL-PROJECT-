@@ -26,4 +26,15 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByEmailVerificationToken(String token);
 
     Optional<User> findByPasswordResetToken(String token);
+
+    // P11-53: security-health metrics.
+    long countByActiveTrue();
+
+    long countByActiveTrueAndMfaEnabledTrue();
+
+    @Query("SELECT COUNT(u) FROM User u WHERE u.lockedUntil IS NOT NULL AND u.lockedUntil > :now")
+    long countLockedAccounts(java.time.Instant now);
+
+    @Query("SELECT COALESCE(SUM(u.failedLoginAttempts), 0) FROM User u")
+    long sumFailedLoginAttempts();
 }

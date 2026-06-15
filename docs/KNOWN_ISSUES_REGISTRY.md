@@ -270,6 +270,15 @@
 
 ---
 
+### [PROB-048] Conformité avancée (REQ-24) — 6 des 8 items non implémentés (P11-53, scope partiel)
+- **Catégorie :** Backend / Frontend / Conformité
+- **Sévérité :** 🟡 Mineur
+- **Statut :** ❌ Non implémenté (scope partiel P11-53 assumé)
+- **Description :** P11-53 a livré 2 des 8 items REQ-24 via le tableau « Santé de la sécurité » (`GET /admin/security-health`, ADMIN) : couverture de chiffrement au repos, adoption MFA %, tendance des échecs de connexion (comptes verrouillés + tentatives), et taux de succès des webhooks. Restent absents : statut de backup des données, tracking d'acceptation de la politique de confidentialité, reporting d'incident de sécurité, checklist de conformité (SOX/IFRS/régulations locales), et calendrier de conformité.
+- **Solution recommandée :** Intégrer un statut de backup (sonde sur le job de sauvegarde DB/MinIO), une entité de consentement politique de confidentialité (par utilisateur + version), un workflow d'incident (entité + statuts), une checklist de conformité paramétrable, et un calendrier d'échéances de conformité.
+
+---
+
 ## PROBLÈMES RÉSOLUS — AUDIT 2026-06-07 (Sécurité)
 
 ### [PROB-017] User.isAccountNonLocked() ignorait lockedUntil

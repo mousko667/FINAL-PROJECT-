@@ -21,6 +21,17 @@ interface SecurityPolicy {
   updatedAt: string
 }
 
+interface SecurityHealth {
+  atRestEncryptionEnabled: boolean
+  encryptedBankDetailRecords: number
+  totalActiveUsers: number
+  mfaEnabledUsers: number
+  mfaAdoptionPercent: number
+  lockedAccounts: number
+  totalFailedLoginAttempts: number
+  webhookDeliverySuccessRate: number
+}
+
 export default function SecuritySettingsPage() {
   const { t, i18n } = useTranslation()
   const dateLocale = i18n.language === 'en' ? 'en-GB' : 'fr-FR'
@@ -74,6 +85,12 @@ export default function SecuritySettingsPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'sessions'] }),
   })
 
+  // P11-53: security-health snapshot (REQ-24, partial — 2 of 8 items)
+  const { data: health } = useQuery<SecurityHealth>({
+    queryKey: ['admin', 'security-health'],
+    queryFn: () => apiClient.get('/admin/security-health').then(r => r.data.data),
+  })
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
     setFormError('')
@@ -86,6 +103,40 @@ export default function SecuritySettingsPage() {
         <h1 className="text-2xl font-bold text-gray-900">{t('admin.security.title')}</h1>
         <p className="text-sm text-gray-500 mt-1">{t('admin.security.subtitle', 'Configure system-wide security policies.')}</p>
       </div>
+
+      {/* P11-53: security-health dashboard */}
+      {health && (
+        <div className="bg-white rounded-xl border p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Shield className="w-5 h-5 text-primary" />
+            <h2 className="font-semibold text-gray-800">{t('admin.security.health.title')}</h2>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="rounded-lg border p-4">
+              <div className="flex items-center gap-2 text-xs text-gray-500"><Lock className="w-4 h-4" />{t('admin.security.health.encryption')}</div>
+              <div className="mt-1 text-lg font-bold text-gray-900">
+                {health.atRestEncryptionEnabled ? t('admin.security.health.enabled') : t('admin.security.health.disabled')}
+              </div>
+              <div className="text-xs text-gray-400">{t('admin.security.health.encryptedRecords', { count: health.encryptedBankDetailRecords })}</div>
+            </div>
+            <div className="rounded-lg border p-4">
+              <div className="flex items-center gap-2 text-xs text-gray-500"><Key className="w-4 h-4" />{t('admin.security.health.mfaAdoption')}</div>
+              <div className="mt-1 text-lg font-bold text-gray-900">{health.mfaAdoptionPercent.toFixed(0)}%</div>
+              <div className="text-xs text-gray-400">{health.mfaEnabledUsers} / {health.totalActiveUsers}</div>
+            </div>
+            <div className="rounded-lg border p-4">
+              <div className="flex items-center gap-2 text-xs text-gray-500"><Users className="w-4 h-4" />{t('admin.security.health.loginFailures')}</div>
+              <div className={`mt-1 text-lg font-bold ${health.lockedAccounts > 0 ? 'text-red-600' : 'text-gray-900'}`}>{health.lockedAccounts}</div>
+              <div className="text-xs text-gray-400">{t('admin.security.health.failedAttempts', { count: health.totalFailedLoginAttempts })}</div>
+            </div>
+            <div className="rounded-lg border p-4">
+              <div className="flex items-center gap-2 text-xs text-gray-500"><CheckCircle className="w-4 h-4" />{t('admin.security.health.webhookSuccess')}</div>
+              <div className="mt-1 text-lg font-bold text-gray-900">{(health.webhookDeliverySuccessRate * 100).toFixed(0)}%</div>
+              <div className="text-xs text-gray-400">{t('admin.security.health.last7Days')}</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {saved && (
         <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3">

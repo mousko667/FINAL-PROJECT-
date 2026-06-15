@@ -383,6 +383,18 @@
     },
     "security": {
       "title": "Paramètres de sécurité",
+      "health": {
+        "title": "Santé de la sécurité",
+        "encryption": "Chiffrement au repos",
+        "enabled": "Activé",
+        "disabled": "Désactivé",
+        "encryptedRecords": "{{count}} enregistrement(s) chiffré(s)",
+        "mfaAdoption": "Adoption MFA",
+        "loginFailures": "Comptes verrouillés",
+        "failedAttempts": "{{count}} tentative(s) échouée(s)",
+        "webhookSuccess": "Succès des webhooks",
+        "last7Days": "7 derniers jours"
+      },
       "mfaPolicy": "Politique MFA",
       "mfaRequired": "MFA obligatoire pour tous les rôles du personnel",
       "sessionTimeout": "Délai d'expiration de session (minutes)",

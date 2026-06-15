@@ -110,4 +110,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
             @Param("from") Instant from,
             @Param("to") Instant to,
             Pageable pageable);
+
+    // P11-53: count invoices carrying (encrypted-at-rest) supplier bank details.
+    long countBySupplierBankDetailsIsNotNull();
 }
