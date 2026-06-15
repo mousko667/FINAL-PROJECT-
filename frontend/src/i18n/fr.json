@@ -37,6 +37,7 @@
     "password": "Mot de passe",
     "loginButton": "Se connecter",
     "loginError": "Identifiants incorrects",
+    "forgotPassword": "Mot de passe oublié ?",
     "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
     "email": "E-mail",
     "passwordStrength": {
