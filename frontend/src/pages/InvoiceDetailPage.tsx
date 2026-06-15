@@ -8,8 +8,9 @@ import { StatusBadge } from '@/components/ui/StatusBadge'
 import { InvoiceTimeline } from '@/components/invoice/InvoiceTimeline'
 import { InvoiceActionPanel } from '@/components/invoice/InvoiceActionPanel'
 import { BulkDocumentUpload } from '@/components/invoice/BulkDocumentUpload'
+import { DocumentViewerModal } from '@/components/invoice/DocumentViewerModal'
 import { useAppSelector } from '@/store/hooks'
-import { Loader2, ArrowLeft, Download, CheckCircle, XCircle, AlertTriangle, MinusCircle, Clock, User, FileDown, Lock } from 'lucide-react'
+import { Loader2, ArrowLeft, Download, CheckCircle, XCircle, AlertTriangle, MinusCircle, Clock, User, FileDown, Lock, Eye } from 'lucide-react'
 
 interface ApprovalStep {
   id: string
@@ -80,6 +81,7 @@ export default function InvoiceDetailPage() {
   const [overrideReason, setOverrideReason] = useState('')
   const [showOverrideForm, setShowOverrideForm] = useState(false)
   const [pdfLoading, setPdfLoading] = useState(false)
+  const [viewerDoc, setViewerDoc] = useState<{ fileName: string; fileType: string; downloadUrl?: string } | null>(null)
 
   const { data: invoice, isLoading, isError } = useQuery({
     queryKey: ['invoice', id],
@@ -453,9 +455,19 @@ export default function InvoiceDetailPage() {
               <ul className="space-y-2">
                 {invoice.documents.map((doc) => (
                   <li key={doc.id} className="flex items-center justify-between text-sm px-3 py-2.5 bg-gray-50 rounded-lg border">
-                    <span className="font-medium text-gray-700 truncate">{doc.fileName}</span>
+                    <span className="font-medium text-gray-700 truncate">
+                      {doc.fileName}
+                      {doc.version && doc.version > 1 && (
+                        <span className="ml-2 text-xs font-mono bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded">v{doc.version}</span>
+                      )}
+                    </span>
                     <div className="flex items-center gap-3 ml-2 shrink-0">
                       <span className="text-xs text-muted-foreground">{(doc.fileSize / 1024).toFixed(1)} KB</span>
+                      {doc.downloadUrl && (
+                        <button onClick={() => setViewerDoc(doc)} className="text-gray-500 hover:text-primary" title={t('invoice.viewer.view', 'Aperçu')}>
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      )}
                       {doc.downloadUrl && (
                         <a href={doc.downloadUrl} download className="text-primary hover:text-primary/80">
                           <Download className="w-4 h-4" />
@@ -480,6 +492,16 @@ export default function InvoiceDetailPage() {
           <InvoiceTimeline invoice={invoice} />
         </div>
       </div>
+
+      {/* M9: in-app document viewer */}
+      {viewerDoc?.downloadUrl && (
+        <DocumentViewerModal
+          url={viewerDoc.downloadUrl}
+          filename={viewerDoc.fileName}
+          fileType={viewerDoc.fileType}
+          onClose={() => setViewerDoc(null)}
+        />
+      )}
     </div>
   )
 }

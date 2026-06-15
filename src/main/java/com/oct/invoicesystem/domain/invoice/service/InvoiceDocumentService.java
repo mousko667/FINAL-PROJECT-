@@ -90,6 +90,18 @@ public class InvoiceDocumentService {
 
         minioStorageService.upload(objectKey, content, detectedMimeType);
 
+        // M9 versioning: if a current document with the same filename already exists on this invoice,
+        // the new upload becomes the next version and the old one is marked superseded (history kept).
+        int nextVersion = 1;
+        InvoiceDocument previous = file.getOriginalFilename() == null ? null
+                : invoiceDocumentRepository
+                    .findFirstByInvoiceIdAndOriginalFilenameAndSupersededByDocumentIdIsNull(
+                            invoiceId, file.getOriginalFilename())
+                    .orElse(null);
+        if (previous != null) {
+            nextVersion = previous.getVersion() + 1;
+        }
+
         InvoiceDocument document = InvoiceDocument.builder()
                 .invoice(invoice)
                 .originalFilename(file.getOriginalFilename())
@@ -98,9 +110,16 @@ public class InvoiceDocumentService {
                 .fileSizeBytes(file.getSize())
                 .checksumSha256(checksum)
                 .uploadedBy(uploader)
+                .version(nextVersion)
                 .build();
 
-        return invoiceDocumentRepository.save(document);
+        InvoiceDocument saved = invoiceDocumentRepository.save(document);
+
+        if (previous != null) {
+            previous.setSupersededByDocumentId(saved.getId());
+            invoiceDocumentRepository.save(previous);
+        }
+        return saved;
     }
 
     /**
@@ -160,7 +179,9 @@ public class InvoiceDocumentService {
                 document.getFileSizeBytes(),
                 document.getChecksumSha256(),
                 document.getUploadedBy() != null ? document.getUploadedBy().getId() : null,
-                document.getUploadedAt()
+                document.getUploadedAt(),
+                document.getVersion(),
+                document.getSupersededByDocumentId()
         );
     }
 

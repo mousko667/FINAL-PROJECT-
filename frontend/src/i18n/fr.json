@@ -228,6 +228,10 @@
       "report": "{{uploaded}} téléversé(s), {{failed}} échec(s) sur {{total}}.",
       "error": "Le téléversement a échoué. Réessayez."
     },
+    "viewer": {
+      "view": "Aperçu",
+      "noPreview": "Aperçu non disponible pour ce type de fichier."
+    },
     "lineItems": "Lignes de facturation",
     "submit": "Soumettre pour validation",
     "validate": "Valider",

@@ -228,6 +228,10 @@
       "report": "{{uploaded}} uploaded, {{failed}} failed of {{total}}.",
       "error": "Upload failed. Please try again."
     },
+    "viewer": {
+      "view": "Preview",
+      "noPreview": "No preview available for this file type."
+    },
     "lineItems": "Line Items",
     "submit": "Submit for Validation",
     "validate": "Validate",

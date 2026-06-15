@@ -11,6 +11,8 @@ public record InvoiceDocumentDTO(
         Long fileSizeBytes,
         String checksumSha256,
         UUID uploadedBy,
-        Instant uploadedAt
+        Instant uploadedAt,
+        int version,
+        UUID supersededByDocumentId
 ) {
 }

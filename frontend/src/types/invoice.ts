@@ -24,6 +24,8 @@ export interface InvoiceDocument {
   fileSize: number
   uploadedAt: string
   downloadUrl?: string
+  version?: number
+  supersededByDocumentId?: string | null
 }
 
 export interface Invoice {

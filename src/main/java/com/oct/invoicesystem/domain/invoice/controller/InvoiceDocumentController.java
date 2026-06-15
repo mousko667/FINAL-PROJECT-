@@ -99,7 +99,9 @@ public class InvoiceDocumentController {
                 document.getFileSizeBytes(),
                 document.getChecksumSha256(),
                 document.getUploadedBy() != null ? document.getUploadedBy().getId() : null,
-                document.getUploadedAt()
+                document.getUploadedAt(),
+                document.getVersion(),
+                document.getSupersededByDocumentId()
         );
     }
 }

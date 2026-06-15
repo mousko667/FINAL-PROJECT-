@@ -49,7 +49,7 @@ public class AuditController {
     private static final List<String> FINANCIAL_ACTIONS = List.of(
             "HTTP_REQUEST_FINANCIAL", "INVOICE_CREATE", "INVOICE_SUBMIT", "INVOICE_UPDATE", "INVOICE_DELETE",
             "APPROVE", "REJECT", "BON_A_PAYER", "PAYMENT", "MATCHING", "ARCHIVE",
-            "MATCHING_OVERRIDE", "RESUBMIT", "ACCESS_DENIED"
+            "MATCHING_OVERRIDE", "RESUBMIT", "ACCESS_DENIED", "RETENTION_FLAG"
     );
 
     /**

@@ -168,6 +168,33 @@ class InvoiceDocumentServiceTest {
     }
 
     @Test
+    void upload_secondVersionOfSameFile_incrementsVersionAndSupersedes() throws Exception {
+        byte[] pdf = "%PDF-1.4\nv2".getBytes(StandardCharsets.UTF_8);
+        MockMultipartFile file = new MockMultipartFile("file", "invoice.pdf", "application/pdf", pdf);
+
+        InvoiceDocument prior = InvoiceDocument.builder()
+                .id(UUID.randomUUID()).invoice(invoice).originalFilename("invoice.pdf").version(1).build();
+
+        when(invoiceRepository.findByIdAndDeletedAtIsNull(invoiceId)).thenReturn(Optional.of(invoice));
+        when(userRepository.findById(actorId)).thenReturn(Optional.of(user));
+        when(minioStorageService.upload(any(), any(), eq("application/pdf"))).thenAnswer(i -> i.getArgument(0));
+        when(invoiceDocumentRepository
+                .findFirstByInvoiceIdAndOriginalFilenameAndSupersededByDocumentIdIsNull(invoiceId, "invoice.pdf"))
+                .thenReturn(Optional.of(prior));
+        when(invoiceDocumentRepository.save(any(InvoiceDocument.class))).thenAnswer(i -> {
+            InvoiceDocument d = i.getArgument(0);
+            if (d.getId() == null) d.setId(UUID.randomUUID());
+            return d;
+        });
+
+        InvoiceDocument v2 = service.upload(invoiceId, file, actorId);
+
+        assertEquals(2, v2.getVersion());
+        // the prior version must now point to the new one
+        assertEquals(v2.getId(), prior.getSupersededByDocumentId());
+    }
+
+    @Test
     void uploadMultiple_emptyList_throwsValidation() {
         assertThrows(ValidationException.class,
                 () -> service.uploadMultiple(invoiceId, java.util.List.of(), "assistant"));

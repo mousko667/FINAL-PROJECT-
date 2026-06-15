@@ -59,6 +59,15 @@ public class InvoiceDocument {
     @Column(name = "uploaded_at", nullable = false, updatable = false)
     private Instant uploadedAt;
 
+    // M9: versioning. version starts at 1; when a newer version is uploaded, the older row's
+    // supersededByDocumentId points to the newer document (history preserved).
+    @Column(name = "version", nullable = false)
+    @Builder.Default
+    private int version = 1;
+
+    @Column(name = "superseded_by_document_id")
+    private UUID supersededByDocumentId;
+
     @PrePersist
     public void prePersist() {
         if (uploadedAt == null) {

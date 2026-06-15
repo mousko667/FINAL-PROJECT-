@@ -12,4 +12,11 @@ import java.util.UUID;
 public interface InvoiceDocumentRepository extends JpaRepository<InvoiceDocument, UUID> {
     List<InvoiceDocument> findByInvoiceId(UUID invoiceId);
     Optional<InvoiceDocument> findByIdAndInvoiceId(UUID id, UUID invoiceId);
+
+    // M9 versioning: the current (non-superseded) document with this filename on this invoice, if any.
+    Optional<InvoiceDocument> findFirstByInvoiceIdAndOriginalFilenameAndSupersededByDocumentIdIsNull(
+            UUID invoiceId, String originalFilename);
+
+    // M9 retention: documents uploaded on/before a cut-off (for the retention sweep).
+    List<InvoiceDocument> findByUploadedAtBefore(java.time.Instant cutoff);
 }
