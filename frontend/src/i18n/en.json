@@ -84,6 +84,32 @@
     "goodsReceipts": "Goods Receipts",
     "payments": "Payments"
   },
+  "reportBuilder": {
+    "navTitle": "Report builder",
+    "title": "Report builder",
+    "subtitle": "Define custom reports, run them on demand or schedule email distribution.",
+    "execSummary": "Executive summary (PDF)",
+    "name": "Report name",
+    "datasetCol": "Dataset",
+    "format": "Format",
+    "frequencyCol": "Frequency",
+    "recipients": "Recipients (comma-separated emails)",
+    "create": "Create report",
+    "none": "No report definitions.",
+    "run": "Run",
+    "dataset": {
+      "INVOICES": "Invoices",
+      "SUPPLIERS": "Suppliers",
+      "AUDIT": "Audit",
+      "BUDGET": "Budget vs Actual"
+    },
+    "frequency": {
+      "MANUAL": "Manual",
+      "DAILY": "Daily",
+      "WEEKLY": "Weekly",
+      "MONTHLY": "Monthly"
+    }
+  },
   "delegations": {
     "navMine": "My delegations",
     "myTitle": "My approval delegations",

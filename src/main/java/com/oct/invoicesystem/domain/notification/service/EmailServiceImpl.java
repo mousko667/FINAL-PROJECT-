@@ -73,4 +73,27 @@ public class EmailServiceImpl implements EmailService {
     public void sendEmailToUsers(List<String> emails, String subject, String templateName, Map<String, Object> variables) {
         emails.forEach(email -> sendEmail(email, subject, templateName, variables));
     }
+
+    @Override
+    public void sendEmailWithAttachment(String to, String subject, String bodyText,
+                                        byte[] attachment, String attachmentFilename, String attachmentContentType) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(fromAddress, fromName);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(bodyText == null ? "" : bodyText, false);
+            if (attachment != null && attachment.length > 0) {
+                helper.addAttachment(attachmentFilename,
+                        new org.springframework.core.io.ByteArrayResource(attachment), attachmentContentType);
+            }
+            mailSender.send(message);
+            log.info("Report email sent to {} with attachment '{}'", to, attachmentFilename);
+        } catch (MessagingException e) {
+            log.error("Failed to send report email to {}: {}", to, e.getMessage());
+        } catch (Exception e) {
+            log.error("Unexpected error sending report email to {}: {}", to, e.getMessage());
+        }
+    }
 }

@@ -84,6 +84,32 @@
     "goodsReceipts": "Bons de Réception",
     "payments": "Paiements"
   },
+  "reportBuilder": {
+    "navTitle": "Constructeur de rapports",
+    "title": "Constructeur de rapports",
+    "subtitle": "Définissez des rapports personnalisés, exécutez-les à la demande ou planifiez leur envoi par e-mail.",
+    "execSummary": "Résumé exécutif (PDF)",
+    "name": "Nom du rapport",
+    "datasetCol": "Données",
+    "format": "Format",
+    "frequencyCol": "Fréquence",
+    "recipients": "Destinataires (e-mails séparés par des virgules)",
+    "create": "Créer le rapport",
+    "none": "Aucun rapport défini.",
+    "run": "Exécuter",
+    "dataset": {
+      "INVOICES": "Factures",
+      "SUPPLIERS": "Fournisseurs",
+      "AUDIT": "Audit",
+      "BUDGET": "Budget vs Réalisé"
+    },
+    "frequency": {
+      "MANUAL": "Manuel",
+      "DAILY": "Quotidien",
+      "WEEKLY": "Hebdomadaire",
+      "MONTHLY": "Mensuel"
+    }
+  },
   "delegations": {
     "navMine": "Mes délégations",
     "myTitle": "Mes délégations d'approbation",

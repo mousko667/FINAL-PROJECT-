@@ -32,6 +32,7 @@ const SecuritySettingsPage = lazy(() => import('@/pages/admin/SecuritySettingsPa
 const IntegrationsPage = lazy(() => import('@/pages/admin/IntegrationsPage'))
 const MyAccessRequestsPage = lazy(() => import('@/pages/MyAccessRequestsPage'))
 const MyDelegationsPage = lazy(() => import('@/pages/MyDelegationsPage'))
+const ReportBuilderPage = lazy(() => import('@/pages/ReportBuilderPage'))
 const AdminAccessRequestsPage = lazy(() => import('@/pages/admin/AdminAccessRequestsPage'))
 const AdminAnnouncementsPage = lazy(() => import('@/pages/admin/AdminAnnouncementsPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
@@ -81,6 +82,7 @@ function AppRoutes() {
             <Route path="/financial-audit" element={<FinancialAuditPage />} />
             <Route path="/purchase-orders" element={<PurchaseOrdersPage />} />
             <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/reports/builder" element={<ReportBuilderPage />} />
             <Route path="/payments" element={<PaymentsPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/goods-receipts" element={<GoodsReceiptsPage />} />

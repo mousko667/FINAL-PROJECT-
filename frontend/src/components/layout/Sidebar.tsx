@@ -157,6 +157,7 @@ export default function Sidebar() {
         {/* Reports: DAF + AA */}
         <RoleGuard allowedRoles={['ROLE_DAF', 'ROLE_ASSISTANT_COMPTABLE']} fallback={null}>
           <NavItem to="/reports" icon={BarChart3} label={t('nav.reports')} />
+          <NavItem to="/reports/builder" icon={FileText} label={t('reportBuilder.navTitle', 'Constructeur de rapports')} />
         </RoleGuard>
 
         {/* Financial audit: DAF only */}

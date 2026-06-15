@@ -37,6 +37,8 @@ import java.util.UUID;
 public class ReportController {
 
     private final ReportService reportService;
+    private final com.oct.invoicesystem.domain.report.service.ReportBuilderService reportBuilderService;
+    private final com.oct.invoicesystem.shared.util.SecurityHelper securityHelper;
 
     @GetMapping("/kpis")
     @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
@@ -159,5 +161,54 @@ public class ReportController {
     public ApiResponse<java.util.List<BudgetVsActualDTO.DepartmentBudgetLine>> getBudgetAlerts(
             @RequestParam(defaultValue = "80") double threshold) {
         return ApiResponse.success(reportService.getBudgetAlerts(threshold));
+    }
+
+    // ── M11: custom report builder + scheduled distribution + executive summary ──
+    @GetMapping("/definitions")
+    @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
+    @Operation(summary = "List saved report definitions")
+    public ApiResponse<java.util.List<com.oct.invoicesystem.domain.report.dto.ReportDefinitionDTO.Response>> listDefinitions() {
+        return ApiResponse.success(reportBuilderService.list());
+    }
+
+    @PostMapping("/definitions")
+    @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
+    @Operation(summary = "Create a report definition")
+    public ApiResponse<com.oct.invoicesystem.domain.report.dto.ReportDefinitionDTO.Response> createDefinition(
+            @jakarta.validation.Valid @RequestBody com.oct.invoicesystem.domain.report.dto.ReportDefinitionDTO.Request req,
+            org.springframework.security.core.Authentication authentication) {
+        java.util.UUID actor = securityHelper.currentUserId(authentication);
+        return ApiResponse.success(reportBuilderService.create(req, actor), "Report definition created");
+    }
+
+    @DeleteMapping("/definitions/{id}")
+    @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
+    @Operation(summary = "Delete a report definition")
+    public ApiResponse<Void> deleteDefinition(@PathVariable UUID id) {
+        reportBuilderService.delete(id);
+        return ApiResponse.success(null, "Report definition deleted");
+    }
+
+    @GetMapping("/definitions/{id}/run")
+    @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
+    @Operation(summary = "Run a report definition now and download the result")
+    public ResponseEntity<byte[]> runDefinition(@PathVariable UUID id) {
+        byte[] body = reportBuilderService.run(id);
+        var fmt = reportBuilderService.formatOf(id);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=report." + fmt.extension)
+                .contentType(MediaType.parseMediaType(fmt.mediaType))
+                .body(body);
+    }
+
+    @GetMapping("/executive-summary")
+    @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
+    @Operation(summary = "Download the executive-summary PDF")
+    public ResponseEntity<byte[]> executiveSummary() {
+        byte[] body = reportBuilderService.executiveSummaryPdf();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=executive_summary.pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(body);
     }
 }
