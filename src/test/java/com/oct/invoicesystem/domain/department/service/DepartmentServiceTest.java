@@ -74,7 +74,7 @@ class DepartmentServiceTest {
     @Test
     void updateDepartment_Success() {
         UUID id = department.getId();
-        DepartmentUpdateRequest updateReq = new DepartmentUpdateRequest("Tech", "Tech En", false, "R1", null);
+        DepartmentUpdateRequest updateReq = new DepartmentUpdateRequest("Tech", "Tech En", false, "R1", null, null);
         
         when(departmentRepository.findById(id)).thenReturn(Optional.of(department));
         when(departmentRepository.save(department)).thenReturn(department);

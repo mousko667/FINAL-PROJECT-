@@ -2,6 +2,7 @@ package com.oct.invoicesystem.domain.report.service;
 
 import com.oct.invoicesystem.domain.report.dto.AgingReportDTO;
 import com.oct.invoicesystem.domain.report.dto.BottleneckDTO;
+import com.oct.invoicesystem.domain.report.dto.BudgetVsActualDTO;
 import com.oct.invoicesystem.domain.report.dto.CashFlowProjectionDTO;
 import com.oct.invoicesystem.domain.report.dto.DashboardKpiDTO;
 import com.oct.invoicesystem.domain.report.dto.SupplierPaymentHistoryDTO;
@@ -74,4 +75,13 @@ public interface ReportService {
     SupplierPerformanceDTO getSupplierPerformance(UUID supplierId);
 
     List<InvoiceHistoryDTO> getRecentActivity(int limit);
+
+    /**
+     * Budget-vs-actual comparison per department (P11-52 / REQ-21).
+     * Compares each department's configured budget against committed invoice spend
+     * (sum of invoice amounts excluding BROUILLON and REJETE).
+     *
+     * @return BudgetVsActualDTO with one line per department plus totals
+     */
+    BudgetVsActualDTO getBudgetVsActual();
 }

@@ -58,6 +58,10 @@ public class Department {
     @Builder.Default
     private boolean isActive = true;
 
+    // P11-52: per-department annual budget (REQ-20). Nullable = not yet defined.
+    @Column(name = "budget", precision = 15, scale = 2)
+    private java.math.BigDecimal budget;
+
     @CreatedDate
     @Column(name = "created_at", updatable = false, nullable = false)
     private Instant createdAt;

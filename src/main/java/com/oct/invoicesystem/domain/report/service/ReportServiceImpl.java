@@ -7,9 +7,12 @@ import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
+import com.oct.invoicesystem.domain.department.model.Department;
+import com.oct.invoicesystem.domain.department.repository.DepartmentRepository;
 import com.oct.invoicesystem.domain.invoice.model.Invoice;
 import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
 import com.oct.invoicesystem.domain.invoice.repository.InvoiceRepository;
+import com.oct.invoicesystem.domain.report.dto.BudgetVsActualDTO;
 import com.oct.invoicesystem.domain.payment.model.Payment;
 import com.oct.invoicesystem.domain.payment.repository.PaymentRepository;
 import com.oct.invoicesystem.domain.report.dto.AgingReportDTO;
@@ -43,6 +46,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -64,6 +68,7 @@ public class ReportServiceImpl implements ReportService {
     private final PaymentRepository paymentRepository;
     private final WebhookDeliveryRepository webhookDeliveryRepository;
     private final MessageSource messageSource;
+    private final DepartmentRepository departmentRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -728,5 +733,59 @@ public class ReportServiceImpl implements ReportService {
             case 3 -> "DAF Reviewer";
             default -> "Approval Step " + stepOrder;
         };
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BudgetVsActualDTO getBudgetVsActual() {
+        log.info("Calculating budget-vs-actual report");
+
+        // Committed spend = all invoices except drafts and rejected ones.
+        List<Invoice> invoices = invoiceRepository.findAllWithFilters(
+                null, null, null, null, null, null, Pageable.unpaged()).getContent();
+
+        Map<UUID, BigDecimal> actualByDept = new HashMap<>();
+        for (Invoice inv : invoices) {
+            if (inv.getStatus() == InvoiceStatus.BROUILLON || inv.getStatus() == InvoiceStatus.REJETE) {
+                continue;
+            }
+            if (inv.getDepartment() == null || inv.getAmount() == null) {
+                continue;
+            }
+            actualByDept.merge(inv.getDepartment().getId(), inv.getAmount(), BigDecimal::add);
+        }
+
+        List<BudgetVsActualDTO.DepartmentBudgetLine> lines = new ArrayList<>();
+        BigDecimal totalBudget = BigDecimal.ZERO;
+        BigDecimal totalActual = BigDecimal.ZERO;
+
+        List<Department> departments = departmentRepository.findAll().stream()
+                .sorted(Comparator.comparing(Department::getCode))
+                .toList();
+
+        for (Department dept : departments) {
+            BigDecimal actual = actualByDept.getOrDefault(dept.getId(), BigDecimal.ZERO);
+            BigDecimal budget = dept.getBudget();
+
+            BigDecimal variance = null;
+            BigDecimal utilization = null;
+            if (budget != null) {
+                variance = budget.subtract(actual);
+                totalBudget = totalBudget.add(budget);
+                if (budget.compareTo(BigDecimal.ZERO) > 0) {
+                    utilization = actual.multiply(BigDecimal.valueOf(100))
+                            .divide(budget, 2, RoundingMode.HALF_UP);
+                } else {
+                    utilization = BigDecimal.ZERO;
+                }
+            }
+            totalActual = totalActual.add(actual);
+
+            lines.add(new BudgetVsActualDTO.DepartmentBudgetLine(
+                    dept.getCode(), dept.getNameFr(), dept.getNameEn(),
+                    budget, actual, variance, utilization));
+        }
+
+        return new BudgetVsActualDTO(lines, totalBudget, totalActual);
     }
 }

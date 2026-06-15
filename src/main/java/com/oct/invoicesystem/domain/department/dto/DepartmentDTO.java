@@ -16,6 +16,7 @@ public record DepartmentDTO(
         String n1Role,
         String n2Role,
         @JsonProperty("isActive") boolean active,
+        java.math.BigDecimal budget,
         ZonedDateTime createdAt,
         ZonedDateTime updatedAt
 ) {}

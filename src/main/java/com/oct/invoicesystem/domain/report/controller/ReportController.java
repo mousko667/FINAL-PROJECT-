@@ -3,6 +3,7 @@ package com.oct.invoicesystem.domain.report.controller;
 import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
 import com.oct.invoicesystem.domain.report.dto.AgingReportDTO;
 import com.oct.invoicesystem.domain.report.dto.BottleneckDTO;
+import com.oct.invoicesystem.domain.report.dto.BudgetVsActualDTO;
 import com.oct.invoicesystem.domain.report.dto.CashFlowProjectionDTO;
 import com.oct.invoicesystem.domain.report.dto.DashboardKpiDTO;
 import com.oct.invoicesystem.domain.report.dto.SupplierPaymentHistoryDTO;
@@ -141,5 +142,13 @@ public class ReportController {
     @Operation(summary = "Get Supplier Performance Metrics", description = "Returns accuracy rate, rejection rate, and average payment time for a supplier")
     public ApiResponse<SupplierPerformanceDTO> getSupplierPerformance(@PathVariable UUID supplierId) {
         return ApiResponse.success(reportService.getSupplierPerformance(supplierId));
+    }
+
+    @GetMapping("/budget-vs-actual")
+    @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
+    @Operation(summary = "Get Budget vs Actual Report",
+            description = "Per-department budget compared to committed invoice spend (P11-52 / REQ-21)")
+    public ApiResponse<BudgetVsActualDTO> getBudgetVsActual() {
+        return ApiResponse.success(reportService.getBudgetVsActual());
     }
 }

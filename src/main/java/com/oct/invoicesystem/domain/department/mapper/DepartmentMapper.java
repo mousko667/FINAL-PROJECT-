@@ -20,6 +20,7 @@ public interface DepartmentMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "isActive", ignore = true)
+    @Mapping(target = "budget", ignore = true) // set later via update, not at creation (P11-52)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     Department toEntity(DepartmentCreateRequest request);

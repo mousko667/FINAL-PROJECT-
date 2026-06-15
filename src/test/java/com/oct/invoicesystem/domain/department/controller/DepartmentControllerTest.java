@@ -55,8 +55,8 @@ class DepartmentControllerTest {
     @WithMockUser(roles = "ADMIN")
     void createDepartment_AsAdmin_Returns201() throws Exception {
         DepartmentCreateRequest request = new DepartmentCreateRequest("IT", "Info", "IT", false, "ROLE_M", null);
-        DepartmentDTO responseDto = new DepartmentDTO(UUID.randomUUID(), "IT", "Info", "IT", false, "ROLE_M", null, true, null, null);
-        
+        DepartmentDTO responseDto = new DepartmentDTO(UUID.randomUUID(), "IT", "Info", "IT", false, "ROLE_M", null, true, null, null, null);
+
         when(departmentService.createDepartment(any())).thenReturn(responseDto);
 
         mockMvc.perform(post("/api/v1/departments")
@@ -81,8 +81,8 @@ class DepartmentControllerTest {
     @WithMockUser(roles = "ADMIN")
     void updateDepartment_AsAdmin_Returns200() throws Exception {
         UUID id = UUID.randomUUID();
-        DepartmentUpdateRequest request = new DepartmentUpdateRequest("New Name", null, null, null, null);
-        DepartmentDTO responseDto = new DepartmentDTO(id, "IT", "New Name", "IT", false, "ROLE_M", null, true, null, null);
+        DepartmentUpdateRequest request = new DepartmentUpdateRequest("New Name", null, null, null, null, null);
+        DepartmentDTO responseDto = new DepartmentDTO(id, "IT", "New Name", "IT", false, "ROLE_M", null, true, null, null, null);
         
         when(departmentService.updateDepartment(eq(id), any())).thenReturn(responseDto);
 

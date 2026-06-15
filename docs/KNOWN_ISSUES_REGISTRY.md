@@ -261,6 +261,15 @@
 
 ---
 
+### [PROB-047] Générateur de rapports avancé (REQ-21) — non implémenté (P11-52, scope partiel)
+- **Catégorie :** Backend / Frontend
+- **Sévérité :** 🟡 Mineur
+- **Statut :** ❌ Non implémenté (scope partiel P11-52 assumé)
+- **Description :** P11-52 a livré la colonne `Department.budget` (V49) + le rapport budget-vs-réalisé (`GET /reports/budget-vs-actual`, DAF + ASSISTANT_COMPTABLE). Les autres éléments REQ-21 restent absents : constructeur de rapports personnalisés (choix des colonnes/filtres), planification (rapports périodiques), distribution automatique (envoi e-mail programmé), et synthèse exécutive (executive summary).
+- **Solution recommandée :** Module de reporting paramétrable (définitions de rapports persistées), job `@Scheduled` de génération, intégration `EmailService` pour la distribution, et un template de synthèse exécutive (PDF) agrégeant les KPI clés.
+
+---
+
 ## PROBLÈMES RÉSOLUS — AUDIT 2026-06-07 (Sécurité)
 
 ### [PROB-017] User.isAccountNonLocked() ignorait lockedUntil

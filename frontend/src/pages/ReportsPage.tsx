@@ -79,6 +79,18 @@ export default function ReportsPage() {
     retry: false,
   })
 
+  const { data: budget, isLoading: budgetLoading } = useQuery({
+    queryKey: ['budget-vs-actual'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<{ data: {
+        lines: Array<{ departmentCode: string; nameFr: string; nameEn: string; budget: number | null; actual: number; variance: number | null; utilizationPercent: number | null }>
+        totalBudget: number; totalActual: number
+      } }>('/reports/budget-vs-actual')
+      return data.data
+    },
+    retry: false,
+  })
+
   const excelMutation = useMutation({
     mutationFn: () => reportService.exportExcel({ fromDate: fromDate || undefined, toDate: toDate || undefined }),
   })
@@ -120,6 +132,60 @@ export default function ReportsPage() {
               <KpiCard title={t('dashboard.overdueInvoices')} value={kpi?.overdueCount ?? '—'} icon={<AlertTriangle className="w-5 h-5 text-red-600" />} color="bg-red-50" />
               <KpiCard title={t('dashboard.avgProcessingTime')} value={kpi ? `${kpi.averageProcessingTimeDays.toFixed(1)} ${t('dashboard.days')}` : '—'} icon={<Clock className="w-5 h-5 text-amber-600" />} color="bg-amber-50" />
               <KpiCard title={t('dashboard.rejectionRate')} value={kpi ? `${(kpi.rejectionRate * 100).toFixed(1)}%` : '—'} icon={<XCircle className="w-5 h-5 text-orange-600" />} color="bg-orange-50" />
+            </div>
+          )}
+        </Section>
+
+        {/* P11-52: Budget vs Actual per department */}
+        <Section title={t('reports.budgetTitle')}>
+          <p className="text-sm text-gray-500 mb-4">{t('reports.budgetDesc')}</p>
+          {budgetLoading ? (
+            <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+          ) : !budget?.lines?.length ? (
+            <p className="text-sm text-center text-gray-400 py-4">{t('reports.noData')}</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left text-gray-500">
+                    <th className="px-3 py-2 font-medium">{t('reports.budgetDept')}</th>
+                    <th className="px-3 py-2 font-medium text-right">{t('reports.budgetColBudget')}</th>
+                    <th className="px-3 py-2 font-medium text-right">{t('reports.budgetColActual')}</th>
+                    <th className="px-3 py-2 font-medium text-right">{t('reports.budgetColVariance')}</th>
+                    <th className="px-3 py-2 font-medium text-right">{t('reports.budgetColUtil')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {budget.lines.map(l => {
+                    const over = l.variance != null && l.variance < 0
+                    return (
+                      <tr key={l.departmentCode} className="border-b last:border-0">
+                        <td className="px-3 py-2 font-medium text-gray-900">{l.departmentCode}</td>
+                        <td className="px-3 py-2 text-right text-gray-600">
+                          {l.budget != null ? `${Number(l.budget).toLocaleString()} XAF` : <span className="text-gray-300">—</span>}
+                        </td>
+                        <td className="px-3 py-2 text-right text-gray-600">{Number(l.actual).toLocaleString()} XAF</td>
+                        <td className={`px-3 py-2 text-right font-medium ${l.variance == null ? 'text-gray-300' : over ? 'text-red-600' : 'text-green-700'}`}>
+                          {l.variance != null ? `${Number(l.variance).toLocaleString()} XAF` : '—'}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          {l.utilizationPercent != null ? (
+                            <span className={over ? 'text-red-600 font-medium' : 'text-gray-600'}>{Number(l.utilizationPercent).toFixed(1)}%</span>
+                          ) : <span className="text-gray-300">—</span>}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t-2 font-semibold text-gray-800">
+                    <td className="px-3 py-2">{t('reports.budgetTotal')}</td>
+                    <td className="px-3 py-2 text-right">{Number(budget.totalBudget).toLocaleString()} XAF</td>
+                    <td className="px-3 py-2 text-right">{Number(budget.totalActual).toLocaleString()} XAF</td>
+                    <td className="px-3 py-2" colSpan={2}></td>
+                  </tr>
+                </tfoot>
+              </table>
             </div>
           )}
         </Section>

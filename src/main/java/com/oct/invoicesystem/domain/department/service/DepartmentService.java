@@ -82,6 +82,7 @@ public class DepartmentService {
         if (request.requiresN2() != null) dept.setRequiresN2(request.requiresN2());
         if (request.n1Role() != null) dept.setN1Role(request.n1Role());
         if (request.n2Role() != null) dept.setN2Role(request.n2Role());
+        if (request.budget() != null) dept.setBudget(request.budget());
 
         return departmentMapper.toDto(departmentRepository.save(dept));
     }

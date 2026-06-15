@@ -62,6 +62,9 @@ class ReportServiceTest {
     @Mock
     private MessageSource messageSource;
 
+    @Mock
+    private com.oct.invoicesystem.domain.department.repository.DepartmentRepository departmentRepository;
+
     @InjectMocks
     private ReportServiceImpl reportService;
 
@@ -501,5 +504,43 @@ class ReportServiceTest {
         
         // Webhook success rate (mocked 8/10 = 0.8)
         assertEquals(0.8, result.webhookDeliverySuccessRate());
+    }
+
+    @Test
+    void getBudgetVsActual_computesActualVarianceAndUtilization() {
+        com.oct.invoicesystem.domain.department.model.Department it =
+                com.oct.invoicesystem.domain.department.model.Department.builder()
+                        .id(UUID.randomUUID()).code("IT").nameFr("Informatique").nameEn("IT")
+                        .n1Role("ROLE_X").budget(new BigDecimal("1000.00")).build();
+        com.oct.invoicesystem.domain.department.model.Department hr =
+                com.oct.invoicesystem.domain.department.model.Department.builder()
+                        .id(UUID.randomUUID()).code("HR").nameFr("RH").nameEn("HR")
+                        .n1Role("ROLE_Y").budget(null).build(); // no budget defined
+
+        when(departmentRepository.findAll()).thenReturn(List.of(it, hr));
+
+        // Two committed IT invoices (300 + 250) and one HR invoice (100); one REJETE IT must be excluded.
+        Invoice it1 = Invoice.builder().department(it).amount(new BigDecimal("300.00")).status(InvoiceStatus.VALIDE).build();
+        Invoice it2 = Invoice.builder().department(it).amount(new BigDecimal("250.00")).status(InvoiceStatus.BON_A_PAYER).build();
+        Invoice itRejected = Invoice.builder().department(it).amount(new BigDecimal("999.00")).status(InvoiceStatus.REJETE).build();
+        Invoice hr1 = Invoice.builder().department(hr).amount(new BigDecimal("100.00")).status(InvoiceStatus.PAYE).build();
+        when(invoiceRepository.findAllWithFilters(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(new PageImpl<>(List.of(it1, it2, itRejected, hr1)));
+
+        var result = reportService.getBudgetVsActual();
+
+        var itLine = result.lines().stream().filter(l -> l.departmentCode().equals("IT")).findFirst().orElseThrow();
+        assertEquals(0, new BigDecimal("550.00").compareTo(itLine.actual()));   // 300 + 250, rejected excluded
+        assertEquals(0, new BigDecimal("450.00").compareTo(itLine.variance())); // 1000 - 550
+        assertEquals(0, new BigDecimal("55.00").compareTo(itLine.utilizationPercent())); // 550/1000 * 100
+
+        var hrLine = result.lines().stream().filter(l -> l.departmentCode().equals("HR")).findFirst().orElseThrow();
+        assertNull(hrLine.budget());
+        assertNull(hrLine.variance());
+        assertNull(hrLine.utilizationPercent());
+        assertEquals(0, new BigDecimal("100.00").compareTo(hrLine.actual()));
+
+        assertEquals(0, new BigDecimal("1000.00").compareTo(result.totalBudget()));
+        assertEquals(0, new BigDecimal("650.00").compareTo(result.totalActual())); // 550 + 100
     }
 }
