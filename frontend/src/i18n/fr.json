@@ -14,6 +14,7 @@
     "search": "Rechercher",
     "filter": "Filtrer",
     "export": "Exporter",
+    "add": "Ajouter",
     "noData": "Aucune donnée disponible",
     "all": "Tous",
     "actions": "Actions",
@@ -767,7 +768,20 @@
     "tabs": {
       "details": "Informations",
       "documents": "Documents",
-      "performance": "Performance"
+      "performance": "Performance",
+      "relationship": "Contrats & communications"
+    },
+    "contracts": {
+      "title": "Contrats & accords",
+      "reference": "Référence",
+      "titleField": "Intitulé",
+      "none": "Aucun contrat."
+    },
+    "comms": {
+      "title": "Journal de communication",
+      "subject": "Sujet",
+      "body": "Détails (facultatif)",
+      "none": "Aucune communication."
     },
     "document": {
       "upload": "Téléverser un document",

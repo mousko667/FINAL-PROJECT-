@@ -12,13 +12,14 @@ import {
 } from '@/api/suppliers'
 import { useAppSelector } from '@/store/hooks'
 import { SupplierStatusBadge } from '@/components/SupplierStatusBadge'
+import { SupplierRelationship } from '@/components/supplier/SupplierRelationship'
 import { Loader2, ArrowLeft, CheckCircle, Ban, Trash2, Building, Mail, Phone, MapPin, Calendar, FileText, Activity, Upload } from 'lucide-react'
 
 export default function SupplierDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const [activeTab, setActiveTab] = useState<'DETAILS' | 'DOCUMENTS' | 'PERFORMANCE'>('DETAILS')
+  const [activeTab, setActiveTab] = useState<'DETAILS' | 'DOCUMENTS' | 'PERFORMANCE' | 'RELATIONSHIP'>('DETAILS')
   const [docType, setDocType] = useState<'TAX_CERTIFICATE' | 'CONTRACT' | 'OTHER'>('TAX_CERTIFICATE')
   const fileInputRef = useRef<HTMLInputElement>(null)
   
@@ -136,7 +137,19 @@ export default function SupplierDetailPage() {
         >
           {t('supplier.tabs.performance', 'Performance')}
         </button>
+        <button
+          onClick={() => setActiveTab('RELATIONSHIP')}
+          className={`pb-4 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'RELATIONSHIP' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          {t('supplier.tabs.relationship', 'Contrats & communications')}
+        </button>
       </div>
+
+      {activeTab === 'RELATIONSHIP' && id && (
+        <SupplierRelationship supplierId={id} canEdit={!!canManageSupplier} />
+      )}
 
       {activeTab === 'DETAILS' && (
         <div className="bg-white rounded-xl border p-6 grid grid-cols-1 md:grid-cols-2 gap-8">

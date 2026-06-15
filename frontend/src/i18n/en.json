@@ -14,6 +14,7 @@
     "search": "Search",
     "filter": "Filter",
     "export": "Export",
+    "add": "Add",
     "noData": "No data available",
     "all": "All",
     "actions": "Actions",
@@ -767,7 +768,20 @@
     "tabs": {
       "details": "Details",
       "documents": "Documents",
-      "performance": "Performance"
+      "performance": "Performance",
+      "relationship": "Contracts & communications"
+    },
+    "contracts": {
+      "title": "Contracts & agreements",
+      "reference": "Reference",
+      "titleField": "Title",
+      "none": "No contracts."
+    },
+    "comms": {
+      "title": "Communication log",
+      "subject": "Subject",
+      "body": "Details (optional)",
+      "none": "No communications."
     },
     "document": {
       "upload": "Upload Document",
