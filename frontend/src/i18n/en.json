@@ -407,6 +407,11 @@
         "justNow": "just now",
         "minutesAgo": "{{count}} min ago",
         "hoursAgo": "{{count}} h ago"
+      },
+      "anomalies": {
+        "title": "Detected anomalies",
+        "HIGH_VOLUME": "High volume",
+        "EXCESSIVE_ACCESS_DENIED": "Excessive access-denied"
       }
     },
     "approvalMatrix": {

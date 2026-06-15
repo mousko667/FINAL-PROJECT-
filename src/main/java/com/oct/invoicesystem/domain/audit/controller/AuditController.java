@@ -36,6 +36,7 @@ import java.util.UUID;
 public class AuditController {
 
     private final AuditService auditService;
+    private final com.oct.invoicesystem.domain.audit.service.AuditAnomalyService auditAnomalyService;
     private final com.oct.invoicesystem.shared.export.TabularExportService tabularExportService;
 
     // System/security audit trail — Administrator only
@@ -111,6 +112,14 @@ public class AuditController {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<AuditLogDTO> result = auditService.searchLogs(userId, entityType, entityId, action, pageable);
         return ApiResponse.success(PagedResponse.of(result), "audit.retrieved");
+    }
+
+    @GetMapping("/anomalies")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Détection d'anomalies d'audit (statistique)",
+            description = "Utilisateurs au volume d'activité anormal ou aux accès refusés excessifs (M10)")
+    public ApiResponse<java.util.List<com.oct.invoicesystem.domain.audit.dto.AuditAnomalyDTO>> getAnomalies() {
+        return ApiResponse.success(auditAnomalyService.detectAnomalies());
     }
 
     @GetMapping("/export")

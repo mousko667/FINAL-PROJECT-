@@ -98,6 +98,50 @@ function RecentActivityPanel() {
   )
 }
 
+interface Anomaly {
+  userId: string; username: string; type: string; observed: number; baseline: number; detail: string
+}
+
+/**
+ * M10 — statistical audit anomaly detection. Lists users flagged for unusual activity volume or
+ * excessive access-denied events over the recent window. Empty (hidden) when nothing is flagged.
+ */
+function AnomalyPanel() {
+  const { t } = useTranslation()
+  const { data: anomalies = [] } = useQuery<Anomaly[]>({
+    queryKey: ['audit-anomalies'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<{ data: Anomaly[] }>('/audit-logs/anomalies')
+      return data.data ?? []
+    },
+    retry: false,
+  })
+
+  if (anomalies.length === 0) return null
+
+  return (
+    <div className="bg-white rounded-xl border border-red-200 p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <Activity className="w-5 h-5 text-red-600" />
+        <h2 className="font-semibold text-gray-800">{t('admin.audit.anomalies.title', 'Anomalies détectées')}</h2>
+      </div>
+      <ul className="divide-y">
+        {anomalies.map((a, i) => (
+          <li key={i} className="flex items-center justify-between gap-3 py-2 text-sm">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-xs font-mono bg-red-50 text-red-700 px-2 py-0.5 rounded border border-red-100 shrink-0">
+                {t(`admin.audit.anomalies.${a.type}`, a.type)}
+              </span>
+              <span className="text-gray-700 truncate">{a.username}</span>
+            </div>
+            <span className="text-xs text-gray-500 text-right">{a.detail}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 export default function AdminAuditPage() {
   const { t } = useTranslation()
   const [filters, setFilters] = useState<AuditFilters>({ page: 0, size: 20 })
@@ -127,6 +171,9 @@ export default function AdminAuditPage() {
         <ExportMenu endpoint="/audit-logs/export" filename="audit"
           params={{ entityType: filters.entityType, action: filters.action }} />
       </div>
+
+      {/* M10: statistical anomaly detection */}
+      <AnomalyPanel />
 
       {/* P11-51: live recent-activity feed */}
       <RecentActivityPanel />
