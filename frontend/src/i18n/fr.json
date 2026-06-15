@@ -138,7 +138,11 @@
     "securityLogs": "Journaux système",
     "supplierRegistry": "Registre fournisseurs",
     "approved": "Approuvées",
-    "processedThisMonth": "Traitées ce mois"
+    "processedThisMonth": "Traitées ce mois",
+    "budgetAlerts": {
+      "title": "Alertes budgétaires",
+      "overBudget": "dépassé"
+    }
   },
   "po": {
     "title": "Bons de commande",
@@ -439,6 +443,21 @@
       "save": "Enregistrer",
       "saved": "Enregistré",
       "saveError": "Échec de l'enregistrement"
+    },
+    "announcements": {
+      "navTitle": "Annonces",
+      "title": "Annonces système",
+      "subtitle": "Messages affichés sur les tableaux de bord de tous les utilisateurs.",
+      "titleField": "Titre",
+      "body": "Message",
+      "severity": "Niveau",
+      "create": "Publier",
+      "createError": "Échec de la création.",
+      "incomplete": "Titre et message requis.",
+      "statusCol": "Actif",
+      "active": "Actif",
+      "inactive": "Inactif",
+      "none": "Aucune annonce."
     },
     "integrations": {
       "title": "Intégrations & Webhooks",

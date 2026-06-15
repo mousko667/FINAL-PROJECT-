@@ -788,4 +788,15 @@ public class ReportServiceImpl implements ReportService {
 
         return new BudgetVsActualDTO(lines, totalBudget, totalActual);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BudgetVsActualDTO.DepartmentBudgetLine> getBudgetAlerts(double thresholdPercent) {
+        BigDecimal threshold = BigDecimal.valueOf(thresholdPercent);
+        return getBudgetVsActual().lines().stream()
+                .filter(l -> l.utilizationPercent() != null
+                        && l.utilizationPercent().compareTo(threshold) >= 0)
+                .sorted(Comparator.comparing(BudgetVsActualDTO.DepartmentBudgetLine::utilizationPercent).reversed())
+                .toList();
+    }
 }

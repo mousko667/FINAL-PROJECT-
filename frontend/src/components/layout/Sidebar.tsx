@@ -23,6 +23,7 @@ import {
   UserCheck,
   KeyRound,
   SlidersHorizontal,
+  Megaphone,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -174,6 +175,7 @@ export default function Sidebar() {
           <NavItem to="/admin/users" icon={Users} label={t('nav.users')} />
           <NavItem to="/admin/permissions" icon={KeyRound} label={t('admin.permissions.navTitle', 'Matrice des permissions')} />
           <NavItem to="/admin/access-requests" icon={UserCheck} label={t('accessRequests.navAdmin', 'Demandes d\'accès')} />
+          <NavItem to="/admin/announcements" icon={Megaphone} label={t('admin.announcements.navTitle', 'Annonces')} />
           <NavItem to="/admin/departments" icon={Building2} label={t('nav.departments')} />
           <NavItem to="/admin/suppliers" icon={Truck} label={t('nav.suppliers')} />
           <NavItem to="/admin/audit" icon={ScrollText} label={t('nav.auditLog')} />

@@ -32,6 +32,7 @@ const SecuritySettingsPage = lazy(() => import('@/pages/admin/SecuritySettingsPa
 const IntegrationsPage = lazy(() => import('@/pages/admin/IntegrationsPage'))
 const MyAccessRequestsPage = lazy(() => import('@/pages/MyAccessRequestsPage'))
 const AdminAccessRequestsPage = lazy(() => import('@/pages/admin/AdminAccessRequestsPage'))
+const AdminAnnouncementsPage = lazy(() => import('@/pages/admin/AdminAnnouncementsPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 const SuppliersPage = lazy(() => import('@/pages/admin/SuppliersPage'))
 const SupplierDetailPage = lazy(() => import('@/pages/admin/SupplierDetailPage'))
@@ -86,6 +87,7 @@ function AppRoutes() {
             <Route path="/admin/users/new" element={<AdminUserFormPage />} />
             <Route path="/admin/permissions" element={<AdminPermissionMatrixPage />} />
             <Route path="/admin/access-requests" element={<AdminAccessRequestsPage />} />
+            <Route path="/admin/announcements" element={<AdminAnnouncementsPage />} />
             <Route path="/admin/departments" element={<AdminDepartmentsPage />} />
             <Route path="/admin/departments/new" element={<AdminDepartmentFormPage />} />
             <Route path="/admin/audit" element={<AdminAuditPage />} />

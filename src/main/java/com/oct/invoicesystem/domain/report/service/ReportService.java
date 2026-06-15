@@ -84,4 +84,13 @@ public interface ReportService {
      * @return BudgetVsActualDTO with one line per department plus totals
      */
     BudgetVsActualDTO getBudgetVsActual();
+
+    /**
+     * Budget alerts (M2): departments whose committed spend is at or above {@code thresholdPercent}
+     * of their budget (default 80%). Used by the manager dashboard "budget alerts" widget.
+     *
+     * @param thresholdPercent utilisation % at/above which a department is flagged
+     * @return only the flagged department lines, highest utilisation first
+     */
+    java.util.List<BudgetVsActualDTO.DepartmentBudgetLine> getBudgetAlerts(double thresholdPercent);
 }

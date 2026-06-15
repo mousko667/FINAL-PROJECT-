@@ -138,7 +138,11 @@
     "securityLogs": "System Logs",
     "supplierRegistry": "Supplier Registry",
     "approved": "Approved",
-    "processedThisMonth": "Processed this month"
+    "processedThisMonth": "Processed this month",
+    "budgetAlerts": {
+      "title": "Budget alerts",
+      "overBudget": "over budget"
+    }
   },
   "po": {
     "title": "Purchase Orders",
@@ -439,6 +443,21 @@
       "save": "Save",
       "saved": "Saved",
       "saveError": "Save failed"
+    },
+    "announcements": {
+      "navTitle": "Announcements",
+      "title": "System announcements",
+      "subtitle": "Messages shown on every user's dashboard.",
+      "titleField": "Title",
+      "body": "Message",
+      "severity": "Severity",
+      "create": "Publish",
+      "createError": "Creation failed.",
+      "incomplete": "Title and message are required.",
+      "statusCol": "Active",
+      "active": "Active",
+      "inactive": "Inactive",
+      "none": "No announcements."
     },
     "integrations": {
       "title": "Integrations & Webhooks",

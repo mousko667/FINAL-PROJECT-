@@ -151,4 +151,13 @@ public class ReportController {
     public ApiResponse<BudgetVsActualDTO> getBudgetVsActual() {
         return ApiResponse.success(reportService.getBudgetVsActual());
     }
+
+    @GetMapping("/budget-alerts")
+    @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
+    @Operation(summary = "Get Budget Alerts",
+            description = "Departments at/above the given budget-utilisation threshold (default 80%) — M2 dashboard widget")
+    public ApiResponse<java.util.List<BudgetVsActualDTO.DepartmentBudgetLine>> getBudgetAlerts(
+            @RequestParam(defaultValue = "80") double threshold) {
+        return ApiResponse.success(reportService.getBudgetAlerts(threshold));
+    }
 }
