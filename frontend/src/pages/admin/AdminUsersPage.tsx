@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import apiClient from '@/services/apiClient'
 import type { ApiResponse, PagedResponse } from '@/types/invoice'
-import { Loader2, Plus, Pencil, LockOpen, UserCheck, UserX, Download, Upload, X, AlertCircle, CheckCircle, ShieldOff } from 'lucide-react'
+import { Loader2, Plus, Pencil, LockOpen, UserCheck, UserX, Upload, X, AlertCircle, CheckCircle, ShieldOff } from 'lucide-react'
+import { ExportMenu } from '@/components/ui/ExportMenu'
 
 interface ImportRowError { line: number; username: string; message: string }
 interface ImportResult { totalRows: number; created: number; failed: number; errors: ImportRowError[] }
@@ -15,25 +16,6 @@ function CsvToolbar() {
   const queryClient = useQueryClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [report, setReport] = useState<ImportResult | null>(null)
-  const [exporting, setExporting] = useState(false)
-
-  const handleExport = async () => {
-    setExporting(true)
-    try {
-      // Authenticated blob download (apiClient attaches the JWT), then trigger a browser save.
-      const res = await apiClient.get('/users/export/csv', { responseType: 'blob' })
-      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'text/csv' }))
-      const a = document.createElement('a')
-      a.href = url
-      a.download = 'users_export.csv'
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-      window.URL.revokeObjectURL(url)
-    } finally {
-      setExporting(false)
-    }
-  }
 
   const importMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -58,14 +40,7 @@ function CsvToolbar() {
 
   return (
     <div className="flex items-center gap-2">
-      <button
-        onClick={handleExport}
-        disabled={exporting}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-      >
-        {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-        {t('admin.users.exportCsv')}
-      </button>
+      <ExportMenu endpoint="/users/export" filename="users_export" />
       <button
         onClick={() => fileInputRef.current?.click()}
         disabled={importMutation.isPending}

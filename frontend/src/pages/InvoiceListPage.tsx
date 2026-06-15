@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAppSelector } from '@/store/hooks'
 import { invoiceService, type InvoiceFilters } from '@/services/invoiceService'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import { ExportMenu } from '@/components/ui/ExportMenu'
 import type { InvoiceStatus } from '@/types/invoice'
 import { Plus, Search, ChevronLeft, ChevronRight, Loader2, Archive, Lock } from 'lucide-react'
 
@@ -73,17 +74,20 @@ export default function InvoiceListPage() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">{t('invoice.title')}</h1>
-        {isAA && (
-          <button
-            id="btn-new-invoice"
-            onClick={() => navigate('/invoices/new')}
-            title={t('invoice.newTooltip')}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            {t('invoice.new')}
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          <ExportMenu endpoint="/invoices/export" filename="invoices" />
+          {isAA && (
+            <button
+              id="btn-new-invoice"
+              onClick={() => navigate('/invoices/new')}
+              title={t('invoice.newTooltip')}
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              {t('invoice.new')}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Department scope notice for validators */}

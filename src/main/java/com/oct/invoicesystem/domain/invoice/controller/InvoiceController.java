@@ -68,6 +68,7 @@ public class InvoiceController {
     private final InvoicePdfService invoicePdfService;
     private final InvoiceMapper invoiceMapper;
     private final SecurityHelper securityHelper;
+    private final com.oct.invoicesystem.shared.export.TabularExportService tabularExportService;
 
     @GetMapping
     @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER') and !hasRole('ADMIN')")
@@ -86,6 +87,37 @@ public class InvoiceController {
         return ResponseEntity.ok(ApiResponse.success(
                 new PagedResponse<>(mapped, paged.getPage(), paged.getSize(), paged.getTotalElements(), paged.getTotalPages(), paged.isLast())
         ));
+    }
+
+    @GetMapping("/export")
+    @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER') and !hasRole('ADMIN')")
+    @Operation(summary = "Export invoice list (csv|excel|pdf)",
+            description = "Exports the filtered invoice list in the requested format")
+    public ResponseEntity<byte[]> exportInvoices(
+            @RequestParam(defaultValue = "csv") String format,
+            @RequestParam(required = false) InvoiceStatus status,
+            @RequestParam(required = false) UUID department,
+            @RequestParam(required = false) LocalDate from,
+            @RequestParam(required = false) LocalDate to,
+            @RequestParam(required = false) String reference) {
+        var fmt = com.oct.invoicesystem.shared.export.TabularExportService.Format.from(format);
+        PagedResponse<Invoice> paged = invoiceService.listInvoices(
+                status, department, from, to, reference, null, 0, 10000, "createdAt,desc");
+        List<String> headers = List.of("Reference", "Supplier", "Amount", "Currency", "Status", "Issue date", "Due date", "Department");
+        List<List<String>> rows = paged.getContent().stream().map(i -> List.of(
+                i.getReferenceNumber() == null ? "" : i.getReferenceNumber(),
+                i.getSupplierName() == null ? "" : i.getSupplierName(),
+                i.getAmount() == null ? "" : i.getAmount().toPlainString(),
+                i.getCurrency() == null ? "" : i.getCurrency(),
+                i.getStatus() == null ? "" : i.getStatus().name(),
+                i.getIssueDate() == null ? "" : i.getIssueDate().toString(),
+                i.getDueDate() == null ? "" : i.getDueDate().toString(),
+                i.getDepartment() == null ? "" : i.getDepartment().getCode())).toList();
+        byte[] body = tabularExportService.export(fmt, "Invoices", headers, rows);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=invoices_export." + fmt.extension)
+                .contentType(MediaType.parseMediaType(fmt.mediaType))
+                .body(body);
     }
 
     @GetMapping("/{id}")

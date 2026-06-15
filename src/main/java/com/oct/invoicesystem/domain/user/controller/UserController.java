@@ -7,6 +7,7 @@ import com.oct.invoicesystem.domain.user.dto.UserImportResultDTO;
 import com.oct.invoicesystem.domain.user.dto.UserUpdateRequest;
 import com.oct.invoicesystem.domain.user.service.UserCsvService;
 import com.oct.invoicesystem.domain.user.service.UserService;
+import com.oct.invoicesystem.shared.export.TabularExportService;
 import com.oct.invoicesystem.shared.response.ApiResponse;
 import com.oct.invoicesystem.shared.response.PagedResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -37,6 +39,20 @@ public class UserController {
 
     private final UserService userService;
     private final UserCsvService userCsvService;
+    private final com.oct.invoicesystem.shared.export.TabularExportService tabularExportService;
+
+    private static String nz(String s) {
+        return s == null ? "" : s;
+    }
+
+    private static ResponseEntity<byte[]> fileResponse(byte[] body,
+            String baseName, com.oct.invoicesystem.shared.export.TabularExportService.Format fmt) {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=" + baseName + "." + fmt.extension)
+                .contentType(MediaType.parseMediaType(fmt.mediaType))
+                .body(body);
+    }
 
     @GetMapping
     @Operation(summary = "List all users", description = "Retrieves a paginated list of users")
@@ -111,6 +127,21 @@ public class UserController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=users_export.csv")
                 .contentType(MediaType.parseMediaType("text/csv"))
                 .body(new InputStreamResource(stream));
+    }
+
+    @GetMapping("/export")
+    @Operation(summary = "Export users (csv|excel|pdf)",
+            description = "Unified export of all users in the requested format (no passwords)")
+    public ResponseEntity<byte[]> exportUsers(@RequestParam(defaultValue = "csv") String format) {
+        TabularExportService.Format fmt = TabularExportService.Format.from(format);
+        List<UserDTO> users = userService.getUsers(0, 10000, "createdAt,desc").getContent();
+        List<String> headers = List.of("Username", "Email", "First name", "Last name", "Roles", "Active");
+        List<List<String>> rows = users.stream().map(u -> List.of(
+                nz(u.username()), nz(u.email()), nz(u.firstName()), nz(u.lastName()),
+                u.roles() == null ? "" : String.join("|", u.roles()),
+                Boolean.toString(u.active()))).toList();
+        byte[] body = tabularExportService.export(fmt, "Users", headers, rows);
+        return fileResponse(body, "users_export", fmt);
     }
 
     @PostMapping(value = "/import/csv", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { useSuppliers, useActivateSupplier, useSuspendSupplier, useDeleteSupplier } from '@/api/suppliers'
 import { useAppSelector } from '@/store/hooks'
 import { SupplierStatusBadge } from '@/components/SupplierStatusBadge'
+import { ExportMenu } from '@/components/ui/ExportMenu'
 import { Loader2, Search, Filter, Eye, CheckCircle, Ban, Trash2, Plus } from 'lucide-react'
 
 export default function SuppliersPage() {
@@ -30,15 +31,18 @@ export default function SuppliersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">{t('supplier.title', 'Suppliers')}</h1>
-        {isAdmin && (
-          <Link
-            to="/admin/suppliers/new"
-            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 text-sm font-medium"
-          >
-            <Plus className="w-4 h-4" />
-            {t('supplier.create', 'Add Supplier')}
-          </Link>
-        )}
+        <div className="flex items-center gap-2">
+          <ExportMenu endpoint="/suppliers/export" filename="suppliers" />
+          {isAdmin && (
+            <Link
+              to="/admin/suppliers/new"
+              className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 text-sm font-medium"
+            >
+              <Plus className="w-4 h-4" />
+              {t('supplier.create', 'Add Supplier')}
+            </Link>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center gap-4 bg-white p-4 rounded-xl border">

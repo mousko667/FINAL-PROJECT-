@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import type { ApiResponse, PagedResponse } from '@/types/invoice'
 import { Loader2, Search, ChevronLeft, ChevronRight, Activity } from 'lucide-react'
+import { ExportMenu } from '@/components/ui/ExportMenu'
 
 interface AuditLog {
   id: string
@@ -121,7 +122,11 @@ export default function AdminAuditPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">{t('admin.audit.title')}</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">{t('admin.audit.title')}</h1>
+        <ExportMenu endpoint="/audit-logs/export" filename="audit"
+          params={{ entityType: filters.entityType, action: filters.action }} />
+      </div>
 
       {/* P11-51: live recent-activity feed */}
       <RecentActivityPanel />

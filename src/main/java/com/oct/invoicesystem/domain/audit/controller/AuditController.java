@@ -36,6 +36,7 @@ import java.util.UUID;
 public class AuditController {
 
     private final AuditService auditService;
+    private final com.oct.invoicesystem.shared.export.TabularExportService tabularExportService;
 
     // System/security audit trail — Administrator only
     private static final List<String> SYSTEM_ACTIONS = List.of(
@@ -110,5 +111,32 @@ public class AuditController {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<AuditLogDTO> result = auditService.searchLogs(userId, entityType, entityId, action, pageable);
         return ApiResponse.success(PagedResponse.of(result), "audit.retrieved");
+    }
+
+    @GetMapping("/export")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DAF')")
+    @Operation(summary = "Export du journal d'audit (csv|excel|pdf)")
+    public org.springframework.http.ResponseEntity<byte[]> exportLogs(
+            @RequestParam(defaultValue = "csv") String format,
+            @RequestParam(required = false) String entityType,
+            @RequestParam(required = false) String action) {
+        var fmt = com.oct.invoicesystem.shared.export.TabularExportService.Format.from(format);
+        Pageable pageable = PageRequest.of(0, 10000, Sort.by(Sort.Direction.DESC, "createdAt"));
+        java.util.List<AuditLogDTO> logs =
+                auditService.searchLogs(null, entityType, null, action, pageable).getContent();
+        java.util.List<String> headers = java.util.List.of("Date", "User ID", "Action", "Entity", "Entity ID", "IP");
+        java.util.List<java.util.List<String>> rows = logs.stream().map(l -> java.util.List.of(
+                l.createdAt() == null ? "" : l.createdAt().toString(),
+                l.userId() == null ? "" : l.userId().toString(),
+                l.action() == null ? "" : l.action(),
+                l.entityType() == null ? "" : l.entityType(),
+                l.entityId() == null ? "" : l.entityId(),
+                l.ipAddress() == null ? "" : l.ipAddress())).toList();
+        byte[] body = tabularExportService.export(fmt, "Audit", headers, rows);
+        return org.springframework.http.ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=audit_export." + fmt.extension)
+                .contentType(org.springframework.http.MediaType.parseMediaType(fmt.mediaType))
+                .body(body);
     }
 }

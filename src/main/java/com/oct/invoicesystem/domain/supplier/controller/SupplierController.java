@@ -23,6 +23,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -53,6 +54,7 @@ public class SupplierController {
     private final MinioStorageService minioStorageService;
     private final ReportService reportService;
     private final SecurityHelper securityHelper;
+    private final com.oct.invoicesystem.shared.export.TabularExportService tabularExportService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -85,6 +87,27 @@ public class SupplierController {
         Page<SupplierResponse> page = supplierService.searchSuppliers(name, taxId, status, pageable);
         return ApiResponse.success(PagedResponse.of(page));
     }
+
+    @GetMapping("/export")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE', 'DAF')")
+    public ResponseEntity<byte[]> exportSuppliers(@RequestParam(defaultValue = "csv") String format) {
+        var fmt = com.oct.invoicesystem.shared.export.TabularExportService.Format.from(format);
+        var suppliers = supplierService.searchSuppliers(null, null, null,
+                org.springframework.data.domain.Pageable.unpaged()).getContent();
+        java.util.List<String> headers = java.util.List.of(
+                "Company", "Tax ID", "Email", "Phone", "Address", "Status");
+        java.util.List<java.util.List<String>> rows = suppliers.stream().map(s -> java.util.List.of(
+                ns(s.companyName()), ns(s.taxId()), ns(s.contactEmail()), ns(s.contactPhone()),
+                ns(s.address()), s.status() == null ? "" : s.status().name())).toList();
+        byte[] body = tabularExportService.export(fmt, "Suppliers", headers, rows);
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=suppliers_export." + fmt.extension)
+                .contentType(org.springframework.http.MediaType.parseMediaType(fmt.mediaType))
+                .body(body);
+    }
+
+    private static String ns(String s) { return s == null ? "" : s; }
 
     @PostMapping("/{id}/activate")
     @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")

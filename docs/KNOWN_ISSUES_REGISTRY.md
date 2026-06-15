@@ -189,6 +189,26 @@
 
 ## PROBLÈMES EN COURS / NON RÉSOLUS
 
+### [PROB-049] Lecture des factures non restreinte au département (validateurs) — par conception
+- **Catégorie :** Sécurité / Autorisation
+- **Sévérité :** 🟡 Mineur (revue de sécurité l'a classé HIGH ; voir analyse)
+- **Statut :** ⏳ Acquitté — comportement voulu par le design actuel
+- **Description :** La revue de sécurité automatique a signalé que `GET /invoices/export` (et `GET /invoices`)
+  passe `null` comme scope à `listInvoices`, donc un validateur peut lister/exporter les factures de
+  TOUS les départements, pas seulement le sien. Vérification faite : (1) l'endpoint d'export utilise
+  EXACTEMENT le même `@PreAuthorize` et le même scope que l'endpoint de liste existant — aucune
+  asymétrie introduite par l'ajout de l'export ; (2) le 6e paramètre est `supplierId`, pas un jeton de
+  scope ; (3) le frontend affiche « Showing invoices from your department only. Use the All tab to
+  browse **without restriction** » — la restriction par département est donc un **filtre UX par défaut,
+  pas une frontière d'autorisation** dans le design actuel. Tout staff non-fournisseur (hors ADMIN) est
+  censé pouvoir consulter toutes les factures.
+- **Solution recommandée (SI on veut en faire une vraie frontière) :** appliquer un scope département
+  côté service pour les rôles VALIDATEUR (dériver `departmentId` du `User` courant et le forcer dans la
+  clause WHERE), de façon identique sur `GET /invoices` ET `GET /invoices/export`, + test d'intégration
+  « validateur dept A ne peut pas lire/exporter dept B ». Décision produit à confirmer avec le client.
+
+---
+
 ### [PROB-014] JWT utilise HS256 au lieu de RS256
 - **Catégorie :** Sécurité
 - **Sévérité :** 🔴 Critique (pour production)
