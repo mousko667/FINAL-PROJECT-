@@ -78,12 +78,24 @@ public class TabularExportService {
         return sb.toString();
     }
 
-    private String escapeCsv(String value) {
-        String v = value == null ? "" : value;
-        // Formula-injection guard: prefix a single quote if the cell starts with =,+,-,@.
-        if (!v.isEmpty() && "=+-@".indexOf(v.charAt(0)) >= 0) {
-            v = "'" + v;
+    /**
+     * Spreadsheet formula-injection guard, shared by CSV and Excel sinks: a cell starting with
+     * = + - @ (or a leading tab/CR that some apps treat as a formula lead) gets a single-quote
+     * prefix so it is rendered as text, not executed.
+     */
+    static String neutralizeFormula(String value) {
+        if (value == null || value.isEmpty()) {
+            return value == null ? "" : value;
         }
+        char c = value.charAt(0);
+        if (c == '=' || c == '+' || c == '-' || c == '@' || c == '\t' || c == '\r') {
+            return "'" + value;
+        }
+        return value;
+    }
+
+    private String escapeCsv(String value) {
+        String v = neutralizeFormula(value);
         boolean mustQuote = v.contains(",") || v.contains("\"") || v.contains("\n") || v.contains("\r");
         if (v.contains("\"")) {
             v = v.replace("\"", "\"\"");
@@ -112,7 +124,8 @@ public class TabularExportService {
             for (List<String> row : rows) {
                 Row r = sheet.createRow(rowIdx++);
                 for (int i = 0; i < row.size(); i++) {
-                    r.createCell(i).setCellValue(row.get(i) == null ? "" : row.get(i));
+                    // Same formula-injection guard as CSV — Excel evaluates =,+,-,@ leads too.
+                    r.createCell(i).setCellValue(neutralizeFormula(row.get(i)));
                 }
             }
             for (int i = 0; i < headers.size(); i++) {

@@ -101,18 +101,9 @@ public class InvoiceController {
             @RequestParam(required = false) LocalDate to,
             @RequestParam(required = false) String reference) {
         var fmt = com.oct.invoicesystem.shared.export.TabularExportService.Format.from(format);
-        PagedResponse<Invoice> paged = invoiceService.listInvoices(
-                status, department, from, to, reference, null, 0, 10000, "createdAt,desc");
+        // Build rows inside the service transaction so the lazy Department association can be read.
         List<String> headers = List.of("Reference", "Supplier", "Amount", "Currency", "Status", "Issue date", "Due date", "Department");
-        List<List<String>> rows = paged.getContent().stream().map(i -> List.of(
-                i.getReferenceNumber() == null ? "" : i.getReferenceNumber(),
-                i.getSupplierName() == null ? "" : i.getSupplierName(),
-                i.getAmount() == null ? "" : i.getAmount().toPlainString(),
-                i.getCurrency() == null ? "" : i.getCurrency(),
-                i.getStatus() == null ? "" : i.getStatus().name(),
-                i.getIssueDate() == null ? "" : i.getIssueDate().toString(),
-                i.getDueDate() == null ? "" : i.getDueDate().toString(),
-                i.getDepartment() == null ? "" : i.getDepartment().getCode())).toList();
+        List<List<String>> rows = invoiceService.buildExportRows(status, department, from, to, reference);
         byte[] body = tabularExportService.export(fmt, "Invoices", headers, rows);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=invoices_export." + fmt.extension)

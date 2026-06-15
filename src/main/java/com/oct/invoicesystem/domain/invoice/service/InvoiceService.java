@@ -198,6 +198,28 @@ public class InvoiceService {
         );
     }
 
+    /**
+     * Builds tabular rows for the invoice-list export. Runs inside a read-only transaction so the
+     * lazy {@code Invoice.department} association can be safely read while building each row
+     * (avoids LazyInitializationException when the controller iterates outside a session).
+     */
+    @Transactional(readOnly = true)
+    public List<java.util.List<String>> buildExportRows(
+            InvoiceStatus status, UUID departmentId, LocalDate fromDate, LocalDate toDate, String reference) {
+        List<Invoice> invoices = invoiceRepository.findAllWithFilters(
+                status, departmentId, fromDate, toDate, reference, null,
+                PageRequest.of(0, 10000, Sort.by(Sort.Direction.DESC, "createdAt"))).getContent();
+        return invoices.stream().map(i -> java.util.List.of(
+                i.getReferenceNumber() == null ? "" : i.getReferenceNumber(),
+                i.getSupplierName() == null ? "" : i.getSupplierName(),
+                i.getAmount() == null ? "" : i.getAmount().toPlainString(),
+                i.getCurrency() == null ? "" : i.getCurrency(),
+                i.getStatus() == null ? "" : i.getStatus().name(),
+                i.getIssueDate() == null ? "" : i.getIssueDate().toString(),
+                i.getDueDate() == null ? "" : i.getDueDate().toString(),
+                i.getDepartment() == null ? "" : i.getDepartment().getCode())).toList();
+    }
+
     @Transactional(readOnly = true)
     public Page<Invoice> getPendingValidationQueue(Pageable pageable) {
         return invoiceRepository.findPendingValidationQueue(pageable);

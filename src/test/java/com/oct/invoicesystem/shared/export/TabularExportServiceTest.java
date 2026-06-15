@@ -35,6 +35,16 @@ class TabularExportServiceTest {
     }
 
     @Test
+    void neutralizeFormula_guardsDangerousLeads() {
+        assertEquals("'=cmd", TabularExportService.neutralizeFormula("=cmd"));
+        assertEquals("'+1", TabularExportService.neutralizeFormula("+1"));
+        assertEquals("'-1", TabularExportService.neutralizeFormula("-1"));
+        assertEquals("'@x", TabularExportService.neutralizeFormula("@x"));
+        assertEquals("safe", TabularExportService.neutralizeFormula("safe"));
+        assertEquals("", TabularExportService.neutralizeFormula(null));
+    }
+
+    @Test
     void excel_producesNonEmptyWorkbook() {
         byte[] bytes = service.export(TabularExportService.Format.EXCEL, "Users",
                 List.of("a", "b"), List.of(List.of("1", "2")));
