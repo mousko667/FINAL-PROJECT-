@@ -94,6 +94,15 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success(null, "User account unlocked successfully"));
     }
 
+    @PostMapping("/{id}/mfa/reset")
+    @Operation(summary = "Reset/disable a user's MFA",
+            description = "Admin action: clears the user's MFA secret + verified/enabled flags so they can re-enrol "
+                    + "(or stay without MFA if the policy doesn't force it). Use when a user loses their authenticator.")
+    public ResponseEntity<ApiResponse<Void>> resetMfa(@PathVariable UUID id) {
+        userService.resetMfa(id);
+        return ResponseEntity.ok(ApiResponse.success(null, "User MFA has been reset"));
+    }
+
     @GetMapping("/export/csv")
     @Operation(summary = "Export users to CSV", description = "Downloads every user as a CSV file (no passwords)")
     public ResponseEntity<Resource> exportUsersCsv() {

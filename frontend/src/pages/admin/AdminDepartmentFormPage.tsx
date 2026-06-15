@@ -6,12 +6,17 @@ import { useNavigate } from 'react-router-dom'
 import apiClient from '@/services/apiClient'
 import { Loader2, ArrowLeft } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
+import { ROLE_OPTIONS } from '@/constants/roles'
 
+// Matches the backend DepartmentCreateRequest: code, nameFr, nameEn, requiresN2, n1Role, n2Role (+ optional budget via update).
 const departmentSchema = z.object({
-  name: z.string().min(1),
   code: z.string().min(1),
-  budget: z.coerce.number().min(0),
-  currency: z.string().min(1),
+  nameFr: z.string().min(1),
+  nameEn: z.string().min(1),
+  n1Role: z.string().min(1),
+  requiresN2: z.boolean().default(false),
+  n2Role: z.string().optional(),
+  budget: z.coerce.number().min(0).optional(),
 })
 
 type DepartmentFormData = z.infer<typeof departmentSchema>
@@ -23,21 +28,39 @@ export default function AdminDepartmentFormPage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
-  } = useForm<DepartmentFormData>({ resolver: zodResolver(departmentSchema) })
+  } = useForm<DepartmentFormData>({ resolver: zodResolver(departmentSchema), defaultValues: { requiresN2: false } })
+
+  const requiresN2 = watch('requiresN2')
 
   const createDeptMutation = useMutation({
-    mutationFn: (data: DepartmentFormData) => {
-      return apiClient.post('/departments', data)
+    mutationFn: async (data: DepartmentFormData) => {
+      // 1) create with the backend's expected shape
+      const { data: resp } = await apiClient.post('/departments', {
+        code: data.code,
+        nameFr: data.nameFr,
+        nameEn: data.nameEn,
+        requiresN2: data.requiresN2,
+        n1Role: data.n1Role,
+        n2Role: data.requiresN2 ? data.n2Role : null,
+      })
+      // 2) if a budget was provided, set it via the update endpoint (budget is update-only)
+      const id = resp?.data?.id
+      if (id && data.budget != null && !Number.isNaN(data.budget)) {
+        await apiClient.put(`/departments/${id}`, { budget: data.budget })
+      }
+      return resp
     },
-    onSuccess: () => {
-      navigate('/admin/departments')
-    }
+    onSuccess: () => navigate('/admin/departments'),
   })
 
   const onSubmit = async (data: DepartmentFormData) => {
     await createDeptMutation.mutateAsync(data)
   }
+
+  const inputCls =
+    'w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -49,64 +72,82 @@ export default function AdminDepartmentFormPage() {
           <ArrowLeft className="w-5 h-5 text-gray-600" />
         </button>
         <h1 className="text-2xl font-bold text-gray-900">
-          {t('admin.departments.create', 'Add Department')}
+          {t('admin.departments.create', 'Créer un département')}
         </h1>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-xl border p-6 space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('admin.departments.name', 'Department Name')} *
-            </label>
-            <input
-              {...register('name')}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-            {errors.name && <p className="text-xs text-red-500 mt-1">{t('validation.required')}</p>}
-          </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {t('admin.departments.code', 'Code')} *
             </label>
-            <input
-              {...register('code')}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-            {errors.code && <p className="text-xs text-red-500 mt-1">{t('validation.required')}</p>}
+            <input {...register('code')} placeholder="ex. FIN" className={inputCls} />
+            {errors.code && <p className="text-xs text-red-500 mt-1">{t('validation.required', 'Requis')}</p>}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('admin.departments.budget', 'Budget')} *
+              {t('admin.departments.budget', 'Budget annuel')}
             </label>
-            <input
-              type="number"
-              step="0.01"
-              {...register('budget')}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-            {errors.budget && <p className="text-xs text-red-500 mt-1">{t('validation.required')}</p>}
+            <input type="number" step="0.01" {...register('budget')} placeholder="0" className={inputCls} />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('admin.departments.currency', 'Currency')} *
+              {t('admin.departments.nameFr', 'Nom (FR)')} *
             </label>
-            <input
-              {...register('currency')}
-              defaultValue="EUR"
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-            {errors.currency && <p className="text-xs text-red-500 mt-1">{t('validation.required')}</p>}
+            <input {...register('nameFr')} className={inputCls} />
+            {errors.nameFr && <p className="text-xs text-red-500 mt-1">{t('validation.required', 'Requis')}</p>}
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('admin.departments.nameEn', 'Nom (EN)')} *
+            </label>
+            <input {...register('nameEn')} className={inputCls} />
+            {errors.nameEn && <p className="text-xs text-red-500 mt-1">{t('validation.required', 'Requis')}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('admin.departments.n1Role', 'Rôle Validateur N1')} *
+            </label>
+            <select {...register('n1Role')} className={inputCls}>
+              <option value="">{t('admin.departments.selectRole', '— Sélectionner —')}</option>
+              {ROLE_OPTIONS.filter(r => r.value.startsWith('ROLE_VALIDATEUR_N1_')).map(r => (
+                <option key={r.value} value={r.value}>{r.label}</option>
+              ))}
+            </select>
+            {errors.n1Role && <p className="text-xs text-red-500 mt-1">{t('validation.required', 'Requis')}</p>}
+          </div>
+
+          <div className="flex items-center gap-2 pt-7">
+            <input id="requiresN2" type="checkbox" {...register('requiresN2')} className="w-4 h-4 accent-primary" />
+            <label htmlFor="requiresN2" className="text-sm font-medium text-gray-700">
+              {t('admin.departments.requiresN2', 'Nécessite un Niveau 2')}
+            </label>
+          </div>
+
+          {requiresN2 && (
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t('admin.departments.n2Role', 'Rôle Validateur N2')}
+              </label>
+              <select {...register('n2Role')} className={inputCls}>
+                <option value="">{t('admin.departments.selectRole', '— Sélectionner —')}</option>
+                {ROLE_OPTIONS.filter(r => r.value.startsWith('ROLE_VALIDATEUR_N2_')).map(r => (
+                  <option key={r.value} value={r.value}>{r.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {createDeptMutation.isError && (
-            <p className="text-sm text-red-600 bg-red-50 p-3 rounded-md border border-red-200">
-                Failed to create department. Please check the inputs and try again.
-            </p>
+          <p className="text-sm text-red-600 bg-red-50 p-3 rounded-md border border-red-200">
+            {t('admin.departments.createError', 'Échec de la création. Vérifiez les champs (le code doit être unique).')}
+          </p>
         )}
 
         <div className="flex items-center justify-end gap-3 pt-2 border-t">
@@ -115,7 +156,7 @@ export default function AdminDepartmentFormPage() {
             onClick={() => navigate('/admin/departments')}
             className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50 transition-colors"
           >
-            {t('app.cancel', 'Cancel')}
+            {t('app.cancel', 'Annuler')}
           </button>
           <button
             type="submit"
@@ -123,7 +164,7 @@ export default function AdminDepartmentFormPage() {
             className="flex items-center gap-2 px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-60 transition-colors"
           >
             {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-            {t('admin.departments.create', 'Create Department')}
+            {t('admin.departments.create', 'Créer le département')}
           </button>
         </div>
       </form>

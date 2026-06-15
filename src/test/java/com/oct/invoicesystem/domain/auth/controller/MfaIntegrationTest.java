@@ -122,6 +122,30 @@ class MfaIntegrationTest {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Regression: MFA setup must persist the AES-encrypted TOTP secret.
+    // Before the fix, mfa_secret was VARCHAR(64) but the encrypted secret is ~85+ chars,
+    // so setupMfa() failed at flush with "value too long for type character varying(64)".
+    // ─────────────────────────────────────────────────────────────────────────
+    @Test
+    @DisplayName("MFA Setup: persists the encrypted secret (regression for VARCHAR(64) overflow)")
+    void testMfaSetup_persistsEncryptedSecret() {
+        org.springframework.security.core.userdetails.User principal =
+                new org.springframework.security.core.userdetails.User(
+                        testUser.getUsername(), testUser.getPassword(), java.util.Collections.emptyList());
+
+        MfaSetupResponse response = authService.setupMfa(principal);
+
+        assertNotNull(response.getSecret());
+        assertNotNull(response.getQrCodeUrl());
+
+        // The secret must actually be persisted (encrypted) and round-trip back to plaintext.
+        User reloaded = userRepository.findByUsername(testUser.getUsername()).orElseThrow();
+        assertNotNull(reloaded.getMfaSecret(), "encrypted MFA secret must be saved, not rejected by the column");
+        assertEquals(response.getSecret(), reloaded.getMfaSecret(),
+                "decrypted secret on read must equal the one returned at setup");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Helper methods
     // ─────────────────────────────────────────────────────────────────────────
 

@@ -69,8 +69,9 @@ class AuditLoggingFilterTest {
         verify(auditService).logAction(any(), entityTypeCaptor.capture(), any(),
                 actionCaptor.capture(), any(), any(), any(), any());
 
-        assertEquals("FINANCIAL_ACTION", entityTypeCaptor.getValue());
-        assertEquals("HTTP_REQUEST_FINANCIAL", actionCaptor.getValue());
+        // Semantic classification (improved): entity = resource, action = specific verb.
+        assertEquals("INVOICE", entityTypeCaptor.getValue());
+        assertEquals("INVOICE_CREATE", actionCaptor.getValue());
     }
 
     @Test
@@ -89,8 +90,8 @@ class AuditLoggingFilterTest {
         verify(auditService).logAction(any(), entityTypeCaptor.capture(), any(),
                 actionCaptor.capture(), any(), any(), any(), any());
 
-        assertEquals("SYSTEM_ACTION", entityTypeCaptor.getValue());
-        assertEquals("HTTP_REQUEST_SYSTEM", actionCaptor.getValue());
+        assertEquals("USER", entityTypeCaptor.getValue());
+        assertEquals("USER_CREATE", actionCaptor.getValue());
     }
 
     @Test

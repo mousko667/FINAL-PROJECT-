@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import apiClient from '@/services/apiClient'
 import type { ApiResponse, PagedResponse } from '@/types/invoice'
-import { Loader2, CheckCircle, XCircle, GitBranch } from 'lucide-react'
+import { Loader2, CheckCircle, XCircle, GitBranch, Plus } from 'lucide-react'
 
 interface Department {
   id: string
@@ -46,13 +46,22 @@ export default function AdminDepartmentsPage() {
             {t('admin.departments.subtitle', 'Départements OCT et chaînes d\'approbation BAP')}
           </p>
         </div>
-        <Link
-          to="/admin/approval-matrix"
-          className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 text-sm font-medium"
-        >
-          <GitBranch className="w-4 h-4" />
-          {t('admin.approvalMatrix.title', 'Matrice d\'approbation')}
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/admin/departments/new"
+            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 text-sm font-medium"
+          >
+            <Plus className="w-4 h-4" />
+            {t('admin.departments.create', 'Créer un département')}
+          </Link>
+          <Link
+            to="/admin/approval-matrix"
+            className="flex items-center gap-2 border px-4 py-2 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700"
+          >
+            <GitBranch className="w-4 h-4" />
+            {t('admin.approvalMatrix.title', 'Matrice d\'approbation')}
+          </Link>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border overflow-hidden">

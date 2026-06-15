@@ -199,7 +199,26 @@ public class UserService {
 
         user.setFailedLoginAttempts(0);
         user.setLockedUntil(null);
-        
+
         userRepository.save(user);
+    }
+
+    /**
+     * Admin action: reset/disable a user's MFA so they can re-enrol (e.g. lost authenticator).
+     * Clears the encrypted secret and the enabled/verified flags. If the security policy mandates
+     * MFA for the user's role, the {@code MfaSetupEnforcementFilter} will require them to set it up
+     * again on next access; otherwise they remain without MFA.
+     */
+    @Transactional
+    public void resetMfa(UUID id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
+        user.setMfaSecret(null);
+        user.setMfaEnabled(false);
+        user.setMfaVerified(false);
+        userRepository.save(user);
+
+        auditService.logAction(id, "USER", id.toString(), "MFA_RESET", null, null, null, null);
     }
 }

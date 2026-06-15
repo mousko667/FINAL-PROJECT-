@@ -91,19 +91,36 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
     @Query("SELECT MIN(i.dueDate) FROM Invoice i WHERE i.deletedAt IS NULL AND i.supplier IS NOT NULL AND i.supplier.id = :supplierId AND i.status = 'BON_A_PAYER' AND NOT EXISTS (SELECT p FROM Payment p WHERE p.invoice = i AND p.deleted = false)")
     java.time.LocalDate findNextExpectedPaymentDateForSupplier(@Param("supplierId") UUID supplierId);
 
-    @Query("""
-            SELECT i FROM Invoice i
-            WHERE i.deletedAt IS NULL
-              AND i.status = com.oct.invoicesystem.domain.invoice.model.InvoiceStatus.ARCHIVE
-              AND (:keyword IS NULL OR
-                   LOWER(i.referenceNumber) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
-                   LOWER(i.supplierName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
-                   LOWER(i.description) LIKE LOWER(CONCAT('%', :keyword, '%')))
-              AND (:department IS NULL OR i.department.id = :department)
-              AND (:from IS NULL OR i.createdAt >= :from)
-              AND (:to IS NULL OR i.createdAt <= :to)
-            ORDER BY i.createdAt DESC
-            """)
+    // Native SQL with ILIKE + explicit ::text / ::uuid / ::timestamptz casts on the nullable params.
+    // JPQL LOWER(CONCAT('%', :keyword, '%')) was rejected by PostgreSQL ("function lower(bytea) does
+    // not exist") because a null String param is inferred as bytea — the same issue already fixed for
+    // SupplierRepository.searchSuppliers. Casting each param makes its type explicit even when null.
+    @Query(value = """
+            SELECT * FROM invoices i
+            WHERE i.deleted_at IS NULL
+              AND i.status = 'ARCHIVE'
+              AND (CAST(:keyword AS text) IS NULL
+                   OR i.reference_number ILIKE CONCAT('%', CAST(:keyword AS text), '%')
+                   OR i.supplier_name ILIKE CONCAT('%', CAST(:keyword AS text), '%')
+                   OR i.description ILIKE CONCAT('%', CAST(:keyword AS text), '%'))
+              AND (CAST(:department AS uuid) IS NULL OR i.department_id = CAST(:department AS uuid))
+              AND (CAST(:from AS timestamptz) IS NULL OR i.created_at >= CAST(:from AS timestamptz))
+              AND (CAST(:to AS timestamptz) IS NULL OR i.created_at <= CAST(:to AS timestamptz))
+            ORDER BY i.created_at DESC
+            """,
+           countQuery = """
+            SELECT COUNT(*) FROM invoices i
+            WHERE i.deleted_at IS NULL
+              AND i.status = 'ARCHIVE'
+              AND (CAST(:keyword AS text) IS NULL
+                   OR i.reference_number ILIKE CONCAT('%', CAST(:keyword AS text), '%')
+                   OR i.supplier_name ILIKE CONCAT('%', CAST(:keyword AS text), '%')
+                   OR i.description ILIKE CONCAT('%', CAST(:keyword AS text), '%'))
+              AND (CAST(:department AS uuid) IS NULL OR i.department_id = CAST(:department AS uuid))
+              AND (CAST(:from AS timestamptz) IS NULL OR i.created_at >= CAST(:from AS timestamptz))
+              AND (CAST(:to AS timestamptz) IS NULL OR i.created_at <= CAST(:to AS timestamptz))
+            """,
+           nativeQuery = true)
     Page<Invoice> searchArchived(
             @Param("keyword") String keyword,
             @Param("department") UUID department,

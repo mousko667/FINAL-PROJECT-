@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import apiClient from '@/services/apiClient'
 import type { ApiResponse, PagedResponse } from '@/types/invoice'
-import { Loader2, Plus, Pencil, LockOpen, UserCheck, UserX, Download, Upload, X, AlertCircle, CheckCircle } from 'lucide-react'
+import { Loader2, Plus, Pencil, LockOpen, UserCheck, UserX, Download, Upload, X, AlertCircle, CheckCircle, ShieldOff } from 'lucide-react'
 
 interface ImportRowError { line: number; username: string; message: string }
 interface ImportResult { totalRows: number; created: number; failed: number; errors: ImportRowError[] }
@@ -180,6 +180,14 @@ function EditUserModal({ user, onClose }: EditUserModalProps) {
     },
   })
 
+  const resetMfa = useMutation({
+    mutationFn: () => apiClient.post(`/users/${user.id}/mfa/reset`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+      onClose()
+    },
+  })
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-5" onClick={e => e.stopPropagation()}>
@@ -218,6 +226,10 @@ function EditUserModal({ user, onClose }: EditUserModalProps) {
           <button onClick={() => unlock.mutate()} disabled={unlock.isPending}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors">
             <LockOpen className="w-3.5 h-3.5" /> {t('admin.users.unlock')}
+          </button>
+          <button onClick={() => resetMfa.mutate()} disabled={resetMfa.isPending}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+            <ShieldOff className="w-3.5 h-3.5" /> {t('admin.users.resetMfa', 'Réinitialiser MFA')}
           </button>
         </div>
 

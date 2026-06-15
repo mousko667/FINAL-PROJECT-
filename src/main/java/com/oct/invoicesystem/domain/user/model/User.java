@@ -106,7 +106,8 @@ public class User implements UserDetails {
     private boolean mfaEnabled = false;
 
     @Convert(converter = EncryptionAttributeConverter.class)
-    @Column(name = "mfa_secret", length = 64)
+    // 255 — stores the AES-GCM-encrypted TOTP secret ("GCM:iv:cipher", ~85+ chars), not the raw 32-char secret.
+    @Column(name = "mfa_secret", length = 255)
     private String mfaSecret;
 
     @Column(name = "mfa_verified")

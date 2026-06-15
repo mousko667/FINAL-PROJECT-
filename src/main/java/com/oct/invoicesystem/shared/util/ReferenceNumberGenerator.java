@@ -16,7 +16,16 @@ public class ReferenceNumberGenerator {
 
     public String nextReferenceNumber() {
         int year = Year.now().getValue();
-        String sequenceName = "invoice_ref_seq_" + year;
+
+        // The sequence name is built from the current calendar year only — never from user input.
+        // We still hard-validate it as a 4-digit number so the identifier interpolated into the
+        // (unavoidable) dynamic DDL can never be anything but digits: removes any SQL-injection
+        // surface even if this method is later refactored to take an external value.
+        if (year < 1000 || year > 9999) {
+            throw new IllegalStateException("Unexpected year for reference sequence: " + year);
+        }
+        String sequenceName = "invoice_ref_seq_" + year; // e.g. invoice_ref_seq_2026 — digits only
+
         jdbcTemplate.execute("CREATE SEQUENCE IF NOT EXISTS " + sequenceName + " START WITH 1 INCREMENT BY 1");
         Long value = jdbcTemplate.queryForObject("SELECT nextval('" + sequenceName + "')", Long.class);
         long sequenceValue = value == null ? 1L : value;

@@ -51,7 +51,7 @@ public class AuditLoggingFilter extends OncePerRequestFilter {
                     String userAgent = request.getHeader("User-Agent");
 
                     String entityType = classifyEntityType(uri);
-                    String action = classifyAction(uri);
+                    String action = classifyAction(method, uri, status);
                     String details = "{\"duration_ms\":" + duration + ", \"method\":\"" + method + "\", \"status\":" + status + "}";
 
                     auditService.logAction(userId, entityType, uri, action, null, details, ipAddress, userAgent);
@@ -64,32 +64,72 @@ public class AuditLoggingFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Classifies the request into an audit action recognized by {@code AuditController}'s
-     * SYSTEM_ACTIONS / FINANCIAL_ACTIONS allow-lists, so HTTP-originated audit entries are
-     * actually retrievable via {@code GET /api/v1/audit-logs/system} and {@code /financial}.
+     * Derives a *specific, human-meaningful* audit action from the HTTP method + path (e.g.
+     * LOGIN, INVOICE_SUBMIT, APPROVE, PAYMENT, USER_CREATE) rather than the old coarse
+     * HTTP_REQUEST_* tag — so the "Action" column actually differs from the "Entité" column and
+     * tells the auditor what happened. Every value returned here is present in
+     * {@code AuditController}'s SYSTEM_ACTIONS / FINANCIAL_ACTIONS allow-lists so the filtered
+     * /system and /financial views keep working (the coarse HTTP_REQUEST_* remain as fallback).
      */
-    private String classifyAction(String uri) {
+    private String classifyAction(String method, String uri, int status) {
+        if (status == 401 || status == 403) {
+            return "ACCESS_DENIED";
+        }
+        // Auth / security
+        if (uri.endsWith("/auth/login")) return "LOGIN";
+        if (uri.contains("/mfa/")) return "MFA";
+        if (uri.contains("/auth")) return "SECURITY";
+
+        // Invoices & workflow
+        if (uri.contains("/resubmit")) return "RESUBMIT";
+        if (uri.contains("/approvals") || uri.contains("/workflow")) {
+            if (uri.contains("reject")) return "REJECT";
+            return "APPROVE";
+        }
+        if (uri.contains("/payments")) return "PAYMENT";
+        if (uri.contains("/matching")) return uri.contains("override") ? "MATCHING_OVERRIDE" : "MATCHING";
+        if (uri.contains("/invoices")) {
+            if ("POST".equalsIgnoreCase(method)) return "INVOICE_CREATE";
+            if ("PUT".equalsIgnoreCase(method) || "PATCH".equalsIgnoreCase(method)) return "INVOICE_UPDATE";
+            if ("DELETE".equalsIgnoreCase(method)) return "INVOICE_DELETE";
+            return "INVOICE_SUBMIT";
+        }
+
+        // Users / roles / config
+        if (uri.contains("/roles") || uri.contains("/permissions")) return "ROLE_CHANGE";
+        if (uri.contains("/users")) {
+            if ("POST".equalsIgnoreCase(method)) return "USER_CREATE";
+            if ("DELETE".equalsIgnoreCase(method)) return "USER_DELETE";
+            return "USER_UPDATE";
+        }
+        if (uri.contains("/profile")) return "PROFILE_UPDATE";
+        if (uri.contains("/integrations") || uri.contains("/webhooks")) return "INTEGRATION";
+        if (uri.contains("/security") || uri.contains("/sessions")) return "SECURITY";
+        if (uri.contains("/departments") || uri.contains("/matching-config")) return "CONFIG_CHANGE";
+
+        // Fallbacks keep the old coarse tags (still allow-listed) so nothing is lost.
         if (uri.contains("/invoices") || uri.contains("/payments")
                 || uri.contains("/approvals") || uri.contains("/workflow")) {
             return "HTTP_REQUEST_FINANCIAL";
         }
-        if (uri.contains("/auth") || uri.contains("/users")
-                || uri.contains("/integrations") || uri.contains("/admin")) {
+        if (uri.contains("/admin")) {
             return "HTTP_REQUEST_SYSTEM";
         }
         return "HTTP_REQUEST";
     }
 
+    /** The resource the action targeted — distinct from the action verb above. */
     private String classifyEntityType(String uri) {
-        if (uri.contains("/invoices") || uri.contains("/payments")
-                || uri.contains("/approvals") || uri.contains("/workflow")) {
-            return "FINANCIAL_ACTION";
-        }
-        if (uri.contains("/auth") || uri.contains("/users")
-                || uri.contains("/integrations") || uri.contains("/admin")) {
-            return "SYSTEM_ACTION";
-        }
-        return "HTTP_REQUEST";
+        if (uri.contains("/invoices")) return "INVOICE";
+        if (uri.contains("/payments")) return "PAYMENT";
+        if (uri.contains("/approvals") || uri.contains("/workflow")) return "APPROVAL";
+        if (uri.contains("/matching")) return "MATCHING";
+        if (uri.contains("/users") || uri.contains("/roles") || uri.contains("/permissions")) return "USER";
+        if (uri.contains("/suppliers") || uri.contains("/supplier")) return "SUPPLIER";
+        if (uri.contains("/departments")) return "DEPARTMENT";
+        if (uri.contains("/integrations") || uri.contains("/webhooks")) return "INTEGRATION";
+        if (uri.contains("/auth") || uri.contains("/profile") || uri.contains("/admin")) return "SECURITY";
+        return "SYSTEM";
     }
 
     private UUID resolveUserId(HttpServletRequest request) {
