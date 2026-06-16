@@ -38,7 +38,7 @@
     "password": "Password",
     "loginButton": "Sign In",
     "loginError": "Invalid credentials",
-    "forgotPassword": "Forgot password?",
+    "forgotPasswordLink": "Forgot password?",
     "sessionExpired": "Your session has expired. Please log in again.",
     "email": "Email",
     "passwordStrength": {

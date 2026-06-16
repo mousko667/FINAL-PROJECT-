@@ -162,7 +162,7 @@ export default function LoginPage() {
               )}
               <div className="mt-1.5 text-right">
                 <Link to="/forgot-password" className="text-xs text-primary hover:underline">
-                  {t('auth.forgotPassword', 'Mot de passe oublié ?')}
+                  {t('auth.forgotPasswordLink', 'Mot de passe oublié ?')}
                 </Link>
               </div>
             </div>
