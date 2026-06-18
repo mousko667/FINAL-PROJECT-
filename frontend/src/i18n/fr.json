@@ -288,6 +288,12 @@
     "resubmitHint": "Cette facture a été rejetée. Corrigez les problèmes indiqués et renvoyez-la.",
     "paymentDetails": "Détails du paiement",
     "paymentMethod": "Mode de paiement",
+    "paymentMethods": {
+      "VIREMENT": "Virement bancaire",
+      "CHEQUE": "Chèque",
+      "ESPECES": "Espèces",
+      "MOBILE_MONEY": "Mobile Money"
+    },
     "paymentDate": "Date de paiement",
     "paymentReference": "Référence de paiement",
     "noDocuments": "Aucun document joint",

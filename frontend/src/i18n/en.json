@@ -288,6 +288,12 @@
     "resubmitHint": "This invoice was rejected. Correct the issues and resubmit for re-evaluation.",
     "paymentDetails": "Payment Details",
     "paymentMethod": "Payment Method",
+    "paymentMethods": {
+      "VIREMENT": "Bank Transfer",
+      "CHEQUE": "Check",
+      "ESPECES": "Cash",
+      "MOBILE_MONEY": "Mobile Money"
+    },
     "paymentDate": "Payment Date",
     "paymentReference": "Payment Reference",
     "noDocuments": "No documents attached",

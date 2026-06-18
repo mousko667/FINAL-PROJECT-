@@ -31,12 +31,9 @@ interface Invoice {
   status: string
 }
 
-const PAYMENT_METHODS = [
-  { value: 'BANK_TRANSFER', label: 'Virement bancaire' },
-  { value: 'CHECK', label: 'Chèque' },
-  { value: 'MOBILE_MONEY', label: 'Mobile Money' },
-  { value: 'CASH', label: 'Espèces' },
-]
+// Values MUST match the backend PaymentMethod enum exactly (Jackson maps the JSON string to the
+// enum by name). Labels are resolved at render time via i18n (invoice.paymentMethods.<value>).
+const PAYMENT_METHODS = ['VIREMENT', 'CHEQUE', 'ESPECES', 'MOBILE_MONEY'] as const
 
 function RecordPaymentModal({ invoice, onClose, onSuccess }: {
   invoice: Invoice
@@ -47,7 +44,7 @@ function RecordPaymentModal({ invoice, onClose, onSuccess }: {
   const [form, setForm] = useState({
     amountPaid: invoice.amount,
     paymentDate: new Date().toISOString().slice(0, 10),
-    paymentMethod: 'BANK_TRANSFER',
+    paymentMethod: 'VIREMENT',
     reference: `PAY-${invoice.referenceNumber}-${Date.now().toString().slice(-6)}`,
     notes: '',
   })
@@ -90,7 +87,7 @@ function RecordPaymentModal({ invoice, onClose, onSuccess }: {
               <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoice.paymentMethod', 'Mode de paiement')} *</label>
               <select value={form.paymentMethod} onChange={e => setForm(p => ({ ...p, paymentMethod: e.target.value }))}
                 className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-                {PAYMENT_METHODS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                {PAYMENT_METHODS.map(m => <option key={m} value={m}>{t(`invoice.paymentMethods.${m}`, m)}</option>)}
               </select>
             </div>
             <div>
@@ -294,7 +291,7 @@ export default function PaymentsPage() {
                       </td>
                       <td className="px-4 py-3">
                         <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-100">
-                          {PAYMENT_METHODS.find(m => m.value === p.paymentMethod)?.label ?? p.paymentMethod}
+                          {t(`invoice.paymentMethods.${p.paymentMethod}`, p.paymentMethod)}
                         </span>
                       </td>
                       <td className="px-4 py-3 font-mono text-xs text-gray-700">{p.reference}</td>

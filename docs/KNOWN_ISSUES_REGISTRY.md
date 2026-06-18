@@ -659,6 +659,19 @@
 
 ---
 
+### [PROB-055] Enregistrement de paiement en 400 — `PaymentsPage` envoyait des codes de méthode (EN) absents de l'enum backend `PaymentMethod` (FR)
+- **Catégorie :** Frontend + Backend
+- **Sévérité :** 🔴 Critique (l'écran Paiements était **cassé pour TOUTES les méthodes**, pas seulement Mobile Money)
+- **Découvert :** 2026-06-18 — tâche A2
+- **Symptôme :** Enregistrer un paiement renvoyait `400 — JSON parse error: Cannot deserialize value of type PaymentMethod from String "MOBILE_MONEY": not one of the values accepted for Enum class: [CHEQUE, VIREMENT, ESPECES]`. Le même échec se produisait pour `BANK_TRANSFER`, `CHECK`, `CASH` : **aucune** des 4 valeurs envoyées par le front ne correspondait à l'enum backend → tout paiement via cet écran échouait.
+- **Cause racine :** Désynchronisation du contrat. `PaymentsPage.tsx` proposait `BANK_TRANSFER`/`CHECK`/`CASH`/`MOBILE_MONEY` (anglais) alors que l'enum `PaymentMethod` du backend est `VIREMENT`/`CHEQUE`/`ESPECES` (français). Jackson mappe le JSON → enum par **nom exact** : aucune correspondance, donc rejet 400. De plus l'enum ne contenait pas du tout `MOBILE_MONEY`.
+- **Solution appliquée :** (1) Backend : ajout de la valeur `MOBILE_MONEY` à l'enum `PaymentMethod` (colonne `payment_method VARCHAR(50)` sans contrainte CHECK → aucune migration nécessaire). (2) Frontend : `PAYMENT_METHODS` envoie désormais **exactement** les noms de l'enum (`VIREMENT`/`CHEQUE`/`ESPECES`/`MOBILE_MONEY`), défaut `VIREMENT` ; libellés résolus à l'affichage via i18n `invoice.paymentMethods.<valeur>` (FR + EN, parité 770/770). L'enum backend reste la **source de vérité unique** du contrat.
+- **Test (TDD) :** `PaymentControllerTest.recordPayment_AcceptsMobileMoney` poste le JSON brut `{"paymentMethod":"MOBILE_MONEY",...}` (tel que sérialisé par le front) et attend 200 + `data.paymentMethod = MOBILE_MONEY`. RED avant fix (400, « not one of … ») → GREEN après. Suite complète 366/0/0, build front vert.
+- **Règle préventive :** Un enum exposé dans un contrat d'API est la source de vérité unique : le frontend DOIT envoyer ses **noms exacts** (jamais des alias traduits) et ne traduire que pour l'affichage (i18n). Quand une `<select>` alimente un champ enum, vérifier d'emblée que chaque `value` correspond à une constante de l'enum — sinon Jackson renvoie 400. Tester le mapping string→enum avec un body JSON brut, pas seulement un DTO typé (un test typé ne peut pas exprimer une valeur inexistante).
+- **Fichiers modifiés :** `PaymentMethod.java`, `PaymentsPage.tsx`, `fr.json`, `en.json`, `PaymentControllerTest.java`.
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :

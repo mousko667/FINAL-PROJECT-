@@ -132,6 +132,10 @@ class PaymentControllerTest {
         auditeur.setPassword(passwordEncoder.encode("Password123!"));
         auditeur.setFirstName("Aud");
         auditeur.setLastName("Iteur");
+        // MFA is mandatory for all staff roles (incl. AUDITEUR); mark verified so this test
+        // isolates the authorization (403) check rather than tripping the MFA-setup gate.
+        auditeur.setMfaEnabled(true);
+        auditeur.setMfaVerified(true);
         auditeur = userRepository.save(auditeur);
 
         UserRole urAud = UserRole.builder()
@@ -178,6 +182,24 @@ class PaymentControllerTest {
         // Verify status changed to ARCHIVE
         Invoice updatedInvoice = invoiceRepository.findById(invoice.getId()).orElseThrow();
         assertEquals(InvoiceStatus.ARCHIVE, updatedInvoice.getStatus());
+    }
+
+    @Test
+    void recordPayment_AcceptsMobileMoney() throws Exception {
+        // A2 (PROB-055): the PaymentsPage offers a "Mobile Money" method. The backend enum must
+        // accept MOBILE_MONEY (sent as a raw JSON string, exactly as the frontend serializes it)
+        // instead of rejecting it with a 400 Jackson deserialization error.
+        String body = """
+                {"amountPaid":1500.00,"paymentMethod":"MOBILE_MONEY","paymentDate":"%s","reference":"REF-MM"}
+                """.formatted(Instant.now().toString());
+
+        mockMvc.perform(post("/api/v1/payments/invoice/" + invoice.getId())
+                        .with(SecurityMockMvcRequestPostProcessors.authentication(
+                                new UsernamePasswordAuthenticationToken(assistant, null, java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ASSISTANT_COMPTABLE")))))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.paymentMethod").value("MOBILE_MONEY"));
     }
 
     @Test

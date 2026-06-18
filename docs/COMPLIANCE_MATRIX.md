@@ -224,7 +224,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 5 | Payment batch processing interface | ❌ | Aucun traitement par lot de paiements (pas d'endpoint/UI batch). **Absent.** |
 | 6 | Payment confirmation recording | ✅ | Enregistrement paiement vérifié (VIREMENT, réf, montant → PAYE→ARCHIVE). |
 | 7 | Remittance advice generation | ✅ | Bouton « Avis » → PDF pré-signé MinIO (vérifié runtime). |
-| 8 | Payment method tracking (bank transfer, check, **mobile money**) | 🟠 | Backend : VIREMENT, CHEQUE, ESPECES. **MOBILE_MONEY proposé dans l'UI mais ABSENT du backend** (enum) → sélection « Mobile Money » échouerait. Bug de cohérence. |
+| 8 | Payment method tracking (bank transfer, check, **mobile money**) | ✅ | Backend : VIREMENT, CHEQUE, ESPECES, **MOBILE_MONEY** (ajouté). Front aligné sur les noms d'enum + libellés i18n FR/EN. **Corrigé (PROB-055, 2026-06-18)** : 200 vérifié pour MOBILE_MONEY (`recordPayment_AcceptsMobileMoney`). |
 | 9 | Payment history by supplier | ✅ | `/payments` liste + filtre département ; historique par fournisseur. |
 | 10 | Cash flow impact analysis | ✅ | `/reports/cash-flow` (CashFlowProjectionDTO, projection par semaine) + UI cashFlowTitle/Desc. **Corrigé (PROB-054, 2026-06-18)** : 500 `SQLGrammarException $5` résolu par `CAST` des paramètres date nullables dans `findAllWithFilters` ; **200** vérifié par `CashFlowProjectionIntegrationTest` sur vrai PostgreSQL. |
 | 11 | Export payment reports | 🟠 | Export global via Rapports (M11) ; **pas d'export dédié sur la page Paiements**. |
@@ -238,13 +238,13 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 3 | Due date monitoring & alerts | ✅ | Job rappel + escalade. |
 | 4 | Payment batch processing | ❌ | Absent. |
 | 5 | Remittance advice generation | ✅ | PDF pré-signé. |
-| 6 | Multiple payment method support | 🟠 | 3 méthodes backend ; mobile money manquant côté backend. |
+| 6 | Multiple payment method support | ✅ | 4 méthodes backend (VIREMENT/CHEQUE/ESPECES/MOBILE_MONEY) ; mobile money ajouté (PROB-055). |
 | 7 | Payment confirmation & reconciliation | ✅ | Enregistrement + statut. Réconciliation auto limitée. |
 | 8 | Supplier payment history | ✅ | Historique. |
 | 9 | Cash flow visibility | ✅ | Endpoint cash-flow opérationnel (200) — voir UI #10 (PROB-054 corrigé). |
 | 10 | Reduced payment delays | ✅ | Rappels + SLA. |
 
-**Gaps M7 :** #5 **batch payments absent** ; #8 **MOBILE_MONEY: bug front/back** (proposé à l'écran, refusé en base) ; ~~#10 cash-flow CASSÉ (500)~~ **corrigé (PROB-054)** ; #12 **alertes paiement configurables absentes** ; #11 export paiement dédié manquant.
+**Gaps M7 :** #5 **batch payments absent** ; ~~#8 MOBILE_MONEY bug front/back~~ **corrigé (PROB-055)** ; ~~#10 cash-flow CASSÉ (500)~~ **corrigé (PROB-054)** ; #12 **alertes paiement configurables absentes** ; #11 export paiement dédié manquant.
 
 ---
 
@@ -513,7 +513,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | M4 Validation Workflow | 17 | 4 | 1 | 0 | Bon (checklist templates absents) |
 | M5 Three-Way Matching | 12 | 8 | 1 | 0 | Partiel (pas de page/ligne-à-ligne/export) |
 | M6 Approval | 17 | 3 | 0 | 0 | Bon |
-| M7 Payment | 14 | 4 | 3 | 0 | Moyen (batch/alertes absents, mobile-money bug ; cash-flow corrigé PROB-054) |
+| M7 Payment | 15 | 4 | 2 | 0 | Moyen (batch/alertes absents ; cash-flow PROB-054 + mobile-money PROB-055 corrigés) |
 | M8 Supplier | 19 | 1 | 1 | 0 | Bon (catégorisation absente) |
 | M9 Archiving | 12 | 5 | 0 | 0 | Bon (purge/folder/zoom partiels) |
 | M10 Audit | 20 | 2 | 0 | 0 | Très bon |
@@ -522,17 +522,17 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | M13 User/Access | 20 | 2 | 0 | 0 | Très bon |
 | M14 Security/Compliance | 18 | 3 | 0 | 0 | Très bon |
 
-> Les chiffres comptent chaque puce (UI element OU feature) du document de requirements. Total ≈ **262 items** : ~**224 ✅**, ~**52 🟠**, ~**8 ❌**, ~**1 🔴** (Mobile Money — A2 restant).
+> Les chiffres comptent chaque puce (UI element OU feature) du document de requirements. Total ≈ **262 items** : ~**226 ✅**, ~**50 🟠**, ~**8 ❌**, ~**0 🔴** (A1 cash-flow + A2 Mobile Money corrigés — PROB-054/055).
 
 ## RÉPONSE À « est-ce 100 % implémenté ? »
 **Non.** Le système couvre **~85 % des items à 100 %**, mais il reste :
-- **1 bug runtime (🔴)** : méthode de paiement Mobile Money (front propose / back refuse). *(Cash-flow 500 corrigé — PROB-054, 2026-06-18.)*
+- **0 bug runtime (🔴)** : les 2 bugs A1/A2 sont corrigés (cash-flow 500 → PROB-054 ; Mobile Money front/back → PROB-055, 2026-06-18).
 - **~8 éléments absents (❌)** : checklist templates de validation (M4), export rapport matching (M5), batch payments + alertes paiement configurables (M7), catégorisation fournisseur (M8), sync schedule connecteurs (M12).
 - **~52 partiels (🟠)** : surtout des éléments présents mais incomplets (config par propriété au lieu d'UI, web responsive au lieu d'app mobile dédiée, framework au lieu de sync live, etc.).
 
 ## Bugs réels découverts pendant cette campagne (à corriger)
 1. **✅ Cash-flow projection** (`/reports/cash-flow`) : ~~500 `SQLGrammarException`~~ **CORRIGÉ (PROB-054, 2026-06-18)** — `CAST` des paramètres date/status/dept nullables dans `findAllWithFilters` ; 200 vérifié sur vrai PostgreSQL (`CashFlowProjectionIntegrationTest`). Impactait M7 #10 et M11.
-2. **🔴 Mobile Money** : `PaymentsPage` propose `MOBILE_MONEY` mais l'enum backend `PaymentMethod` ne contient que VIREMENT/CHEQUE/ESPECES → sélectionner Mobile Money échouerait. Mismatch front/back.
+2. **✅ Mobile Money** : ~~`PaymentsPage` propose `MOBILE_MONEY` mais l'enum backend ne le contient pas~~ **CORRIGÉ (PROB-055, 2026-06-18)** — `MOBILE_MONEY` ajouté à l'enum + front aligné sur les noms d'enum (i18n FR/EN) ; 200 vérifié. Le mismatch touchait en fait les 4 méthodes (front EN vs enum FR).
 
 ## Écarts fonctionnels (absents — décision d'implémentation requise)
 | Réf | Élément | Module |
