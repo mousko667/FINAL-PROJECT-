@@ -58,8 +58,14 @@ public class SupplierServiceImpl implements SupplierService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<SupplierResponse> searchSuppliers(String name, String taxId, SupplierStatus status, Pageable pageable) {
-        return supplierRepository.searchSuppliers(name, taxId, status != null ? status.name() : null, pageable)
+    public Page<SupplierResponse> searchSuppliers(String name, String taxId, SupplierStatus status,
+                                                  com.oct.invoicesystem.domain.supplier.model.SupplierCategory category,
+                                                  Pageable pageable) {
+        return supplierRepository.searchSuppliers(
+                        name, taxId,
+                        status != null ? status.name() : null,
+                        category != null ? category.name() : null,
+                        pageable)
                 .map(supplierMapper::toResponse);
     }
 

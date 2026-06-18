@@ -67,6 +67,10 @@ public class Supplier {
     @Builder.Default
     private SupplierStatus status = SupplierStatus.PENDING_VERIFICATION;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private SupplierCategory category;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "onboarded_by")
     private User onboardedBy;

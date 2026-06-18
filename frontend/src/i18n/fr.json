@@ -823,6 +823,14 @@
       "ACTIVE": "Actif",
       "SUSPENDED": "Suspendu"
     },
+    "category": {
+      "all": "Toutes les catégories",
+      "none": "Non catégorisé",
+      "GOODS": "Biens",
+      "SERVICES": "Services",
+      "WORKS": "Travaux",
+      "CONSULTING": "Conseil"
+    },
     "fields": {
       "companyName": "Raison sociale",
       "taxId": "NIF / Identifiant fiscal",
@@ -830,6 +838,7 @@
       "contactPhone": "Téléphone",
       "address": "Adresse",
       "status": "Statut",
+      "category": "Catégorie",
       "onboardingDate": "Date d'entrée",
       "createdAt": "Date de création",
       "bankDetails": "Coordonnées bancaires",

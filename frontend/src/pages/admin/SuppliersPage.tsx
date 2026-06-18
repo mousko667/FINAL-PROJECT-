@@ -11,17 +11,21 @@ export default function SuppliersPage() {
   const { t } = useTranslation()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('')
+  const [categoryFilter, setCategoryFilter] = useState<string>('')
   const [page, setPage] = useState(0)
-  
+
   const { user } = useAppSelector((state) => state.auth)
   const isAdmin = user?.roles.includes('ROLE_ADMIN')
 
   const { data, isLoading } = useSuppliers({
     page,
     size: 10,
-    search: searchTerm || undefined,
+    name: searchTerm || undefined,
     status: statusFilter || undefined,
+    category: categoryFilter || undefined,
   })
+
+  const SUPPLIER_CATEGORIES = ['GOODS', 'SERVICES', 'WORKS', 'CONSULTING'] as const
 
   const { mutate: activate } = useActivateSupplier()
   const { mutate: suspend } = useSuspendSupplier()
@@ -69,6 +73,19 @@ export default function SuppliersPage() {
             <option value="SUSPENDED">{t('supplier.status.SUSPENDED', 'Suspended')}</option>
           </select>
         </div>
+        <div className="relative w-48">
+          <Filter className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <select
+            value={categoryFilter}
+            onChange={(e) => { setCategoryFilter(e.target.value); setPage(0) }}
+            className="w-full pl-9 pr-4 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none bg-white"
+          >
+            <option value="">{t('supplier.category.all', 'All Categories')}</option>
+            {SUPPLIER_CATEGORIES.map(c => (
+              <option key={c} value={c}>{t(`supplier.category.${c}`, c)}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border overflow-hidden">
@@ -85,13 +102,14 @@ export default function SuppliersPage() {
                   <th className="text-left px-4 py-3 font-medium text-gray-600">{t('supplier.fields.taxId', 'Tax ID')}</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-600">{t('supplier.fields.contactEmail', 'Email')}</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-600">{t('supplier.fields.status', 'Status')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('supplier.fields.category', 'Category')}</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-600">{t('supplier.fields.createdAt', 'Created Date')}</th>
                   <th className="text-right px-4 py-3 font-medium text-gray-600">{t('app.actions', 'Actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {(!data?.content || data.content.length === 0) ? (
-                  <tr><td colSpan={6} className="text-center py-16 text-muted-foreground">{t('app.noData', 'No data found.')}</td></tr>
+                  <tr><td colSpan={7} className="text-center py-16 text-muted-foreground">{t('app.noData', 'No data found.')}</td></tr>
                 ) : (
                   data.content.map((supplier) => (
                     <tr key={supplier.id} className="hover:bg-gray-50 group">
@@ -100,6 +118,9 @@ export default function SuppliersPage() {
                       <td className="px-4 py-3 text-gray-500">{supplier.contactEmail}</td>
                       <td className="px-4 py-3">
                         <SupplierStatusBadge status={supplier.status} />
+                      </td>
+                      <td className="px-4 py-3 text-gray-500">
+                        {supplier.category ? t(`supplier.category.${supplier.category}`, supplier.category) : '—'}
                       </td>
                       <td className="px-4 py-3 text-gray-500">
                         {supplier.createdAt ? new Date(supplier.createdAt).toLocaleDateString() : '—'}

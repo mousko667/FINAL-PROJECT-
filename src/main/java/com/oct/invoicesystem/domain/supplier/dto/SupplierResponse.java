@@ -1,5 +1,6 @@
 package com.oct.invoicesystem.domain.supplier.dto;
 
+import com.oct.invoicesystem.domain.supplier.model.SupplierCategory;
 import com.oct.invoicesystem.domain.supplier.model.SupplierStatus;
 
 import java.time.Instant;
@@ -13,6 +14,7 @@ public record SupplierResponse(
     String contactPhone,
     String address,
     SupplierStatus status,
+    SupplierCategory category,
     UUID onboardedBy,
     Instant onboardedAt,
     Instant createdAt,

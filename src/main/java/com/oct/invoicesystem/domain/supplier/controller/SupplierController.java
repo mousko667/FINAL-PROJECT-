@@ -83,8 +83,9 @@ public class SupplierController {
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String taxId,
             @RequestParam(required = false) SupplierStatus status,
+            @RequestParam(required = false) com.oct.invoicesystem.domain.supplier.model.SupplierCategory category,
             Pageable pageable) {
-        Page<SupplierResponse> page = supplierService.searchSuppliers(name, taxId, status, pageable);
+        Page<SupplierResponse> page = supplierService.searchSuppliers(name, taxId, status, category, pageable);
         return ApiResponse.success(PagedResponse.of(page));
     }
 
@@ -92,13 +93,14 @@ public class SupplierController {
     @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE', 'DAF')")
     public ResponseEntity<byte[]> exportSuppliers(@RequestParam(defaultValue = "csv") String format) {
         var fmt = com.oct.invoicesystem.shared.export.TabularExportService.Format.from(format);
-        var suppliers = supplierService.searchSuppliers(null, null, null,
+        var suppliers = supplierService.searchSuppliers(null, null, null, null,
                 org.springframework.data.domain.Pageable.unpaged()).getContent();
         java.util.List<String> headers = java.util.List.of(
-                "Company", "Tax ID", "Email", "Phone", "Address", "Status");
+                "Company", "Tax ID", "Email", "Phone", "Address", "Status", "Category");
         java.util.List<java.util.List<String>> rows = suppliers.stream().map(s -> java.util.List.of(
                 ns(s.companyName()), ns(s.taxId()), ns(s.contactEmail()), ns(s.contactPhone()),
-                ns(s.address()), s.status() == null ? "" : s.status().name())).toList();
+                ns(s.address()), s.status() == null ? "" : s.status().name(),
+                s.category() == null ? "" : s.category().name())).toList();
         byte[] body = tabularExportService.export(fmt, "Suppliers", headers, rows);
         return ResponseEntity.ok()
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,

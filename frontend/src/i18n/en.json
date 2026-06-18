@@ -823,6 +823,14 @@
       "ACTIVE": "Active",
       "SUSPENDED": "Suspended"
     },
+    "category": {
+      "all": "All Categories",
+      "none": "Uncategorized",
+      "GOODS": "Goods",
+      "SERVICES": "Services",
+      "WORKS": "Works",
+      "CONSULTING": "Consulting"
+    },
     "fields": {
       "companyName": "Company Name",
       "taxId": "Tax ID",
@@ -830,6 +838,7 @@
       "contactPhone": "Phone",
       "address": "Address",
       "status": "Status",
+      "category": "Category",
       "onboardingDate": "Onboarding Date",
       "createdAt": "Created Date",
       "bankDetails": "Bank Details",

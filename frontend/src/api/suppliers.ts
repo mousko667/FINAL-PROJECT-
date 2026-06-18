@@ -9,10 +9,13 @@ export interface Supplier {
   contactPhone?: string
   address?: string
   status: 'PENDING_VERIFICATION' | 'ACTIVE' | 'SUSPENDED'
+  category?: SupplierCategory | null
   onboardingDate?: string
   createdAt?: string
   updatedAt?: string
 }
+
+export type SupplierCategory = 'GOODS' | 'SERVICES' | 'WORKS' | 'CONSULTING'
 
 export interface SupplierPerformance {
   accuracyRate: number

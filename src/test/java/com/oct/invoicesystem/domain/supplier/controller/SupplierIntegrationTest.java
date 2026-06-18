@@ -75,4 +75,35 @@ class SupplierIntegrationTest {
         // Cleanup
         supplierRepository.deleteById(java.util.UUID.fromString(id));
     }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void shouldPersistAndFilterByCategory() throws Exception {
+        // B5: a supplier carries a spend-type category (GOODS/SERVICES/WORKS/CONSULTING) that
+        // round-trips through create and acts as a directory filter.
+        SupplierCreateRequest createReq = new SupplierCreateRequest(
+                "Cat Services Co", "TAX-CAT-001", "cat.services@example.com",
+                "+100000000", "BANKCAT", "1 Cat St",
+                com.oct.invoicesystem.domain.supplier.model.SupplierCategory.SERVICES);
+
+        String createResponse = mockMvc.perform(post("/api/v1/suppliers")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createReq)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.category").value("SERVICES"))
+                .andReturn().getResponse().getContentAsString();
+        String id = objectMapper.readTree(createResponse).get("data").get("id").asText();
+
+        // Filter by the matching category → supplier is present
+        mockMvc.perform(get("/api/v1/suppliers").param("category", "SERVICES").param("taxId", "TAX-CAT-001"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].category").value("SERVICES"));
+
+        // Filter by a different category → supplier is filtered out
+        mockMvc.perform(get("/api/v1/suppliers").param("category", "GOODS").param("taxId", "TAX-CAT-001"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content").isEmpty());
+
+        supplierRepository.deleteById(java.util.UUID.fromString(id));
+    }
 }

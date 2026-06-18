@@ -260,7 +260,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 5 | Contract and agreement tracking | ✅ | Onglet « Contrats & communications » (contrat VERIF-C1 ACTIVE vérifié). |
 | 6 | Supplier performance metrics | ✅ | Onglet Performance : accuracy rate, rejection rate, avg payment time (`/suppliers/{id}/performance`). |
 | 7 | Supplier communication log | ✅ | Journal de communication (NOTE/EMAIL/PHONE/MEETING) — vérifié. |
-| 8 | Supplier categorization & segmentation | ❌ | Pas de champ catégorie/segment/tier sur l'entité Supplier (seulement le cycle de statut). **Absent.** |
+| 8 | Supplier categorization & segmentation | ✅ | Enum `SupplierCategory` (GOODS/SERVICES/WORKS/CONSULTING) + colonne `category` (V57) sur `Supplier`. Saisie au formulaire (création + édition), filtre déroulant + colonne dans l'annuaire, colonne dans l'export. **Fait (B5, 2026-06-18)** : `shouldPersistAndFilterByCategory`. |
 | 9 | Document repository per supplier | ✅ | Onglet Documents + upload par type. |
 | 10 | Supplier onboarding workflow | 🟠 | Cycle de statut PENDING_VERIFICATION→ACTIVE→SUSPENDED + onboardedBy/At. Pas d'assistant d'onboarding multi-étapes dédié. |
 | 11 | Supplier self-service portal access | ✅ | Portail fournisseur complet (M3). |
@@ -279,7 +279,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 8 | Centralized supplier database | ✅ | Annuaire. |
 | 9 | Enhanced supplier relationship mgmt | ✅ | Contrats + comms + performance. |
 
-**Gaps M8 :** #8 **catégorisation/segmentation absente** ; #10 onboarding = cycle de statut (pas d'assistant dédié).
+**Gaps M8 :** ~~#8 catégorisation/segmentation absente~~ **fait (B5)** ; #10 onboarding = cycle de statut (pas d'assistant dédié).
 
 ---
 
@@ -514,7 +514,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | M5 Three-Way Matching | 13 | 8 | 0 | 0 | Partiel (pas de page dédiée / ligne-à-ligne ; export fait B2) |
 | M6 Approval | 17 | 3 | 0 | 0 | Bon |
 | M7 Payment | 15 | 4 | 2 | 0 | Moyen (batch/alertes absents ; cash-flow PROB-054 + mobile-money PROB-055 corrigés) |
-| M8 Supplier | 19 | 1 | 1 | 0 | Bon (catégorisation absente) |
+| M8 Supplier | 20 | 1 | 0 | 0 | Bon (catégorisation faite B5 ; onboarding sans assistant dédié) |
 | M9 Archiving | 12 | 5 | 0 | 0 | Bon (purge/folder/zoom partiels) |
 | M10 Audit | 20 | 2 | 0 | 0 | Très bon |
 | M11 Reporting | 18 | 5 | 0 | 0 | Bon (cash-flow corrigé PROB-054) |
@@ -527,7 +527,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 ## RÉPONSE À « est-ce 100 % implémenté ? »
 **Non.** Le système couvre **~85 % des items à 100 %**, mais il reste :
 - **0 bug runtime (🔴)** : les 2 bugs A1/A2 sont corrigés (cash-flow 500 → PROB-054 ; Mobile Money front/back → PROB-055, 2026-06-18).
-- **~8 éléments absents (❌)** : checklist templates de validation (M4), export rapport matching (M5), batch payments + alertes paiement configurables (M7), catégorisation fournisseur (M8), sync schedule connecteurs (M12).
+- **éléments absents (❌) restants** : checklist templates de validation (M4), batch payments + alertes paiement configurables (M7), sync schedule connecteurs (M12). *(Faits : export rapport matching M5→B2, catégorisation fournisseur M8→B5.)*
 - **~52 partiels (🟠)** : surtout des éléments présents mais incomplets (config par propriété au lieu d'UI, web responsive au lieu d'app mobile dédiée, framework au lieu de sync live, etc.).
 
 ## Bugs réels découverts pendant cette campagne (à corriger)
@@ -541,7 +541,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | ~~A2~~ | ~~Export de rapport de rapprochement~~ — **fait (B2, 2026-06-18)** | M5 |
 | A3 | Traitement par lot des paiements (batch) | M7 |
 | A4 | Configuration d'alertes de paiement | M7 |
-| A5 | Catégorisation / segmentation fournisseurs | M8 |
+| ~~A5~~ | ~~Catégorisation / segmentation fournisseurs~~ — **fait (B5, 2026-06-18)** | M8 |
 | A6 | Planification de synchronisation des connecteurs | M12 |
 | ~~A7~~ | ~~Champs *employee ID* / *approval limit* éditables (UI)~~ — **fait (B7, 2026-06-18)** | M1 |
 | A8 | Format **XML** en réception + bulk de plusieurs factures | M3 |

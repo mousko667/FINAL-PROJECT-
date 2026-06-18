@@ -7,6 +7,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useSupplier, useCreateSupplier, useUpdateSupplier } from '@/api/suppliers'
 import { Loader2, ArrowLeft } from 'lucide-react'
 
+const SUPPLIER_CATEGORIES = ['GOODS', 'SERVICES', 'WORKS', 'CONSULTING'] as const
+
 const supplierSchema = z.object({
   companyName: z.string().min(1),
   taxId: z.string().min(1),
@@ -14,6 +16,7 @@ const supplierSchema = z.object({
   contactPhone: z.string().optional(),
   address: z.string().optional(),
   bankDetails: z.string().optional(),
+  category: z.enum(SUPPLIER_CATEGORIES).optional().or(z.literal('')),
 })
 
 type SupplierFormData = z.infer<typeof supplierSchema>
@@ -42,6 +45,7 @@ export default function SupplierFormPage() {
         contactPhone: existing.contactPhone ?? '',
         address: existing.address ?? '',
         bankDetails: '',
+        category: existing.category ?? '',
       })
     }
   }, [existing, reset])
@@ -50,11 +54,12 @@ export default function SupplierFormPage() {
   const { mutateAsync: update } = useUpdateSupplier(id)
 
   const onSubmit = async (data: SupplierFormData) => {
+    const payload = { ...data, category: data.category ? data.category : null }
     if (isEdit) {
-      await update(data)
+      await update(payload)
       navigate(`/admin/suppliers/${id}`)
     } else {
-      const created = await create(data)
+      const created = await create(payload)
       navigate(`/admin/suppliers/${created.id}`)
     }
   }
@@ -135,6 +140,21 @@ export default function SupplierFormPage() {
               {...register('address')}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('supplier.fields.category', 'Category')}
+            </label>
+            <select
+              {...register('category')}
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            >
+              <option value="">{t('supplier.category.none', 'Uncategorized')}</option>
+              {SUPPLIER_CATEGORIES.map(c => (
+                <option key={c} value={c}>{t(`supplier.category.${c}`, c)}</option>
+              ))}
+            </select>
           </div>
 
           <div className="md:col-span-2">

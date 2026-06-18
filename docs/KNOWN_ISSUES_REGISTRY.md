@@ -698,6 +698,19 @@
 
 ---
 
+### [PROB-058] (B5) Catégorisation / segmentation fournisseurs — absente
+- **Catégorie :** Backend + Frontend
+- **Sévérité :** 🟡 Mineur (lacune fonctionnelle M8)
+- **Découvert :** 2026-06-18 — tâche B5
+- **Symptôme :** Aucun moyen de catégoriser/segmenter les fournisseurs (champ inexistant en base, ni au formulaire, ni en filtre d'annuaire), contrairement à l'exigence M8.
+- **Cause racine :** Fonctionnalité jamais implémentée.
+- **Solution appliquée :** (1) Enum `SupplierCategory` (GOODS/SERVICES/WORKS/CONSULTING — segmentation par **type de dépense**, choix produit confirmé). (2) Champ `category` nullable sur `Supplier` + migration **V57** (`ALTER TABLE suppliers ADD COLUMN category VARCHAR(30)` + index). (3) DTO create/update/response (constructeurs de compat conservés pour les appelants existants ; MapStruct mappe `category` par nom). (4) Filtre `:category` ajouté à `searchSuppliers` (repository natif) **avec `CAST(:category AS text)`** — comme les autres params nullables, désormais tous castés pour éviter le 500 Postgres « could not determine type » (PROB-038/054). Signature `searchSuppliers` propagée (service + 3 appelants : controller search, export controller, `ReportBuilderService`). Colonne « Category » ajoutée à l'export fournisseurs. (5) Frontend : `<select>` catégorie au `SupplierFormPage` (création + édition, prefill), filtre déroulant + colonne dans l'annuaire `SuppliersPage`, type `SupplierCategory` + i18n `supplier.category.*` / `supplier.fields.category` (FR+EN). Bonus : le champ de recherche de l'annuaire envoie désormais `name` (et non `search`, ignoré côté backend) → recherche serveur fonctionnelle.
+- **Test (TDD) :** `SupplierIntegrationTest.shouldPersistAndFilterByCategory` — crée un fournisseur `category=SERVICES` (round-trip 201 + `data.category=SERVICES`), filtre `?category=SERVICES` (présent) et `?category=GOODS` (filtré). RED avant (champ/constructeur inexistants → ne compile pas) → GREEN après. Suite 369/0/0, build front + tsc verts.
+- **Règle préventive :** Ajouter une dimension de segmentation = enum + colonne nullable + migration + DTO (avec constructeur de compat si le record est déjà utilisé) + filtre repository **casté** + propager la signature à TOUS les appelants (compiler tôt pour les repérer). Côté UI : form (create+edit prefill) + filtre annuaire + colonne, i18n FR/EN.
+- **Fichiers modifiés :** `SupplierCategory.java` (nouveau), `Supplier.java`, `V57__add_supplier_category.sql` (nouveau), `SupplierCreateRequest.java`, `SupplierUpdateRequest.java`, `SupplierResponse.java`, `SupplierRepository.java`, `SupplierService.java`, `SupplierServiceImpl.java`, `SupplierController.java`, `ReportBuilderService.java`, `suppliers.ts`, `SupplierFormPage.tsx`, `SuppliersPage.tsx`, `fr.json`, `en.json`, `SupplierIntegrationTest.java`.
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :

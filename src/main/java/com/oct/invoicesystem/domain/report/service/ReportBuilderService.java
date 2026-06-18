@@ -88,7 +88,7 @@ public class ReportBuilderService {
                     invoiceService.buildExportRows(null, null, null, null, null));
             case "SUPPLIERS" -> exportService.export(fmt, "Suppliers",
                     List.of("Company", "Tax ID", "Email", "Phone", "Status"),
-                    supplierService.searchSuppliers(null, null, null, Pageable.unpaged()).getContent().stream()
+                    supplierService.searchSuppliers(null, null, null, null, Pageable.unpaged()).getContent().stream()
                             .map(s -> List.of(ns(s.companyName()), ns(s.taxId()), ns(s.contactEmail()),
                                     ns(s.contactPhone()), s.status() == null ? "" : s.status().name())).toList());
             case "BUDGET" -> exportService.export(fmt, "Budget vs Actual",
