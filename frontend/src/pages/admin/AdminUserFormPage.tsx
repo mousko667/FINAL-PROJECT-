@@ -19,6 +19,11 @@ const userSchema = z.object({
   password:   z.string().min(8, 'Minimum 8 characters'),
   role:       z.string().min(1, 'Select a role'),
   departmentId: z.string().optional(),
+  employeeId: z.string().optional(),
+  approvalLimit: z.preprocess(
+    (v) => (v === '' || v === null || v === undefined ? undefined : Number(v)),
+    z.number({ invalid_type_error: 'Enter a valid number' }).nonnegative('Must be ≥ 0').optional(),
+  ),
   preferredLang: z.enum(['fr', 'en']),
 })
 
@@ -60,6 +65,8 @@ export default function AdminUserFormPage() {
         password:     data.password,
         roles:        [data.role],
         departmentId: data.departmentId || null,
+        employeeId:   data.employeeId?.trim() || null,
+        approvalLimit: data.approvalLimit ?? null,
         preferredLang: data.preferredLang,
       }
       return apiClient.post('/users', payload)
@@ -213,6 +220,38 @@ export default function AdminUserFormPage() {
               </p>
             </div>
           )}
+
+          {/* Employee ID */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('admin.users.employeeId', 'Employee ID')}
+            </label>
+            <input
+              {...register('employeeId')}
+              placeholder={t('admin.users.employeeIdPlaceholder', 'e.g. EMP-0042')}
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+            {errors.employeeId && <p className="text-xs text-red-500 mt-1">{errors.employeeId.message}</p>}
+          </div>
+
+          {/* Approval Limit */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('admin.users.approvalLimit', 'Approval Limit')}
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              {...register('approvalLimit')}
+              placeholder={t('admin.users.approvalLimitPlaceholder', 'e.g. 50000')}
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              {t('admin.users.approvalLimitHint', 'Maximum invoice amount this user may approve (optional).')}
+            </p>
+            {errors.approvalLimit && <p className="text-xs text-red-500 mt-1">{errors.approvalLimit.message}</p>}
+          </div>
         </div>
 
         {createUserMutation.isError && (

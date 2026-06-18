@@ -15,7 +15,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 |---|----------------|---------|--------|
 | 1 | Registration form with role selection | ✅ | `/admin/users/new` : formulaire avec dropdown **Rôle** (Administrator, CFO/DAF, Assistant comptable, tous N1/N2). Inscription publique = fournisseur uniquement (rôle fixe), staff créé par admin (conforme à l'exigence). |
 | 2 | Supplier-specific fields (company, tax ID, contact, bank) | ✅ | `/register` : Raison sociale, NIF/tax ID, Téléphone, Adresse, **Coordonnées bancaires** + identifiants compte. |
-| 3 | Staff-specific fields (employee ID, department, approval limits) | 🟠 | **Affichés** dans `/profile` → section « Affectation » : **Matricule** (employee ID), **Département**, **Limite d'approbation** (lecture seule). En base : `employee_id`, `department_id`, `approval_limit`. **Gap** : au `/admin/users/new`, seul Département est saisissable (conditionnel) ; **employee ID et approval limit ne sont éditables dans aucun formulaire** (affichés mais non modifiables via UI). |
+| 3 | Staff-specific fields (employee ID, department, approval limits) | ✅ | Affichés dans `/profile` (lecture seule) ET **saisissables à la création** : `/admin/users/new` propose désormais **Matricule** (employee ID) + **Limite d'approbation** (en plus de Département conditionnel). Backend persiste déjà les 3 champs (DTO/mapper/service). **Corrigé (B7, 2026-06-18)** : `createUser_persistsEmployeeIdAndApprovalLimit` vérifie le round-trip. |
 | 4 | Password creation with strength indicator | ✅ | `/register` : saisie « Test1234! » → barre + libellé « Fort ». |
 | 5 | Email verification interface | ✅ | Route `/verify-email` (EmailVerificationPage) ; endpoint `/auth/verify-email` permitAll. |
 | 6 | Login page (username/email + password) | ✅ | `/login` : champs username + password, vérifié. |
@@ -37,7 +37,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 6 | Audit-ready user access tracking | ✅ | Journal d'audit logge LOGIN/MFA/ACCESS_DENIED (M10). |
 | 7 | Compliance with financial data protection | ✅ | Chiffrement AES au repos (bank details) + RBAC + audit. |
 
-**Gap M1 :** UI #3 — *employee ID* et *approval limits* sont **affichés** (Profile, lecture seule) mais **non éditables** via UI (aucun formulaire de saisie). Donnée présente en base.
+**Gap M1 :** ~~UI #3 — employee ID / approval limit non éditables via UI~~ **corrigé (B7, 2026-06-18)** : tous deux saisissables à la création dans `/admin/users/new`. (M1 désormais sans gap.)
 
 ---
 
@@ -507,7 +507,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 
 | Module | ✅ Conforme | 🟠 Partiel | ❌ Absent | 🔴 Cassé | Note globale |
 |--------|:---------:|:---------:|:--------:|:-------:|--------------|
-| M1 Authentification | 18 | 1 | 0 | 0 | Quasi-complet |
+| M1 Authentification | 19 | 0 | 0 | 0 | Complet (B7 : employee ID + approval limit éditables) |
 | M2 Dashboard | 16 | 1 | 0 | 0 | Quasi-complet |
 | M3 Réception | 17 | 4 | 0 | 0 | Bon (XML, bulk-factures) |
 | M4 Validation Workflow | 17 | 4 | 1 | 0 | Bon (checklist templates absents) |
@@ -543,7 +543,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | A4 | Configuration d'alertes de paiement | M7 |
 | A5 | Catégorisation / segmentation fournisseurs | M8 |
 | A6 | Planification de synchronisation des connecteurs | M12 |
-| A7 | Champs *employee ID* / *approval limit* éditables (UI) | M1 |
+| ~~A7~~ | ~~Champs *employee ID* / *approval limit* éditables (UI)~~ — **fait (B7, 2026-06-18)** | M1 |
 | A8 | Format **XML** en réception + bulk de plusieurs factures | M3 |
 
 ## Limites de cette vérification (honnêteté)

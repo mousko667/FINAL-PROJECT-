@@ -672,6 +672,19 @@
 
 ---
 
+### [PROB-056] (B7) *employee ID* et *approval limit* présents partout dans le backend mais non saisissables dans le formulaire admin
+- **Catégorie :** Frontend
+- **Sévérité :** 🟡 Mineur (lacune fonctionnelle — données existantes en base, jamais éditables via UI)
+- **Découvert :** 2026-06-18 — tâche B7
+- **Symptôme :** Les champs `employee_id` et `approval_limit` existaient sur `User` et étaient **affichés en lecture seule** dans `/profile`, mais aucun formulaire ne permettait de les **saisir**. Le `/admin/users/new` n'envoyait que username/email/nom/rôle/département.
+- **Cause racine :** Asymétrie front/back. Le backend était complet (`UserCreateRequest`/`UserUpdateRequest` portent `employeeId`+`approvalLimit`, `UserMapper.toEntity` les mappe par nom, `UserService.createUser`/`updateUser` les persistent, `UserDTO` les expose). Seul le formulaire React ne les exposait pas (ni dans le schéma Zod, ni dans le payload, ni en input).
+- **Solution appliquée :** Ajout des deux champs au `AdminUserFormPage.tsx` : schéma Zod (`employeeId` string optionnel, `approvalLimit` number ≥ 0 optionnel via `z.preprocess`), payload (`employeeId`/`approvalLimit` → `null` si vide), inputs UI + libellés/placeholders/hint i18n FR+EN (parité maintenue). Aucun changement backend nécessaire.
+- **Test (TDD) :** `UserServiceIntegrationTest.createUser_persistsEmployeeIdAndApprovalLimit` crée un user via le **vrai** `UserService` avec `employeeId`+`approvalLimit` et vérifie le round-trip (DTO retourné + relecture depuis le repository). GREEN — confirme que la persistance backend était déjà correcte (la lacune était purement UI). Suite 367/0/0, build front + typecheck verts.
+- **Règle préventive :** Quand un champ existe en base et dans les DTO mais « n'apparaît nulle part en saisie », vérifier d'abord le formulaire frontend avant de toucher au backend : la lacune est souvent une simple omission d'input (schéma + payload + champ), pas un manque de support serveur. Toujours confronter les champs du DTO de création/màj à ce que le formulaire envoie réellement.
+- **Fichiers modifiés :** `AdminUserFormPage.tsx`, `fr.json`, `en.json`, `UserServiceIntegrationTest.java`.
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :
