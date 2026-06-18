@@ -41,14 +41,18 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
 
     Optional<Invoice> findByIdAndDeletedAtIsNull(UUID id);
 
+    // Every nullable parameter is wrapped in an explicit CAST so PostgreSQL can determine its type
+    // even when the value is null. Without it, a bare "(:param IS NULL OR ...)" leaves the bind
+    // parameter untyped and PostgreSQL raises "could not determine data type of parameter $N"
+    // (SQLGrammarException) — exactly the cash-flow 500 fixed in PROB-054 (same family as PROB-038).
     @Query("""
             SELECT i
             FROM Invoice i
             WHERE i.deletedAt IS NULL
-              AND (:status IS NULL OR i.status = :status)
-              AND (:departmentId IS NULL OR i.department.id = :departmentId)
-              AND (:fromDate IS NULL OR i.issueDate >= :fromDate)
-              AND (:toDate IS NULL OR i.issueDate <= :toDate)
+              AND (CAST(:status AS string) IS NULL OR i.status = :status)
+              AND (CAST(:departmentId AS uuid) IS NULL OR i.department.id = :departmentId)
+              AND (CAST(:fromDate AS date) IS NULL OR i.issueDate >= :fromDate)
+              AND (CAST(:toDate AS date) IS NULL OR i.issueDate <= :toDate)
               AND (:reference IS NULL OR LOWER(i.referenceNumber) LIKE LOWER(CONCAT('%', CAST(:reference AS string), '%')))
               AND (CAST(:supplierId AS uuid) IS NULL OR (i.supplier IS NOT NULL AND i.supplier.id = :supplierId))
             """)

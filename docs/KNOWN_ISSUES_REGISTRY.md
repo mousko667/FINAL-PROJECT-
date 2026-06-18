@@ -599,6 +599,66 @@
 
 ---
 
+### [PROB-050] Connexion impossible dans l'UI pour tout compte MFA activé (pas d'écran OTP)
+- **Catégorie :** Frontend / Auth
+- **Sévérité :** 🟠 Moyenne (bloquait la connexion UI des comptes admin/DAF/validateurs une fois la MFA activée)
+- **Découvert :** 2026-06-16 — vérification visuelle exhaustive des 14 modules
+- **Symptôme :** Se connecter avec un compte MFA activé affichait **« Identifiants incorrects »**. Le `POST /auth/login` renvoyait pourtant 200 avec `mfa_required:true` + `pre_auth_token`.
+- **Cause racine :** `LoginPage.tsx` ne gérait que la réponse à une étape ; une réponse de défi MFA (sans `accessToken`) était traitée comme un échec. Aucun écran de saisie OTP n'était câblé (l'OTP n'existait que dans ProfilePage/SecuritySettings). Non détecté car les comptes de seed ont `mfa_enabled=false` (donc connexion à une étape).
+- **Solution appliquée :** Ajout de la 2e étape dans `LoginPage.tsx` : si `mfa_required`, on stocke le `pre_auth_token` et on affiche un écran de code à 6 chiffres qui POST `/auth/mfa/validate`. Clés i18n FR/EN `mfa.challengeTitle/challengeSubtitle/codeLabel/verify`.
+- **Règle préventive :** Tout flux d'auth multi-étapes doit être vérifié de bout en bout dans l'UI avec un compte réellement dans cet état — un seed qui désactive l'étape masque le trou (cf. [[verify-runtime-not-snapshot]]).
+- **Fichiers modifiés :** `LoginPage.tsx`, `i18n/fr.json`, `i18n/en.json`.
+
+---
+
+### [PROB-051] WebSocket de notifications : handshake `/ws/info` rejeté en 401 (JWT non vérifié + endpoint mal aligné)
+- **Catégorie :** Backend / Sécurité / WebSocket
+- **Sévérité :** 🟡 Moyenne (notifications temps réel jamais connectées ; bruit ACCESS_DENIED toutes les 5 s)
+- **Découvert :** 2026-06-16 — console navigateur pendant la vérification visuelle
+- **Symptôme :** `GET /ws/info` → **401** en boucle ; le client STOMP ne se connectait jamais.
+- **Cause racine :** (1) Le front se connecte à `/ws` mais le backend n'exposait que `/ws/notifications` (endpoint non aligné). (2) `/ws/**` n'était pas dans la liste `permitAll` de SecurityConfig → le handshake SockJS (qui ne peut pas porter d'en-tête Bearer) tombait sur `anyRequest().authenticated()` → 401.
+- **Solution appliquée :** Endpoint enregistré sur `/ws` (+`/ws/notifications` rétro-compat) ; `/ws/**` mis en `permitAll` au niveau HTTP ; authentification réelle déplacée sur la frame STOMP CONNECT via `WebSocketAuthChannelInterceptor` (valide le JWT du `connectHeaders.Authorization`, rejette les pre-auth tokens). Le **nom du principal** est posé à l'`userId` pour que `convertAndSendToUser(userId,…)` route vers `/user/{userId}/notifications`.
+- **Règle préventive :** Pour SockJS/STOMP, sécuriser au niveau de la frame CONNECT (ChannelInterceptor), pas au handshake HTTP ; et le nom du principal WebSocket doit correspondre à la clé utilisée par `convertAndSendToUser`.
+- **Fichiers modifiés :** `WebSocketConfig.java`, `WebSocketAuthChannelInterceptor.java` (nouveau), `SecurityConfig.java`.
+
+---
+
+### [PROB-052] `/actuator/health` renvoie 503 quand le relais mail est injoignable
+- **Catégorie :** Backend / Observabilité
+- **Sévérité :** 🟢 Basse (santé agrégée trompeuse ; n'affecte aucune fonctionnalité)
+- **Découvert :** 2026-06-16
+- **Symptôme :** `/actuator/health` → **503 DOWN** alors que l'application fonctionne. Log : `MailHealthIndicator - Mail health check failed`.
+- **Cause racine :** L'indicateur de santé `mail` teste la connexion SMTP ; si MailHog/SMTP est injoignable, il fait basculer la santé **agrégée** à DOWN. Or le mail n'est pas une dépendance de vivacité.
+- **Solution appliquée :** `management.health.mail.enabled: false` — la disponibilité du relais mail ne doit pas faire échouer la santé applicative (elle ne dégrade que les notifications e-mail).
+- **Règle préventive :** Exclure de la santé agrégée les dépendances non critiques à la vivacité (mail, services tiers best-effort) ; sinon une panne périphérique fait croire à une panne applicative.
+- **Fichiers modifiés :** `application.yaml`.
+
+---
+
+### [PROB-053] Règle MFA passée d'une liste blanche de rôles à une liste noire (tous sauf fournisseur)
+- **Catégorie :** Backend / Sécurité
+- **Sévérité :** 🟢 Renforcement (exigence métier : MFA obligatoire pour tous les rôles sauf fournisseur)
+- **Découvert :** 2026-06-16 — demande explicite
+- **Symptôme/Motivation :** L'ancienne logique listait explicitement ADMIN/DAF/ASSISTANT_COMPTABLE/VALIDATEUR_* ; un nouveau rôle (ex. `ROLE_AUDITEUR`) n'était **pas** couvert.
+- **Solution appliquée :** `AuthService.requiresMandatoryMfaSetup` et `MfaSetupEnforcementFilter.requiresMandatoryMfa` réécrits en liste noire : MFA requise dès qu'il existe au moins un rôle `ROLE_` autre que `ROLE_SUPPLIER`. Un compte fournisseur-seul (ou sans rôle) est exempté. Test `PaymentControllerTest.recordPayment_ForbiddenForAuditeur` ajusté (fixture `auditeur` marquée `mfaVerified=true`) pour isoler le contrôle d'autorisation (403) du filtre MFA (400).
+- **Règle préventive :** Pour une politique « tout le monde sauf X », coder une **liste noire** (deny-list), pas une liste blanche — sinon chaque nouveau rôle crée un trou silencieux. Garder les deux points d'application (service de login + filtre) synchronisés.
+- **Fichiers modifiés :** `AuthService.java`, `MfaSetupEnforcementFilter.java`, `PaymentControllerTest.java`.
+
+---
+
+### [PROB-054] `GET /reports/cash-flow` → 500 `SQLGrammarException: n'a pas pu déterminer le type du paramètre $5` (paramètres de date nullables non typés dans `findAllWithFilters`)
+- **Catégorie :** Backend
+- **Sévérité :** 🔴 Critique (l'écran Rapports → projection de trésorerie était **entièrement cassé à l'exécution** : 500 systématique)
+- **Découvert :** 2026-06-18 — vérification runtime A1 (la fonctionnalité renvoyait 500 en prod-dev alors que la suite était verte)
+- **Symptôme :** À l'ouverture de la projection de trésorerie (`reportService.getCashFlowProjection`), PostgreSQL renvoyait `ERREUR: n'a pas pu déterminer le type de données du paramètre $5` → `SQLGrammarException` → HTTP 500. Aucun test ne le détectait : `ReportControllerTest` **mocke** `ReportService` (la vraie requête n'est jamais exécutée), et le profil `test` tourne sur **H2** qui infère silencieusement le type des paramètres null.
+- **Cause racine :** Dans `InvoiceRepository.findAllWithFilters`, les prédicats `(:param IS NULL OR colonne = :param)` laissaient les paramètres nullables **non typés**. `reference` et `supplierId` avaient déjà un `CAST(...)` (corrigé antérieurement), mais `status`, `departmentId`, `fromDate` et `toDate` non. PostgreSQL n'a aucun contexte d'opérateur pour inférer le type d'un `?` isolé dans `? IS NULL` → il refuse de préparer l'instruction. Le SQL généré montrait `$5` = le `?` de `(? is null or i1_0.issue_date >= ?)` (fromDate). Même famille que PROB-038 (Postgres ne devine pas le type d'un bind null). `getCashFlowProjection` appelle ce repository avec `status/departmentId/reference/supplierId = null`, déclenchant l'erreur.
+- **Solution appliquée :** Ajout d'un `CAST` explicite sur chaque paramètre nullable du `WHERE` : `CAST(:status AS string)`, `CAST(:departmentId AS uuid)`, `CAST(:fromDate AS date)`, `CAST(:toDate AS date)` (alignement sur le pattern déjà appliqué à `searchArchived` et à `reference`/`supplierId`). Aucun changement de signature → les 3 appelants (`InvoiceService.listInvoices`, `InvoiceService.buildExportRows`, `ReportServiceImpl.getCashFlowProjection`) restent inchangés.
+- **Test (anti-régression réel) :** ajout de `CashFlowProjectionIntegrationTest` qui appelle **vraiment** `GET /api/v1/reports/cash-flow` avec le service et le repository réels, contre **un vrai PostgreSQL** (classe de base `AbstractPostgresIntegrationTest`, branchée sur la base dev `localhost:5433/oct_invoice` via `@DynamicPropertySource`, skip propre si la base est injoignable). Vérifié : avant fix → 500 (`$5` non typé) ; après fix → 200. H2 ne peut PAS servir de garde-fou ici (il ne reproduit pas le bug).
+- **Règle préventive :** (1) Tout paramètre nullable d'un prédicat `(:p IS NULL OR ...)` en JPQL/SQL natif sur PostgreSQL DOIT être enveloppé d'un `CAST(:p AS <type>)` — JAMAIS de bind null nu. (2) Une requête repository réelle ne se valide PAS sur H2 ni avec un service mocké : prévoir au moins un test d'intégration sur **vrai PostgreSQL** (Testcontainers ou base dev) pour toute requête à paramètres nullables. (3) Cf. PROB-038 — vérifier au runtime, pas au snapshot.
+- **Fichiers modifiés :** `InvoiceRepository.java` (CAST sur status/departmentId/fromDate/toDate), `AbstractPostgresIntegrationTest.java` (nouveau, support de test), `CashFlowProjectionIntegrationTest.java` (nouveau).
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :
