@@ -151,6 +151,23 @@ public class InvoiceController {
         return ResponseEntity.ok(ApiResponse.success(toMatchingDto(result)));
     }
 
+    @GetMapping("/{id}/matching/export")
+    @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER') and !hasRole('ADMIN')")
+    @Operation(summary = "Export invoice matching reconciliation report (csv|excel|pdf)",
+            description = "Exports the three-way matching reconciliation report for an invoice in the requested format")
+    public ResponseEntity<byte[]> exportMatchingReport(
+            @PathVariable UUID id,
+            @RequestParam(defaultValue = "csv") String format) {
+        var fmt = com.oct.invoicesystem.shared.export.TabularExportService.Format.from(format);
+        List<String> headers = List.of("Field", "Value");
+        List<List<String>> rows = invoiceService.buildMatchingExportRows(id);
+        byte[] body = tabularExportService.export(fmt, "Matching report", headers, rows);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=matching_report_" + id + "." + fmt.extension)
+                .contentType(MediaType.parseMediaType(fmt.mediaType))
+                .body(body);
+    }
+
     @GetMapping("/{id}/history")
     @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER') and !hasRole('ADMIN')")
     @Operation(summary = "Get invoice status history", description = "Retrieves the full status transition history for an invoice")

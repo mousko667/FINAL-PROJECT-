@@ -667,6 +667,7 @@
     "MISMATCH": "Mismatch — Override Required",
     "OVERRIDDEN": "Mismatch Overridden",
     "pending": "Matching will run automatically on submission.",
+    "exportReport": "Export report",
     "notes": "Matching details:",
     "overrideJustification": "Override justification:",
     "override": "Override with Justification",

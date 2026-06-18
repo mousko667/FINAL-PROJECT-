@@ -158,7 +158,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 8 | Manual override with justification | ✅ | Détail facture : formulaire override (motif obligatoire), réservé DAF/ADMIN/AA ; statut → OVERRIDDEN. |
 | 9 | Matching history viewer | 🟠 | `ThreeWayMatchingResult` append-only ; **dernier** résultat affiché. Pas de viewer listant l'historique des tentatives. |
 | 10 | Unmatched items resolution workflow | 🟠 | Résolution via **override** (déblocage MISMATCH). Pas de workflow de résolution ligne-par-ligne dédié. |
-| 11 | Export matching reports | ❌ | Aucun export de rapport de rapprochement (endpoint absent). |
+| 11 | Export matching reports | ✅ | `GET /invoices/{id}/matching/export?format=csv\|excel\|pdf` (via `TabularExportService`) + bouton `ExportMenu` sur le panneau matching de `InvoiceDetailPage`. **Fait (B2, 2026-06-18)** : CSV/Excel vérifiés (`testExportMatchingReport`). |
 | 12 | Integration with procurement & inventory | 🟠 | PO + GRN internes ✅ ; connecteurs procurement/inventory externes = M12 (type connecteur, pas de sync réelle). |
 
 ### Features
@@ -174,7 +174,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 8 | Reduced overpayment & fraud risk | ✅ | Blocage MISMATCH + override tracé. |
 | 9 | Streamlined validation accuracy | ✅ | Matching auto + seuils. |
 
-**Gaps M5 :** #11 **export rapport matching absent** ; #1/#4 pas de **page dédiée** ni comparaison **ligne-à-ligne** stricte (rapprochement au niveau montant) ; #9/#10 history & résolution = via override, pas de viewer/workflow dédiés.
+**Gaps M5 :** ~~#11 export rapport matching absent~~ **fait (B2)** ; #1/#4 pas de **page dédiée** ni comparaison **ligne-à-ligne** stricte (rapprochement au niveau montant) ; #9/#10 history & résolution = via override, pas de viewer/workflow dédiés.
 
 ---
 
@@ -511,7 +511,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | M2 Dashboard | 16 | 1 | 0 | 0 | Quasi-complet |
 | M3 Réception | 17 | 4 | 0 | 0 | Bon (XML, bulk-factures) |
 | M4 Validation Workflow | 17 | 4 | 1 | 0 | Bon (checklist templates absents) |
-| M5 Three-Way Matching | 12 | 8 | 1 | 0 | Partiel (pas de page/ligne-à-ligne/export) |
+| M5 Three-Way Matching | 13 | 8 | 0 | 0 | Partiel (pas de page dédiée / ligne-à-ligne ; export fait B2) |
 | M6 Approval | 17 | 3 | 0 | 0 | Bon |
 | M7 Payment | 15 | 4 | 2 | 0 | Moyen (batch/alertes absents ; cash-flow PROB-054 + mobile-money PROB-055 corrigés) |
 | M8 Supplier | 19 | 1 | 1 | 0 | Bon (catégorisation absente) |
@@ -538,7 +538,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | Réf | Élément | Module |
 |-----|---------|--------|
 | A1 | Modèles de checklist de validation | M4 |
-| A2 | Export de rapport de rapprochement | M5 |
+| ~~A2~~ | ~~Export de rapport de rapprochement~~ — **fait (B2, 2026-06-18)** | M5 |
 | A3 | Traitement par lot des paiements (batch) | M7 |
 | A4 | Configuration d'alertes de paiement | M7 |
 | A5 | Catégorisation / segmentation fournisseurs | M8 |

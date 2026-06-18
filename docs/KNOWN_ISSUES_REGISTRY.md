@@ -685,6 +685,19 @@
 
 ---
 
+### [PROB-057] (B2) Export du rapport de rapprochement (3-way matching) — absent
+- **Catégorie :** Backend + Frontend
+- **Sévérité :** 🟡 Mineur (lacune fonctionnelle M5)
+- **Découvert :** 2026-06-18 — tâche B2
+- **Symptôme :** Le résultat du rapprochement à trois voies était affiché sur le détail facture mais ne pouvait **pas être exporté** (aucun bouton, aucun endpoint), contrairement à l'exigence M5 (export CSV/Excel/PDF du rapport de rapprochement).
+- **Cause racine :** Fonctionnalité jamais implémentée. L'infrastructure existait pourtant : `TabularExportService` (CSV/XLSX/PDF partagé) côté backend et le composant réutilisable `ExportMenu` côté frontend.
+- **Solution appliquée :** (1) Backend : `InvoiceService.buildMatchingExportRows(invoiceId)` assemble le rapport en table Field/Value (réf facture, BC, BL, statut, écarts, substitué par, motif, date) dans une transaction read-only (associations lazy de `ThreeWayMatchingResult`), réutilisant `getMatchingResult` (404 si absent). Endpoint `GET /invoices/{id}/matching/export?format=` calqué sur l'export de liste existant (même `@PreAuthorize` que `GET /{id}/matching`). (2) Frontend : réutilisation du composant `ExportMenu` (CSV/Excel/PDF, blob authentifié) dans le panneau « Rapprochement à trois voies » de `InvoiceDetailPage`, visible uniquement si un résultat existe. i18n `matching.exportReport` FR+EN.
+- **Test (TDD) :** `ThreeWayMatchingIntegrationTest.testExportMatchingReport` construit un flux PO→GRN→facture→soumission (résultat MATCHED) puis exporte en CSV (200, Content-Disposition `matching_report_*.csv`, contenu contient la réf + le statut) et en Excel (content-type spreadsheet). RED avant (404 endpoint inexistant) → GREEN après. Suite 368/0/0, build front + tsc verts.
+- **Règle préventive :** Avant d'écrire un nouvel export, chercher l'infra partagée (`TabularExportService` backend, `ExportMenu` frontend) et la réutiliser — un export = 1 méthode « buildRows » dans le service (transaction si associations lazy) + 1 endpoint calqué sur l'existant + `<ExportMenu endpoint=… />`. Ne pas redéfinir le formatage CSV/XLSX/PDF.
+- **Fichiers modifiés :** `InvoiceService.java`, `InvoiceController.java`, `InvoiceDetailPage.tsx`, `fr.json`, `en.json`, `ThreeWayMatchingIntegrationTest.java`.
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :

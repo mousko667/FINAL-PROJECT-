@@ -667,6 +667,7 @@
     "MISMATCH": "Écart — Substitution requise",
     "OVERRIDDEN": "Écart substitué",
     "pending": "Le rapprochement sera effectué automatiquement à la soumission.",
+    "exportReport": "Exporter le rapport",
     "notes": "Détails du rapprochement :",
     "overrideJustification": "Justification de la substitution :",
     "override": "Substituer avec justification",

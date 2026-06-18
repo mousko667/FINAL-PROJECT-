@@ -9,6 +9,7 @@ import { InvoiceTimeline } from '@/components/invoice/InvoiceTimeline'
 import { InvoiceActionPanel } from '@/components/invoice/InvoiceActionPanel'
 import { BulkDocumentUpload } from '@/components/invoice/BulkDocumentUpload'
 import { DocumentViewerModal } from '@/components/invoice/DocumentViewerModal'
+import { ExportMenu } from '@/components/ui/ExportMenu'
 import { useAppSelector } from '@/store/hooks'
 import { Loader2, ArrowLeft, Download, CheckCircle, XCircle, AlertTriangle, MinusCircle, Clock, User, FileDown, Lock, Eye } from 'lucide-react'
 
@@ -246,7 +247,16 @@ export default function InvoiceDetailPage() {
             <div className="bg-white rounded-xl border p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-semibold text-gray-800">{t('matching.title', 'Three-Way Matching')}</h2>
-                {matchingResult && <MatchingBadge status={matchingResult.status} />}
+                <div className="flex items-center gap-3">
+                  {matchingResult && <MatchingBadge status={matchingResult.status} />}
+                  {matchingResult && (
+                    <ExportMenu
+                      endpoint={`/invoices/${id}/matching/export`}
+                      filename={`matching_report_${invoice.referenceNumber ?? id}`}
+                      label={t('matching.exportReport', 'Export report')}
+                    />
+                  )}
+                </div>
               </div>
 
               {!matchingResult ? (

@@ -360,6 +360,65 @@ class ThreeWayMatchingIntegrationTest {
     }
 
     @Test
+    @DisplayName("B2: matching reconciliation report can be exported as CSV and Excel")
+    @WithMockUser(username = "admin", roles = {"ASSISTANT_COMPTABLE"})
+    void testExportMatchingReport() throws Exception {
+        // Build a PO + GRN + invoice and submit it so a matching result is persisted.
+        PurchaseOrderCreateRequest poRequest = new PurchaseOrderCreateRequest(
+                "PO-EXPORT-001", supplierId, LocalDate.now(), LocalDate.now().plusDays(30), "EUR",
+                List.of(new PurchaseOrderItemCreateRequest("Widget X", new BigDecimal("100"), new BigDecimal("50.00"))));
+
+        mockMvc.perform(post("/api/v1/purchase-orders")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(poRequest)))
+                .andExpect(status().isCreated());
+
+        PurchaseOrder purchaseOrder = purchaseOrderRepository.findByPoNumber("PO-EXPORT-001").orElseThrow();
+
+        GoodsReceiptNote grn = goodsReceiptNoteRepository.save(GoodsReceiptNote.builder()
+                .grnNumber("GRN-EXPORT-001").purchaseOrder(purchaseOrder)
+                .receivedBy(adminUser).receiptDate(LocalDate.now()).build());
+        grn.getItems().add(GoodsReceiptItem.builder()
+                .goodsReceiptNote(grn).purchaseOrderItem(purchaseOrder.getItems().get(0))
+                .receivedQuantity(new BigDecimal("100")).build());
+        goodsReceiptNoteRepository.save(grn);
+
+        InvoiceItem invoiceItem = InvoiceItem.builder()
+                .lineNumber(1).description("Widget X").quantity(new BigDecimal("100"))
+                .unitPrice(new BigDecimal("50.00")).totalPrice(new BigDecimal("5000.00")).build();
+        Invoice invoice = Invoice.builder()
+                .referenceNumber("FAC-EXPORT-001").supplierName("Test Supplier")
+                .supplierEmail("supplier@test.com").amount(new BigDecimal("5000.00")).currency("EUR")
+                .issueDate(LocalDate.now()).dueDate(LocalDate.now().plusDays(30))
+                .department(department).submittedBy(adminUser).purchaseOrderId(purchaseOrder.getId()).build();
+        invoiceItem.setInvoice(invoice);
+        invoice.setItems(List.of(invoiceItem));
+        InvoiceDocument document = InvoiceDocument.builder()
+                .originalFilename("inv.pdf").minioObjectKey("docs/inv-export.pdf").fileType("application/pdf")
+                .fileSizeBytes(1024L).checksumSha256("hashx").uploadedBy(adminUser).build();
+        document.setInvoice(invoice);
+        invoice.setDocuments(List.of(document));
+        invoice = invoiceRepository.save(invoice);
+
+        mockMvc.perform(post("/api/v1/invoices/{id}/submit", invoice.getId()))
+                .andExpect(status().isOk());
+
+        // CSV export of the reconciliation report
+        mockMvc.perform(get("/api/v1/invoices/{id}/matching/export", invoice.getId()).param("format", "csv"))
+                .andExpect(status().isOk())
+                .andExpect(result -> assertThat(result.getResponse().getHeader("Content-Disposition"))
+                        .contains("matching_report_").contains(".csv"))
+                .andExpect(result -> assertThat(result.getResponse().getContentAsString())
+                        .contains("FAC-EXPORT-001").contains("MATCHED"));
+
+        // Excel export returns the spreadsheet content type
+        mockMvc.perform(get("/api/v1/invoices/{id}/matching/export", invoice.getId()).param("format", "excel"))
+                .andExpect(status().isOk())
+                .andExpect(result -> assertThat(result.getResponse().getContentType())
+                        .contains("spreadsheetml"));
+    }
+
+    @Test
     @DisplayName("Get purchase order should return all items and details")
     @WithMockUser(username = "admin", roles = {"ADMIN"})
     void testGetPurchaseOrderWithItems() throws Exception {

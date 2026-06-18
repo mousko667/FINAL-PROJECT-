@@ -231,6 +231,32 @@ public class InvoiceService {
                 .orElseThrow(() -> new ResourceNotFoundException("Matching result not found for invoice: " + invoiceId));
     }
 
+    /**
+     * Builds the rows of the three-way matching reconciliation report for a single invoice as a
+     * Field/Value table (B2). Runs inside a read-only transaction so the lazy associations of
+     * {@link ThreeWayMatchingResult} (invoice, purchase order, GRN, overriddenBy) can be read while
+     * the report is assembled. Throws {@link ResourceNotFoundException} when no matching result
+     * exists for the invoice (same contract as {@link #getMatchingResult}).
+     */
+    @Transactional(readOnly = true)
+    public List<java.util.List<String>> buildMatchingExportRows(UUID invoiceId) {
+        ThreeWayMatchingResult r = getMatchingResult(invoiceId);
+        java.util.List<java.util.List<String>> rows = new java.util.ArrayList<>();
+        rows.add(java.util.List.of("Invoice reference",
+                r.getInvoice() != null && r.getInvoice().getReferenceNumber() != null ? r.getInvoice().getReferenceNumber() : ""));
+        rows.add(java.util.List.of("Purchase order",
+                r.getPurchaseOrder() != null && r.getPurchaseOrder().getPoNumber() != null ? r.getPurchaseOrder().getPoNumber() : ""));
+        rows.add(java.util.List.of("Goods receipt note",
+                r.getGoodsReceiptNote() != null && r.getGoodsReceiptNote().getGrnNumber() != null ? r.getGoodsReceiptNote().getGrnNumber() : ""));
+        rows.add(java.util.List.of("Matching status", r.getStatus() == null ? "" : r.getStatus().name()));
+        rows.add(java.util.List.of("Discrepancy notes", r.getDiscrepancyNotes() == null ? "" : r.getDiscrepancyNotes()));
+        rows.add(java.util.List.of("Overridden by",
+                r.getOverriddenBy() != null && r.getOverriddenBy().getUsername() != null ? r.getOverriddenBy().getUsername() : ""));
+        rows.add(java.util.List.of("Override reason", r.getOverrideReason() == null ? "" : r.getOverrideReason()));
+        rows.add(java.util.List.of("Generated at", r.getCreatedAt() == null ? "" : r.getCreatedAt().toString()));
+        return rows;
+    }
+
     @Transactional(readOnly = true)
     public List<InvoiceHistoryDTO> getInvoiceHistory(UUID invoiceId) {
         getById(invoiceId); // validates existence
