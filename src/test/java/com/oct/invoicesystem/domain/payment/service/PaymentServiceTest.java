@@ -169,6 +169,7 @@ class PaymentServiceTest {
         assertEquals("PAY-1", row.get(3));
         assertEquals("1500.00", row.get(4));
         assertEquals("XAF", row.get(5));
+        assertEquals("2026-06-01T00:00:00Z", row.get(6));
         assertEquals("assistant", row.get(7));
     }
 }
