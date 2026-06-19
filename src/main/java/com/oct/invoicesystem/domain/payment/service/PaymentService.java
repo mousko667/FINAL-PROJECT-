@@ -4,6 +4,7 @@ import com.oct.invoicesystem.domain.payment.dto.BatchPaymentRequest;
 import com.oct.invoicesystem.domain.payment.dto.BatchPaymentResultDTO;
 import com.oct.invoicesystem.domain.payment.dto.PaymentDTO;
 import com.oct.invoicesystem.domain.payment.dto.PaymentRequest;
+import com.oct.invoicesystem.shared.export.TabularExportService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -14,4 +15,5 @@ public interface PaymentService {
     BatchPaymentResultDTO recordBatchPayment(BatchPaymentRequest request, UUID userId);
     PaymentDTO getPaymentByInvoiceId(UUID invoiceId);
     Page<PaymentDTO> listPayments(String departmentCode, Pageable pageable);
+    byte[] exportPayments(String departmentCode, TabularExportService.Format format);
 }

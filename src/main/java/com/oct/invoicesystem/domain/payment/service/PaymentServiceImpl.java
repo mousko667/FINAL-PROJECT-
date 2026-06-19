@@ -17,6 +17,7 @@ import com.oct.invoicesystem.domain.notification.event.InvoicePayedEvent;
 import com.oct.invoicesystem.domain.user.repository.UserRepository;
 import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 import com.oct.invoicesystem.shared.exception.WorkflowException;
+import com.oct.invoicesystem.shared.export.TabularExportService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationEventPublisher;
@@ -48,6 +49,7 @@ public class PaymentServiceImpl implements PaymentService {
      * call would bypass the proxy and run everything in a single transaction.
      */
     private final ObjectProvider<PaymentService> selfProvider;
+    private final TabularExportService tabularExportService;
 
     public PaymentServiceImpl(PaymentRepository paymentRepository,
                               InvoiceRepository invoiceRepository,
@@ -55,7 +57,8 @@ public class PaymentServiceImpl implements PaymentService {
                               InvoiceStateMachineService invoiceStateMachineService,
                               RemittanceAdviceService remittanceAdviceService,
                               ApplicationEventPublisher eventPublisher,
-                              ObjectProvider<PaymentService> selfProvider) {
+                              ObjectProvider<PaymentService> selfProvider,
+                              TabularExportService tabularExportService) {
         this.paymentRepository = paymentRepository;
         this.invoiceRepository = invoiceRepository;
         this.userRepository = userRepository;
@@ -63,6 +66,7 @@ public class PaymentServiceImpl implements PaymentService {
         this.remittanceAdviceService = remittanceAdviceService;
         this.eventPublisher = eventPublisher;
         this.selfProvider = selfProvider;
+        this.tabularExportService = tabularExportService;
     }
 
     @Override
@@ -170,6 +174,33 @@ public class PaymentServiceImpl implements PaymentService {
         return paymentRepository.findByInvoiceDepartmentCode(departmentCode, pageable).map(this::toDTO);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] exportPayments(String departmentCode, TabularExportService.Format format) {
+        List<Payment> payments = (departmentCode == null || departmentCode.isBlank())
+                ? paymentRepository.findAll()
+                : paymentRepository.findByInvoiceDepartmentCode(departmentCode);
+
+        List<String> headers = List.of(
+                "Référence facture", "Fournisseur", "Mode de paiement", "Référence paiement",
+                "Montant payé", "Devise", "Date de paiement", "Enregistré par");
+
+        List<List<String>> rows = payments.stream().map(p -> {
+            Invoice inv = p.getInvoice();
+            return List.of(
+                    nz(inv == null ? null : inv.getReferenceNumber()),
+                    nz(inv == null ? null : inv.getSupplierName()),
+                    p.getPaymentMethod() == null ? "" : p.getPaymentMethod().name(),
+                    nz(p.getReference()),
+                    p.getAmountPaid() == null ? "" : p.getAmountPaid().toPlainString(),
+                    nz(inv == null ? null : inv.getCurrency()),
+                    p.getPaymentDate() == null ? "" : p.getPaymentDate().toString(),
+                    p.getRecordedBy() == null ? "" : nz(p.getRecordedBy().getUsername()));
+        }).toList();
+
+        return tabularExportService.export(format, "Payments", headers, rows);
+    }
+
     private PaymentDTO toDTO(Payment payment) {
         return new PaymentDTO(
                 payment.getId(),
@@ -181,5 +212,9 @@ public class PaymentServiceImpl implements PaymentService {
                 payment.getRecordedBy() != null ? payment.getRecordedBy().getId() : null,
                 payment.getCreatedAt()
         );
+    }
+
+    private static String nz(String s) {
+        return s == null ? "" : s;
     }
 }
