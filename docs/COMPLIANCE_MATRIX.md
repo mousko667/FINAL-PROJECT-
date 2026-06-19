@@ -119,7 +119,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 5 | Pending validation queue | ✅ | `/approvals` : file d'attente N1. |
 | 6 | Invoice review interface with key details | ✅ | `/invoices/:id` : détails + historique + parcours. |
 | 7 | Approval/Rejection with comments | ✅ | InvoiceActionPanel : commentaire à la validation + motif au rejet (vérifié runtime). |
-| 8 | Rejection reason selection | 🟠 | Motif de rejet = **champ texte libre obligatoire** (min 10 car.), **pas une liste de motifs prédéfinis**. |
+| 8 | Rejection reason selection | ✅ | **Liste de motifs prédéfinis obligatoire** (dropdown) + détail libre optionnel (obligatoire ≥10 car. si motif = `AUTRE`). Enum `RejectionReasonCode` (6 motifs), endpoint `GET /workflow/rejection-reasons` (libellés i18n FR/EN), motif+détail composés `[CODE] détail` dans `rejectionReason` (pas de migration, guard inchangé). **Fait (C1, 2026-06-19)** : `rejectionReasons_returnsTranslatedOptions_fr`, `reject_withCodeAndDetail_persistsBracketedReason`, validation `AUTRE`/code null → 400 ; test front dropdown. |
 | 9 | Re-submission workflow for rejected invoices | ✅ | Endpoint `/invoices/{id}/resubmit` (REJETE → SOUMIS). |
 | 10 | Approval history viewer | ✅ | `/invoices/:id` « Historique des approbations » (vérifié). |
 | 11 | Escalation rules for delayed approvals | 🟠 | **Escalade fonctionne** (`DeadlineReminderJob` quotidien → DAF+Admin si dépassé), mais **pas d'UI de configuration** des règles d'escalade. |
@@ -139,7 +139,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 9 | SLA compliance monitoring | ✅ | UI #12. |
 | 10 | Streamlined & transparent validation | ✅ | Parcours d'approbation complet visible. |
 
-**Gaps M4 :** ~~#3 checklist templates absents~~ **fait (B1)** ; #8 motif de rejet en texte libre (pas une liste) ; #11 escalade sans UI de config ; feat #4 routage par seuil de montant non exploité comme règle.
+**Gaps M4 :** ~~#3 checklist templates absents~~ **fait (B1)** ; ~~#8 motif de rejet en texte libre (pas une liste)~~ **fait (C1, 2026-06-19)** ; #11 escalade sans UI de config ; feat #4 routage par seuil de montant non exploité comme règle.
 
 ---
 
@@ -510,7 +510,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | M1 Authentification | 19 | 0 | 0 | 0 | Complet (B7 : employee ID + approval limit éditables) |
 | M2 Dashboard | 16 | 1 | 0 | 0 | Quasi-complet |
 | M3 Réception | 19 | 2 | 0 | 0 | Très bon (XML + bulk multi-factures faits B8) |
-| M4 Validation Workflow | 18 | 3 | 0 | 0 | Bon (checklist templates faits B1) |
+| M4 Validation Workflow | 19 | 2 | 0 | 0 | Bon (checklist B1 + motifs de rejet prédéfinis C1) |
 | M5 Three-Way Matching | 13 | 8 | 0 | 0 | Partiel (pas de page dédiée / ligne-à-ligne ; export fait B2) |
 | M6 Approval | 17 | 3 | 0 | 0 | Bon |
 | M7 Payment | 17 | 4 | 0 | 0 | Bon (batch B3 + alertes configurables B4 faits) |
@@ -522,13 +522,13 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | M13 User/Access | 20 | 2 | 0 | 0 | Très bon |
 | M14 Security/Compliance | 18 | 3 | 0 | 0 | Très bon |
 
-> Les chiffres comptent chaque puce (UI element OU feature) du document de requirements. Total ≈ **262 items** : ~**226 ✅**, ~**50 🟠**, ~**8 ❌**, ~**0 🔴** (A1 cash-flow + A2 Mobile Money corrigés — PROB-054/055).
+> Les chiffres comptent chaque puce (UI element OU feature) du document de requirements. Total ≈ **262 items** : ~**227 ✅**, ~**49 🟠**, ~**8 ❌**, ~**0 🔴** (A1 cash-flow + A2 Mobile Money corrigés — PROB-054/055 ; motifs de rejet prédéfinis M4 #8 → C1).
 
 ## RÉPONSE À « est-ce 100 % implémenté ? »
 **Non.** Le système couvre **~85 % des items à 100 %**, mais il reste :
 - **0 bug runtime (🔴)** : les 2 bugs A1/A2 sont corrigés (cash-flow 500 → PROB-054 ; Mobile Money front/back → PROB-055, 2026-06-18).
 - **éléments absents (❌) restants** : *(aucun)*. *(Faits : checklist templates M4→B1, export rapport matching M5→B2, catégorisation fournisseur M8→B5, batch payments M7→B3, alertes paiement configurables M7→B4, sync schedule connecteurs M12→B6.)*
-- **~52 partiels (🟠)** : surtout des éléments présents mais incomplets (config par propriété au lieu d'UI, web responsive au lieu d'app mobile dédiée, framework au lieu de sync live, etc.).
+- **~49 partiels (🟠)** : surtout des éléments présents mais incomplets (config par propriété au lieu d'UI, web responsive au lieu d'app mobile dédiée, framework au lieu de sync live, etc.).
 
 ## Bugs réels découverts pendant cette campagne (à corriger)
 1. **✅ Cash-flow projection** (`/reports/cash-flow`) : ~~500 `SQLGrammarException`~~ **CORRIGÉ (PROB-054, 2026-06-18)** — `CAST` des paramètres date/status/dept nullables dans `findAllWithFilters` ; 200 vérifié sur vrai PostgreSQL (`CashFlowProjectionIntegrationTest`). Impactait M7 #10 et M11.
