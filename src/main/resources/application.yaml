@@ -124,6 +124,12 @@ management:
   endpoint:
     health:
       show-details: when-authorized
+  health:
+    # Mail (SMTP) is not a liveness dependency: an unreachable mail relay must not
+    # make the whole application report DOWN (it only degrades notifications).
+    # See KNOWN_ISSUES_REGISTRY.md — mail health DOWN caused /actuator/health 503.
+    mail:
+      enabled: false
   info:
     env:
       enabled: true
