@@ -77,4 +77,50 @@ class IntegrationConnectorServiceTest {
 
         assertEquals("UNKNOWN", dto.lastStatus());
     }
+
+    // ── B6: sync schedule configuration (M12 #10) ──────────────────────────
+
+    @Test
+    void updateSchedule_setsIntervalMinutes() {
+        UUID id = UUID.randomUUID();
+        IntegrationConnector c = IntegrationConnector.builder().id(id).name("Demo").type("MOCK").build();
+        when(repository.findById(id)).thenReturn(Optional.of(c));
+        when(repository.save(any(IntegrationConnector.class))).thenAnswer(i -> i.getArgument(0));
+
+        var dto = service.updateSchedule(id, 60);
+
+        assertEquals(60, dto.syncIntervalMinutes());
+    }
+
+    @Test
+    void updateSchedule_nullDisablesScheduledSync() {
+        UUID id = UUID.randomUUID();
+        IntegrationConnector c = IntegrationConnector.builder()
+                .id(id).name("Demo").type("MOCK").syncIntervalMinutes(60).build();
+        when(repository.findById(id)).thenReturn(Optional.of(c));
+        when(repository.save(any(IntegrationConnector.class))).thenAnswer(i -> i.getArgument(0));
+
+        var dto = service.updateSchedule(id, null);
+
+        org.junit.jupiter.api.Assertions.assertNull(dto.syncIntervalMinutes());
+    }
+
+    @Test
+    void updateSchedule_rejectsNonPositiveInterval() {
+        // Validation happens before any repository lookup, so no stubbing is needed.
+        assertThrows(ValidationException.class, () -> service.updateSchedule(UUID.randomUUID(), 0));
+    }
+
+    @Test
+    void syncNow_recordsSyncOutcomeOnConnector() {
+        UUID id = UUID.randomUUID();
+        IntegrationConnector mock = IntegrationConnector.builder().id(id).name("Demo").type("MOCK").build();
+        when(repository.findById(id)).thenReturn(Optional.of(mock));
+        when(repository.save(any(IntegrationConnector.class))).thenAnswer(i -> i.getArgument(0));
+
+        var dto = service.syncNow(id);
+
+        assertEquals("SUCCESS", dto.lastSyncStatus());
+        org.junit.jupiter.api.Assertions.assertNotNull(dto.lastSyncAt());
+    }
 }

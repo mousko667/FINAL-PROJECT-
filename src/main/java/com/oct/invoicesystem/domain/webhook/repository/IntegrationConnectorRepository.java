@@ -10,4 +10,7 @@ import java.util.UUID;
 @Repository
 public interface IntegrationConnectorRepository extends JpaRepository<IntegrationConnector, UUID> {
     List<IntegrationConnector> findByOrderByCreatedAtDesc();
+
+    /** Enabled connectors with a configured sync interval — candidates for scheduled sync (B6). */
+    List<IntegrationConnector> findBySyncIntervalMinutesIsNotNullAndEnabledTrue();
 }

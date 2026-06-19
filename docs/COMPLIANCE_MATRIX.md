@@ -407,7 +407,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 7 | API configuration interface | ✅ | Formulaire connecteur (nom/type/endpoint) + webhooks. |
 | 8 | Webhook management | ✅ | « Ajouter un webhook » + CRUD + signature HMAC. |
 | 9 | Integration status monitoring | ✅ | `/integrations/status` + statut UP/DOWN par connecteur (vérifié « Verif Mock → UP »). |
-| 10 | Sync schedule configuration | ❌ | Pas d'UI/endpoint de planification de synchronisation. **Absent.** |
+| 10 | Sync schedule configuration | ✅ | `PUT /integrations/connectors/{id}/sync-schedule` (intervalle minutes ; null = désactivé) + `POST /{id}/sync` (sync now) + `ConnectorSyncJob` `@Scheduled` qui synchronise les connecteurs activés dont l'intervalle est échu. UI : colonne « Synchronisation » dans `/admin/integrations`. **Fait (B6, 2026-06-19)** : orchestration réelle (planif/déclenchement/journal) ; payload échangé = cadre jusqu'au branchement d'un vrai connecteur. |
 | 11 | Error log and resolution | ✅ | `/webhooks/{id}/deliveries` : journal de livraison (succès/échec, retries). |
 | 12 | Test connection interface | ✅ | Test de connexion (vérifié → UP) + garde SSRF (PROB-08x). |
 
@@ -425,7 +425,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 9 | Error handling and logging | ✅ | Delivery log. |
 | 10 | Scalable integration architecture | ✅ | Entité connecteur générique extensible. |
 
-**Gaps M12 :** connecteurs ERP/procurement/accounting/banking/DMS = **cadre configurable (MOCK/typé), sans synchronisation réelle** ; #10 **sync schedule absent**. Webhooks + test + status + error log = réels.
+**Gaps M12 :** connecteurs ERP/procurement/accounting/banking/DMS = **cadre configurable (MOCK/typé), sans synchronisation réelle** (payload métier échangé hors périmètre PFE). Webhooks + test + status + error log + **planification de synchro (B6)** = réels. ~~#10 sync schedule absent~~ → **fait (B6, 2026-06-19)**.
 
 ---
 
@@ -518,7 +518,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | M9 Archiving | 12 | 5 | 0 | 0 | Bon (purge/folder/zoom partiels) |
 | M10 Audit | 20 | 2 | 0 | 0 | Très bon |
 | M11 Reporting | 18 | 5 | 0 | 0 | Bon (cash-flow corrigé PROB-054) |
-| M12 Integration | 6 | 9 | 1 | 0 | **Cadre seulement** (pas de sync réelle) |
+| M12 Integration | 7 | 9 | 0 | 0 | **Cadre + planif de synchro (B6)** ; pas de sync live externe |
 | M13 User/Access | 20 | 2 | 0 | 0 | Très bon |
 | M14 Security/Compliance | 18 | 3 | 0 | 0 | Très bon |
 
@@ -527,7 +527,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 ## RÉPONSE À « est-ce 100 % implémenté ? »
 **Non.** Le système couvre **~85 % des items à 100 %**, mais il reste :
 - **0 bug runtime (🔴)** : les 2 bugs A1/A2 sont corrigés (cash-flow 500 → PROB-054 ; Mobile Money front/back → PROB-055, 2026-06-18).
-- **éléments absents (❌) restants** : sync schedule connecteurs (M12). *(Faits : checklist templates M4→B1, export rapport matching M5→B2, catégorisation fournisseur M8→B5, batch payments M7→B3, alertes paiement configurables M7→B4.)*
+- **éléments absents (❌) restants** : *(aucun)*. *(Faits : checklist templates M4→B1, export rapport matching M5→B2, catégorisation fournisseur M8→B5, batch payments M7→B3, alertes paiement configurables M7→B4, sync schedule connecteurs M12→B6.)*
 - **~52 partiels (🟠)** : surtout des éléments présents mais incomplets (config par propriété au lieu d'UI, web responsive au lieu d'app mobile dédiée, framework au lieu de sync live, etc.).
 
 ## Bugs réels découverts pendant cette campagne (à corriger)
@@ -542,7 +542,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | ~~A3~~ | ~~Traitement par lot des paiements (batch)~~ — **fait (B3, 2026-06-18)** | M7 |
 | ~~A4~~ | ~~Configuration d'alertes de paiement~~ — **fait (B4, 2026-06-18)** | M7 |
 | ~~A5~~ | ~~Catégorisation / segmentation fournisseurs~~ — **fait (B5, 2026-06-18)** | M8 |
-| A6 | Planification de synchronisation des connecteurs | M12 |
+| ~~A6~~ | ~~Planification de synchronisation des connecteurs~~ — **fait (B6, 2026-06-19)** | M12 |
 | ~~A7~~ | ~~Champs *employee ID* / *approval limit* éditables (UI)~~ — **fait (B7, 2026-06-18)** | M1 |
 | ~~A8~~ | ~~Format **XML** en réception + bulk de plusieurs factures~~ — **fait (B8, 2026-06-19)** | M3 |
 

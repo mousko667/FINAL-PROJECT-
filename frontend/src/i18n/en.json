@@ -571,7 +571,13 @@
       "endpoint": "Endpoint (URL, optional for MOCK)",
       "status": "Status",
       "test": "Test",
-      "none": "No connectors."
+      "none": "No connectors.",
+      "sync": "Synchronisation",
+      "syncNow": "Sync now",
+      "off": "Off",
+      "intervalHint": "Interval in minutes (empty = disabled)",
+      "syncOk": "Last sync OK",
+      "syncFail": "Sync failed"
     },
     "integrations": {
       "title": "Integrations & Webhooks",

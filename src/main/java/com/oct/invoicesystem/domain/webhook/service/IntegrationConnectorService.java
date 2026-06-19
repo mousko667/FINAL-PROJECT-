@@ -57,6 +57,40 @@ public class IntegrationConnectorService {
         repository.save(c);
     }
 
+    /**
+     * Configures the scheduled-sync interval (B6, M12 #10). A {@code null} interval disables
+     * automatic synchronisation; a positive value (minutes) enables the {@code ConnectorSyncJob}
+     * to sync this connector once the interval has elapsed since {@code lastSyncAt}.
+     */
+    @Transactional
+    public IntegrationConnectorDTO.Response updateSchedule(UUID id, Integer intervalMinutes) {
+        if (intervalMinutes != null && intervalMinutes <= 0) {
+            throw new ValidationException("Sync interval must be a positive number of minutes");
+        }
+        IntegrationConnector c = get(id);
+        c.setSyncIntervalMinutes(intervalMinutes);
+        return toDto(repository.save(c));
+    }
+
+    /**
+     * Runs a synchronisation now and records the outcome on the connector (B6). As M12 connectors
+     * are a configurable framework (no live external backend), the sync reuses the same connectivity
+     * probe as {@link #testConnection(UUID)}: a healthy probe is recorded as SUCCESS, otherwise FAILED.
+     * The orchestration (scheduling, triggering, outcome log) is real; only the exchanged payload is
+     * out of scope until a real connector is plugged in.
+     */
+    @Transactional
+    public IntegrationConnectorDTO.Response syncNow(UUID id) {
+        IntegrationConnectorDTO.Response probe = testConnection(id);
+        IntegrationConnector c = get(id);
+        boolean ok = "UP".equals(probe.lastStatus());
+        c.setLastSyncStatus(ok ? "SUCCESS" : "FAILED");
+        c.setLastSyncMessage(ok ? "Sync completed (framework probe): " + probe.lastMessage()
+                                : "Sync failed: " + probe.lastMessage());
+        c.setLastSyncAt(Instant.now());
+        return toDto(repository.save(c));
+    }
+
     @Transactional
     public void delete(UUID id) {
         if (!repository.existsById(id)) throw new ResourceNotFoundException("Connector not found: " + id);
@@ -135,6 +169,8 @@ public class IntegrationConnectorService {
 
     private IntegrationConnectorDTO.Response toDto(IntegrationConnector c) {
         return new IntegrationConnectorDTO.Response(c.getId(), c.getName(), c.getType(), c.getEndpoint(),
-                c.isEnabled(), c.getLastStatus(), c.getLastCheckedAt(), c.getLastMessage(), c.getCreatedAt());
+                c.isEnabled(), c.getLastStatus(), c.getLastCheckedAt(), c.getLastMessage(),
+                c.getSyncIntervalMinutes(), c.getLastSyncAt(), c.getLastSyncStatus(), c.getLastSyncMessage(),
+                c.getCreatedAt());
     }
 }

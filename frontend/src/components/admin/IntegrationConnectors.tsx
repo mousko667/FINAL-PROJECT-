@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
-import { Plug, Plus, Trash2, Loader2, Wifi } from 'lucide-react'
+import { Plug, Plus, Trash2, Loader2, Wifi, RefreshCw, Clock } from 'lucide-react'
 
 interface Connector {
   id: string; name: string; type: string; endpoint: string | null; enabled: boolean
   lastStatus: string | null; lastMessage: string | null; lastCheckedAt: string | null
+  syncIntervalMinutes: number | null; lastSyncAt: string | null
+  lastSyncStatus: string | null; lastSyncMessage: string | null
 }
 
 const TYPES = ['MOCK', 'ERP', 'ACCOUNTING', 'BANKING', 'DMS']
@@ -19,6 +21,7 @@ export function IntegrationConnectors() {
   const [type, setType] = useState('MOCK')
   const [endpoint, setEndpoint] = useState('')
   const [testing, setTesting] = useState<string | null>(null)
+  const [syncing, setSyncing] = useState<string | null>(null)
 
   const { data: connectors = [], isLoading } = useQuery<Connector[]>({
     queryKey: ['integration-connectors'],
@@ -36,6 +39,15 @@ export function IntegrationConnectors() {
   })
   const del = useMutation({
     mutationFn: (id: string) => apiClient.delete(`/integrations/connectors/${id}`),
+    onSuccess: invalidate,
+  })
+  const syncNow = useMutation({
+    mutationFn: (id: string) => apiClient.post(`/integrations/connectors/${id}/sync`),
+    onSettled: () => { setSyncing(null); invalidate() },
+  })
+  const updateSchedule = useMutation({
+    mutationFn: ({ id, minutes }: { id: string; minutes: number | null }) =>
+      apiClient.put(`/integrations/connectors/${id}/sync-schedule`, { syncIntervalMinutes: minutes }),
     onSuccess: invalidate,
   })
 
@@ -73,6 +85,7 @@ export function IntegrationConnectors() {
             <th className="px-3 py-2 font-medium">{t('admin.connectors.name', 'Nom')}</th>
             <th className="px-3 py-2 font-medium">Type</th>
             <th className="px-3 py-2 font-medium">{t('admin.connectors.status', 'Statut')}</th>
+            <th className="px-3 py-2 font-medium">{t('admin.connectors.sync', 'Synchronisation')}</th>
             <th className="px-3 py-2 font-medium text-right">Actions</th>
           </tr></thead>
           <tbody>
@@ -84,8 +97,35 @@ export function IntegrationConnectors() {
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusCls(c.lastStatus)}`}>{c.lastStatus ?? 'UNKNOWN'}</span>
                   {c.lastMessage && <div className="text-xs text-gray-400 mt-0.5">{c.lastMessage}</div>}
                 </td>
+                <td className="px-3 py-2">
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-gray-400" />
+                    <input type="number" min={1} defaultValue={c.syncIntervalMinutes ?? ''}
+                      placeholder={t('admin.connectors.off', 'Off')}
+                      onBlur={e => {
+                        const v = e.target.value.trim()
+                        const minutes = v === '' ? null : Number(v)
+                        if (minutes !== c.syncIntervalMinutes) updateSchedule.mutate({ id: c.id, minutes })
+                      }}
+                      className={`${inputCls} w-20 py-1`}
+                      title={t('admin.connectors.intervalHint', 'Intervalle en minutes (vide = désactivé)')} />
+                    <span className="text-xs text-gray-400">min</span>
+                  </div>
+                  {c.lastSyncStatus && (
+                    <div className={`text-xs mt-0.5 ${c.lastSyncStatus === 'SUCCESS' ? 'text-green-600' : 'text-red-500'}`}>
+                      {c.lastSyncStatus === 'SUCCESS'
+                        ? t('admin.connectors.syncOk', 'Dernière synchro OK')
+                        : t('admin.connectors.syncFail', 'Échec synchro')}
+                      {c.lastSyncAt && ` · ${new Date(c.lastSyncAt).toLocaleString()}`}
+                    </div>
+                  )}
+                </td>
                 <td className="px-3 py-2 text-right">
                   <div className="flex items-center gap-3 justify-end">
+                    <button onClick={() => { setSyncing(c.id); syncNow.mutate(c.id) }} disabled={syncing === c.id}
+                      className="text-primary hover:text-primary/80" title={t('admin.connectors.syncNow', 'Synchroniser maintenant')}>
+                      {syncing === c.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                    </button>
                     <button onClick={() => { setTesting(c.id); test.mutate(c.id) }} disabled={testing === c.id}
                       className="text-primary hover:text-primary/80" title={t('admin.connectors.test', 'Tester')}>
                       {testing === c.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wifi className="w-4 h-4" />}

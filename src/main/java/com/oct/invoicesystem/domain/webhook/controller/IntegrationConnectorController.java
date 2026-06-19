@@ -51,6 +51,22 @@ public class IntegrationConnectorController {
         return ResponseEntity.ok(ApiResponse.success(service.testConnection(id), "Connection tested"));
     }
 
+    @PutMapping("/{id}/sync-schedule")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Configure a connector's sync schedule (interval in minutes; null disables)")
+    public ResponseEntity<ApiResponse<IntegrationConnectorDTO.Response>> updateSchedule(
+            @PathVariable UUID id, @RequestBody IntegrationConnectorDTO.ScheduleRequest req) {
+        return ResponseEntity.ok(ApiResponse.success(
+                service.updateSchedule(id, req.syncIntervalMinutes()), "Sync schedule updated"));
+    }
+
+    @PostMapping("/{id}/sync")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Trigger a connector synchronisation now")
+    public ResponseEntity<ApiResponse<IntegrationConnectorDTO.Response>> syncNow(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(service.syncNow(id), "Synchronisation triggered"));
+    }
+
     @PatchMapping("/{id}/enabled")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Enable/disable a connector")

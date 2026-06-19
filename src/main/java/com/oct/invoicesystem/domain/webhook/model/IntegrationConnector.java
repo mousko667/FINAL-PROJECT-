@@ -50,6 +50,19 @@ public class IntegrationConnector {
     @Column(name = "last_message", length = 1000)
     private String lastMessage;
 
+    /** Scheduled-sync interval in minutes; null = automatic sync disabled (B6, M12 #10). */
+    @Column(name = "sync_interval_minutes")
+    private Integer syncIntervalMinutes;
+
+    @Column(name = "last_sync_at")
+    private Instant lastSyncAt;
+
+    @Column(name = "last_sync_status", length = 20)
+    private String lastSyncStatus;   // SUCCESS | FAILED
+
+    @Column(name = "last_sync_message", length = 1000)
+    private String lastSyncMessage;
+
     @Column(name = "created_by")
     private UUID createdBy;
 
