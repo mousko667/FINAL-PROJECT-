@@ -114,7 +114,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 |---|----------------|---------|--------|
 | 1 | Workflow configuration interface | ✅ | `/admin/approval-matrix` : config du routage par département. |
 | 2 | Multi-level approval routing rules | ✅ | Matrice N1/N2 par dept (INFO/INFRA/TECH = 2 niveaux). |
-| 3 | Validation checklist templates | ❌ | Aucune fonctionnalité de modèles de checklist de validation trouvée (code + UI). **Absent.** |
+| 3 | Validation checklist templates | ✅ | Domaine `checklist` (V58) : admin CRUD `/admin/checklist-templates` (templates global/département + items ordonnés required), affichage interactif sur l'écran de validation (`ValidationChecklist`, coche + note, **non bloquant**), réponses persistées par facture. **Fait (B1, 2026-06-18)** : `ChecklistServiceIntegrationTest`. |
 | 4 | Automatic validation rules (PO matching, thresholds, supplier verif) | ✅ | Rapprochement auto à la soumission (M5) + seuils de tolérance (`/admin/matching-config`). |
 | 5 | Pending validation queue | ✅ | `/approvals` : file d'attente N1. |
 | 6 | Invoice review interface with key details | ✅ | `/invoices/:id` : détails + historique + parcours. |
@@ -139,7 +139,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 9 | SLA compliance monitoring | ✅ | UI #12. |
 | 10 | Streamlined & transparent validation | ✅ | Parcours d'approbation complet visible. |
 
-**Gaps M4 :** #3 **checklist templates absents** ; #8 motif de rejet en texte libre (pas une liste) ; #11 escalade sans UI de config ; feat #4 routage par seuil de montant non exploité comme règle.
+**Gaps M4 :** ~~#3 checklist templates absents~~ **fait (B1)** ; #8 motif de rejet en texte libre (pas une liste) ; #11 escalade sans UI de config ; feat #4 routage par seuil de montant non exploité comme règle.
 
 ---
 
@@ -510,7 +510,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | M1 Authentification | 19 | 0 | 0 | 0 | Complet (B7 : employee ID + approval limit éditables) |
 | M2 Dashboard | 16 | 1 | 0 | 0 | Quasi-complet |
 | M3 Réception | 17 | 4 | 0 | 0 | Bon (XML, bulk-factures) |
-| M4 Validation Workflow | 17 | 4 | 1 | 0 | Bon (checklist templates absents) |
+| M4 Validation Workflow | 18 | 3 | 0 | 0 | Bon (checklist templates faits B1) |
 | M5 Three-Way Matching | 13 | 8 | 0 | 0 | Partiel (pas de page dédiée / ligne-à-ligne ; export fait B2) |
 | M6 Approval | 17 | 3 | 0 | 0 | Bon |
 | M7 Payment | 15 | 4 | 2 | 0 | Moyen (batch/alertes absents ; cash-flow PROB-054 + mobile-money PROB-055 corrigés) |
@@ -527,7 +527,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 ## RÉPONSE À « est-ce 100 % implémenté ? »
 **Non.** Le système couvre **~85 % des items à 100 %**, mais il reste :
 - **0 bug runtime (🔴)** : les 2 bugs A1/A2 sont corrigés (cash-flow 500 → PROB-054 ; Mobile Money front/back → PROB-055, 2026-06-18).
-- **éléments absents (❌) restants** : checklist templates de validation (M4), batch payments + alertes paiement configurables (M7), sync schedule connecteurs (M12). *(Faits : export rapport matching M5→B2, catégorisation fournisseur M8→B5.)*
+- **éléments absents (❌) restants** : batch payments + alertes paiement configurables (M7), sync schedule connecteurs (M12). *(Faits : checklist templates M4→B1, export rapport matching M5→B2, catégorisation fournisseur M8→B5.)*
 - **~52 partiels (🟠)** : surtout des éléments présents mais incomplets (config par propriété au lieu d'UI, web responsive au lieu d'app mobile dédiée, framework au lieu de sync live, etc.).
 
 ## Bugs réels découverts pendant cette campagne (à corriger)
@@ -537,7 +537,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 ## Écarts fonctionnels (absents — décision d'implémentation requise)
 | Réf | Élément | Module |
 |-----|---------|--------|
-| A1 | Modèles de checklist de validation | M4 |
+| ~~A1~~ | ~~Modèles de checklist de validation~~ — **fait (B1, 2026-06-18)** | M4 |
 | ~~A2~~ | ~~Export de rapport de rapprochement~~ — **fait (B2, 2026-06-18)** | M5 |
 | A3 | Traitement par lot des paiements (batch) | M7 |
 | A4 | Configuration d'alertes de paiement | M7 |

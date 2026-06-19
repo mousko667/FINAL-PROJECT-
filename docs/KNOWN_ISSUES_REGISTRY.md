@@ -711,6 +711,19 @@
 
 ---
 
+### [PROB-059] (B1) Modèles de checklist de validation — absents
+- **Catégorie :** Backend + Frontend
+- **Sévérité :** 🟡 Mineur (lacune fonctionnelle M4)
+- **Découvert :** 2026-06-18 — tâche B1
+- **Symptôme :** Aucune fonctionnalité de modèles de checklist de validation (exigence M4 « Validation checklist templates ») : ni entité, ni admin CRUD, ni affichage en validation.
+- **Cause racine :** Fonctionnalité jamais implémentée.
+- **Solution appliquée (cadrage validé avec l'utilisateur : interactif + réponses persistées **sans blocage** ; template **global OU rattaché à un département**) :** Nouveau domaine `checklist`. (1) Migration **V58** : `checklist_templates` (name, department_id nullable=global, active, audit), `checklist_template_items` (label, required, display_order), `checklist_responses` (invoice_id, template_id, responded_by, responded_at), `checklist_response_items` (template_item_id, checked, note). (2) Entités + repositories ; `findApplicable(departmentId)` résout le template du département sinon le global actif (CAST sur le param — famille PROB-038/054 ; param non-null en pratique car les factures ont toujours un département + fallback global dédié). (3) `ChecklistService` : CRUD templates + `getInvoiceChecklist` (fusionne template applicable + dernières réponses) + `saveResponse` (append, la dernière réponse fait foi, historique conservé). (4) Contrôleurs : `/checklist-templates` (CRUD, **ADMIN**) et `/invoices/{id}/checklist` (GET/POST, staff hors fournisseur). (5) Messages i18n backend FR/EN. (6) Frontend : page admin `AdminChecklistTemplatesPage` (liste + éditeur items dynamiques) + route `/admin/checklist-templates` + entrée sidebar ; composant `ValidationChecklist` monté sur `InvoiceDetailPage` (s'affiche uniquement si un template s'applique ; coche + note + save ; **non bloquant**) ; i18n `checklist.*` FR/EN.
+- **Test (TDD) :** `ChecklistServiceIntegrationTest` (vrai service) : (a) création template → items ordonnés persistés + listés ; (b) résolution du template **département** pour une facture + round-trip des réponses (coché + note relus) ; (c) **fallback global** quand pas de template département. GREEN. Suite 372/0/0, build front + tsc verts.
+- **Règle préventive :** Pour une fonctionnalité « template + réponses par entité » : 4 tables (template/items/response/response-items), résolution par portée (spécifique → global) avec param CAST, réponses **append-only** (dernière fait foi, audit préservé), et UI en 2 temps (admin CRUD + widget contextuel non bloquant). Confirmer le niveau d'interactivité/blocage avec le client avant de coder (impacte le moteur de workflow).
+- **Fichiers modifiés :** `V58__create_validation_checklists.sql` (nouveau), `ChecklistTemplate.java`/`ChecklistTemplateItem.java`/`ChecklistResponse.java`/`ChecklistResponseItem.java` (nouveaux), `ChecklistTemplateRepository.java`/`ChecklistResponseRepository.java` (nouveaux), `ChecklistTemplateRequest.java`/`ChecklistTemplateDTO.java`/`InvoiceChecklistDTO.java`/`ChecklistResponseRequest.java` (nouveaux), `ChecklistService.java` (nouveau), `ChecklistTemplateController.java`/`InvoiceChecklistController.java` (nouveaux), `messages_en.properties`, `messages_fr.properties`, `AdminChecklistTemplatesPage.tsx` (nouveau), `ValidationChecklist.tsx` (nouveau), `InvoiceDetailPage.tsx`, `AppRoutes.tsx`, `Sidebar.tsx`, `fr.json`, `en.json`, `ChecklistServiceIntegrationTest.java` (nouveau).
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :

@@ -10,6 +10,7 @@ import { InvoiceActionPanel } from '@/components/invoice/InvoiceActionPanel'
 import { BulkDocumentUpload } from '@/components/invoice/BulkDocumentUpload'
 import { DocumentViewerModal } from '@/components/invoice/DocumentViewerModal'
 import { ExportMenu } from '@/components/ui/ExportMenu'
+import { ValidationChecklist } from '@/components/invoice/ValidationChecklist'
 import { useAppSelector } from '@/store/hooks'
 import { Loader2, ArrowLeft, Download, CheckCircle, XCircle, AlertTriangle, MinusCircle, Clock, User, FileDown, Lock, Eye } from 'lucide-react'
 
@@ -319,6 +320,9 @@ export default function InvoiceDetailPage() {
               )}
             </div>
           )}
+
+          {/* Validation checklist (B1) — renders only when a template applies to this invoice */}
+          {id && <ValidationChecklist invoiceId={id} />}
 
           {/* Approval Steps — vertical timeline */}
           {approvalSteps && approvalSteps.length > 0 && (
