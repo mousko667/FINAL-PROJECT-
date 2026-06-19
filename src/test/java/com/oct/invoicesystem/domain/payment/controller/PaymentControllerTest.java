@@ -38,9 +38,13 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.http.HttpHeaders;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -237,6 +241,57 @@ class PaymentControllerTest {
                                 new UsernamePasswordAuthenticationToken(auditeur, null, java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_AUDITEUR")))))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isForbidden());
+    }
+
+    private void recordOnePayment() throws Exception {
+        PaymentRequest req = new PaymentRequest(
+                new BigDecimal("1500.00"), PaymentMethod.VIREMENT, Instant.now(), "REF-EXP");
+        mockMvc.perform(post("/api/v1/payments/invoice/" + invoice.getId())
+                        .with(SecurityMockMvcRequestPostProcessors.authentication(
+                                new UsernamePasswordAuthenticationToken(assistant, null, java.util.List.of(
+                                        new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ASSISTANT_COMPTABLE")))))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void exportPayments_csv_returnsFileWithRow() throws Exception {
+        recordOnePayment();
+
+        mockMvc.perform(get("/api/v1/payments/export").param("format", "csv")
+                        .with(SecurityMockMvcRequestPostProcessors.authentication(
+                                new UsernamePasswordAuthenticationToken(assistant, null, java.util.List.of(
+                                        new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ASSISTANT_COMPTABLE"))))))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
+                        org.hamcrest.Matchers.containsString("payments.csv")))
+                .andExpect(content().contentTypeCompatibleWith("text/csv"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Référence facture")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("INV-12345")));
+    }
+
+    @Test
+    void exportPayments_departmentFilter_excludesOtherDept() throws Exception {
+        recordOnePayment();
+
+        // Le paiement vit dans le département "IT" ; un filtre sur un dept inexistant ne renvoie aucune ligne.
+        mockMvc.perform(get("/api/v1/payments/export")
+                        .param("format", "csv").param("departmentCode", "NOPE")
+                        .with(SecurityMockMvcRequestPostProcessors.authentication(
+                                new UsernamePasswordAuthenticationToken(assistant, null, java.util.List.of(
+                                        new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ASSISTANT_COMPTABLE"))))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("INV-12345"))));
+    }
+
+    @Test
+    void exportPayments_forbiddenForAuditeur() throws Exception {
+        mockMvc.perform(get("/api/v1/payments/export").param("format", "csv")
+                        .with(SecurityMockMvcRequestPostProcessors.authentication(
+                                new UsernamePasswordAuthenticationToken(auditeur, null, java.util.List.of(
+                                        new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_AUDITEUR"))))))
                 .andExpect(status().isForbidden());
     }
 

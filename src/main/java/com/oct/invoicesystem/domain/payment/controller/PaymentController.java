@@ -8,8 +8,11 @@ import com.oct.invoicesystem.domain.payment.dto.RemittanceAdviceDTO;
 import com.oct.invoicesystem.domain.payment.service.PaymentService;
 import com.oct.invoicesystem.domain.payment.service.RemittanceAdviceService;
 import com.oct.invoicesystem.domain.user.model.User;
+import com.oct.invoicesystem.shared.export.TabularExportService;
 import com.oct.invoicesystem.shared.response.ApiResponse;
 import com.oct.invoicesystem.shared.response.PagedResponse;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -32,6 +35,7 @@ public class PaymentController {
 
     private final PaymentService paymentService;
     private final RemittanceAdviceService remittanceAdviceService;
+    private final TabularExportService tabularExportService;
 
     @PostMapping("/invoice/{invoiceId}")
     @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
@@ -80,5 +84,23 @@ public class PaymentController {
     public ResponseEntity<ApiResponse<String>> getRemittanceDownloadUrl(@PathVariable UUID paymentId) {
         String downloadUrl = remittanceAdviceService.getDownloadUrl(paymentId);
         return ResponseEntity.ok(ApiResponse.success(downloadUrl, "remittance.download.url.generated"));
+    }
+
+    @GetMapping("/export")
+    @PreAuthorize("hasAnyRole('ASSISTANT_COMPTABLE', 'DAF', 'ADMIN')")
+    @Operation(summary = "Export payments (csv|excel|pdf)",
+            description = "Unified export of the payment history in the requested format")
+    public ResponseEntity<byte[]> exportPayments(
+            @RequestParam(required = false) String departmentCode,
+            @RequestParam(defaultValue = "csv") String format) {
+        TabularExportService.Format fmt = TabularExportService.Format.from(format);
+        byte[] body = paymentService.exportPayments(departmentCode, fmt);
+        String mediaType = fmt == TabularExportService.Format.CSV
+                ? fmt.mediaType + "; charset=UTF-8"
+                : fmt.mediaType;
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=payments." + fmt.extension)
+                .contentType(MediaType.parseMediaType(mediaType))
+                .body(body);
     }
 }
