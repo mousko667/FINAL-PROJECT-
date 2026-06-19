@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAppSelector } from '@/store/hooks'
 import apiClient from '@/services/apiClient'
 import type { Invoice, InvoiceStatus } from '@/types/invoice'
@@ -22,10 +22,21 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
   const { user } = useAppSelector((s) => s.auth)
   const queryClient = useQueryClient()
   const [rejectReason, setRejectReason] = useState('')
+  const [reasonCode, setReasonCode] = useState('')
   const [pendingAction, setPendingAction] = useState<string | null>(null)
 
+  // Predefined rejection reasons (M4 #8) — loaded only while the reject dialog is open.
+  const { data: rejectionReasons } = useQuery<{ code: string; label: string }[]>({
+    queryKey: ['rejection-reasons'],
+    queryFn: () =>
+      apiClient
+        .get(`/invoices/${invoice.id}/workflow/rejection-reasons`)
+        .then((r) => r.data.data),
+    enabled: pendingAction === 'REJECT',
+  })
+
   const mutation = useMutation({
-    mutationFn: async ({ action, reason }: { action: string; reason?: string }) => {
+    mutationFn: async ({ action, reason, code }: { action: string; reason?: string; code?: string }) => {
       const invoiceId = invoice.id
       const base = `/invoices/${invoiceId}/workflow`
       switch (action) {
@@ -36,7 +47,7 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
         case 'VALIDATE_N2':
           return apiClient.post(`${base}/validate-n2`, reason ? { comment: reason } : {})
         case 'REJECT':
-          return apiClient.post(`${base}/reject`, { rejectionReason: reason })
+          return apiClient.post(`${base}/reject`, { reasonCode: code, rejectionReason: reason })
         case 'BON_A_PAYER':
           return apiClient.post(`${base}/bon-a-payer`, {})
         case 'MARK_PAID':
@@ -55,6 +66,7 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
       queryClient.invalidateQueries({ queryKey: ['approval-queue'] })
       setPendingAction(null)
       setRejectReason('')
+      setReasonCode('')
     },
   })
 
@@ -166,7 +178,23 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
             <h3 className="font-semibold text-gray-900">{t('invoice.confirmReject', 'Confirm rejection')}</h3>
             <div>
               <label className="block text-sm text-gray-600 mb-1">
-                {t('invoice.rejectReason', 'Rejection reason')} *
+                {t('invoice.rejectReasonCode', 'Rejection reason')} *
+              </label>
+              <select
+                id="reject-reason-code"
+                value={reasonCode}
+                onChange={(e) => setReasonCode(e.target.value)}
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+              >
+                <option value="">{t('invoice.selectReason', 'Select a reason...')}</option>
+                {(rejectionReasons ?? []).map((r) => (
+                  <option key={r.code} value={r.code}>{r.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">
+                {t('invoice.rejectReasonDetail', 'Detail (optional)')}{reasonCode === 'AUTRE' ? ' *' : ''}
               </label>
               <textarea
                 id="reject-reason-input"
@@ -179,15 +207,19 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
             </div>
             <div className="flex justify-end gap-3">
               <button
-                onClick={() => { setPendingAction(null); setRejectReason('') }}
+                onClick={() => { setPendingAction(null); setRejectReason(''); setReasonCode('') }}
                 className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50"
               >
                 {t('app.cancel')}
               </button>
               <button
                 id="btn-confirm-reject"
-                disabled={!rejectReason.trim() || mutation.isPending}
-                onClick={() => mutation.mutate({ action: pendingAction, reason: rejectReason })}
+                disabled={
+                  !reasonCode ||
+                  (reasonCode === 'AUTRE' && rejectReason.trim().length < 10) ||
+                  mutation.isPending
+                }
+                onClick={() => mutation.mutate({ action: pendingAction, reason: rejectReason, code: reasonCode })}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50"
               >
                 {t('app.confirm')}

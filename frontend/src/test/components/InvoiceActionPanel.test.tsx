@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { Provider } from 'react-redux'
 import { configureStore } from '@reduxjs/toolkit'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -7,6 +7,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { I18nextProvider } from 'react-i18next'
 import i18n from '@/i18n'
 import { InvoiceActionPanel } from '@/components/invoice/InvoiceActionPanel'
+import apiClient from '@/services/apiClient'
 import authReducer from '@/store/slices/authSlice'
 import notificationReducer from '@/store/slices/notificationSlice'
 import type { AuthUser } from '@/store/slices/authSlice'
@@ -132,5 +133,29 @@ describe('InvoiceActionPanel', () => {
     fireEvent.click(screen.getByText(/rejeter/i))
     const confirmBtn = document.getElementById('btn-confirm-reject') as HTMLButtonElement | null
     if (confirmBtn) expect(confirmBtn.disabled).toBe(true)
+  })
+
+  it('reject dialog shows a predefined reason dropdown loaded from the API', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: { data: [
+        { code: 'MONTANT_INCORRECT', label: 'Montant incorrect' },
+        { code: 'AUTRE', label: 'Autre' },
+      ] },
+    } as any)
+
+    renderPanel(makeInvoice('EN_VALIDATION_N1'), validateur1)
+    fireEvent.click(screen.getByText(/rejeter/i))
+
+    const select = document.getElementById('reject-reason-code') as HTMLSelectElement | null
+    expect(select).not.toBeNull()
+
+    // Options are populated from the API response
+    await waitFor(() => {
+      expect(screen.getByText('Montant incorrect')).toBeDefined()
+    })
+
+    // Confirm stays disabled until a reason code is chosen
+    const confirmBtn = document.getElementById('btn-confirm-reject') as HTMLButtonElement
+    expect(confirmBtn.disabled).toBe(true)
   })
 })
