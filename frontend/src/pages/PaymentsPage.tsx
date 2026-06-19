@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import apiClient from '@/services/apiClient'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
+import { ExportMenu } from '@/components/ui/ExportMenu'
 import {
   Loader2, DollarSign, ExternalLink, Download, CheckCircle,
   FileText, CreditCard, Calendar, Hash, BellRing,
@@ -358,7 +359,10 @@ export default function PaymentsPage() {
           <div className="flex items-center gap-2 px-5 py-3 border-b">
             <FileText className="w-4 h-4 text-gray-500" />
             <h2 className="font-semibold text-gray-800 text-sm">{t('payments.history', 'Historique des paiements')}</h2>
-            {payments && <span className="ml-auto text-xs text-gray-400">{payments.totalElements} {t('payments.total', 'paiements')}</span>}
+            {payments && <span className="text-xs text-gray-400">{payments.totalElements} {t('payments.total', 'paiements')}</span>}
+            <div className="ml-auto">
+              <ExportMenu endpoint="/payments/export" filename="payments" />
+            </div>
           </div>
 
           {remittanceError && (
