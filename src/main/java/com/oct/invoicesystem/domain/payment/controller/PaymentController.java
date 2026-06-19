@@ -35,7 +35,6 @@ public class PaymentController {
 
     private final PaymentService paymentService;
     private final RemittanceAdviceService remittanceAdviceService;
-    private final TabularExportService tabularExportService;
 
     @PostMapping("/invoice/{invoiceId}")
     @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
