@@ -943,6 +943,21 @@
     "batchResultTitle": "Batch payment result",
     "batchSummary": "{{ok}} succeeded, {{ko}} failed out of {{total}}"
   },
+  "paymentAlerts": {
+    "title": "Payment Alert Rules",
+    "subtitle": "Configure when payment due-date reminders are sent (J-N).",
+    "configureLink": "Alert rules",
+    "new": "New rule",
+    "daysBeforeDue": "Days before due date",
+    "daysHint": "Alert is sent when an invoice is this many days from its due date.",
+    "label": "Label",
+    "labelPlaceholder": "e.g. Final reminder",
+    "active": "Active",
+    "inactive": "Inactive",
+    "empty": "No rules — the default 7-day reminder applies.",
+    "deleteConfirm": "Delete this rule?",
+    "saveError": "Failed to save the rule (a rule for this number of days may already exist)."
+  },
   "archive": {
     "title": "Digital Archive",
     "subtitle": "All archived invoices — search and download",

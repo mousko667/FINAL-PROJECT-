@@ -737,6 +737,19 @@
 
 ---
 
+### [PROB-061] (B4) Configuration d'alertes de paiement — seuil codé en dur (7 jours)
+- **Catégorie :** Backend + Frontend
+- **Sévérité :** 🟡 Mineur (lacune fonctionnelle M7 « Payment alert configuration »)
+- **Découvert :** 2026-06-18 — tâche B4
+- **Symptôme :** `DeadlineReminderJob.sendPaymentDueAlerts` alertait les ASSISTANT_COMPTABLE pour les factures BON_A_PAYER dues sous **7 jours codés en dur** ; aucun moyen de configurer des seuils (J-N) ni de les activer/désactiver.
+- **Cause racine :** Seuil non paramétrable ; aucune entité de configuration.
+- **Solution appliquée (cadrage validé : plusieurs règles J-N activables ; accès DAF + ASSISTANT_COMPTABLE — ADMIN exclu du financier, cf. [[admin-no-financial-access]]) :** (1) Entité `PaymentAlertRule` (daysBeforeDue, label, active, audit) + migration **V59** (table + `UNIQUE(days_before_due)` + `CHECK >= 0` + seed J-7 pour préserver le comportement historique). (2) DTO + repository (`findByActiveTrue`) + `PaymentAlertRuleService` (CRUD + validation d'unicité des jours) + contrôleur `/payment-alert-rules` (DAF + ASSISTANT_COMPTABLE) + messages i18n. (3) `sendPaymentDueAlerts` réécrit : lit les seuils des règles **actives** ; une facture est alertée quand `jours jusqu'à échéance == un seuil actif` (J-N précis). **Fallback** : si aucune règle, on retombe sur le seuil par défaut 7 jours (comportement jamais perdu). (4) Frontend : page `PaymentAlertRulesPage` (`/payments/alert-rules`, `PageRoleGuard` DAF/ASSISTANT_COMPTABLE) — liste + éditeur (jours, libellé, actif) + suppression ; lien depuis `PaymentsPage`. i18n `paymentAlerts.*` FR/EN.
+- **Test (TDD) :** `PaymentAlertRuleServiceTest` (CRUD, tri par jours, unicité, update) + `PaymentDueAlertJobTest` (mock `EmailService`) : règle J-3 active → seule la facture due dans 3 jours est alertée (la J-5 non) ; aucune règle → fallback 7 jours. RED→GREEN. Suite 378/0/0, build front + tsc verts.
+- **Règle préventive :** Tout seuil métier « magique » dans un job planifié (ici 7 jours) doit être externalisé en configuration persistée + UI, avec un **fallback** sur l'ancienne valeur par défaut pour ne jamais régresser quand la config est vide. Accès aligné sur la séparation des tâches (config financière = DAF/ASSISTANT_COMPTABLE, pas ADMIN).
+- **Fichiers modifiés :** `PaymentAlertRule.java` (nouveau), `V59__create_payment_alert_rules.sql` (nouveau), `PaymentAlertRuleRepository.java` (nouveau), `PaymentAlertRuleDTO.java`/`PaymentAlertRuleRequest.java` (nouveaux), `PaymentAlertRuleService.java` (nouveau), `PaymentAlertRuleController.java` (nouveau), `DeadlineReminderJob.java`, `messages_en.properties`, `messages_fr.properties`, `PaymentAlertRulesPage.tsx` (nouveau), `PaymentsPage.tsx`, `AppRoutes.tsx`, `fr.json`, `en.json`, `PaymentAlertRuleServiceTest.java` (nouveau), `PaymentDueAlertJobTest.java` (nouveau).
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :

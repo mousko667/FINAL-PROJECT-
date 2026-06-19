@@ -6,7 +6,7 @@ import apiClient from '@/services/apiClient'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import {
   Loader2, DollarSign, ExternalLink, Download, CheckCircle,
-  FileText, CreditCard, Calendar, Hash,
+  FileText, CreditCard, Calendar, Hash, BellRing,
 } from 'lucide-react'
 
 interface Payment {
@@ -236,9 +236,18 @@ export default function PaymentsPage() {
   return (
     <PageRoleGuard allowedRoles={['ROLE_ASSISTANT_COMPTABLE', 'ROLE_DAF']}>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('nav.payments', 'Paiements')}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{t('payments.subtitle', 'Enregistrez les paiements et consultez l\'historique')}</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{t('nav.payments', 'Paiements')}</h1>
+            <p className="text-sm text-gray-500 mt-0.5">{t('payments.subtitle', 'Enregistrez les paiements et consultez l\'historique')}</p>
+          </div>
+          <Link
+            to="/payments/alert-rules"
+            className="flex items-center gap-2 border px-3 py-2 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700"
+          >
+            <BellRing className="w-4 h-4" />
+            {t('paymentAlerts.configureLink', 'Alert rules')}
+          </Link>
         </div>
 
         {/* Invoices awaiting payment */}

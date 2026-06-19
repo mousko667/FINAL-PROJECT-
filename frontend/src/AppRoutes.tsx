@@ -50,6 +50,7 @@ const ApprovalQueuePage = lazy(() => import('@/pages/ApprovalQueuePage'))
 const FinancialAuditPage = lazy(() => import('@/pages/FinancialAuditPage'))
 const PurchaseOrdersPage = lazy(() => import('@/pages/PurchaseOrdersPage'))
 const PaymentsPage = lazy(() => import('@/pages/PaymentsPage'))
+const PaymentAlertRulesPage = lazy(() => import('@/pages/PaymentAlertRulesPage'))
 const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'))
 const GoodsReceiptsPage = lazy(() => import('@/pages/GoodsReceiptsPage'))
 const ArchivePage = lazy(() => import('@/pages/ArchivePage'))
@@ -86,6 +87,7 @@ function AppRoutes() {
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/reports/builder" element={<ReportBuilderPage />} />
             <Route path="/payments" element={<PaymentsPage />} />
+            <Route path="/payments/alert-rules" element={<PaymentAlertRulesPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/goods-receipts" element={<GoodsReceiptsPage />} />
             <Route path="/archive" element={<ArchivePage />} />

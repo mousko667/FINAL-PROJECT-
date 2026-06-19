@@ -228,7 +228,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 9 | Payment history by supplier | ✅ | `/payments` liste + filtre département ; historique par fournisseur. |
 | 10 | Cash flow impact analysis | ✅ | `/reports/cash-flow` (CashFlowProjectionDTO, projection par semaine) + UI cashFlowTitle/Desc. **Corrigé (PROB-054, 2026-06-18)** : 500 `SQLGrammarException $5` résolu par `CAST` des paramètres date nullables dans `findAllWithFilters` ; **200** vérifié par `CashFlowProjectionIntegrationTest` sur vrai PostgreSQL. |
 | 11 | Export payment reports | 🟠 | Export global via Rapports (M11) ; **pas d'export dédié sur la page Paiements**. |
-| 12 | Payment alert configuration | ❌ | Pas de configuration d'alertes de paiement (les rappels SLA existent mais non configurables). **Absent.** |
+| 12 | Payment alert configuration | ✅ | Règles d'alerte J-N configurables (`PaymentAlertRule`, V59) : CRUD `/payments/alert-rules` (DAF + ASSISTANT_COMPTABLE), seuils actifs/inactifs lus par `DeadlineReminderJob.sendPaymentDueAlerts` (fallback 7 j). **Fait (B4, 2026-06-18)** : `PaymentAlertRuleServiceTest` + `PaymentDueAlertJobTest`. |
 
 ### Features
 | # | Feature | Verdict | Preuve |
@@ -244,7 +244,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 9 | Cash flow visibility | ✅ | Endpoint cash-flow opérationnel (200) — voir UI #10 (PROB-054 corrigé). |
 | 10 | Reduced payment delays | ✅ | Rappels + SLA. |
 
-**Gaps M7 :** ~~#5 batch payments absent~~ **fait (B3)** ; ~~#8 MOBILE_MONEY bug front/back~~ **corrigé (PROB-055)** ; ~~#10 cash-flow CASSÉ (500)~~ **corrigé (PROB-054)** ; #12 **alertes paiement configurables absentes** ; #11 export paiement dédié manquant.
+**Gaps M7 :** ~~#5 batch payments absent~~ **fait (B3)** ; ~~#8 MOBILE_MONEY bug front/back~~ **corrigé (PROB-055)** ; ~~#10 cash-flow CASSÉ (500)~~ **corrigé (PROB-054)** ; ~~#12 alertes paiement configurables absentes~~ **fait (B4)** ; #11 export paiement dédié manquant.
 
 ---
 
@@ -513,7 +513,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | M4 Validation Workflow | 18 | 3 | 0 | 0 | Bon (checklist templates faits B1) |
 | M5 Three-Way Matching | 13 | 8 | 0 | 0 | Partiel (pas de page dédiée / ligne-à-ligne ; export fait B2) |
 | M6 Approval | 17 | 3 | 0 | 0 | Bon |
-| M7 Payment | 16 | 4 | 1 | 0 | Bon (batch fait B3 ; reste alertes configurables) |
+| M7 Payment | 17 | 4 | 0 | 0 | Bon (batch B3 + alertes configurables B4 faits) |
 | M8 Supplier | 20 | 1 | 0 | 0 | Bon (catégorisation faite B5 ; onboarding sans assistant dédié) |
 | M9 Archiving | 12 | 5 | 0 | 0 | Bon (purge/folder/zoom partiels) |
 | M10 Audit | 20 | 2 | 0 | 0 | Très bon |
@@ -527,7 +527,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 ## RÉPONSE À « est-ce 100 % implémenté ? »
 **Non.** Le système couvre **~85 % des items à 100 %**, mais il reste :
 - **0 bug runtime (🔴)** : les 2 bugs A1/A2 sont corrigés (cash-flow 500 → PROB-054 ; Mobile Money front/back → PROB-055, 2026-06-18).
-- **éléments absents (❌) restants** : alertes paiement configurables (M7), sync schedule connecteurs (M12). *(Faits : checklist templates M4→B1, export rapport matching M5→B2, catégorisation fournisseur M8→B5, batch payments M7→B3.)*
+- **éléments absents (❌) restants** : sync schedule connecteurs (M12). *(Faits : checklist templates M4→B1, export rapport matching M5→B2, catégorisation fournisseur M8→B5, batch payments M7→B3, alertes paiement configurables M7→B4.)*
 - **~52 partiels (🟠)** : surtout des éléments présents mais incomplets (config par propriété au lieu d'UI, web responsive au lieu d'app mobile dédiée, framework au lieu de sync live, etc.).
 
 ## Bugs réels découverts pendant cette campagne (à corriger)
@@ -540,7 +540,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | ~~A1~~ | ~~Modèles de checklist de validation~~ — **fait (B1, 2026-06-18)** | M4 |
 | ~~A2~~ | ~~Export de rapport de rapprochement~~ — **fait (B2, 2026-06-18)** | M5 |
 | ~~A3~~ | ~~Traitement par lot des paiements (batch)~~ — **fait (B3, 2026-06-18)** | M7 |
-| A4 | Configuration d'alertes de paiement | M7 |
+| ~~A4~~ | ~~Configuration d'alertes de paiement~~ — **fait (B4, 2026-06-18)** | M7 |
 | ~~A5~~ | ~~Catégorisation / segmentation fournisseurs~~ — **fait (B5, 2026-06-18)** | M8 |
 | A6 | Planification de synchronisation des connecteurs | M12 |
 | ~~A7~~ | ~~Champs *employee ID* / *approval limit* éditables (UI)~~ — **fait (B7, 2026-06-18)** | M1 |

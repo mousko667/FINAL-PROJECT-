@@ -5,6 +5,8 @@ import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
 import com.oct.invoicesystem.domain.invoice.repository.InvoiceRepository;
 import com.oct.invoicesystem.domain.notification.event.ApprovalDeadlineEvent;
 import com.oct.invoicesystem.domain.notification.service.EmailService;
+import com.oct.invoicesystem.domain.payment.model.PaymentAlertRule;
+import com.oct.invoicesystem.domain.payment.repository.PaymentAlertRuleRepository;
 import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.domain.user.repository.UserRepository;
 import com.oct.invoicesystem.domain.workflow.model.ApprovalStep;
@@ -34,6 +36,10 @@ public class DeadlineReminderJob {
     private final EmailService emailService;
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final PaymentAlertRuleRepository paymentAlertRuleRepository;
+
+    /** Fallback threshold (days) used when no payment alert rule is configured (B4). */
+    private static final int DEFAULT_DUE_ALERT_DAYS = 7;
 
     @Value("${app.frontend-url:http://localhost:3000}")
     private String frontendUrl;
@@ -150,32 +156,40 @@ public class DeadlineReminderJob {
     }
 
     /**
-     * Runs daily at 06:00 (server time). Checks for invoices due within 7 days
-     * and sends payment due date alert emails to ASSISTANT_COMPTABLE users.
-     * P9-55: Payment due date alerts
+     * Runs daily at 06:00 (server time). Sends payment due-date alerts to ASSISTANT_COMPTABLE users
+     * for every BON_A_PAYER invoice whose due date matches an active {@link PaymentAlertRule}
+     * threshold (J-N). When no rule is configured, falls back to the historical single 7-day
+     * threshold so behaviour is never lost. (P9-55, made configurable by B4.)
      */
     @Scheduled(cron = "0 0 6 * * *")
     public void sendPaymentDueAlerts() {
         log.info("Running payment due alert job...");
         LocalDate today = LocalDate.now();
-        LocalDate in7days = today.plusDays(7);
 
-        // Find invoices in BON_A_PAYER status due within 7 days
-        List<Invoice> upcomingPayments = invoiceRepository.findAll().stream()
-                .filter(inv -> inv.getStatus() == InvoiceStatus.BON_A_PAYER &&
-                           inv.getDueDate() != null &&
-                           !inv.getDueDate().isBefore(today) &&
-                           !inv.getDueDate().isAfter(in7days))
+        // Resolve the active J-N thresholds (configurable). Empty config → historical 7-day default.
+        java.util.Set<Integer> thresholds = paymentAlertRuleRepository.findByActiveTrue().stream()
+                .map(PaymentAlertRule::getDaysBeforeDue)
+                .collect(java.util.stream.Collectors.toCollection(java.util.TreeSet::new));
+        if (thresholds.isEmpty()) {
+            thresholds = java.util.Set.of(DEFAULT_DUE_ALERT_DAYS);
+        }
+        final java.util.Set<Integer> activeThresholds = thresholds;
+        log.info("Payment alert thresholds (days before due): {}", activeThresholds);
+
+        // An invoice is alerted when the number of days until its due date equals an active threshold.
+        List<Invoice> dueToAlert = invoiceRepository.findAll().stream()
+                .filter(inv -> inv.getStatus() == InvoiceStatus.BON_A_PAYER && inv.getDueDate() != null)
+                .filter(inv -> !inv.getDueDate().isBefore(today))
+                .filter(inv -> activeThresholds.contains(
+                        (int) ChronoUnit.DAYS.between(today, inv.getDueDate())))
                 .toList();
 
-        log.info("Found {} invoices due within 7 days", upcomingPayments.size());
+        log.info("Found {} invoices matching an active payment alert threshold", dueToAlert.size());
 
-        // Get all ASSISTANT_COMPTABLE users
         List<User> comptables = userRepository.findActiveUsersByRoleName("ROLE_ASSISTANT_COMPTABLE");
-
         log.info("Found {} ASSISTANT_COMPTABLE users to notify", comptables.size());
 
-        for (Invoice invoice : upcomingPayments) {
+        for (Invoice invoice : dueToAlert) {
             for (User comptable : comptables) {
                 try {
                     Map<String, Object> vars = new HashMap<>();

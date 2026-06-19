@@ -943,6 +943,21 @@
     "batchResultTitle": "Résultat du paiement par lot",
     "batchSummary": "{{ok}} réussi(s), {{ko}} échoué(s) sur {{total}}"
   },
+  "paymentAlerts": {
+    "title": "Règles d'alerte de paiement",
+    "subtitle": "Configurez quand les rappels d'échéance de paiement sont envoyés (J-N).",
+    "configureLink": "Règles d'alerte",
+    "new": "Nouvelle règle",
+    "daysBeforeDue": "Jours avant échéance",
+    "daysHint": "L'alerte est envoyée lorsqu'une facture est à ce nombre de jours de son échéance.",
+    "label": "Libellé",
+    "labelPlaceholder": "ex. Dernier rappel",
+    "active": "Active",
+    "inactive": "Inactive",
+    "empty": "Aucune règle — le rappel par défaut à 7 jours s'applique.",
+    "deleteConfirm": "Supprimer cette règle ?",
+    "saveError": "Échec de l'enregistrement (une règle pour ce nombre de jours existe peut-être déjà)."
+  },
   "archive": {
     "title": "Archive Numérique",
     "subtitle": "Toutes les factures archivées — recherche et téléchargement",
