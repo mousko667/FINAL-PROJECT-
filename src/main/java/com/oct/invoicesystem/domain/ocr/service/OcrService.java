@@ -38,6 +38,11 @@ import java.util.regex.Pattern;
 public class OcrService {
 
     private final Tika tika = new Tika();
+    private final InvoiceXmlParser invoiceXmlParser;
+
+    public OcrService(InvoiceXmlParser invoiceXmlParser) {
+        this.invoiceXmlParser = invoiceXmlParser;
+    }
 
     @Value("${ocr.tessdata-path:tessdata}")
     private String tessdataPath;
@@ -55,6 +60,12 @@ public class OcrService {
     public OcrExtractionResult extract(byte[] fileBytes, String originalFilename) {
         String mimeType = tika.detect(fileBytes);
         log.info("OCR extraction started for file='{}' mimeType='{}'", originalFilename, mimeType);
+
+        // B8 (M3): structured XML invoices are parsed directly into the same result shape — no OCR.
+        if (invoiceXmlParser.isXml(mimeType)) {
+            log.debug("XML invoice parsed structurally for '{}'", originalFilename);
+            return invoiceXmlParser.parse(fileBytes);
+        }
 
         String rawText;
         boolean digitalPdf = false;

@@ -307,7 +307,7 @@ export default function SupplierInvoiceSubmitPage() {
                 </span>
                 <input
                   type="file"
-                  accept=".pdf,.jpg,.jpeg,.png,.tiff,.tif"
+                  accept=".pdf,.jpg,.jpeg,.png,.tiff,.tif,.xml"
                   className="hidden"
                   onChange={(e) => { if (e.target.files?.[0]) handleFileSelected(e.target.files[0]) }}
                 />

@@ -38,7 +38,10 @@ public class InvoiceDocumentService {
             "application/pdf",
             "image/png",
             "image/jpeg",
-            "image/tiff"
+            "image/tiff",
+            // B8 (M3): structured XML invoices (Tika detects either of these for .xml content).
+            "application/xml",
+            "text/xml"
     );
 
     private final InvoiceRepository invoiceRepository;

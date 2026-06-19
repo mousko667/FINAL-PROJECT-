@@ -15,7 +15,7 @@ class OcrServiceTest {
 
     @BeforeEach
     void setUp() {
-        ocrService = new OcrService();
+        ocrService = new OcrService(new com.oct.invoicesystem.domain.ocr.service.InvoiceXmlParser());
     }
 
     @Test

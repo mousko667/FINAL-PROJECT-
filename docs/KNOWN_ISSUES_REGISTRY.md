@@ -750,6 +750,20 @@
 
 ---
 
+### [PROB-062] (B8) Upload XML + import multi-factures — absents
+- **Catégorie :** Backend + Frontend
+- **Sévérité :** 🟡 Mineur (lacunes fonctionnelles M3 « XML invoice ingestion » #2 et « bulk multi-invoice import » #11)
+- **Découvert :** 2026-06-19 — tâche B8
+- **Symptôme :** (1) L'upload de document de facture rejetait les fichiers `.xml` (MIME non autorisé), aucun parseur XML. (2) Aucun moyen d'importer plusieurs factures en une fois ; chaque facture devait être saisie une à une.
+- **Cause racine :** `ALLOWED_MIME_TYPES` n'incluait pas `application/xml`/`text/xml` ; aucun parseur XML ni service d'import en masse.
+- **Solution appliquée (cadrage validé : Part1 = accepter `.xml` + parser schéma OCT simple best-effort → `OcrExtractionResult` ; Part2 = import multi-factures CSV (1 ligne = 1 facture) + XML (plusieurs `<invoice>`), ASSISTANT_COMPTABLE, best-effort par ligne ; ZIP reporté) :** (1) `InvoiceDocumentService` : ajout `application/xml`/`text/xml` aux MIME autorisés. (2) `InvoiceXmlParser` (nouveau, **XXE-safe** : `disallow-doctype-decl`, external entities désactivées) — `parse()` (1 facture) + `parseMany()` (N factures) → `OcrExtractionResult`. (3) `OcrService` route les XML vers le parseur. (4) `InvoiceImportService` (nouveau) + `InvoiceImportResultDTO` : import best-effort, **une transaction par facture** (les valides sont persistées même si d'autres échouent), parser CSV RFC-4180 inline, détection XML par Tika + nom de fichier + `startsWithXmlTag` ; lignes 1-based. (5) Endpoint `POST /invoices/import` (multipart `file` + `departmentCode` optionnel, **ASSISTANT_COMPTABLE**). (6) Frontend : `.xml` ajouté à l'`accept` du portail fournisseur ; nouveau `ImportInvoicesModal` (upload CSV/XML, code département optionnel, résultat par ligne succès/échec) branché sur un bouton « Importer » de `InvoiceListPage` (AA uniquement) avec invalidation de la query au succès. i18n `invoice.import.*` FR/EN.
+- **Test (TDD) :** `InvoiceXmlParserTest` (3/3 : 1 facture, plusieurs `<invoice>`, XXE bloqué), `OcrServiceTest` (9/9, routage XML), `InvoiceImportIntegrationTest` (2/2 : CSV 1 créée/1 échec par date invalide ; XML multi-factures). Tests d'import **non-`@Transactional`** pour valider le commit par ligne réel. RED→GREEN. Suite **383/0/0**, build front + tsc verts, parité i18n FR/EN (onlyFR/onlyEN: none).
+- **Piège résolu :** la détection de format reposait initialement sur Tika seul, qui classait l'XML en `text/csv` → import échouait. Corrigé en combinant Tika + extension de fichier + test du premier tag (`startsWithXmlTag`).
+- **Règle préventive :** Tout parseur XML doit être **XXE-safe** par défaut (désactiver DOCTYPE et entités externes). Un import en masse best-effort doit committer **par ligne** (transaction par entrée) et renvoyer un résultat par ligne, jamais un échec global qui perd les entrées valides. Ne jamais se fier à un seul détecteur de type MIME : croiser Tika + extension + contenu.
+- **Fichiers modifiés :** `InvoiceXmlParser.java` (nouveau), `InvoiceImportService.java` (nouveau), `InvoiceImportResultDTO.java` (nouveau), `InvoiceDocumentService.java`, `OcrService.java`, `InvoiceController.java`, `messages_en.properties`, `messages_fr.properties`, `ImportInvoicesModal.tsx` (nouveau), `InvoiceListPage.tsx`, `invoiceService.ts`, `SupplierInvoiceSubmitPage.tsx`, `fr.json`, `en.json`, `InvoiceXmlParserTest.java` (nouveau), `InvoiceImportIntegrationTest.java` (nouveau), `OcrServiceTest.java`.
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :

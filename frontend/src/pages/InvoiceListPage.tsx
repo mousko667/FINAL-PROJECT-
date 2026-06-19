@@ -1,13 +1,14 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useAppSelector } from '@/store/hooks'
 import { invoiceService, type InvoiceFilters } from '@/services/invoiceService'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { ExportMenu } from '@/components/ui/ExportMenu'
+import { ImportInvoicesModal } from '@/components/invoice/ImportInvoicesModal'
 import type { InvoiceStatus } from '@/types/invoice'
-import { Plus, Search, ChevronLeft, ChevronRight, Loader2, Archive, Lock } from 'lucide-react'
+import { Plus, Upload, Search, ChevronLeft, ChevronRight, Loader2, Archive, Lock } from 'lucide-react'
 
 const ALL_STATUSES: InvoiceStatus[] = [
   'BROUILLON', 'SOUMIS', 'EN_VALIDATION_N1', 'EN_VALIDATION_N2',
@@ -26,6 +27,8 @@ const matchingBadge: Record<string, string> = {
 export default function InvoiceListPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const [showImport, setShowImport] = useState(false)
   const user = useAppSelector((s) => s.auth.user)
   const roles = user?.roles ?? []
   const isAA    = roles.includes('ROLE_ASSISTANT_COMPTABLE')
@@ -76,6 +79,17 @@ export default function InvoiceListPage() {
         <h1 className="text-2xl font-bold text-gray-900">{t('invoice.title')}</h1>
         <div className="flex items-center gap-2">
           <ExportMenu endpoint="/invoices/export" filename="invoices" />
+          {isAA && (
+            <button
+              id="btn-import-invoices"
+              onClick={() => setShowImport(true)}
+              title={t('invoice.import.tooltip', 'Importer des factures depuis un fichier CSV ou XML')}
+              className="flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              <Upload className="w-4 h-4" />
+              {t('invoice.import.button', 'Importer')}
+            </button>
+          )}
           {isAA && (
             <button
               id="btn-new-invoice"
@@ -252,6 +266,13 @@ export default function InvoiceListPage() {
           </>
         )}
       </div>
+
+      {showImport && (
+        <ImportInvoicesModal
+          onClose={() => setShowImport(false)}
+          onImported={() => queryClient.invalidateQueries({ queryKey: ['invoices'] })}
+        />
+      )}
     </div>
   )
 }

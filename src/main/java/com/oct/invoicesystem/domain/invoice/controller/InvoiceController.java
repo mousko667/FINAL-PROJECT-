@@ -69,6 +69,7 @@ public class InvoiceController {
     private final InvoiceMapper invoiceMapper;
     private final SecurityHelper securityHelper;
     private final com.oct.invoicesystem.shared.export.TabularExportService tabularExportService;
+    private final com.oct.invoicesystem.domain.invoice.service.InvoiceImportService invoiceImportService;
 
     @GetMapping
     @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER') and !hasRole('ADMIN')")
@@ -186,6 +187,21 @@ public class InvoiceController {
         Invoice created = invoiceService.createInvoice(toInvoice(request, actorId), actorId);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(invoiceMapper.toDto(created), "Invoice created successfully"));
+    }
+
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
+    @Operation(summary = "Import multiple draft invoices (CSV or XML)",
+            description = "Bulk-creates draft invoices from a CSV (one row per invoice) or an XML document "
+                    + "with several <invoice> elements. Best-effort with a per-line result. Distinct from "
+                    + "the bulk document upload (several files for one invoice).")
+    public ResponseEntity<ApiResponse<com.oct.invoicesystem.domain.invoice.dto.InvoiceImportResultDTO>> importInvoices(
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            @RequestParam(value = "departmentCode", required = false) String departmentCode,
+            Authentication authentication) {
+        UUID actorId = securityHelper.currentUserId(authentication);
+        var result = invoiceImportService.importInvoices(file, departmentCode, actorId);
+        return ResponseEntity.ok(ApiResponse.success(result, "invoice.import.processed"));
     }
 
     @PutMapping("/{id}")

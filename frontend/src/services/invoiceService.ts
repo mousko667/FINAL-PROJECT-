@@ -1,6 +1,21 @@
 import apiClient from '@/services/apiClient'
 import type { Invoice, InvoiceStatus, PagedResponse, ApiResponse } from '@/types/invoice'
 
+export interface ImportLineResult {
+  line: number
+  success: boolean
+  invoiceId: string | null
+  reference: string | null
+  error: string | null
+}
+
+export interface ImportResult {
+  total: number
+  created: number
+  failed: number
+  results: ImportLineResult[]
+}
+
 export interface InvoiceFilters {
   status?: InvoiceStatus
   departmentId?: string
@@ -55,5 +70,15 @@ export const invoiceService = {
 
   deleteDocument: async (invoiceId: string, docId: string): Promise<void> => {
     await apiClient.delete(`/invoices/${invoiceId}/documents/${docId}`)
+  },
+
+  importInvoices: async (file: File, departmentCode?: string): Promise<ImportResult> => {
+    const formData = new FormData()
+    formData.append('file', file)
+    if (departmentCode) formData.append('departmentCode', departmentCode)
+    const { data } = await apiClient.post<ApiResponse<ImportResult>>('/invoices/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return data.data
   },
 }

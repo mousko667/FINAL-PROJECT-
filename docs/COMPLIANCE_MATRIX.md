@@ -78,7 +78,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | # | Élément requis | Verdict | Preuve |
 |---|----------------|---------|--------|
 | 1 | Supplier-facing submission interface | ✅ | `/supplier/invoices/new` : dépôt + OCR + saisie manuelle. |
-| 2 | Invoice upload (PDF, **XML**, image) | 🟠 | Accepté : `.pdf,.jpg,.jpeg,.png,.tiff`. **XML NON accepté** (gap par rapport au requirement). |
+| 2 | Invoice upload (PDF, **XML**, image) | ✅ | Accepté : `.pdf,.jpg,.jpeg,.png,.tiff` **+ `.xml`** (B8, 2026-06-19). Parseur `InvoiceXmlParser` XXE-safe → `OcrExtractionResult`, routé par `OcrService`. |
 | 3 | OCR-assisted data extraction preview | ✅ | « nous extrairons les données automatiquement » + résultat OCR (digital PDF vs image), prévisualisation avant validation. |
 | 4 | Invoice fields (number, date, amount, supplier, description) | ✅ | Formulaire manuel (`/invoices/new`) + saisie supplier : tous les champs. |
 | 5 | PO / reference number linking | ✅ | `/invoices/new` : dropdown « Purchase Order » → active le rapprochement 3-voies. |
@@ -87,14 +87,14 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 8 | Submission confirmation with reference number | ✅ | « Facture soumise avec succès » + référence `FAC-YYYY-NNNNN` générée. |
 | 9 | Invoice status tracking (suppliers) | ✅ | `/supplier/invoices` : colonne « Progression de la validation » + 9 statuts. |
 | 10 | Submission history viewer | ✅ | `/supplier/invoices` liste l'historique des soumissions du fournisseur. |
-| 11 | Bulk invoice upload option | 🟠 | **Bulk de documents** vers UNE facture existante (`/invoices/{id}/documents/bulk` + composant BulkDocumentUpload) ✅. **Bulk de plusieurs factures** : non implémenté. |
+| 11 | Bulk invoice upload option | ✅ | **Bulk de documents** vers UNE facture existante (`/invoices/{id}/documents/bulk` + BulkDocumentUpload) ✅ **et bulk de plusieurs factures** (B8, 2026-06-19) : `POST /invoices/import` (CSV 1 ligne/facture ou XML multi-`<invoice>`, best-effort par ligne, ASSISTANT_COMPTABLE) + `ImportInvoicesModal` sur `InvoiceListPage`. |
 | 12 | API integration for automated submission | ✅ | API REST `/supplier/invoices` (POST) documentée Swagger ; soumission automatisée possible (utilisée lors du seed). |
 
 ### Features
 | # | Feature | Verdict | Preuve |
 |---|---------|---------|--------|
 | 1 | Digital submission from suppliers | ✅ | Portail fournisseur. |
-| 2 | Multiple format + OCR | 🟠 | OCR ✅ ; formats PDF/image ✅, **XML manquant**. |
+| 2 | Multiple format + OCR | ✅ | OCR ✅ ; formats PDF/image ✅ **+ XML** (B8, 2026-06-19). |
 | 3 | Automatic numbering & tracking | ✅ | Référence auto `FAC-…` (ReferenceNumberGenerator). |
 | 4 | Duplicate detection | ✅ | Vérifié. |
 | 5 | PO matching for validation | ✅ | Lien PO → matching 3-voies (M5). |
@@ -103,7 +103,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 8 | Reduced manual data entry | ✅ | OCR pré-remplit. |
 | 9 | Streamlined reception process | ✅ | Wizard 3 étapes. |
 
-**Gaps M3 :** #2 format **XML** non supporté (PDF/JPEG/PNG/TIFF seulement) ; #11 **bulk de plusieurs factures** non implémenté (bulk de documents OK).
+**Gaps M3 :** aucun — #2 format **XML** et #11 **bulk de plusieurs factures** résolus (B8, 2026-06-19, PROB-062).
 
 ---
 
@@ -509,7 +509,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 |--------|:---------:|:---------:|:--------:|:-------:|--------------|
 | M1 Authentification | 19 | 0 | 0 | 0 | Complet (B7 : employee ID + approval limit éditables) |
 | M2 Dashboard | 16 | 1 | 0 | 0 | Quasi-complet |
-| M3 Réception | 17 | 4 | 0 | 0 | Bon (XML, bulk-factures) |
+| M3 Réception | 19 | 2 | 0 | 0 | Très bon (XML + bulk multi-factures faits B8) |
 | M4 Validation Workflow | 18 | 3 | 0 | 0 | Bon (checklist templates faits B1) |
 | M5 Three-Way Matching | 13 | 8 | 0 | 0 | Partiel (pas de page dédiée / ligne-à-ligne ; export fait B2) |
 | M6 Approval | 17 | 3 | 0 | 0 | Bon |
@@ -544,7 +544,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | ~~A5~~ | ~~Catégorisation / segmentation fournisseurs~~ — **fait (B5, 2026-06-18)** | M8 |
 | A6 | Planification de synchronisation des connecteurs | M12 |
 | ~~A7~~ | ~~Champs *employee ID* / *approval limit* éditables (UI)~~ — **fait (B7, 2026-06-18)** | M1 |
-| A8 | Format **XML** en réception + bulk de plusieurs factures | M3 |
+| ~~A8~~ | ~~Format **XML** en réception + bulk de plusieurs factures~~ — **fait (B8, 2026-06-19)** | M3 |
 
 ## Limites de cette vérification (honnêteté)
 - Vérification = rendu d'écran + endpoints + chemins nominaux cliqués + lecture de code ciblée. **Tous les cas d'erreur et toutes les combinaisons rôle×champ n'ont pas été exhaustivement exercés.**
