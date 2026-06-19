@@ -3,6 +3,8 @@ package com.oct.invoicesystem.domain.workflow.controller;
 import com.oct.invoicesystem.domain.workflow.dto.ApprovalRequest;
 import com.oct.invoicesystem.domain.workflow.dto.ApprovalStepResponse;
 import com.oct.invoicesystem.domain.workflow.dto.RejectRequest;
+import com.oct.invoicesystem.domain.workflow.dto.RejectionReasonOption;
+import com.oct.invoicesystem.domain.workflow.model.RejectionReasonCode;
 import com.oct.invoicesystem.domain.workflow.service.ApprovalService;
 import com.oct.invoicesystem.shared.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,6 +31,20 @@ import java.util.UUID;
 public class ApprovalController {
 
     private final ApprovalService approvalService;
+    private final org.springframework.context.MessageSource messageSource;
+
+    @GetMapping("/rejection-reasons")
+    @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER')")
+    @Operation(summary = "List predefined rejection reasons",
+               description = "Returns the selectable rejection reason codes with localized labels")
+    public ResponseEntity<ApiResponse<List<RejectionReasonOption>>> rejectionReasons(java.util.Locale locale) {
+        List<RejectionReasonOption> options = java.util.Arrays.stream(RejectionReasonCode.values())
+                .map(c -> new RejectionReasonOption(
+                        c.name(),
+                        messageSource.getMessage("invoice.reject.code." + c.name(), null, c.name(), locale)))
+                .toList();
+        return ResponseEntity.ok(ApiResponse.success(options));
+    }
 
     @GetMapping("/steps")
     @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER')")

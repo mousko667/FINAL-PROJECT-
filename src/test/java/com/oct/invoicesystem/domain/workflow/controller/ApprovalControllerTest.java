@@ -39,7 +39,9 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(classes = TestConfig.class)
@@ -273,6 +275,21 @@ class ApprovalControllerTest {
         perform(post("/api/v1/invoices/{id}/workflow/reject", invoice.getId()),
                 auditeur, new RejectRequest("I want to reject this invoice"))
                 .andExpect(status().isForbidden());
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // C1: predefined rejection reasons (M4 #8)
+    // ──────────────────────────────────────────────────────────────────────────
+    @Test
+    void rejectionReasons_returnsTranslatedOptions_fr() throws Exception {
+        mockMvc.perform(get("/api/v1/invoices/{id}/workflow/rejection-reasons", UUID.randomUUID())
+                        .header("Accept-Language", "fr")
+                        .with(SecurityMockMvcRequestPostProcessors.authentication(
+                                new UsernamePasswordAuthenticationToken(daf, null, daf.getAuthorities()))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(6))
+                .andExpect(jsonPath("$.data[?(@.code=='AUTRE')].label")
+                        .value(org.hamcrest.Matchers.hasItem("Autre")));
     }
 
     // ──────────────────────────────────────────────────────────────────────────
