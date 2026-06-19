@@ -64,6 +64,10 @@ public class SecurityConfig {
                 ).permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
+                // The SockJS/STOMP handshake transport (/ws/**, incl. /ws/info) cannot carry a
+                // Bearer header, so it is permitted at the HTTP layer; authentication is enforced
+                // on the STOMP CONNECT frame by WebSocketAuthChannelInterceptor (JWT in connectHeaders).
+                .requestMatchers("/ws/**").permitAll()
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex.authenticationEntryPoint(new org.springframework.security.web.authentication.HttpStatusEntryPoint(org.springframework.http.HttpStatus.UNAUTHORIZED)))

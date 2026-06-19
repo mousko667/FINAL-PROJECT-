@@ -928,6 +928,10 @@
   },
   "mfa": {
     "invalidOtp": "Code invalide. Vérifiez votre application et réessayez.",
+    "challengeTitle": "Vérification en deux étapes",
+    "challengeSubtitle": "Saisissez le code à 6 chiffres de votre application d'authentification.",
+    "codeLabel": "Code de vérification",
+    "verify": "Vérifier",
     "title": "Authentification à deux facteurs (MFA)",
     "active": "Activé",
     "requiredNotConfigured": "Requis — non configuré",

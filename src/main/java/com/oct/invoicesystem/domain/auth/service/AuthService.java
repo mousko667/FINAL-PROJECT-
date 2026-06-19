@@ -366,13 +366,18 @@ public class AuthService {
     }
 
     private boolean requiresMandatoryMfaSetup(User user) {
-        return !user.isMfaVerified() && user.getAuthorities().stream()
+        // MFA is mandatory for every role EXCEPT supplier (deny-list, not allow-list, so any
+        // staff role added later is covered automatically). Required iff the account holds at
+        // least one non-supplier ROLE_ authority.
+        return !user.isMfaVerified() && hasNonSupplierRole(user);
+    }
+
+    /** True when the account holds at least one granted ROLE_ other than ROLE_SUPPLIER. */
+    private boolean hasNonSupplierRole(User user) {
+        return user.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .anyMatch(role -> "ROLE_ADMIN".equals(role)
-                        || "ROLE_DAF".equals(role)
-                        || "ROLE_ASSISTANT_COMPTABLE".equals(role)
-                        || role.startsWith("ROLE_VALIDATEUR_N1_")
-                        || role.startsWith("ROLE_VALIDATEUR_N2_"));
+                .filter(a -> a.startsWith("ROLE_"))
+                .anyMatch(role -> !"ROLE_SUPPLIER".equals(role));
     }
 
     private void ensureAccountNotLocked(User user) {

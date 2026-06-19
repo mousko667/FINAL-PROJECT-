@@ -928,6 +928,10 @@
   },
   "mfa": {
     "invalidOtp": "Invalid code. Check your app and try again.",
+    "challengeTitle": "Two-step verification",
+    "challengeSubtitle": "Enter the 6-digit code from your authenticator app.",
+    "codeLabel": "Verification code",
+    "verify": "Verify",
     "title": "Two-Factor Authentication (MFA)",
     "active": "Enabled",
     "requiredNotConfigured": "Required — not configured",

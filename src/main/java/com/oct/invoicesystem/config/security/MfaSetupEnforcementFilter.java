@@ -77,12 +77,12 @@ public class MfaSetupEnforcementFilter extends OncePerRequestFilter {
     }
 
     private boolean requiresMandatoryMfa(User user) {
+        // MFA is mandatory for every role EXCEPT supplier (deny-list — must stay in sync with
+        // AuthService.requiresMandatoryMfaSetup). Required iff the account holds at least one
+        // non-supplier ROLE_ authority.
         return user.getAuthorities().stream()
                 .map(authority -> authority.getAuthority())
-                .anyMatch(role -> "ROLE_ADMIN".equals(role)
-                        || "ROLE_DAF".equals(role)
-                        || "ROLE_ASSISTANT_COMPTABLE".equals(role)
-                        || role.startsWith("ROLE_VALIDATEUR_N1_")
-                        || role.startsWith("ROLE_VALIDATEUR_N2_"));
+                .filter(a -> a.startsWith("ROLE_"))
+                .anyMatch(role -> !"ROLE_SUPPLIER".equals(role));
     }
 }
