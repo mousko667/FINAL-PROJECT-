@@ -776,6 +776,18 @@
 
 ---
 
+### [PROB-064] Tests front InvoiceActionPanel cassés par des fixtures de rôles périmées
+- **Catégorie :** Frontend
+- **Sévérité :** 🟡 Mineur
+- **Découvert :** 2026-06-19 — tâche C1 (motifs de rejet), en lançant `npx vitest run InvoiceActionPanel.test.tsx` avant d'ajouter le nouveau test : 6 tests sur 9 échouaient déjà sur `HEAD`, sans rapport avec C1.
+- **Symptôme :** `TestingLibraryElementError: Unable to find /valider/i` (et `/rejeter/i`, `/approuver/i`, `/payée/i`) ; le panneau d'actions rendait un body vide pour les rôles validateur/DAF.
+- **Cause racine :** Le composant `InvoiceActionPanel` matche les rôles validateur par préfixe **départemental** : `roles.some(r => r.startsWith('ROLE_VALIDATEUR_N1_'))`. Ce contrôle a été introduit au commit `41d4369` (sessions+delegation), **après** le dernier commit du test (`8d2810d`). Les fixtures du test utilisaient les anciens noms `ROLE_VALIDATEUR_N1` / `ROLE_VALIDATEUR_N2` (sans suffixe dept) → `startsWith('ROLE_VALIDATEUR_N1_')` = false → aucun bouton rendu. De plus 2 tests DAF encodaient des attentes obsolètes : label `/approuver/i` (le libellé réel `invoice.approve` = « Émettre le Bon à Payer ») et MARK_PAID attendu pour le DAF (le composant ne l'affiche que pour l'ASSISTANT_COMPTABLE).
+- **Solution appliquée :** Fixtures alignées sur les vrais rôles (`ROLE_VALIDATEUR_N1_DRH`, `ROLE_VALIDATEUR_N2_INFO`). Les 2 tests DAF alignés sur le comportement réel : assertion `/bon à payer/i` pour VALIDE+DAF ; MARK_PAID testé via l'ASSISTANT_COMPTABLE (`/paiement/i`) sur BON_A_PAYER. Aucun changement de code applicatif — uniquement le test.
+- **Règle préventive :** Quand un contrôle d'autorisation/rôle change de forme (ajout d'un suffixe, scoping départemental…), faire un `grep` des fixtures de test sur l'ancien nom de rôle et les mettre à jour dans le même commit. Un test qui n'a pas tourné depuis longtemps doit être exécuté (pas seulement `tsc`/`build`) avant de s'appuyer dessus. `npm run build`/`tsc` ne détectent PAS ce type de régression — seul `vitest run` l'attrape.
+- **Fichiers modifiés :** `frontend/src/test/components/InvoiceActionPanel.test.tsx`.
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :

@@ -68,10 +68,10 @@ const assistantUser: AuthUser = {
   id: '1', username: 'ac', email: 'ac@oct.fr', roles: ['ROLE_ASSISTANT_COMPTABLE'],
 }
 const validateur1: AuthUser = {
-  id: '2', username: 'v1', email: 'v1@oct.fr', roles: ['ROLE_VALIDATEUR_N1'],
+  id: '2', username: 'v1', email: 'v1@oct.fr', roles: ['ROLE_VALIDATEUR_N1_DRH'],
 }
 const validateur2: AuthUser = {
-  id: '3', username: 'v2', email: 'v2@oct.fr', roles: ['ROLE_VALIDATEUR_N2'],
+  id: '3', username: 'v2', email: 'v2@oct.fr', roles: ['ROLE_VALIDATEUR_N2_INFO'],
 }
 const dafUser: AuthUser = {
   id: '4', username: 'daf', email: 'daf@oct.fr', roles: ['ROLE_DAF'],
@@ -100,15 +100,16 @@ describe('InvoiceActionPanel', () => {
     expect(screen.getByText(/rejeter/i)).toBeDefined()
   })
 
-  it('shows Approve (BAP) for DAF on VALIDE invoice', () => {
+  it('shows Issue BON À PAYER for DAF on VALIDE invoice', () => {
     renderPanel(makeInvoice('VALIDE'), dafUser)
-    // French translation: 'Approuver (BAP)'
-    expect(screen.getByText(/approuver/i)).toBeDefined()
+    // French translation of invoice.approve: 'Émettre le Bon à Payer'
+    expect(screen.getByText(/bon à payer/i)).toBeDefined()
   })
 
-  it('shows Mark Paid for DAF on BON_A_PAYER invoice', () => {
-    renderPanel(makeInvoice('BON_A_PAYER'), dafUser)
-    expect(screen.getByText(/payée/i)).toBeDefined()
+  it('shows Record Payment for ASSISTANT_COMPTABLE on BON_A_PAYER invoice', () => {
+    // MARK_PAID is shown to the AA (who records the payment), not the DAF.
+    renderPanel(makeInvoice('BON_A_PAYER'), assistantUser)
+    expect(screen.getByText(/paiement/i)).toBeDefined()
   })
 
   it('renders nothing for wrong role+status combo', () => {
