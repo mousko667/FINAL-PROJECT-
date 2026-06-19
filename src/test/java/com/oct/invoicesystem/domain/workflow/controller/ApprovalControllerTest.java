@@ -22,6 +22,7 @@ import com.oct.invoicesystem.domain.workflow.repository.ApprovalStepRepository;
 import com.oct.invoicesystem.domain.workflow.repository.InvoiceStatusHistoryRepository;
 import com.oct.invoicesystem.domain.workflow.dto.ApprovalRequest;
 import com.oct.invoicesystem.domain.workflow.dto.RejectRequest;
+import com.oct.invoicesystem.domain.workflow.model.RejectionReasonCode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -206,8 +207,11 @@ class ApprovalControllerTest {
         perform(post("/api/v1/invoices/{id}/workflow/assign", invoice.getId()), n1Drh)
                 .andExpect(status().isOk());
 
-        // Reject with reason ≥ 10 chars
-        RejectRequest rejectRequest = new RejectRequest("Missing supporting document");
+        // Reject with predefined reason code + detail
+        RejectRequest rejectRequest = RejectRequest.builder()
+                .reasonCode(RejectionReasonCode.PIECE_MANQUANTE)
+                .rejectionReason("document justificatif absent")
+                .build();
         perform(post("/api/v1/invoices/{id}/workflow/reject", invoice.getId()),
                 n1Drh, rejectRequest)
                 .andExpect(status().isOk());
@@ -273,7 +277,10 @@ class ApprovalControllerTest {
 
         // AUDITEUR trying to reject → 403 (wrong role)
         perform(post("/api/v1/invoices/{id}/workflow/reject", invoice.getId()),
-                auditeur, new RejectRequest("I want to reject this invoice"))
+                auditeur, RejectRequest.builder()
+                        .reasonCode(RejectionReasonCode.AUTRE)
+                        .rejectionReason("I want to reject this invoice")
+                        .build())
                 .andExpect(status().isForbidden());
     }
 
@@ -290,6 +297,58 @@ class ApprovalControllerTest {
                 .andExpect(jsonPath("$.data.length()").value(6))
                 .andExpect(jsonPath("$.data[?(@.code=='AUTRE')].label")
                         .value(org.hamcrest.Matchers.hasItem("Autre")));
+    }
+
+    @Test
+    void reject_withCodeAndDetail_persistsBracketedReason() throws Exception {
+        Invoice invoice = submitAndAssignN1Drh();
+
+        RejectRequest req = RejectRequest.builder()
+                .reasonCode(RejectionReasonCode.MONTANT_INCORRECT)
+                .rejectionReason("le HT ne correspond pas au BDC")
+                .build();
+        perform(post("/api/v1/invoices/{id}/workflow/reject", invoice.getId()), n1Drh, req)
+                .andExpect(status().isOk());
+
+        String stored = approvalStepRepository.findByInvoiceIdOrderByStepOrderAsc(invoice.getId()).stream()
+                .map(s -> s.getRejectionReason())
+                .filter(java.util.Objects::nonNull)
+                .findFirst().orElseThrow();
+        assertEquals("[MONTANT_INCORRECT] le HT ne correspond pas au BDC", stored);
+    }
+
+    @Test
+    void reject_withOtherCodeAndNoDetail_returns400() throws Exception {
+        Invoice invoice = submitAndAssignN1Drh();
+
+        RejectRequest req = RejectRequest.builder()
+                .reasonCode(RejectionReasonCode.AUTRE)
+                .rejectionReason(null)
+                .build();
+        perform(post("/api/v1/invoices/{id}/workflow/reject", invoice.getId()), n1Drh, req)
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void reject_withNullCode_returns400() throws Exception {
+        Invoice invoice = submitAndAssignN1Drh();
+
+        RejectRequest req = RejectRequest.builder()
+                .reasonCode(null)
+                .rejectionReason("un détail parfaitement valide ici")
+                .build();
+        perform(post("/api/v1/invoices/{id}/workflow/reject", invoice.getId()), n1Drh, req)
+                .andExpect(status().isBadRequest());
+    }
+
+    /** Brings a fresh DRH invoice to EN_VALIDATION_N1 (submit + N1 self-assign), ready to reject. */
+    private Invoice submitAndAssignN1Drh() throws Exception {
+        Invoice invoice = createInvoice(drhDept, assistant);
+        perform(post("/api/v1/invoices/{id}/submit", invoice.getId()), assistant)
+                .andExpect(status().isOk());
+        perform(post("/api/v1/invoices/{id}/workflow/assign", invoice.getId()), n1Drh)
+                .andExpect(status().isOk());
+        return invoice;
     }
 
     // ──────────────────────────────────────────────────────────────────────────

@@ -1,8 +1,8 @@
 package com.oct.invoicesystem.domain.workflow.dto;
 
+import com.oct.invoicesystem.domain.workflow.model.RejectionReasonCode;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,9 +14,12 @@ import lombok.NoArgsConstructor;
 @Builder
 @Schema(description = "Request to reject an invoice")
 public class RejectRequest {
-    
-    @NotBlank(message = "{error.rejection.reason.required}")
-    @Size(min = 10, message = "{error.rejection.reason.min.length}")
-    @Schema(description = "Mandatory reason for rejection (min 10 chars)", example = "Amount exceeds the approved budget")
+
+    @NotNull(message = "{error.reject.code.required}")
+    @Schema(description = "Predefined rejection reason code", example = "MONTANT_INCORRECT")
+    private RejectionReasonCode reasonCode;
+
+    @Schema(description = "Optional free-text detail (mandatory, min 10 chars, only when reasonCode = AUTRE)",
+            example = "Le HT ne correspond pas au BDC")
     private String rejectionReason;
 }

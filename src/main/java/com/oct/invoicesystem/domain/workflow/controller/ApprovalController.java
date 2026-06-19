@@ -120,7 +120,15 @@ public class ApprovalController {
     public ResponseEntity<ApiResponse<Void>> reject(
             @Parameter(description = "UUID of the invoice") @PathVariable UUID invoiceId,
             @Valid @RequestBody RejectRequest request) {
-        approvalService.reject(invoiceId, request.getRejectionReason());
+        String detail = request.getRejectionReason() == null ? "" : request.getRejectionReason().trim();
+        if (request.getReasonCode() == RejectionReasonCode.AUTRE && detail.length() < 10) {
+            throw new com.oct.invoicesystem.shared.exception.ValidationException(
+                    "A detail of at least 10 characters is required when the reason is \"Other\".");
+        }
+        String composed = detail.isEmpty()
+                ? "[" + request.getReasonCode().name() + "]"
+                : "[" + request.getReasonCode().name() + "] " + detail;
+        approvalService.reject(invoiceId, composed);
         return ResponseEntity.ok(ApiResponse.success(null, "action.reject.success"));
     }
 }
