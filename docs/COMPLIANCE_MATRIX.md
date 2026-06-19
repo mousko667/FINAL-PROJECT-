@@ -227,7 +227,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 8 | Payment method tracking (bank transfer, check, **mobile money**) | ✅ | Backend : VIREMENT, CHEQUE, ESPECES, **MOBILE_MONEY** (ajouté). Front aligné sur les noms d'enum + libellés i18n FR/EN. **Corrigé (PROB-055, 2026-06-18)** : 200 vérifié pour MOBILE_MONEY (`recordPayment_AcceptsMobileMoney`). |
 | 9 | Payment history by supplier | ✅ | `/payments` liste + filtre département ; historique par fournisseur. |
 | 10 | Cash flow impact analysis | ✅ | `/reports/cash-flow` (CashFlowProjectionDTO, projection par semaine) + UI cashFlowTitle/Desc. **Corrigé (PROB-054, 2026-06-18)** : 500 `SQLGrammarException $5` résolu par `CAST` des paramètres date nullables dans `findAllWithFilters` ; **200** vérifié par `CashFlowProjectionIntegrationTest` sur vrai PostgreSQL. |
-| 11 | Export payment reports | 🟠 | Export global via Rapports (M11) ; **pas d'export dédié sur la page Paiements**. |
+| 11 | Export payment reports | ✅ | `GET /payments/export?format=csv\|excel\|pdf` (via `TabularExportService`) + bouton `ExportMenu` (CSV/Excel/PDF) dans l'en-tête « Historique des paiements ». **Fait (C2, 2026-06-19)** : filtre `departmentCode` respecté ; tests d'intégration (200, filtre, 403). |
 | 12 | Payment alert configuration | ✅ | Règles d'alerte J-N configurables (`PaymentAlertRule`, V59) : CRUD `/payments/alert-rules` (DAF + ASSISTANT_COMPTABLE), seuils actifs/inactifs lus par `DeadlineReminderJob.sendPaymentDueAlerts` (fallback 7 j). **Fait (B4, 2026-06-18)** : `PaymentAlertRuleServiceTest` + `PaymentDueAlertJobTest`. |
 
 ### Features
@@ -244,7 +244,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 9 | Cash flow visibility | ✅ | Endpoint cash-flow opérationnel (200) — voir UI #10 (PROB-054 corrigé). |
 | 10 | Reduced payment delays | ✅ | Rappels + SLA. |
 
-**Gaps M7 :** ~~#5 batch payments absent~~ **fait (B3)** ; ~~#8 MOBILE_MONEY bug front/back~~ **corrigé (PROB-055)** ; ~~#10 cash-flow CASSÉ (500)~~ **corrigé (PROB-054)** ; ~~#12 alertes paiement configurables absentes~~ **fait (B4)** ; #11 export paiement dédié manquant.
+**Gaps M7 :** ~~#5 batch payments absent~~ **fait (B3)** ; ~~#8 MOBILE_MONEY bug front/back~~ **corrigé (PROB-055)** ; ~~#10 cash-flow CASSÉ (500)~~ **corrigé (PROB-054)** ; ~~#12 alertes paiement configurables absentes~~ **fait (B4)** ; ~~#11 export paiement dédié manquant~~ **fait (C2, 2026-06-19)**. Plus aucun gap M7 ouvert.
 
 ---
 
