@@ -141,6 +141,20 @@ function RecordPaymentModal({ invoice, onClose, onSuccess }: {
   )
 }
 
+interface BatchLineResult {
+  invoiceId: string
+  success: boolean
+  paymentId?: string | null
+  reference?: string | null
+  error?: string | null
+}
+interface BatchResult {
+  total: number
+  succeeded: number
+  failed: number
+  results: BatchLineResult[]
+}
+
 export default function PaymentsPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
@@ -148,6 +162,11 @@ export default function PaymentsPage() {
   const [page, setPage] = useState(0)
   const [remittanceId, setRemittanceId] = useState<string | null>(null)
   const [remittanceError, setRemittanceError] = useState('')
+  // B3 — batch payment of selected BON_A_PAYER invoices.
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [batchMethod, setBatchMethod] = useState('VIREMENT')
+  const [batchDate, setBatchDate] = useState(new Date().toISOString().slice(0, 10))
+  const [batchResult, setBatchResult] = useState<BatchResult | null>(null)
 
   // REQ-11: fetch the pre-signed remittance-advice URL and open it.
   const downloadRemittance = async (paymentId: string) => {
@@ -187,6 +206,33 @@ export default function PaymentsPage() {
   const paymentList = payments?.content ?? []
   const pendingInvoices = awaitingPayment ?? []
 
+  const toggleSelect = (id: string) => setSelectedIds(prev => {
+    const next = new Set(prev)
+    next.has(id) ? next.delete(id) : next.add(id)
+    return next
+  })
+  const toggleSelectAll = () => setSelectedIds(prev =>
+    prev.size === pendingInvoices.length ? new Set() : new Set(pendingInvoices.map(i => i.id)))
+
+  const batchMutation = useMutation({
+    mutationFn: async () => {
+      const { data } = await apiClient.post<{ data: BatchResult }>('/payments/batch', {
+        invoiceIds: Array.from(selectedIds),
+        paymentMethod: batchMethod,
+        paymentDate: new Date(batchDate).toISOString(),
+      })
+      return data.data
+    },
+    onSuccess: (result) => {
+      setBatchResult(result)
+      setSelectedIds(new Set())
+      queryClient.invalidateQueries({ queryKey: ['invoices-bon-a-payer'] })
+      queryClient.invalidateQueries({ queryKey: ['payments'] })
+    },
+  })
+
+  const refByInvoice = (invoiceId: string) => pendingInvoices.find(i => i.id === invoiceId)?.referenceNumber ?? invoiceId
+
   return (
     <PageRoleGuard allowedRoles={['ROLE_ASSISTANT_COMPTABLE', 'ROLE_DAF']}>
       <div className="space-y-6">
@@ -207,6 +253,39 @@ export default function PaymentsPage() {
                 )}
               </h2>
             </div>
+            {/* B3 — batch payment toolbar (visible once invoices are selected) */}
+            {selectedIds.size > 0 && (
+              <div className="flex flex-wrap items-center gap-3 px-5 py-3 bg-blue-50 border-b border-blue-100">
+                <span className="text-sm font-medium text-blue-800">
+                  {t('payments.batchSelected', '{{count}} selected', { count: selectedIds.size })}
+                </span>
+                <select
+                  value={batchMethod}
+                  onChange={e => setBatchMethod(e.target.value)}
+                  className="border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                >
+                  {PAYMENT_METHODS.map(m => <option key={m} value={m}>{t(`invoice.paymentMethods.${m}`, m)}</option>)}
+                </select>
+                <input
+                  type="date"
+                  value={batchDate}
+                  onChange={e => setBatchDate(e.target.value)}
+                  className="border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+                <button
+                  onClick={() => batchMutation.mutate()}
+                  disabled={batchMutation.isPending}
+                  className="flex items-center gap-1.5 px-4 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-60"
+                >
+                  {batchMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <DollarSign className="w-4 h-4" />}
+                  {t('payments.paySelected', 'Pay selected')}
+                </button>
+                <button onClick={() => setSelectedIds(new Set())} className="text-sm text-gray-500 hover:underline">
+                  {t('app.cancel', 'Cancel')}
+                </button>
+              </div>
+            )}
+
             {invoicesLoading ? (
               <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
             ) : pendingInvoices.length === 0 ? (
@@ -215,6 +294,14 @@ export default function PaymentsPage() {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 border-b">
                   <tr>
+                    <th className="px-4 py-3 w-10">
+                      <input
+                        type="checkbox"
+                        aria-label={t('payments.selectAll', 'Select all')}
+                        checked={pendingInvoices.length > 0 && selectedIds.size === pendingInvoices.length}
+                        onChange={toggleSelectAll}
+                      />
+                    </th>
                     <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.reference')}</th>
                     <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.supplier')}</th>
                     <th className="text-right px-4 py-3 font-medium text-gray-600">{t('invoice.amount')}</th>
@@ -224,6 +311,14 @@ export default function PaymentsPage() {
                 <tbody className="divide-y">
                   {pendingInvoices.map(inv => (
                     <tr key={inv.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          aria-label={`select-${inv.referenceNumber}`}
+                          checked={selectedIds.has(inv.id)}
+                          onChange={() => toggleSelect(inv.id)}
+                        />
+                      </td>
                       <td className="px-4 py-3 font-mono text-xs font-semibold">{inv.referenceNumber}</td>
                       <td className="px-4 py-3 text-gray-700">{inv.supplierName ?? '—'}</td>
                       <td className="px-4 py-3 text-right font-medium text-green-700">
@@ -341,6 +436,43 @@ export default function PaymentsPage() {
             setRecordingFor(null)
           }}
         />
+      )}
+
+      {/* B3 — batch payment result (per-line) */}
+      {batchResult && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setBatchResult(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-900">{t('payments.batchResultTitle', 'Batch payment result')}</h2>
+              <button onClick={() => setBatchResult(null)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+            </div>
+            <p className="text-sm text-gray-600">
+              {t('payments.batchSummary', '{{ok}} succeeded, {{ko}} failed out of {{total}}', {
+                ok: batchResult.succeeded, ko: batchResult.failed, total: batchResult.total,
+              })}
+            </p>
+            <ul className="space-y-2 max-h-80 overflow-y-auto">
+              {batchResult.results.map(r => (
+                <li key={r.invoiceId} className={`flex items-start gap-2 text-sm rounded-lg p-2 border ${r.success ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
+                  {r.success
+                    ? <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
+                    : <span className="w-4 h-4 text-red-600 mt-0.5 shrink-0 font-bold text-center">✕</span>}
+                  <div className="min-w-0">
+                    <span className="font-mono text-xs font-semibold">{refByInvoice(r.invoiceId)}</span>
+                    {r.success
+                      ? <span className="text-green-700 ml-2 text-xs">{r.reference}</span>
+                      : <span className="text-red-700 ml-2 text-xs">{r.error}</span>}
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="flex justify-end pt-2 border-t">
+              <button onClick={() => setBatchResult(null)} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90">
+                {t('app.close', 'Close')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </PageRoleGuard>
   )

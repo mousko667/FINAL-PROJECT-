@@ -221,7 +221,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 2 | Invoice aging analysis | ✅ | `/reports/aging` (AgingReportDTO, tranches par jours de retard) ; affiché dans Rapports. |
 | 3 | Payment due date monitoring | ✅ | KPI « Factures en retard » + dates d'échéance + job de rappel (DeadlineReminderJob). |
 | 4 | Payment status (scheduled, processed, paid, overdue) | 🟠 | Statuts facture (BON_A_PAYER/PAYE) + overdue suivis. Pas de statut intermédiaire « scheduled/processed » distinct côté paiement. |
-| 5 | Payment batch processing interface | ❌ | Aucun traitement par lot de paiements (pas d'endpoint/UI batch). **Absent.** |
+| 5 | Payment batch processing interface | ✅ | `POST /payments/batch` (best-effort, résultat par ligne) + UI `PaymentsPage` : sélection multi-factures BON_A_PAYER, méthode/date communes, modale de résultat par ligne. **Fait (B3, 2026-06-18)** : `BatchPaymentIntegrationTest`. |
 | 6 | Payment confirmation recording | ✅ | Enregistrement paiement vérifié (VIREMENT, réf, montant → PAYE→ARCHIVE). |
 | 7 | Remittance advice generation | ✅ | Bouton « Avis » → PDF pré-signé MinIO (vérifié runtime). |
 | 8 | Payment method tracking (bank transfer, check, **mobile money**) | ✅ | Backend : VIREMENT, CHEQUE, ESPECES, **MOBILE_MONEY** (ajouté). Front aligné sur les noms d'enum + libellés i18n FR/EN. **Corrigé (PROB-055, 2026-06-18)** : 200 vérifié pour MOBILE_MONEY (`recordPayment_AcceptsMobileMoney`). |
@@ -236,7 +236,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 1 | Tracking approval→settlement | ✅ | Parcours complet jusqu'à PAYE/ARCHIVE. |
 | 2 | Aging analysis | ✅ | `/reports/aging`. |
 | 3 | Due date monitoring & alerts | ✅ | Job rappel + escalade. |
-| 4 | Payment batch processing | ❌ | Absent. |
+| 4 | Payment batch processing | ✅ | Fait (B3) — voir UI #5. |
 | 5 | Remittance advice generation | ✅ | PDF pré-signé. |
 | 6 | Multiple payment method support | ✅ | 4 méthodes backend (VIREMENT/CHEQUE/ESPECES/MOBILE_MONEY) ; mobile money ajouté (PROB-055). |
 | 7 | Payment confirmation & reconciliation | ✅ | Enregistrement + statut. Réconciliation auto limitée. |
@@ -244,7 +244,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 9 | Cash flow visibility | ✅ | Endpoint cash-flow opérationnel (200) — voir UI #10 (PROB-054 corrigé). |
 | 10 | Reduced payment delays | ✅ | Rappels + SLA. |
 
-**Gaps M7 :** #5 **batch payments absent** ; ~~#8 MOBILE_MONEY bug front/back~~ **corrigé (PROB-055)** ; ~~#10 cash-flow CASSÉ (500)~~ **corrigé (PROB-054)** ; #12 **alertes paiement configurables absentes** ; #11 export paiement dédié manquant.
+**Gaps M7 :** ~~#5 batch payments absent~~ **fait (B3)** ; ~~#8 MOBILE_MONEY bug front/back~~ **corrigé (PROB-055)** ; ~~#10 cash-flow CASSÉ (500)~~ **corrigé (PROB-054)** ; #12 **alertes paiement configurables absentes** ; #11 export paiement dédié manquant.
 
 ---
 
@@ -513,7 +513,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | M4 Validation Workflow | 18 | 3 | 0 | 0 | Bon (checklist templates faits B1) |
 | M5 Three-Way Matching | 13 | 8 | 0 | 0 | Partiel (pas de page dédiée / ligne-à-ligne ; export fait B2) |
 | M6 Approval | 17 | 3 | 0 | 0 | Bon |
-| M7 Payment | 15 | 4 | 2 | 0 | Moyen (batch/alertes absents ; cash-flow PROB-054 + mobile-money PROB-055 corrigés) |
+| M7 Payment | 16 | 4 | 1 | 0 | Bon (batch fait B3 ; reste alertes configurables) |
 | M8 Supplier | 20 | 1 | 0 | 0 | Bon (catégorisation faite B5 ; onboarding sans assistant dédié) |
 | M9 Archiving | 12 | 5 | 0 | 0 | Bon (purge/folder/zoom partiels) |
 | M10 Audit | 20 | 2 | 0 | 0 | Très bon |
@@ -527,7 +527,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 ## RÉPONSE À « est-ce 100 % implémenté ? »
 **Non.** Le système couvre **~85 % des items à 100 %**, mais il reste :
 - **0 bug runtime (🔴)** : les 2 bugs A1/A2 sont corrigés (cash-flow 500 → PROB-054 ; Mobile Money front/back → PROB-055, 2026-06-18).
-- **éléments absents (❌) restants** : batch payments + alertes paiement configurables (M7), sync schedule connecteurs (M12). *(Faits : checklist templates M4→B1, export rapport matching M5→B2, catégorisation fournisseur M8→B5.)*
+- **éléments absents (❌) restants** : alertes paiement configurables (M7), sync schedule connecteurs (M12). *(Faits : checklist templates M4→B1, export rapport matching M5→B2, catégorisation fournisseur M8→B5, batch payments M7→B3.)*
 - **~52 partiels (🟠)** : surtout des éléments présents mais incomplets (config par propriété au lieu d'UI, web responsive au lieu d'app mobile dédiée, framework au lieu de sync live, etc.).
 
 ## Bugs réels découverts pendant cette campagne (à corriger)
@@ -539,7 +539,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 |-----|---------|--------|
 | ~~A1~~ | ~~Modèles de checklist de validation~~ — **fait (B1, 2026-06-18)** | M4 |
 | ~~A2~~ | ~~Export de rapport de rapprochement~~ — **fait (B2, 2026-06-18)** | M5 |
-| A3 | Traitement par lot des paiements (batch) | M7 |
+| ~~A3~~ | ~~Traitement par lot des paiements (batch)~~ — **fait (B3, 2026-06-18)** | M7 |
 | A4 | Configuration d'alertes de paiement | M7 |
 | ~~A5~~ | ~~Catégorisation / segmentation fournisseurs~~ — **fait (B5, 2026-06-18)** | M8 |
 | A6 | Planification de synchronisation des connecteurs | M12 |

@@ -724,6 +724,19 @@
 
 ---
 
+### [PROB-060] (B3) Traitement par lot des paiements — absent
+- **Catégorie :** Backend + Frontend
+- **Sévérité :** 🟡 Mineur (lacune fonctionnelle M7)
+- **Découvert :** 2026-06-18 — tâche B3
+- **Symptôme :** Les paiements ne pouvaient être enregistrés qu'une facture à la fois ; pas de règlement groupé de plusieurs factures BON_A_PAYER (exigence M7 « batch payment processing »).
+- **Cause racine :** Fonctionnalité jamais implémentée.
+- **Solution appliquée (cadrage validé : montant intégral par facture + méthode/date communes ; best-effort avec résultat par ligne) :** (1) DTOs `BatchPaymentRequest` (invoiceIds + paymentMethod + paymentDate) et `BatchPaymentResultDTO` (total/succeeded/failed + `LineResult` par facture). (2) `PaymentServiceImpl.recordBatchPayment` : boucle sur les factures, génère une référence par facture, paie au montant total via `recordPayment` **appelé à travers le proxy Spring** (auto-injection `ObjectProvider<PaymentService>`) → chaque ligne dans sa **propre transaction**, donc une ligne en échec ne rollback pas les autres. La méthode batch n'est **pas** `@Transactional` (sinon l'isolation par ligne serait perdue). Constructeur explicite (remplace `@RequiredArgsConstructor`) pour injecter le self-provider. (3) Endpoint `POST /payments/batch` (ASSISTANT_COMPTABLE, comme le record unitaire) + message i18n. (4) Frontend `PaymentsPage` : cases à cocher (+ tout sélectionner) sur la table BON_A_PAYER, barre « Payer la sélection » (méthode + date communes), modale de résultat par ligne (succès → référence, échec → motif). i18n FR/EN.
+- **Test (TDD) :** `BatchPaymentIntegrationTest` (**non `@Transactional`** pour exercer le commit par ligne) : lot de 2 factures, une BON_A_PAYER (succès) + une SOUMIS (échec statut) → `total=2, succeeded=1, failed=1`, résultat par ligne correct. RED→GREEN. Pièges rencontrés et résolus : (a) `LazyInitializationException` sur les rôles du principal détaché → re-fetch via `findByUsername` (EntityGraph) ; (b) FK `invoice_status_history` au cleanup → soft-delete des factures au lieu de hard-delete. Suite 373/0/0, build front + tsc verts.
+- **Règle préventive :** Pour un traitement par lot best-effort, ne **pas** envelopper la boucle dans une transaction unique : appeler l'opération unitaire transactionnelle **via le proxy** (self-injection `ObjectProvider`/`@Lazy`, jamais `this.`) pour un commit indépendant par élément, et renvoyer un résultat par ligne. Dans un test d'intégration non transactionnel, charger le principal avec ses rôles (EntityGraph) et nettoyer par soft-delete quand des rows enfants existent.
+- **Fichiers modifiés :** `BatchPaymentRequest.java` (nouveau), `BatchPaymentResultDTO.java` (nouveau), `PaymentService.java`, `PaymentServiceImpl.java`, `PaymentController.java`, `messages_en.properties`, `messages_fr.properties`, `PaymentsPage.tsx`, `fr.json`, `en.json`, `BatchPaymentIntegrationTest.java` (nouveau).
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :

@@ -936,7 +936,12 @@
     "total": "payments",
     "noHistory": "No payments recorded",
     "remittance": "Remittance",
-    "remittanceError": "No remittance advice is available for this payment yet."
+    "remittanceError": "No remittance advice is available for this payment yet.",
+    "selectAll": "Select all",
+    "batchSelected": "{{count}} selected",
+    "paySelected": "Pay selected",
+    "batchResultTitle": "Batch payment result",
+    "batchSummary": "{{ok}} succeeded, {{ko}} failed out of {{total}}"
   },
   "archive": {
     "title": "Digital Archive",

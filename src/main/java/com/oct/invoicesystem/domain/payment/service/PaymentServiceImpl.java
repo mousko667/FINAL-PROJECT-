@@ -6,6 +6,8 @@ import com.oct.invoicesystem.domain.invoice.repository.InvoiceRepository;
 import com.oct.invoicesystem.domain.invoice.service.InvoiceStateMachineService;
 import com.oct.invoicesystem.domain.invoice.statemachine.InvoiceEvent;
 import com.oct.invoicesystem.domain.invoice.statemachine.WorkflowExtendedStateKeys;
+import com.oct.invoicesystem.domain.payment.dto.BatchPaymentRequest;
+import com.oct.invoicesystem.domain.payment.dto.BatchPaymentResultDTO;
 import com.oct.invoicesystem.domain.payment.dto.PaymentDTO;
 import com.oct.invoicesystem.domain.payment.dto.PaymentRequest;
 import com.oct.invoicesystem.domain.payment.model.Payment;
@@ -15,19 +17,21 @@ import com.oct.invoicesystem.domain.notification.event.InvoicePayedEvent;
 import com.oct.invoicesystem.domain.user.repository.UserRepository;
 import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 import com.oct.invoicesystem.shared.exception.WorkflowException;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class PaymentServiceImpl implements PaymentService {
 
@@ -37,6 +41,29 @@ public class PaymentServiceImpl implements PaymentService {
     private final InvoiceStateMachineService invoiceStateMachineService;
     private final RemittanceAdviceService remittanceAdviceService;
     private final ApplicationEventPublisher eventPublisher;
+    /**
+     * Self-reference (the Spring proxy) so the batch loop can invoke {@link #recordPayment} through
+     * the transactional proxy — each call then commits in its own transaction, which is what makes
+     * the batch best-effort (one failing line does not roll back the others). A direct {@code this.}
+     * call would bypass the proxy and run everything in a single transaction.
+     */
+    private final ObjectProvider<PaymentService> selfProvider;
+
+    public PaymentServiceImpl(PaymentRepository paymentRepository,
+                              InvoiceRepository invoiceRepository,
+                              UserRepository userRepository,
+                              InvoiceStateMachineService invoiceStateMachineService,
+                              RemittanceAdviceService remittanceAdviceService,
+                              ApplicationEventPublisher eventPublisher,
+                              ObjectProvider<PaymentService> selfProvider) {
+        this.paymentRepository = paymentRepository;
+        this.invoiceRepository = invoiceRepository;
+        this.userRepository = userRepository;
+        this.invoiceStateMachineService = invoiceStateMachineService;
+        this.remittanceAdviceService = remittanceAdviceService;
+        this.eventPublisher = eventPublisher;
+        this.selfProvider = selfProvider;
+    }
 
     @Override
     @Transactional
@@ -90,6 +117,40 @@ public class PaymentServiceImpl implements PaymentService {
                 ));
 
         return toDTO(payment);
+    }
+
+    /**
+     * Pays several invoices at once (B3). Best-effort: each invoice is paid at its full amount via
+     * {@link #recordPayment} through the proxy, so it runs in its own transaction and a failing line
+     * (e.g. wrong status, already paid) does not roll back the others. Not annotated
+     * {@code @Transactional} on purpose — wrapping the loop in one transaction would defeat the
+     * per-line semantics.
+     */
+    @Override
+    public BatchPaymentResultDTO recordBatchPayment(BatchPaymentRequest request, UUID userId) {
+        PaymentService self = selfProvider.getObject();
+        List<BatchPaymentResultDTO.LineResult> results = new ArrayList<>();
+
+        for (UUID invoiceId : request.invoiceIds()) {
+            try {
+                Invoice invoice = invoiceRepository.findByIdAndDeletedAtIsNull(invoiceId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Invoice not found id: " + invoiceId));
+                String reference = "PAY-" + invoice.getReferenceNumber() + "-"
+                        + Long.toString(Instant.now().toEpochMilli()).substring(7);
+                PaymentRequest perInvoice = new PaymentRequest(
+                        invoice.getAmount(), request.paymentMethod(), request.paymentDate(), reference);
+
+                PaymentDTO dto = self.recordPayment(invoiceId, perInvoice, userId);
+                results.add(BatchPaymentResultDTO.LineResult.ok(invoiceId, dto.id(), dto.reference()));
+            } catch (Exception e) {
+                log.warn("Batch payment failed for invoice {}: {}", invoiceId, e.getMessage());
+                results.add(BatchPaymentResultDTO.LineResult.failure(invoiceId, e.getMessage()));
+            }
+        }
+
+        long succeeded = results.stream().filter(BatchPaymentResultDTO.LineResult::success).count();
+        return new BatchPaymentResultDTO(
+                results.size(), (int) succeeded, (int) (results.size() - succeeded), results);
     }
 
     @Override

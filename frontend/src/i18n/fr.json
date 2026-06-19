@@ -936,7 +936,12 @@
     "total": "paiements",
     "noHistory": "Aucun paiement enregistré",
     "remittance": "Avis",
-    "remittanceError": "Aucun avis de paiement n'est disponible pour ce paiement pour le moment."
+    "remittanceError": "Aucun avis de paiement n'est disponible pour ce paiement pour le moment.",
+    "selectAll": "Tout sélectionner",
+    "batchSelected": "{{count}} sélectionnée(s)",
+    "paySelected": "Payer la sélection",
+    "batchResultTitle": "Résultat du paiement par lot",
+    "batchSummary": "{{ok}} réussi(s), {{ko}} échoué(s) sur {{total}}"
   },
   "archive": {
     "title": "Archive Numérique",

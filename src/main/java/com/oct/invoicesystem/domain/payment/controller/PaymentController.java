@@ -1,5 +1,7 @@
 package com.oct.invoicesystem.domain.payment.controller;
 
+import com.oct.invoicesystem.domain.payment.dto.BatchPaymentRequest;
+import com.oct.invoicesystem.domain.payment.dto.BatchPaymentResultDTO;
 import com.oct.invoicesystem.domain.payment.dto.PaymentDTO;
 import com.oct.invoicesystem.domain.payment.dto.PaymentRequest;
 import com.oct.invoicesystem.domain.payment.dto.RemittanceAdviceDTO;
@@ -41,6 +43,16 @@ public class PaymentController {
 
         PaymentDTO paymentDTO = paymentService.recordPayment(invoiceId, request, currentUser.getId());
         return ResponseEntity.ok(ApiResponse.success(paymentDTO, "payment.recorded.success"));
+    }
+
+    @PostMapping("/batch")
+    @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
+    @Operation(summary = "Record payments for several invoices at once (best-effort, per-line result)")
+    public ResponseEntity<ApiResponse<BatchPaymentResultDTO>> recordBatchPayment(
+            @Valid @RequestBody BatchPaymentRequest request,
+            @AuthenticationPrincipal User currentUser) {
+        BatchPaymentResultDTO result = paymentService.recordBatchPayment(request, currentUser.getId());
+        return ResponseEntity.ok(ApiResponse.success(result, "payment.batch.processed"));
     }
 
     @GetMapping("/invoice/{invoiceId}")
