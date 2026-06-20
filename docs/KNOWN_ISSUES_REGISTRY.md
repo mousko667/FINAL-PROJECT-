@@ -788,6 +788,18 @@
 
 ---
 
+### [PROB-065] (B1) Escalade d'approbation routée vers ROLE_ADMIN — violation de la séparation des devoirs
+- **Catégorie :** Sécurité / Architecture
+- **Sévérité :** 🟠 Important
+- **Découvert :** 2026-06-20 — tâche B1 (UI règles d'escalade) ; analyse du job `DeadlineReminderJob` lors de la refonte de la résolution des destinataires.
+- **Symptôme :** Lors d'une escalade SLA (approbation en retard), les comptes ROLE_ADMIN recevaient un email contenant le montant de la facture et le nom du fournisseur (template `sla-escalation-manager`). La règle du projet stipule qu'ADMIN ne doit jamais accéder à des données financières (montants, coordonnées bancaires) — séparation des devoirs (`admin-no-financial-access`).
+- **Cause racine :** `DeadlineReminderJob.sendDeadlineReminders()` résolvait les destinataires d'escalade en dur : le DAF actif **et** tous les utilisateurs ROLE_ADMIN. Le template `sla-escalation-manager` inclut le montant de la facture et le nom du fournisseur — ces données financières étaient donc systématiquement acheminées vers ROLE_ADMIN, violant la règle de séparation des devoirs.
+- **Solution appliquée (B1, commits 073ad37 + 0ef8df3) :** Résolution contextuelle des destinataires dans `DeadlineReminderJob` : (1) si la facture est en attente au niveau N1, l'escalade va vers l'approbateur N2 du même département (`ApprovalStepRepository.findByInvoiceIdAndStepOrder(invoiceId, 2)`) ; (2) sinon (N2 en retard ou N2 introuvable), l'escalade va uniquement vers les utilisateurs ROLE_DAF actifs. ROLE_ADMIN entièrement retiré de la liste des destinataires d'escalade. En complément, l'escalade émet désormais une notification in-app (`ApprovalEscalationEvent`, type `DEADLINE`) en plus de l'email.
+- **Règle préventive :** Toute liste de destinataires d'escalade ou de notification contenant des données financières (montants, fournisseurs, coordonnées bancaires) doit être construite **sans jamais inclure ROLE_ADMIN**. La séparation des devoirs s'applique aux flux d'email et de notification autant qu'aux endpoints API. Valider la liste des destinataires contre la règle `admin-no-financial-access` avant chaque implémentation d'un job d'escalade ou de rappel.
+- **Fichiers modifiés :** `src/main/java/com/oct/invoicesystem/domain/notification/scheduler/DeadlineReminderJob.java` (commits 073ad37, 0ef8df3).
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :

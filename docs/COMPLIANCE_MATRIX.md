@@ -122,7 +122,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 8 | Rejection reason selection | ✅ | **Liste de motifs prédéfinis obligatoire** (dropdown) + détail libre optionnel (obligatoire ≥10 car. si motif = `AUTRE`). Enum `RejectionReasonCode` (6 motifs), endpoint `GET /workflow/rejection-reasons` (libellés i18n FR/EN), motif+détail composés `[CODE] détail` dans `rejectionReason` (pas de migration, guard inchangé). **Fait (C1, 2026-06-19)** : `rejectionReasons_returnsTranslatedOptions_fr`, `reject_withCodeAndDetail_persistsBracketedReason`, validation `AUTRE`/code null → 400 ; test front dropdown. |
 | 9 | Re-submission workflow for rejected invoices | ✅ | Endpoint `/invoices/{id}/resubmit` (REJETE → SOUMIS). |
 | 10 | Approval history viewer | ✅ | `/invoices/:id` « Historique des approbations » (vérifié). |
-| 11 | Escalation rules for delayed approvals | 🟠 | **Escalade fonctionne** (`DeadlineReminderJob` quotidien → DAF+Admin si dépassé), mais **pas d'UI de configuration** des règles d'escalade. |
+| 11 | Escalation rules for delayed approvals | ✅ | UI de config `/admin/escalation-rules` (B1) : délai configurable (hoursAfterDeadline), escalade hiérarchique contextuelle (N2 même dépt sinon DAF), email + notif in-app. Admin retiré des destinataires (séparation des devoirs). |
 | 12 | SLA monitoring for processing times | ✅ | `/approvals` : SLA 3 jours/niveau, code couleur rouge/ambre (vérifié). |
 
 ### Features
@@ -139,7 +139,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 9 | SLA compliance monitoring | ✅ | UI #12. |
 | 10 | Streamlined & transparent validation | ✅ | Parcours d'approbation complet visible. |
 
-**Gaps M4 :** ~~#3 checklist templates absents~~ **fait (B1)** ; ~~#8 motif de rejet en texte libre (pas une liste)~~ **fait (C1, 2026-06-19)** ; #11 escalade sans UI de config ; feat #4 routage par seuil de montant non exploité comme règle.
+**Gaps M4 :** ~~#3 checklist templates absents~~ **fait (B1)** ; ~~#8 motif de rejet en texte libre (pas une liste)~~ **fait (C1, 2026-06-19)** ; ~~#11 escalade sans UI de config~~ **fait (escalade B1, 2026-06-20)** ; feat #4 routage par seuil de montant non exploité comme règle.
 
 ---
 
@@ -188,7 +188,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 3 | Approval/Rejection interface with comments | ✅ | InvoiceActionPanel (vérifié runtime : validate-n1 + bon-a-payer). |
 | 4 | Multi-level approval visualization | ✅ | Timeline verticale « Parcours d'approbation » (6 étapes vues). |
 | 5 | Approval delegation settings | ✅ | `/my-delegations` (self) + `/admin/delegations` (admin). |
-| 6 | Escalation rules configuration | 🟠 | Escalade SLA fonctionne (job), **pas d'UI de config** (idem M4 #11). |
+| 6 | Escalation rules configuration | ✅ | idem M4 #11 (B1) : UI `/admin/escalation-rules`, délai configurable, escalade contextuelle, Admin retiré. |
 | 7 | Approval history viewer | ✅ | Historique des approbations sur le détail. |
 | 8 | Mobile approval interface | 🟠 | Web responsive (testé 390px), **pas d'interface mobile dédiée**. |
 | 9 | Approval notifications | ✅ | Notifications in-app + e-mail + WS (PROB-051). |
@@ -208,7 +208,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 8 | Approval history & analytics | ✅ | Historique + my-stats. |
 | 9 | Streamlined decision-making | ✅ | File + actions en un écran. |
 
-**Gaps M6 :** #6 escalade sans UI de config ; #8 pas d'interface mobile dédiée (web responsive).
+**Gaps M6 :** ~~#6 escalade sans UI de config~~ **fait (escalade B1, 2026-06-20)** ; #8 pas d'interface mobile dédiée (web responsive).
 
 ---
 
