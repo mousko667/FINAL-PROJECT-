@@ -277,7 +277,14 @@
     },
     "viewer": {
       "view": "Preview",
-      "noPreview": "No preview available for this file type."
+      "noPreview": "No preview available for this file type.",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "rotate": "Rotate",
+      "resetView": "Reset",
+      "page": "Page",
+      "of": "of",
+      "loadError": "Unable to load the document."
     },
     "lineItems": "Line Items",
     "submit": "Submit for Validation",

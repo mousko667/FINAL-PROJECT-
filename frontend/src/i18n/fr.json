@@ -277,7 +277,14 @@
     },
     "viewer": {
       "view": "Aperçu",
-      "noPreview": "Aperçu non disponible pour ce type de fichier."
+      "noPreview": "Aperçu non disponible pour ce type de fichier.",
+      "zoomIn": "Zoom avant",
+      "zoomOut": "Zoom arrière",
+      "rotate": "Pivoter",
+      "resetView": "Réinitialiser",
+      "page": "Page",
+      "of": "sur",
+      "loadError": "Impossible de charger le document."
     },
     "lineItems": "Lignes de facturation",
     "submit": "Soumettre pour validation",
