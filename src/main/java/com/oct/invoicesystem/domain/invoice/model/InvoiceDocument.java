@@ -3,6 +3,8 @@ package com.oct.invoicesystem.domain.invoice.model;
 import com.oct.invoicesystem.domain.user.model.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -67,6 +69,19 @@ public class InvoiceDocument {
 
     @Column(name = "superseded_by_document_id")
     private UUID supersededByDocumentId;
+
+    // M10 #10 refinement: disposition of a document past its retention horizon.
+    @Enumerated(EnumType.STRING)
+    @Column(name = "retention_disposition", nullable = false, length = 20)
+    @Builder.Default
+    private RetentionDisposition retentionDisposition = RetentionDisposition.PENDING;
+
+    @Column(name = "retention_disposition_at")
+    private Instant retentionDispositionAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "retention_disposition_by")
+    private User retentionDispositionBy;
 
     @PrePersist
     public void prePersist() {
