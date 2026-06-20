@@ -291,7 +291,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 1 | Document repository with folder structure | 🟠 | `/archive` : dépôt indexé par métadonnées (recherche/filtres) ; **pas d'arborescence de dossiers** littérale. |
 | 2 | Invoice storage by date, supplier, status | ✅ | Filtres date/département + recherche fournisseur/référence (vérifié). |
 | 3 | Advanced search and filter | ✅ | Recherche plein-texte (bug 500 corrigé) + filtres dept + plage de dates. |
-| 4 | Document viewer with zoom/rotate | 🟠 | DocumentViewerModal (PDF iframe + images). **Pas de contrôles zoom/rotate explicites** (zoom natif du lecteur PDF du navigateur). |
+| 4 | Document viewer with zoom/rotate | ✅ | DocumentViewerModal : contrôles zoom/rotation/reset (react-pdf pour PDF, transform CSS pour images) + pagination PDF. (C3) |
 | 5 | Metadata display (number, date, amount) | ✅ | Table archive : référence, fournisseur, montant, dates. |
 | 6 | Version control for invoice updates | ✅ | `version` + `supersededByDocumentId` (V53). Upload v1 vérifié. |
 | 7 | Retention policy configuration | 🟠 | `DocumentRetentionJob` configurable (`app.retention.years:10`) ; config par **propriété**, pas d'UI. Note 10 ans affichée. |
@@ -314,7 +314,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 8 | Reduced physical storage | ✅ | 100% numérique. |
 | 9 | Instant retrieval | ✅ | Recherche + viewer. |
 
-**Gaps M9 :** #1 pas d'arborescence dossiers ; #4 pas de zoom/rotate dédiés ; #7 retention configurable par propriété (pas d'UI) ; #8 purge non automatisée (par design) ; #11 pas de rapport conformité archives dédié.
+**Gaps M9 :** #1 pas d'arborescence dossiers ; #7 retention configurable par propriété (pas d'UI) ; #8 purge non automatisée (par design) ; #11 pas de rapport conformité archives dédié.
 
 ---
 
@@ -515,7 +515,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | M6 Approval | 17 | 3 | 0 | 0 | Bon |
 | M7 Payment | 17 | 4 | 0 | 0 | Bon (batch B3 + alertes configurables B4 faits) |
 | M8 Supplier | 20 | 1 | 0 | 0 | Bon (catégorisation faite B5 ; onboarding sans assistant dédié) |
-| M9 Archiving | 12 | 5 | 0 | 0 | Bon (purge/folder/zoom partiels) |
+| M9 Archiving | 13 | 4 | 0 | 0 | Bon (zoom/rotate livré C3 ; purge/folder partiels) |
 | M10 Audit | 20 | 2 | 0 | 0 | Très bon |
 | M11 Reporting | 18 | 5 | 0 | 0 | Bon (cash-flow corrigé PROB-054) |
 | M12 Integration | 7 | 9 | 0 | 0 | **Cadre + planif de synchro (B6)** ; pas de sync live externe |
