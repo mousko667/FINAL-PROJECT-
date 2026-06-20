@@ -485,6 +485,21 @@
         "HIGH_VOLUME": "Volume élevé",
         "EXCESSIVE_ACCESS_DENIED": "Accès refusés excessifs"
       },
+      "retention": {
+        "title": "Conformité de la rétention",
+        "period": "Période de rétention",
+        "years": "{{count}} ans",
+        "active": "Politique active",
+        "yes": "Oui",
+        "no": "Non",
+        "lastSweep": "Dernier balayage",
+        "never": "Jamais",
+        "flagged": "Documents marqués",
+        "statusConforme": "Conforme",
+        "statusAttention": "Attention",
+        "statusNonConforme": "Non conforme",
+        "sweepOverdue": "Le dernier balayage de rétention est en retard."
+      },
       "summary": {
         "tabJournal": "Journal",
         "tabSummary": "Synthèse",

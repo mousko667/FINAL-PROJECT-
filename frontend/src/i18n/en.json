@@ -485,6 +485,21 @@
         "HIGH_VOLUME": "High volume",
         "EXCESSIVE_ACCESS_DENIED": "Excessive access-denied"
       },
+      "retention": {
+        "title": "Retention compliance",
+        "period": "Retention period",
+        "years": "{{count}} years",
+        "active": "Policy active",
+        "yes": "Yes",
+        "no": "No",
+        "lastSweep": "Last sweep",
+        "never": "Never",
+        "flagged": "Flagged documents",
+        "statusConforme": "Compliant",
+        "statusAttention": "Warning",
+        "statusNonConforme": "Non-compliant",
+        "sweepOverdue": "The last retention sweep is overdue."
+      },
       "summary": {
         "tabJournal": "Log",
         "tabSummary": "Summary",
