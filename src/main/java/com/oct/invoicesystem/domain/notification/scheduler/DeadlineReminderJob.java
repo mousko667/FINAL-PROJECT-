@@ -4,6 +4,7 @@ import com.oct.invoicesystem.domain.invoice.model.Invoice;
 import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
 import com.oct.invoicesystem.domain.invoice.repository.InvoiceRepository;
 import com.oct.invoicesystem.domain.notification.event.ApprovalDeadlineEvent;
+import com.oct.invoicesystem.domain.notification.event.ApprovalEscalationEvent;
 import com.oct.invoicesystem.domain.notification.service.EmailService;
 import com.oct.invoicesystem.domain.payment.model.PaymentAlertRule;
 import com.oct.invoicesystem.domain.payment.repository.PaymentAlertRuleRepository;
@@ -11,7 +12,9 @@ import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.domain.user.repository.UserRepository;
 import com.oct.invoicesystem.domain.workflow.model.ApprovalStep;
 import com.oct.invoicesystem.domain.workflow.model.ApprovalStepStatus;
+import com.oct.invoicesystem.domain.workflow.model.EscalationRule;
 import com.oct.invoicesystem.domain.workflow.repository.ApprovalStepRepository;
+import com.oct.invoicesystem.domain.workflow.repository.EscalationRuleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -37,6 +40,7 @@ public class DeadlineReminderJob {
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final PaymentAlertRuleRepository paymentAlertRuleRepository;
+    private final EscalationRuleRepository escalationRuleRepository;
 
     /** Fallback threshold (days) used when no payment alert rule is configured (B4). */
     private static final int DEFAULT_DUE_ALERT_DAYS = 7;
@@ -47,7 +51,9 @@ public class DeadlineReminderJob {
     /**
      * Runs daily at 07:00. Sends deadline reminders (24h warning) AND SLA escalations (past deadline).
      * Reminder  → assigned approver
-     * Escalation → DAF + ADMIN users when deadline already passed
+     * Escalation → next approval tier in the same department (contextual), else DAF only,
+     *              once overdue past the smallest active EscalationRule threshold (B1).
+     *              Sends email + persists an in-app notification. Admin is never a recipient.
      */
     @Scheduled(cron = "0 0 7 * * *")
     public void sendDeadlineReminders() {
@@ -92,13 +98,19 @@ public class DeadlineReminderJob {
 
         // ── SLA Escalations ────────────────────────────────────────────────
         if (!overdue.isEmpty()) {
-            List<User> dafUsers   = userRepository.findActiveUsersByRoleName("ROLE_DAF");
-            List<User> adminUsers = userRepository.findActiveUsersByRoleName("ROLE_ADMIN");
+            // Effective escalation threshold = smallest active rule (0 = immediate, historical default)
+            int escalationThresholdHours = escalationRuleRepository.findByActiveTrue().stream()
+                    .filter(EscalationRule::isActive)
+                    .mapToInt(EscalationRule::getHoursAfterDeadline)
+                    .min()
+                    .orElse(0);
 
             for (ApprovalStep step : overdue) {
                 try {
                     var invoice = step.getInvoice();
                     long hoursOverdue = ChronoUnit.HOURS.between(step.getDeadline(), now);
+
+                    if (hoursOverdue < escalationThresholdHours) continue;
 
                     Map<String, Object> vars = buildStepVars(invoice, step);
                     vars.put("hoursOverdue", hoursOverdue);
@@ -116,14 +128,31 @@ public class DeadlineReminderJob {
                         );
                     }
 
-                    // Escalate to DAF + Admin
-                    for (User manager : concat(dafUsers, adminUsers)) {
+                    // Contextual escalation recipient (B1):
+                    // N1 overdue in a 2-tier dept → the N2 approver; otherwise → DAF only.
+                    User recipient = null;
+                    if (step.getStepOrder() != null && step.getStepOrder() == 1) {
+                        recipient = approvalStepRepository
+                                .findByInvoiceIdAndStepOrder(invoice.getId(), 2)
+                                .map(ApprovalStep::getApprover)
+                                .orElse(null);
+                    }
+
+                    List<User> recipients = (recipient != null)
+                            ? java.util.List.of(recipient)
+                            : userRepository.findActiveUsersByRoleName("ROLE_DAF");
+
+                    for (User mgr : recipients) {
                         emailService.sendEmail(
-                                manager.getEmail(),
+                                mgr.getEmail(),
                                 "🚨 Escalade SLA — Facture bloquée / SLA Escalation",
                                 "sla-escalation-manager",
                                 vars
                         );
+                        // In-app notification (B1)
+                        eventPublisher.publishEvent(
+                                new ApprovalEscalationEvent(
+                                        this, invoice.getId(), mgr.getId()));
                     }
 
                     log.info("SLA escalation sent for invoice {} (step {}, {}h overdue)",
@@ -148,11 +177,6 @@ public class DeadlineReminderJob {
         vars.put("frontendUrl",  frontendUrl);
         vars.put("invoiceId",    invoice.getId().toString());
         return vars;
-    }
-
-    private <T> List<T> concat(List<T> a, List<T> b) {
-        return java.util.stream.Stream.concat(a.stream(), b.stream())
-                .distinct().toList();
     }
 
     /**
