@@ -1,5 +1,6 @@
 package com.oct.invoicesystem.domain.retention.controller;
 
+import com.oct.invoicesystem.domain.retention.dto.RetentionComplianceDTO;
 import com.oct.invoicesystem.domain.retention.dto.RetentionPolicyDTO;
 import com.oct.invoicesystem.domain.retention.dto.RetentionPolicyRequest;
 import com.oct.invoicesystem.domain.retention.service.RetentionPolicyService;
@@ -30,6 +31,13 @@ public class RetentionPolicyController {
     @Operation(summary = "Get the retention policy")
     public ApiResponse<RetentionPolicyDTO> get() {
         return ApiResponse.success(service.get());
+    }
+
+    @GetMapping("/compliance")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get retention compliance status")
+    public ApiResponse<RetentionComplianceDTO> compliance() {
+        return ApiResponse.success(service.evaluateCompliance());
     }
 
     @PutMapping

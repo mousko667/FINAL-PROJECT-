@@ -63,4 +63,18 @@ class RetentionPolicyControllerIntegrationTest {
         mockMvc.perform(get("/api/v1/retention-policy"))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void compliance_asAdmin_returnsOk() throws Exception {
+        mockMvc.perform(get("/api/v1/retention-policy/compliance"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "DAF")
+    void compliance_asDaf_returnsForbidden() throws Exception {
+        mockMvc.perform(get("/api/v1/retention-policy/compliance"))
+                .andExpect(status().isForbidden());
+    }
 }
