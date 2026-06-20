@@ -47,4 +47,33 @@ describe('ViewerToolbar', () => {
     expect(screen.getByText(/sur/i)).toBeDefined()
     expect(screen.getByText(/5/)).toBeDefined()
   })
+
+  it('déclenche les callbacks de navigation de page', async () => {
+    const u = userEvent.setup()
+    const onPrevPage = vi.fn()
+    const onNextPage = vi.fn()
+    renderToolbar({ pageNumber: 2, numPages: 5, onPrevPage, onNextPage })
+    await u.click(screen.getByLabelText(/page précédente/i)); expect(onPrevPage).toHaveBeenCalled()
+    await u.click(screen.getByLabelText(/page suivante/i)); expect(onNextPage).toHaveBeenCalled()
+  })
+
+  it('désactive les boutons de navigation aux bornes', () => {
+    const { unmount } = render(
+      <I18nextProvider i18n={i18n}>
+        <ViewerToolbar zoom={1} rotation={0} canZoomIn={true} canZoomOut={true}
+          onZoomIn={vi.fn()} onZoomOut={vi.fn()} onRotate={vi.fn()} onReset={vi.fn()}
+          pageNumber={1} numPages={5} onPrevPage={vi.fn()} onNextPage={vi.fn()} />
+      </I18nextProvider>
+    )
+    expect(screen.getByLabelText(/page précédente/i)).toHaveProperty('disabled', true)
+    unmount()
+    render(
+      <I18nextProvider i18n={i18n}>
+        <ViewerToolbar zoom={1} rotation={0} canZoomIn={true} canZoomOut={true}
+          onZoomIn={vi.fn()} onZoomOut={vi.fn()} onRotate={vi.fn()} onReset={vi.fn()}
+          pageNumber={5} numPages={5} onPrevPage={vi.fn()} onNextPage={vi.fn()} />
+      </I18nextProvider>
+    )
+    expect(screen.getByLabelText(/page suivante/i)).toHaveProperty('disabled', true)
+  })
 })

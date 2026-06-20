@@ -284,6 +284,8 @@
       "resetView": "Réinitialiser",
       "page": "Page",
       "of": "sur",
+      "prevPage": "Page précédente",
+      "nextPage": "Page suivante",
       "loadError": "Impossible de charger le document."
     },
     "lineItems": "Lignes de facturation",

@@ -284,6 +284,8 @@
       "resetView": "Reset",
       "page": "Page",
       "of": "of",
+      "prevPage": "Previous page",
+      "nextPage": "Next page",
       "loadError": "Unable to load the document."
     },
     "lineItems": "Line Items",

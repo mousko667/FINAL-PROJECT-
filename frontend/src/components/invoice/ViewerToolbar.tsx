@@ -36,10 +36,10 @@ export function ViewerToolbar(props: ViewerToolbarProps) {
 
       {multiPage && (
         <div className="flex items-center gap-1 ml-auto text-xs text-gray-600">
-          <button type="button" className={btn} aria-label={t('invoice.viewer.zoomOut', 'Page précédente')}
+          <button type="button" className={btn} aria-label={t('invoice.viewer.prevPage', 'Page précédente')}
             onClick={props.onPrevPage} disabled={(pageNumber ?? 1) <= 1}><ChevronLeft className="w-4 h-4" /></button>
           <span>{t('invoice.viewer.page', 'Page')} {pageNumber} {t('invoice.viewer.of', 'sur')} {numPages}</span>
-          <button type="button" className={btn} aria-label={t('invoice.viewer.rotate', 'Page suivante')}
+          <button type="button" className={btn} aria-label={t('invoice.viewer.nextPage', 'Page suivante')}
             onClick={props.onNextPage} disabled={(pageNumber ?? 1) >= (numPages ?? 1)}><ChevronRight className="w-4 h-4" /></button>
         </div>
       )}
