@@ -6,6 +6,7 @@ import type { ApiResponse, PagedResponse } from '@/types/invoice'
 import { Loader2, Search, ChevronLeft, ChevronRight, Activity } from 'lucide-react'
 import { ExportMenu } from '@/components/ui/ExportMenu'
 import AuditSummary from '@/components/audit/AuditSummary'
+import RetentionComplianceCard from '@/components/audit/RetentionComplianceCard'
 
 interface AuditLog {
   id: string
@@ -192,6 +193,9 @@ export default function AdminAuditPage() {
 
       {tab === 'journal' && (
       <>
+      {/* M10 #10: retention compliance indicator */}
+      <RetentionComplianceCard />
+
       {/* M10: statistical anomaly detection */}
       <AnomalyPanel />
 
