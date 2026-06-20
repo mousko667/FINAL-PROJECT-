@@ -140,4 +140,29 @@ class AuditServiceTest {
         assertEquals(1, result.getTotalElements());
         assertEquals("HTTP_REQUEST_FINANCIAL", result.getContent().get(0).action());
     }
+
+    @Test
+    void summarize_assemblesDtoAndComputesTotal() {
+        java.time.LocalDate from = java.time.LocalDate.now().minusDays(30);
+        java.time.LocalDate to = java.time.LocalDate.now();
+        java.util.List<String> actions = java.util.List.of("LOGIN", "USER_CREATE");
+
+        when(auditLogRepository.summaryByAction(any(), any(), eq(actions)))
+                .thenReturn(java.util.List.<Object[]>of(new Object[]{"LOGIN", 5L}, new Object[]{"USER_CREATE", 2L}));
+        when(auditLogRepository.summaryByUser(any(), any(), eq(actions)))
+                .thenReturn(java.util.Arrays.<Object[]>asList(new Object[]{"alice", 4L}, new Object[]{null, 3L}));
+        when(auditLogRepository.summaryByEntityType(any(), any(), eq(actions)))
+                .thenReturn(java.util.List.<Object[]>of(new Object[]{"User", 7L}));
+        when(auditLogRepository.summaryByDay(any(), any(), eq(actions)))
+                .thenReturn(java.util.List.<Object[]>of(new Object[]{java.sql.Date.valueOf(to), 7L}));
+
+        com.oct.invoicesystem.domain.audit.dto.AuditSummaryDTO dto =
+                auditService.summarize(from, to, actions);
+
+        assertEquals(7L, dto.totalEvents()); // 5 + 2
+        assertEquals(2, dto.byAction().size());
+        assertEquals("alice", dto.byUser().get(0).label());
+        // user null -> label fallback "—"
+        assertEquals("—", dto.byUser().get(1).label());
+    }
 }

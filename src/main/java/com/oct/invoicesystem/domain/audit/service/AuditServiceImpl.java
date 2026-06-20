@@ -28,6 +28,9 @@ public class AuditServiceImpl implements AuditService {
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
 
+    private static final String USER_FALLBACK_LABEL = "—";
+    private static final int TOP_USERS = 10;
+
     @Async
     @Override
     @Transactional
@@ -129,6 +132,39 @@ public class AuditServiceImpl implements AuditService {
         }
 
         return auditLogRepository.findAll(spec, pageable).map(this::toDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public com.oct.invoicesystem.domain.audit.dto.AuditSummaryDTO summarize(
+            java.time.LocalDate from, java.time.LocalDate to, java.util.List<String> allowedActions) {
+        java.time.Instant fromI = from.atStartOfDay(java.time.ZoneOffset.UTC).toInstant();
+        java.time.Instant toI = to.plusDays(1).atStartOfDay(java.time.ZoneOffset.UTC).toInstant(); // borne haute exclusive
+
+        java.util.List<com.oct.invoicesystem.domain.audit.dto.CountEntry> byAction =
+                toEntries(auditLogRepository.summaryByAction(fromI, toI, allowedActions), false);
+        java.util.List<com.oct.invoicesystem.domain.audit.dto.CountEntry> byUser =
+                toEntries(auditLogRepository.summaryByUser(fromI, toI, allowedActions), true);
+        if (byUser.size() > TOP_USERS) byUser = byUser.subList(0, TOP_USERS);
+        java.util.List<com.oct.invoicesystem.domain.audit.dto.CountEntry> byEntityType =
+                toEntries(auditLogRepository.summaryByEntityType(fromI, toI, allowedActions), false);
+        java.util.List<com.oct.invoicesystem.domain.audit.dto.CountEntry> byDay =
+                toEntries(auditLogRepository.summaryByDay(fromI, toI, allowedActions), false);
+
+        long total = byAction.stream().mapToLong(com.oct.invoicesystem.domain.audit.dto.CountEntry::count).sum();
+        return new com.oct.invoicesystem.domain.audit.dto.AuditSummaryDTO(
+                from, to, total, byAction, byUser, byEntityType, byDay);
+    }
+
+    private java.util.List<com.oct.invoicesystem.domain.audit.dto.CountEntry> toEntries(
+            java.util.List<Object[]> rows, boolean fallbackNull) {
+        java.util.List<com.oct.invoicesystem.domain.audit.dto.CountEntry> out = new java.util.ArrayList<>();
+        for (Object[] r : rows) {
+            String label = r[0] == null ? (fallbackNull ? USER_FALLBACK_LABEL : "") : String.valueOf(r[0]);
+            long count = ((Number) r[1]).longValue();
+            out.add(new com.oct.invoicesystem.domain.audit.dto.CountEntry(label, count));
+        }
+        return out;
     }
 
     private AuditLogDTO toDTO(AuditLog log) {

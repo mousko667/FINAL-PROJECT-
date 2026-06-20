@@ -15,4 +15,8 @@ public interface AuditService {
 
     /** Filtered search restricted to a given set of allowed action types. */
     Page<AuditLogDTO> searchLogsWithActionFilter(UUID userId, String entityType, String entityId, String action, List<String> allowedActions, Pageable pageable);
+
+    /** Aggregated audit summary over [from, to], restricted to allowedActions (M10 #12). */
+    com.oct.invoicesystem.domain.audit.dto.AuditSummaryDTO summarize(
+            java.time.LocalDate from, java.time.LocalDate to, java.util.List<String> allowedActions);
 }
