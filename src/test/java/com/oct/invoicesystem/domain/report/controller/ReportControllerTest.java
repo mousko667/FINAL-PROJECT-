@@ -2,7 +2,9 @@ package com.oct.invoicesystem.domain.report.controller;
 
 import com.oct.invoicesystem.domain.report.dto.BottleneckDTO;
 import com.oct.invoicesystem.domain.report.dto.DashboardKpiDTO;
+import com.oct.invoicesystem.domain.report.dto.ReportPreviewDTO;
 import com.oct.invoicesystem.domain.report.dto.SupplierPerformanceDTO;
+import com.oct.invoicesystem.domain.report.service.ReportBuilderService;
 import com.oct.invoicesystem.domain.report.service.ReportService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +23,8 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -42,6 +46,9 @@ class ReportControllerTest {
 
     @MockBean
     private ReportService reportService;
+
+    @MockBean
+    private ReportBuilderService reportBuilderService;
 
     // ─── KPIs ──────────────────────────────────────────────────────────────
 
@@ -233,6 +240,30 @@ class ReportControllerTest {
     void getSupplierPerformance_WithAdmin_ReturnsForbidden() throws Exception {
         UUID supplierId = UUID.randomUUID();
         mockMvc.perform(get("/api/v1/reports/supplier/" + supplierId + "/performance"))
+                .andExpect(status().isForbidden());
+    }
+
+    // ─── Report preview (M11 #10) ──────────────────────────────────────────
+
+    @Test
+    @WithMockUser(roles = "DAF")
+    void previewDefinition_WithDaf_ReturnsPreview() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(reportBuilderService.preview(eq(id), anyInt())).thenReturn(
+                new ReportPreviewDTO(List.of("Reference"), List.of(List.of("FAC-1")), 1, "INVOICES", "CSV"));
+
+        mockMvc.perform(get("/api/v1/reports/definitions/" + id + "/preview").param("limit", "20"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.totalRows").value(1))
+                .andExpect(jsonPath("$.data.columns[0]").value("Reference"))
+                .andExpect(jsonPath("$.data.rows[0][0]").value("FAC-1"));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void previewDefinition_WithAdmin_ReturnsForbidden() throws Exception {
+        mockMvc.perform(get("/api/v1/reports/definitions/" + UUID.randomUUID() + "/preview"))
                 .andExpect(status().isForbidden());
     }
 }

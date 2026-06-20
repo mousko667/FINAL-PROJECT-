@@ -201,6 +201,16 @@ public class ReportController {
                 .body(body);
     }
 
+    @GetMapping("/definitions/{id}/preview")
+    @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
+    @Operation(summary = "Preview a report definition's dataset before export",
+            description = "Returns the column headers and the first N rows (M11 #10) without generating a file")
+    public ApiResponse<com.oct.invoicesystem.domain.report.dto.ReportPreviewDTO> previewDefinition(
+            @PathVariable UUID id,
+            @RequestParam(defaultValue = "20") int limit) {
+        return ApiResponse.success(reportBuilderService.preview(id, limit));
+    }
+
     @GetMapping("/executive-summary")
     @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
     @Operation(summary = "Download the executive-summary PDF")
