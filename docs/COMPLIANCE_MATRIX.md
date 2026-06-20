@@ -332,7 +332,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 7 | User login/logout activity | ✅ | LOGIN / MFA / ACCESS_DENIED (vérifié). |
 | 8 | Export audit trail function | ✅ | `/audit-logs/export` CSV/Excel/PDF (ExportMenu). |
 | 9 | Anomaly detection alerts | ✅ | Panneau « Anomalies détectées » (HIGH_VOLUME, EXCESSIVE_ACCESS_DENIED) — vérifié. |
-| 10 | Retention period compliance display | 🟠 | Rétention gérée en M9/M14 ; pas d'indicateur de conformité de rétention **sur l'écran audit**. |
+| 10 | Retention period compliance display | ✅ | Carte « Conformité de la rétention » sur /admin/audit (onglet Journal) : statut CONFORME/ATTENTION/NON_CONFORME calculé (GET /retention-policy/compliance, ADMIN, SoD), période, dernier balayage, docs marqués. |
 | 11 | Real-time monitoring dashboard | ✅ | « Activité récente / En direct ». |
 | 12 | Audit summary reports | ✅ | Rapport de synthese agrege (totaux par action/utilisateur/entite/jour, plage de dates) en onglet "Synthese" sur /admin/audit (ADMIN, systeme) et /audit/financial (DAF, financier) ; export csv/excel/pdf ; endpoints /audit-logs/summary/{system,financial,export} avec garde SoD. |
 
