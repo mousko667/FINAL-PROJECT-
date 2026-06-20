@@ -1030,5 +1030,21 @@
     "PUBLIC": "Public",
     "INTERNAL": "Interne",
     "CONFIDENTIAL": "Confidentiel"
+  },
+  "escalationRules": {
+    "title": "Règles d'escalade",
+    "navTitle": "Escalades",
+    "subtitle": "Configurez le délai après dépassement avant qu'une approbation soit escaladée.",
+    "new": "Nouvelle règle",
+    "hoursAfter": "Heures après échéance",
+    "hoursHint": "L'escalade est envoyée une fois l'approbation en retard de ce nombre d'heures (0 = immédiatement).",
+    "label": "Libellé",
+    "labelPlaceholder": "ex. Escalader après 1 jour",
+    "active": "Active",
+    "inactive": "Inactive",
+    "recipientNote": "Le destinataire est déterminé automatiquement : le validateur de niveau supérieur du même département, sinon le DAF.",
+    "empty": "Aucune règle — l'escalade est immédiate vers le DAF par défaut.",
+    "saveError": "Échec de l'enregistrement de la règle.",
+    "deleteConfirm": "Supprimer cette règle ?"
   }
 }

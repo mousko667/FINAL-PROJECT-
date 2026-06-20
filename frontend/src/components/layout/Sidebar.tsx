@@ -26,6 +26,7 @@ import {
   Megaphone,
   ShieldAlert,
   ListChecks,
+  AlarmClock,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -187,6 +188,9 @@ export default function Sidebar() {
           <NavItem to="/admin/delegations" icon={UserCheck} label={t('admin.delegations.title', 'Délégations')} />
           <NavItem to="/admin/matching-config" icon={SlidersHorizontal} label={t('admin.matchingConfig.navTitle', 'Rapprochement')} />
           <NavItem to="/admin/checklist-templates" icon={ListChecks} label={t('checklist.navTitle', 'Checklists')} />
+          <RoleGuard allowedRoles={['ROLE_ADMIN', 'ROLE_DAF']} fallback={null}>
+            <NavItem to="/admin/escalation-rules" icon={AlarmClock} label={t('escalationRules.navTitle', 'Escalades')} />
+          </RoleGuard>
           <NavItem to="/admin/security" icon={Shield} label={t('admin.security.title', 'Sécurité')} />
           <NavItem to="/admin/compliance" icon={ShieldAlert} label={t('admin.compliance.navTitle', 'Conformité')} />
           <NavItem to="/admin/integrations" icon={Zap} label={t('admin.integrations.title', 'Intégrations')} />

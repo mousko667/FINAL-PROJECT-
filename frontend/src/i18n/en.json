@@ -1030,5 +1030,21 @@
     "PUBLIC": "Public",
     "INTERNAL": "Internal",
     "CONFIDENTIAL": "Confidential"
+  },
+  "escalationRules": {
+    "title": "Escalation Rules",
+    "navTitle": "Escalations",
+    "subtitle": "Configure how long after a missed deadline an approval is escalated.",
+    "new": "New rule",
+    "hoursAfter": "Hours after deadline",
+    "hoursHint": "Escalation is sent once an approval is overdue by this many hours (0 = immediately).",
+    "label": "Label",
+    "labelPlaceholder": "e.g. Escalate after 1 day",
+    "active": "Active",
+    "inactive": "Inactive",
+    "recipientNote": "The recipient is determined automatically: the next approval tier in the same department, otherwise the DAF.",
+    "empty": "No rules — escalation is immediate to the DAF by default.",
+    "saveError": "Failed to save the rule.",
+    "deleteConfirm": "Delete this rule?"
   }
 }
