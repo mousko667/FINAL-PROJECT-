@@ -1,9 +1,22 @@
+vi.mock('@/components/invoice/pdfWorker', () => ({
+  pdfjs: { GlobalWorkerOptions: {} },
+  Document: ({ children, onLoadSuccess }: any) => {
+    // simule un PDF de 3 pages
+    onLoadSuccess?.({ numPages: 3 })
+    return <div data-testid="pdf-doc">{children}</div>
+  },
+  Page: ({ scale, rotate, pageNumber }: any) => (
+    <div data-testid="pdf-page" data-scale={scale} data-rotate={rotate} data-page={pageNumber} />
+  ),
+}))
+
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { I18nextProvider } from 'react-i18next'
 import i18n from '@/i18n'
 import { ViewerToolbar } from '@/components/invoice/ViewerToolbar'
+import { DocumentViewerModal } from '@/components/invoice/DocumentViewerModal'
 
 function renderToolbar(overrides = {}) {
   const props = {
@@ -75,5 +88,77 @@ describe('ViewerToolbar', () => {
       </I18nextProvider>
     )
     expect(screen.getByLabelText(/page suivante/i)).toHaveProperty('disabled', true)
+  })
+})
+
+function renderModal(props = {}) {
+  const onClose = vi.fn()
+  render(
+    <I18nextProvider i18n={i18n}>
+      <DocumentViewerModal url="http://x/doc.pdf" filename="doc.pdf" fileType="application/pdf" onClose={onClose} {...props} />
+    </I18nextProvider>
+  )
+  return { onClose }
+}
+
+describe('DocumentViewerModal', () => {
+  it('rend un PDF via react-pdf à 100% / 0°', () => {
+    renderModal()
+    const page = screen.getByTestId('pdf-page')
+    expect(page.getAttribute('data-scale')).toBe('1')
+    expect(page.getAttribute('data-rotate')).toBe('0')
+  })
+
+  it('zoom + augmente le scale, zoom - le diminue', async () => {
+    const u = userEvent.setup()
+    renderModal()
+    await u.click(screen.getByLabelText(/zoom avant/i))
+    expect(Number(screen.getByTestId('pdf-page').getAttribute('data-scale'))).toBeGreaterThan(1)
+    await u.click(screen.getByLabelText(/zoom arrière/i))
+    expect(Number(screen.getByTestId('pdf-page').getAttribute('data-scale'))).toBe(1)
+  })
+
+  it('rotation cycle 90/180/270/0', async () => {
+    const u = userEvent.setup()
+    renderModal()
+    const rot = () => screen.getByTestId('pdf-page').getAttribute('data-rotate')
+    await u.click(screen.getByLabelText(/pivoter/i)); expect(rot()).toBe('90')
+    await u.click(screen.getByLabelText(/pivoter/i)); expect(rot()).toBe('180')
+    await u.click(screen.getByLabelText(/pivoter/i)); expect(rot()).toBe('270')
+    await u.click(screen.getByLabelText(/pivoter/i)); expect(rot()).toBe('0')
+  })
+
+  it('reset ramène à 100% / 0°', async () => {
+    const u = userEvent.setup()
+    renderModal()
+    await u.click(screen.getByLabelText(/zoom avant/i))
+    await u.click(screen.getByLabelText(/pivoter/i))
+    await u.click(screen.getByLabelText(/réinitialiser/i))
+    const page = screen.getByTestId('pdf-page')
+    expect(page.getAttribute('data-scale')).toBe('1')
+    expect(page.getAttribute('data-rotate')).toBe('0')
+  })
+
+  it('rend une image avec transform zoom+rotation', async () => {
+    const u = userEvent.setup()
+    render(
+      <I18nextProvider i18n={i18n}>
+        <DocumentViewerModal url="http://x/p.png" filename="p.png" fileType="image/png" onClose={vi.fn()} />
+      </I18nextProvider>
+    )
+    await u.click(screen.getByLabelText(/zoom avant/i))
+    const img = screen.getByRole('img')
+    expect(img.getAttribute('style')).toMatch(/scale/)
+    await u.click(screen.getByLabelText(/pivoter/i))
+    expect(img.getAttribute('style')).toMatch(/rotate/)
+  })
+
+  it('affiche un lien download pour un type non prévisualisable', () => {
+    render(
+      <I18nextProvider i18n={i18n}>
+        <DocumentViewerModal url="http://x/f.zip" filename="f.zip" fileType="application/zip" onClose={vi.fn()} />
+      </I18nextProvider>
+    )
+    expect(screen.getByText(/aperçu non disponible/i)).toBeDefined()
   })
 })
