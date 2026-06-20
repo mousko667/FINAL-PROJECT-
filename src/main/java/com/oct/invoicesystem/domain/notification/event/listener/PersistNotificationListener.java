@@ -163,6 +163,24 @@ public class PersistNotificationListener {
         });
     }
 
+    /**
+     * Persist an in-app escalation notification for the resolved recipient (B1).
+     */
+    @Async
+    @EventListener
+    public void onApprovalEscalation(ApprovalEscalationEvent event) {
+        log.info("Persisting escalation notification for invoice {} → user {}",
+                event.getInvoiceId(), event.getRecipientUserId());
+        invoiceRepository.findById(event.getInvoiceId()).ifPresent(invoice ->
+            userRepository.findById(event.getRecipientUserId()).ifPresent(user ->
+                save(user, invoice,
+                        "URGENT — Escalade SLA",
+                        "URGENT — SLA escalation",
+                        "La facture " + invoice.getReferenceNumber() + " a dépassé son délai d'approbation et vous est escaladée. Action requise.",
+                        "Invoice " + invoice.getReferenceNumber() + " has exceeded its approval deadline and has been escalated to you. Action required.",
+                        NotificationType.DEADLINE)));
+    }
+
     private void save(User user, Invoice invoice,
                       String titleFr, String titleEn,
                       String messageFr, String messageEn,
