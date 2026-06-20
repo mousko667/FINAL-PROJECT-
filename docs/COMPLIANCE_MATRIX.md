@@ -115,7 +115,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 1 | Workflow configuration interface | ✅ | `/admin/approval-matrix` : config du routage par département. |
 | 2 | Multi-level approval routing rules | ✅ | Matrice N1/N2 par dept (INFO/INFRA/TECH = 2 niveaux). |
 | 3 | Validation checklist templates | ✅ | Domaine `checklist` (V58) : admin CRUD `/admin/checklist-templates` (templates global/département + items ordonnés required), affichage interactif sur l'écran de validation (`ValidationChecklist`, coche + note, **non bloquant**), réponses persistées par facture. **Fait (B1, 2026-06-18)** : `ChecklistServiceIntegrationTest`. |
-| 4 | Automatic validation rules (PO matching, thresholds, supplier verif) | ✅ | Rapprochement auto à la soumission (M5) + seuils de tolérance (`/admin/matching-config`). |
+| 4 | Automatic validation rules (PO matching, thresholds, supplier verif) | ✅ | Rapprochement auto à la soumission (M5) + seuils de tolérance (`/admin/matching-config`) + garde de limite d'approbation : `validateN1`/`validateN2` refusent (`approval.limit.exceeded`) si `approvalLimit < amount` ; DAF exempt ; `null`=illimité. Tests `ApprovalServiceTest`. |
 | 5 | Pending validation queue | ✅ | `/approvals` : file d'attente N1. |
 | 6 | Invoice review interface with key details | ✅ | `/invoices/:id` : détails + historique + parcours. |
 | 7 | Approval/Rejection with comments | ✅ | InvoiceActionPanel : commentaire à la validation + motif au rejet (vérifié runtime). |
@@ -131,7 +131,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 1 | Configurable multi-level workflows | ✅ | Matrice d'approbation. |
 | 2 | Automated validation checks | ✅ | Matching + seuils + garde document. |
 | 3 | PO matching | ✅ | M5. |
-| 4 | Threshold-based approval routing | 🟠 | Seuils de **tolérance matching** configurables ; le routage par **montant** (approval_limit) existe en donnée mais pas exploité comme règle de routage configurable. |
+| 4 | Threshold-based approval routing | ✅ | Garde de limite d'approbation : `validateN1`/`validateN2` refusent (`approval.limit.exceeded`) si `approvalLimit < amount` ; DAF exempt ; `null`=illimité. Tests `ApprovalServiceTest`. |
 | 5 | Approval/rejection with audit trail | ✅ | Historique + audit (M10). |
 | 6 | Rejection reason documentation | ✅ | Motif obligatoire enregistré + affiché. |
 | 7 | Re-submission workflow | ✅ | resubmit. |
@@ -139,7 +139,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 9 | SLA compliance monitoring | ✅ | UI #12. |
 | 10 | Streamlined & transparent validation | ✅ | Parcours d'approbation complet visible. |
 
-**Gaps M4 :** ~~#3 checklist templates absents~~ **fait (B1)** ; ~~#8 motif de rejet en texte libre (pas une liste)~~ **fait (C1, 2026-06-19)** ; ~~#11 escalade sans UI de config~~ **fait (escalade B1, 2026-06-20)** ; feat #4 routage par seuil de montant non exploité comme règle.
+**Gaps M4 :** ~~#3 checklist templates absents~~ **fait (B1)** ; ~~#8 motif de rejet en texte libre (pas une liste)~~ **fait (C1, 2026-06-19)** ; ~~#11 escalade sans UI de config~~ **fait (escalade B1, 2026-06-20)** ; ~~feat #4 routage par seuil de montant~~ **fait (A1, 2026-06-20)**.
 
 ---
 

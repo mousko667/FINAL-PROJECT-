@@ -73,7 +73,8 @@ public class ApprovalServiceImpl implements ApprovalService {
         }
         checkRole(currentUser, invoice.getDepartment().getN1Role());
         ensureNotSubmitter(invoice, currentUser);
-        
+        ensureWithinApprovalLimit(currentUser, invoice);
+
         createOrUpdateStep(invoice, 1, currentUser, "Validation N1 - " + invoice.getDepartment().getCode(), comment, null, ApprovalStepStatus.APPROVED);
         invoiceStateMachineService.sendEvent(invoiceId, InvoiceEvent.VALIDATE_N1, Map.of("comment", comment != null ? comment : ""));
     }
@@ -89,6 +90,7 @@ public class ApprovalServiceImpl implements ApprovalService {
         }
         checkRole(currentUser, invoice.getDepartment().getN2Role());
         ensureNotSubmitter(invoice, currentUser);
+        ensureWithinApprovalLimit(currentUser, invoice);
 
         createOrUpdateStep(invoice, 2, currentUser, "Validation N2 - " + invoice.getDepartment().getCode(), comment, null, ApprovalStepStatus.APPROVED);
         invoiceStateMachineService.sendEvent(invoiceId, InvoiceEvent.VALIDATE_N2, Map.of("comment", comment != null ? comment : ""));
@@ -233,6 +235,16 @@ public class ApprovalServiceImpl implements ApprovalService {
                 && approver != null
                 && invoice.getSubmittedBy().getId().equals(approver.getId())) {
             throw new WorkflowException("Approver cannot approve their own submitted invoice");
+        }
+    }
+
+    private void ensureWithinApprovalLimit(User approver, Invoice invoice) {
+        java.math.BigDecimal limit = approver.getApprovalLimit();
+        if (limit == null) {
+            return; // null = unlimited
+        }
+        if (invoice.getAmount() != null && limit.compareTo(invoice.getAmount()) < 0) {
+            throw new WorkflowException("approval.limit.exceeded");
         }
     }
 }

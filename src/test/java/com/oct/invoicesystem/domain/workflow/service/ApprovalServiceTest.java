@@ -300,4 +300,98 @@ class ApprovalServiceTest {
         assertNull(result.get(0).approverName());
         assertEquals(ApprovalStepStatus.PENDING, result.get(0).status());
     }
+
+    @Test
+    void validateN1_NullLimit_IsUnlimited_Success() {
+        invoice.setStatus(InvoiceStatus.EN_VALIDATION_N1);
+        invoice.setAmount(new java.math.BigDecimal("5000000"));
+        mockSecurityContext("ROLE_VALIDATEUR_N1_INFO");
+        currentUser.setApprovalLimit(null); // unlimited
+        when(invoiceRepository.findByIdAndDeletedAtIsNull(invoice.getId())).thenReturn(Optional.of(invoice));
+        ApprovalStep step = new ApprovalStep();
+        step.setStatus(ApprovalStepStatus.PENDING);
+        when(approvalStepRepository.findByInvoiceIdAndStepOrder(invoice.getId(), 1)).thenReturn(Optional.of(step));
+        when(approvalStepRepository.save(any(ApprovalStep.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        approvalService.validateN1(invoice.getId(), "ok");
+
+        assertEquals(ApprovalStepStatus.APPROVED, step.getStatus());
+        verify(invoiceStateMachineService).sendEvent(eq(invoice.getId()), eq(InvoiceEvent.VALIDATE_N1), anyMap());
+    }
+
+    @Test
+    void validateN1_LimitAboveAmount_Success() {
+        invoice.setStatus(InvoiceStatus.EN_VALIDATION_N1);
+        invoice.setAmount(new java.math.BigDecimal("1000000"));
+        mockSecurityContext("ROLE_VALIDATEUR_N1_INFO");
+        currentUser.setApprovalLimit(new java.math.BigDecimal("2000000"));
+        when(invoiceRepository.findByIdAndDeletedAtIsNull(invoice.getId())).thenReturn(Optional.of(invoice));
+        ApprovalStep step = new ApprovalStep();
+        when(approvalStepRepository.findByInvoiceIdAndStepOrder(invoice.getId(), 1)).thenReturn(Optional.of(step));
+        when(approvalStepRepository.save(any(ApprovalStep.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        approvalService.validateN1(invoice.getId(), "ok");
+
+        assertEquals(ApprovalStepStatus.APPROVED, step.getStatus());
+    }
+
+    @Test
+    void validateN1_LimitEqualsAmount_Success() {
+        invoice.setStatus(InvoiceStatus.EN_VALIDATION_N1);
+        invoice.setAmount(new java.math.BigDecimal("1000000"));
+        mockSecurityContext("ROLE_VALIDATEUR_N1_INFO");
+        currentUser.setApprovalLimit(new java.math.BigDecimal("1000000")); // equal => allowed (strict <)
+        when(invoiceRepository.findByIdAndDeletedAtIsNull(invoice.getId())).thenReturn(Optional.of(invoice));
+        ApprovalStep step = new ApprovalStep();
+        when(approvalStepRepository.findByInvoiceIdAndStepOrder(invoice.getId(), 1)).thenReturn(Optional.of(step));
+        when(approvalStepRepository.save(any(ApprovalStep.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        approvalService.validateN1(invoice.getId(), "ok");
+
+        assertEquals(ApprovalStepStatus.APPROVED, step.getStatus());
+    }
+
+    @Test
+    void validateN1_LimitBelowAmount_ThrowsAndDoesNotAdvance() {
+        invoice.setStatus(InvoiceStatus.EN_VALIDATION_N1);
+        invoice.setAmount(new java.math.BigDecimal("5000000"));
+        mockSecurityContext("ROLE_VALIDATEUR_N1_INFO");
+        currentUser.setApprovalLimit(new java.math.BigDecimal("1000000"));
+        when(invoiceRepository.findByIdAndDeletedAtIsNull(invoice.getId())).thenReturn(Optional.of(invoice));
+
+        WorkflowException ex = assertThrows(WorkflowException.class,
+                () -> approvalService.validateN1(invoice.getId(), "ok"));
+        assertEquals("approval.limit.exceeded", ex.getMessage());
+        verify(invoiceStateMachineService, never()).sendEvent(any(), eq(InvoiceEvent.VALIDATE_N1), anyMap());
+    }
+
+    @Test
+    void validateN2_LimitBelowAmount_Throws() {
+        invoice.setStatus(InvoiceStatus.EN_VALIDATION_N2);
+        invoice.setAmount(new java.math.BigDecimal("5000000"));
+        mockSecurityContext("ROLE_VALIDATEUR_N2_INFO");
+        currentUser.setApprovalLimit(new java.math.BigDecimal("1000000"));
+        when(invoiceRepository.findByIdAndDeletedAtIsNull(invoice.getId())).thenReturn(Optional.of(invoice));
+
+        WorkflowException ex = assertThrows(WorkflowException.class,
+                () -> approvalService.validateN2(invoice.getId(), "ok"));
+        assertEquals("approval.limit.exceeded", ex.getMessage());
+    }
+
+    @Test
+    void bonAPayer_DafLimitBelowAmount_StillSucceeds() {
+        invoice.setStatus(InvoiceStatus.VALIDE);
+        invoice.setAmount(new java.math.BigDecimal("5000000"));
+        mockSecurityContext("ROLE_DAF");
+        currentUser.setApprovalLimit(new java.math.BigDecimal("1000000")); // below amount, but DAF is exempt
+        when(invoiceRepository.findByIdAndDeletedAtIsNull(invoice.getId())).thenReturn(Optional.of(invoice));
+        ApprovalStep step = new ApprovalStep();
+        when(approvalStepRepository.findByInvoiceIdAndStepOrder(invoice.getId(), 3)).thenReturn(Optional.of(step));
+        when(approvalStepRepository.save(any(ApprovalStep.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        approvalService.bonAPayer(invoice.getId(), "BAP OK");
+
+        assertEquals(ApprovalStepStatus.APPROVED, step.getStatus());
+        verify(invoiceStateMachineService).sendEvent(eq(invoice.getId()), eq(InvoiceEvent.BON_A_PAYER), anyMap());
+    }
 }
