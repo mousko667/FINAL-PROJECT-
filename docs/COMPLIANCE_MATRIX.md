@@ -368,7 +368,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 7 | Volume and value trends | 🟠 | `volumeBySupplier` (top fournisseurs) ; pas de **tendance temporelle** (volume/valeur dans le temps). |
 | 8 | Budget vs actual comparison | ✅ | `/reports/budget-vs-actual` (200) + table budget/réalisé/variance/util. |
 | 9 | Custom report builder interface | ✅ | `/reports/builder` : dataset/format/fréquence/destinataires (vérifié, « Verif Invoices »). |
-| 10 | Report preview and export (PDF, Excel) | 🟠 | Export CSV/Excel/PDF ✅ (vérifié .xlsx + content-types) ; **pas d'aperçu in-app** avant export. |
+| 10 | Report preview and export (PDF, Excel) | ✅ | Export CSV/Excel/PDF ✅ (vérifié .xlsx + content-types) ; aperçu in-app (bouton œil → modale colonnes + N lignes) via `GET /reports/definitions/{id}/preview` ✅ (C4). |
 | 11 | Scheduled report configuration | ✅ | Fréquence MANUAL/Quotidien/Hebdo/Mensuel + ScheduledReportJob. |
 | 12 | Report distribution manager | ✅ | Champ destinataires (e-mails) + envoi e-mail avec pièce jointe (EmailService). |
 | 13 | Executive summary generator | ✅ | `/reports/executive-summary` (200) + bouton « Résumé exécutif (PDF) ». |
@@ -387,7 +387,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 9 | Scheduled automated reporting | ✅ | ScheduledReportJob. |
 | 10 | Data-driven process optimization | ✅ | Bottlenecks + KPIs. |
 
-**Gaps M11 :** ~~#4/feat#4 cash-flow cassé (500)~~ **corrigé (PROB-054)** ; #5 cycle de paiement non explicite ; #7 pas de tendances temporelles ; #10 pas d'aperçu avant export.
+**Gaps M11 :** ~~#4/feat#4 cash-flow cassé (500)~~ **corrigé (PROB-054)** ; #5 cycle de paiement non explicite ; #7 pas de tendances temporelles ; ~~#10 pas d'aperçu avant export~~ **corrigé (C4)**.
 
 ---
 
