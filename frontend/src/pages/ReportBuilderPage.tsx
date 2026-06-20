@@ -3,12 +3,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
-import { FileBarChart, Loader2, Plus, Trash2, Play, FileText } from 'lucide-react'
+import { FileBarChart, Loader2, Plus, Trash2, Play, FileText, Eye, X, Download } from 'lucide-react'
 
 interface ReportDef {
   id: string; name: string; dataset: string; format: string
   frequency: string; recipients: string | null; active: boolean; lastRunAt: string | null
 }
+
+interface ReportPreview { columns: string[]; rows: string[][]; totalRows: number; dataset: string; format: string }
 
 const DATASETS = ['INVOICES', 'SUPPLIERS', 'AUDIT', 'BUDGET']
 const FORMATS = ['CSV', 'EXCEL', 'PDF']
@@ -48,6 +50,16 @@ export default function ReportBuilderPage() {
       const a = document.createElement('a'); a.href = url; a.download = `${def.name}.${ext}`
       document.body.appendChild(a); a.click(); a.remove(); window.URL.revokeObjectURL(url)
     } finally { setRunning(null) }
+  }
+
+  const [preview, setPreview] = useState<{ def: ReportDef; data: ReportPreview } | null>(null)
+  const [previewing, setPreviewing] = useState<string | null>(null)
+  const openPreview = async (def: ReportDef) => {
+    setPreviewing(def.id)
+    try {
+      const res = await apiClient.get<{ data: ReportPreview }>(`/reports/definitions/${def.id}/preview`, { params: { limit: 20 } })
+      setPreview({ def, data: res.data.data })
+    } finally { setPreviewing(null) }
   }
 
   const downloadExecSummary = async () => {
@@ -120,6 +132,9 @@ export default function ReportBuilderPage() {
                     <td className="px-4 py-2.5">{t(`reportBuilder.frequency.${d.frequency}`, d.frequency)}</td>
                     <td className="px-4 py-2.5 text-right">
                       <div className="flex items-center gap-3 justify-end">
+                        <button onClick={() => openPreview(d)} disabled={previewing === d.id} className="text-gray-500 hover:text-primary" title={t('reportBuilder.preview', 'Aperçu')}>
+                          {previewing === d.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
+                        </button>
                         <button onClick={() => runReport(d)} disabled={running === d.id} className="text-primary hover:text-primary/80" title={t('reportBuilder.run', 'Exécuter')}>
                           {running === d.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
                         </button>
@@ -134,6 +149,55 @@ export default function ReportBuilderPage() {
             </table>
           )}
         </div>
+
+        {preview && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+               onClick={() => setPreview(null)}>
+            <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[80vh] flex flex-col"
+                 onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-5 py-4 border-b">
+                <div>
+                  <h2 className="font-semibold text-gray-900">{preview.def.name}</h2>
+                  <span className="text-xs text-gray-500">{preview.data.dataset} · {preview.data.format}</span>
+                </div>
+                <button onClick={() => setPreview(null)} className="text-gray-400 hover:text-gray-600" title={t('app.close', 'Fermer')}>
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="overflow-auto p-5 flex-1">
+                {preview.data.rows.length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-8">{t('reportBuilder.previewEmpty', 'Aucune donnée à afficher.')}</p>
+                ) : (
+                  <table className="w-full text-sm border-collapse">
+                    <thead><tr className="border-b text-left text-gray-500">
+                      {preview.data.columns.map((c, i) => <th key={i} className="px-3 py-2 font-medium whitespace-nowrap">{c}</th>)}
+                    </tr></thead>
+                    <tbody>
+                      {preview.data.rows.map((row, ri) => (
+                        <tr key={ri} className="border-b last:border-0">
+                          {row.map((cell, ci) => <td key={ci} className="px-3 py-2 text-gray-700 whitespace-nowrap">{cell}</td>)}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+              <div className="flex items-center justify-between px-5 py-4 border-t">
+                <span className="text-xs text-gray-500">
+                  {t('reportBuilder.previewShowing', { shown: preview.data.rows.length, total: preview.data.totalRows })}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setPreview(null)} className="px-3 py-2 text-sm border rounded-lg hover:bg-gray-50">{t('app.close', 'Fermer')}</button>
+                  <button onClick={() => runReport(preview.def)} disabled={running === preview.def.id}
+                    className="inline-flex items-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+                    {running === preview.def.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                    {t('reportBuilder.download', 'Télécharger')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </PageRoleGuard>
   )

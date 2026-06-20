@@ -97,6 +97,11 @@
     "create": "Create report",
     "none": "No report definitions.",
     "run": "Run",
+    "preview": "Preview",
+    "previewTitle": "Report preview",
+    "previewShowing": "Showing first {{shown}} of {{total}} rows",
+    "previewEmpty": "No data to display.",
+    "download": "Download",
     "dataset": {
       "INVOICES": "Invoices",
       "SUPPLIERS": "Suppliers",

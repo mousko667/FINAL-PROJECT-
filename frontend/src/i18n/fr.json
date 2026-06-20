@@ -97,6 +97,11 @@
     "create": "Créer le rapport",
     "none": "Aucun rapport défini.",
     "run": "Exécuter",
+    "preview": "Aperçu",
+    "previewTitle": "Aperçu du rapport",
+    "previewShowing": "Aperçu des {{shown}} premières lignes sur {{total}}",
+    "previewEmpty": "Aucune donnée à afficher.",
+    "download": "Télécharger",
     "dataset": {
       "INVOICES": "Factures",
       "SUPPLIERS": "Fournisseurs",
