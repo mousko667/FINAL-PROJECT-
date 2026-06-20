@@ -800,6 +800,18 @@
 
 ---
 
+### [PROB-066] 4 échecs vitest pré-existants — fixtures de tests périmées + e2e Playwright ramassés par vitest
+- **Catégorie :** Frontend / Tests
+- **Sévérité :** 🟡 Mineur
+- **Découvert :** 2026-06-20 — assainissement de la base de vérif avant la tâche B2 ; `npx vitest run` rapportait 4 tests en échec sur 3 causes distinctes (5 fichiers en échec dont 3 suites Playwright).
+- **Symptôme :** (a) `InvoiceTimeline.test.tsx` (3 tests) : `Error: No QueryClient set, use QueryClientProvider to set one`. (b) `useAuth.test.tsx > navigates to /dashboard on successful login` (1 test) : `mockNavigate` jamais appelé (0 appel). (c) `e2e/bap-single-level.spec.ts`, `e2e/bap-two-level.spec.ts`, `e2e/security-audit.spec.ts` : vitest tente de charger des specs Playwright (`import @playwright/test`) et échoue.
+- **Cause racine :** Trois désalignements indépendants test/code, accumulés au fil des évolutions du code applicatif sans relance de ces tests. (a) `InvoiceTimeline` a évolué pour charger l'historique via `useQuery` (`apiClient.get('/invoices/{id}/history')`) ; le helper `renderTimeline` enveloppait redux+router+i18n mais PAS de `QueryClientProvider`, et les fixtures passaient `invoice.statusHistory` avec `changedBy.username` alors que le composant lit un appel API renvoyant des entrées plates `changedByUsername`. (b) Le mock de réponse de login encodait l'ancienne forme `data.data.user.{id,roles,...}` ; le hook `useAuth` lit désormais des champs **plats** `data.data.{userId,username,roles,supplierId}` → `roles` = `undefined` → `roles.includes('ROLE_SUPPLIER')` lève une TypeError dans `onSuccess`, la mutation se rejette et `navigate('/dashboard')` n'est jamais atteint. (c) Le bloc `test:` de `vite.config.ts` n'avait pas d'`exclude` → vitest ramassait `e2e/**`.
+- **Solution appliquée :** (a) `InvoiceTimeline.test.tsx` : ajout de `QueryClientProvider` (nouveau `QueryClient` par test, `retry:false`), `vi.mock('@/services/apiClient')` avec `get` mocké renvoyant `{ data: { data: [...] } }`, fixtures alignées sur la forme plate `changedByUsername`, assertions passées en `findByText` (async, attend la résolution du query). (b) `useAuth.test.tsx` : mock de login aligné sur la vraie forme plate `LoginResponse` (`userId/username/roles`). `/dashboard` est bien la route correcte pour ROLE_ADMIN — aucun changement de code applicatif. (c) `vite.config.ts` : `exclude: [...configDefaults.exclude, 'e2e/**']` (import de `configDefaults` depuis `vitest/config`). Les specs e2e restent exécutées par Playwright via `playwright.config.ts` (`testDir: './e2e'`). Résultat : `npx vitest run` = 43/43 verts (7 fichiers), `npx tsc --noEmit` = 0 erreur. AUCUN code applicatif modifié — uniquement tests + config.
+- **Règle préventive :** Quand un composant passe de « lit une prop » à « fetch via react-query », ou quand la forme d'une réponse API change (champs imbriqués → plats), faire un `grep` des fixtures de test sur l'ancienne forme et les aligner dans le même commit. Toujours envelopper les tests de composants/hooks utilisant react-query dans un `QueryClientProvider` (un `QueryClient` neuf par test). `npm run build`/`tsc` ne détectent PAS ces régressions — seul `vitest run` les attrape (cf. PROB-064). Configurer l'`exclude` vitest dès qu'un dossier e2e Playwright coexiste avec les tests unitaires, pour ne pas les ramasser.
+- **Fichiers modifiés :** `frontend/src/test/components/InvoiceTimeline.test.tsx`, `frontend/src/test/hooks/useAuth.test.tsx`, `frontend/vite.config.ts`.
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :

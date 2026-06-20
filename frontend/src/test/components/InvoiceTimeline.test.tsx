@@ -1,27 +1,39 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { Provider } from 'react-redux'
 import { configureStore } from '@reduxjs/toolkit'
 import { MemoryRouter } from 'react-router-dom'
 import { I18nextProvider } from 'react-i18next'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import i18n from '@/i18n'
 import { InvoiceTimeline } from '@/components/invoice/InvoiceTimeline'
 import authReducer from '@/store/slices/authSlice'
 import notificationReducer from '@/store/slices/notificationSlice'
+import apiClient from '@/services/apiClient'
 import type { Invoice } from '@/types/invoice'
+
+// InvoiceTimeline fetches history via apiClient.get(`/invoices/{id}/history`)
+vi.mock('@/services/apiClient', () => ({
+  default: {
+    get: vi.fn(),
+  },
+}))
 
 const store = configureStore({
   reducer: { auth: authReducer, notifications: notificationReducer },
 })
 
 function renderTimeline(invoice: Invoice) {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <Provider store={store}>
-      <MemoryRouter>
-        <I18nextProvider i18n={i18n}>
-          <InvoiceTimeline invoice={invoice} />
-        </I18nextProvider>
-      </MemoryRouter>
+      <QueryClientProvider client={qc}>
+        <MemoryRouter>
+          <I18nextProvider i18n={i18n}>
+            <InvoiceTimeline invoice={invoice} />
+          </I18nextProvider>
+        </MemoryRouter>
+      </QueryClientProvider>
     </Provider>
   )
 }
@@ -38,55 +50,60 @@ const baseInvoice: Invoice = {
 }
 
 describe('InvoiceTimeline', () => {
-  it('shows no data message when no history', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('shows no data message when no history', async () => {
+    vi.mocked(apiClient.get).mockResolvedValueOnce({ data: { data: [] } })
     renderTimeline(baseInvoice)
     // "Aucune donnée disponible" in French
-    expect(screen.getByText(/aucune donnée/i)).toBeDefined()
+    expect(await screen.findByText(/aucune donnée/i)).toBeDefined()
   })
 
-  it('renders history entries when present', () => {
-    const invoiceWithHistory = {
-      ...baseInvoice,
-      statusHistory: [
-        {
-          id: 'h1',
-          fromStatus: 'BROUILLON',
-          toStatus: 'SOUMIS',
-          changedBy: { username: 'alice' },
-          changedAt: '2024-01-15T10:00:00Z',
-          changeReason: undefined,
-        },
-        {
-          id: 'h2',
-          fromStatus: 'SOUMIS',
-          toStatus: 'EN_VALIDATION_N1',
-          changedBy: { username: 'bob' },
-          changedAt: '2024-01-16T09:00:00Z',
-          changeReason: undefined,
-        },
-      ],
-    }
-    renderTimeline(invoiceWithHistory as Invoice)
-    // Username is rendered inline with '·' and date — use regex
-    expect(screen.getByText(/alice/)).toBeDefined()
-    expect(screen.getByText(/bob/)).toBeDefined()
+  it('renders history entries when present', async () => {
+    vi.mocked(apiClient.get).mockResolvedValueOnce({
+      data: {
+        data: [
+          {
+            id: 'h1',
+            fromStatus: 'BROUILLON',
+            toStatus: 'SOUMIS',
+            changedByUsername: 'alice',
+            changedAt: '2024-01-15T10:00:00Z',
+          },
+          {
+            id: 'h2',
+            fromStatus: 'SOUMIS',
+            toStatus: 'EN_VALIDATION_N1',
+            changedByUsername: 'bob',
+            changedAt: '2024-01-16T09:00:00Z',
+          },
+        ],
+      },
+    })
+    renderTimeline(baseInvoice)
+    // Username is rendered inline with '-' and date — use regex
+    expect(await screen.findByText(/alice/)).toBeDefined()
+    expect(await screen.findByText(/bob/)).toBeDefined()
   })
 
-  it('shows rejection reason when present', () => {
-    const invoiceWithReject = {
-      ...baseInvoice,
-      statusHistory: [
-        {
-          id: 'h1',
-          fromStatus: 'EN_VALIDATION_N1',
-          toStatus: 'REJETE',
-          changedBy: { username: 'validateur' },
-          changedAt: '2024-01-20T14:00:00Z',
-          changeReason: 'Justificatif manquant',
-        },
-      ],
-    }
-    renderTimeline(invoiceWithReject as Invoice)
-    expect(screen.getByText(/justificatif manquant/i)).toBeDefined()
+  it('shows rejection reason when present', async () => {
+    vi.mocked(apiClient.get).mockResolvedValueOnce({
+      data: {
+        data: [
+          {
+            id: 'h1',
+            fromStatus: 'EN_VALIDATION_N1',
+            toStatus: 'REJETE',
+            changedByUsername: 'validateur',
+            changedAt: '2024-01-20T14:00:00Z',
+            changeReason: 'Justificatif manquant',
+          },
+        ],
+      },
+    })
+    renderTimeline(baseInvoice)
+    expect(await screen.findByText(/justificatif manquant/i)).toBeDefined()
   })
 })

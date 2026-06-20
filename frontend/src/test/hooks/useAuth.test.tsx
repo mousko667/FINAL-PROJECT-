@@ -57,12 +57,9 @@ describe('useAuth', () => {
         data: {
           accessToken: 'access-123',
           refreshToken: 'refresh-456',
-          user: {
-            id: '1',
-            username: 'admin',
-            email: 'admin@oct.fr',
-            roles: ['ROLE_ADMIN'],
-          },
+          userId: '1',
+          username: 'admin',
+          roles: ['ROLE_ADMIN'],
         },
       },
     })
