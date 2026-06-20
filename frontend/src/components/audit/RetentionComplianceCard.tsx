@@ -41,6 +41,7 @@ export default function RetentionComplianceCard() {
   if (isError || !data) return null
 
   const style = STATUS_STYLE[data.status]
+  if (!style) return null
 
   return (
     <div className="bg-white rounded-xl border p-4">

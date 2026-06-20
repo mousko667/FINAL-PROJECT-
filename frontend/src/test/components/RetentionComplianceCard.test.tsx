@@ -53,4 +53,11 @@ describe('RetentionComplianceCard', () => {
     await waitFor(() => expect(apiClient.get).toHaveBeenCalled())
     expect(container.textContent).toBe('')
   })
+
+  it('renders nothing when the API returns an unknown status', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({ data: { data: { ...base, status: 'UNKNOWN' } } } as never)
+    const { container } = renderCard()
+    await waitFor(() => expect(apiClient.get).toHaveBeenCalled())
+    expect(container.textContent).toBe('')
+  })
 })
