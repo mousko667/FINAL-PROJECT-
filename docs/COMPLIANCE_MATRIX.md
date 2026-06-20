@@ -334,7 +334,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 9 | Anomaly detection alerts | ✅ | Panneau « Anomalies détectées » (HIGH_VOLUME, EXCESSIVE_ACCESS_DENIED) — vérifié. |
 | 10 | Retention period compliance display | 🟠 | Rétention gérée en M9/M14 ; pas d'indicateur de conformité de rétention **sur l'écran audit**. |
 | 11 | Real-time monitoring dashboard | ✅ | « Activité récente / En direct ». |
-| 12 | Audit summary reports | 🟠 | Vues filtrées + export ; pas de **rapport de synthèse** agrégé dédié. |
+| 12 | Audit summary reports | ✅ | Rapport de synthese agrege (totaux par action/utilisateur/entite/jour, plage de dates) en onglet "Synthese" sur /admin/audit (ADMIN, systeme) et /audit/financial (DAF, financier) ; export csv/excel/pdf ; endpoints /audit-logs/summary/{system,financial,export} avec garde SoD. |
 
 ### Features
 | # | Feature | Verdict | Preuve |
@@ -516,13 +516,13 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | M7 Payment | 17 | 4 | 0 | 0 | Bon (batch B3 + alertes configurables B4 faits) |
 | M8 Supplier | 20 | 1 | 0 | 0 | Bon (catégorisation faite B5 ; onboarding sans assistant dédié) |
 | M9 Archiving | 13 | 4 | 0 | 0 | Bon (zoom/rotate livré C3 ; purge/folder partiels) |
-| M10 Audit | 20 | 2 | 0 | 0 | Très bon |
+| M10 Audit | 21 | 1 | 0 | 0 | Très bon (rapport de synthèse agrégé M10 #12) |
 | M11 Reporting | 18 | 5 | 0 | 0 | Bon (cash-flow corrigé PROB-054) |
 | M12 Integration | 7 | 9 | 0 | 0 | **Cadre + planif de synchro (B6)** ; pas de sync live externe |
 | M13 User/Access | 20 | 2 | 0 | 0 | Très bon |
 | M14 Security/Compliance | 18 | 3 | 0 | 0 | Très bon |
 
-> Les chiffres comptent chaque puce (UI element OU feature) du document de requirements. Total ≈ **262 items** : ~**227 ✅**, ~**49 🟠**, ~**8 ❌**, ~**0 🔴** (A1 cash-flow + A2 Mobile Money corrigés — PROB-054/055 ; motifs de rejet prédéfinis M4 #8 → C1).
+> Les chiffres comptent chaque puce (UI element OU feature) du document de requirements. Total ≈ **262 items** : ~**228 ✅**, ~**48 🟠**, ~**8 ❌**, ~**0 🔴** (A1 cash-flow + A2 Mobile Money corrigés — PROB-054/055 ; motifs de rejet prédéfinis M4 #8 → C1).
 
 ## RÉPONSE À « est-ce 100 % implémenté ? »
 **Non.** Le système couvre **~85 % des items à 100 %**, mais il reste :
