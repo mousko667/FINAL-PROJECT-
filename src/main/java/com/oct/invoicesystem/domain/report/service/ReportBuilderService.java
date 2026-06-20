@@ -3,6 +3,7 @@ package com.oct.invoicesystem.domain.report.service;
 import com.oct.invoicesystem.domain.audit.repository.AuditLogRepository;
 import com.oct.invoicesystem.domain.invoice.service.InvoiceService;
 import com.oct.invoicesystem.domain.report.dto.ReportDefinitionDTO;
+import com.oct.invoicesystem.domain.report.dto.ReportPreviewDTO;
 import com.oct.invoicesystem.domain.report.model.ReportDefinition;
 import com.oct.invoicesystem.domain.report.repository.ReportDefinitionRepository;
 import com.oct.invoicesystem.domain.supplier.service.SupplierService;
@@ -30,6 +31,10 @@ public class ReportBuilderService {
 
     private static final Set<String> DATASETS = Set.of("INVOICES", "SUPPLIERS", "AUDIT", "BUDGET");
     private static final Set<String> FREQUENCIES = Set.of("MANUAL", "DAILY", "WEEKLY", "MONTHLY");
+    private static final int MAX_PREVIEW_ROWS = 100;
+
+    /** Column headers + data rows for a definition, before serialization to a file format. */
+    public record Dataset(String title, List<String> columns, List<List<String>> rows) {}
 
     private final ReportDefinitionRepository repository;
     private final TabularExportService exportService;
@@ -82,16 +87,22 @@ public class ReportBuilderService {
     /** Renders the report's dataset into the chosen format. Used by run() and the scheduler. */
     public byte[] render(ReportDefinition def) {
         TabularExportService.Format fmt = TabularExportService.Format.from(def.getFormat());
+        Dataset ds = buildDataset(def);
+        return exportService.export(fmt, ds.title(), ds.columns(), ds.rows());
+    }
+
+    /** Builds the headers + rows for a definition's dataset. Shared by render() and preview(). */
+    public Dataset buildDataset(ReportDefinition def) {
         return switch (def.getDataset()) {
-            case "INVOICES" -> exportService.export(fmt, "Invoices",
+            case "INVOICES" -> new Dataset("Invoices",
                     List.of("Reference", "Supplier", "Amount", "Currency", "Status", "Issue date", "Due date", "Department"),
                     invoiceService.buildExportRows(null, null, null, null, null));
-            case "SUPPLIERS" -> exportService.export(fmt, "Suppliers",
+            case "SUPPLIERS" -> new Dataset("Suppliers",
                     List.of("Company", "Tax ID", "Email", "Phone", "Status"),
                     supplierService.searchSuppliers(null, null, null, null, Pageable.unpaged()).getContent().stream()
                             .map(s -> List.of(ns(s.companyName()), ns(s.taxId()), ns(s.contactEmail()),
                                     ns(s.contactPhone()), s.status() == null ? "" : s.status().name())).toList());
-            case "BUDGET" -> exportService.export(fmt, "Budget vs Actual",
+            case "BUDGET" -> new Dataset("Budget vs Actual",
                     List.of("Department", "Budget", "Actual", "Variance", "Utilization %"),
                     reportService.getBudgetVsActual().lines().stream()
                             .map(l -> List.of(ns(l.departmentCode()),
@@ -99,7 +110,7 @@ public class ReportBuilderService {
                                     l.actual() == null ? "" : l.actual().toPlainString(),
                                     l.variance() == null ? "" : l.variance().toPlainString(),
                                     l.utilizationPercent() == null ? "" : l.utilizationPercent().toPlainString())).toList());
-            case "AUDIT" -> exportService.export(fmt, "Audit",
+            case "AUDIT" -> new Dataset("Audit",
                     List.of("Date", "Action", "Entity", "Entity ID", "IP"),
                     auditLogRepository.findAll(org.springframework.data.domain.PageRequest.of(0, 5000,
                             Sort.by(Sort.Direction.DESC, "createdAt"))).getContent().stream()
@@ -107,6 +118,18 @@ public class ReportBuilderService {
                                     ns(a.getAction()), ns(a.getEntityType()), ns(a.getEntityId()), ns(a.getIpAddress()))).toList());
             default -> throw new ValidationException("Unknown dataset: " + def.getDataset());
         };
+    }
+
+    /** Read-only preview of a definition's dataset, truncated to {@code limit} rows. Does NOT stamp lastRunAt. */
+    @Transactional(readOnly = true)
+    public ReportPreviewDTO preview(UUID id, int limit) {
+        ReportDefinition def = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Report definition not found: " + id));
+        int capped = Math.max(1, Math.min(limit, MAX_PREVIEW_ROWS));
+        Dataset ds = buildDataset(def);
+        List<List<String>> truncated = ds.rows().size() > capped ? ds.rows().subList(0, capped) : ds.rows();
+        return new ReportPreviewDTO(ds.columns(), List.copyOf(truncated), ds.rows().size(),
+                def.getDataset(), def.getFormat());
     }
 
     /**
