@@ -11,7 +11,7 @@ vi.mock('@/components/invoice/pdfWorker', () => ({
 }))
 
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { I18nextProvider } from 'react-i18next'
 import i18n from '@/i18n'
@@ -160,5 +160,36 @@ describe('DocumentViewerModal', () => {
       </I18nextProvider>
     )
     expect(screen.getByText(/aperçu non disponible/i)).toBeDefined()
+  })
+
+  it('zoom+ est bloqué à ZOOM_MAX=3 après de nombreux clics', async () => {
+    const u = userEvent.setup()
+    renderModal()
+    // 12 clics de zoom+ — ZOOM_MAX=3, ZOOM_MIN=0.5, ZOOM_STEP=0.25 → plafond atteint avant 12 clics
+    for (let i = 0; i < 12; i++) {
+      await u.click(screen.getByLabelText(/zoom avant/i))
+    }
+    const scale = Number(screen.getByTestId('pdf-page').getAttribute('data-scale'))
+    expect(scale).toBeLessThanOrEqual(3)
+    expect(scale).toBe(3)
+    expect(screen.getByLabelText(/zoom avant/i)).toHaveProperty('disabled', true)
+  })
+
+  it('une image en erreur affiche le fallback loadError + lien download', () => {
+    render(
+      <I18nextProvider i18n={i18n}>
+        <DocumentViewerModal url="http://x/broken.png" filename="broken.png" fileType="image/png" onClose={vi.fn()} />
+      </I18nextProvider>
+    )
+    // Avant l'erreur, l'image est présente
+    const img = screen.getByRole('img')
+    // Déclenche l'erreur de chargement
+    fireEvent.error(img)
+    // L'image disparaît, le fallback s'affiche
+    expect(screen.queryByRole('img')).toBeNull()
+    expect(screen.getByText(/impossible de charger/i)).toBeDefined()
+    // Lien de téléchargement présent dans le fallback
+    const links = screen.getAllByRole('link')
+    expect(links.some(l => l.getAttribute('download') !== null)).toBe(true)
   })
 })

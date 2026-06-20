@@ -79,12 +79,13 @@ export function DocumentViewerModal({ url, filename, fileType, onClose }: Docume
               onLoadSuccess={setNumPages}
               onLoadError={() => setPdfError(true)}
             />
-          ) : isImage ? (
+          ) : isImage && !pdfError ? (
             <img
               src={url}
               alt={filename}
               className="max-w-full max-h-full object-contain"
               style={{ transform: `scale(${zoom}) rotate(${rotation}deg)` }}
+              onError={() => setPdfError(true)}
             />
           ) : (
             <div className="text-center text-sm text-gray-500 p-8">
