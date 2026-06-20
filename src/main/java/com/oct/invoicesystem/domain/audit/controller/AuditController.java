@@ -148,4 +148,77 @@ public class AuditController {
                 .contentType(org.springframework.http.MediaType.parseMediaType(fmt.mediaType))
                 .body(body);
     }
+
+    // ---- M10 #12 : aggregated audit summary report (role-scoped, SoD per PROB-065) ----
+
+    private java.util.List<String> actionsForScope(String scope) {
+        return "financial".equalsIgnoreCase(scope) ? FINANCIAL_ACTIONS : SYSTEM_ACTIONS;
+    }
+
+    private java.time.LocalDate orDefault(java.time.LocalDate v, java.time.LocalDate fallback) {
+        return v == null ? fallback : v;
+    }
+
+    @GetMapping("/summary/system")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Rapport de synthèse audit système", description = "Totaux agrégés des événements système (ADMIN)")
+    public ApiResponse<com.oct.invoicesystem.domain.audit.dto.AuditSummaryDTO> systemSummary(
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate from,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate to) {
+        java.time.LocalDate t = orDefault(to, java.time.LocalDate.now());
+        java.time.LocalDate f = orDefault(from, t.minusDays(30));
+        return ApiResponse.success(auditService.summarize(f, t, SYSTEM_ACTIONS), "audit.summary.retrieved");
+    }
+
+    @GetMapping("/summary/financial")
+    @PreAuthorize("hasRole('DAF')")
+    @Operation(summary = "Rapport de synthèse audit financier", description = "Totaux agrégés des événements financiers (DAF)")
+    public ApiResponse<com.oct.invoicesystem.domain.audit.dto.AuditSummaryDTO> financialSummary(
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate from,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate to) {
+        java.time.LocalDate t = orDefault(to, java.time.LocalDate.now());
+        java.time.LocalDate f = orDefault(from, t.minusDays(30));
+        return ApiResponse.success(auditService.summarize(f, t, FINANCIAL_ACTIONS), "audit.summary.retrieved");
+    }
+
+    @GetMapping("/summary/export")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DAF')")
+    @Operation(summary = "Export du rapport de synthèse audit (csv|excel|pdf)")
+    public org.springframework.http.ResponseEntity<byte[]> exportSummary(
+            @RequestParam(defaultValue = "csv") String format,
+            @RequestParam(defaultValue = "system") String scope,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate from,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate to,
+            org.springframework.security.core.Authentication auth) {
+        boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        boolean isDaf = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_DAF"));
+        boolean financial = "financial".equalsIgnoreCase(scope);
+        // SoD guard: ADMIN may only export system, DAF may only export financial.
+        if ((financial && !isDaf) || (!financial && !isAdmin)) {
+            return org.springframework.http.ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
+        }
+        java.time.LocalDate t = orDefault(to, java.time.LocalDate.now());
+        java.time.LocalDate f = orDefault(from, t.minusDays(30));
+        var summary = auditService.summarize(f, t, actionsForScope(scope));
+        var fmt = com.oct.invoicesystem.shared.export.TabularExportService.Format.from(format);
+        java.util.List<String> headers = java.util.List.of("Dimension", "Libelle", "Nombre");
+        java.util.List<java.util.List<String>> rows = new java.util.ArrayList<>();
+        appendDim(rows, "Action", summary.byAction());
+        appendDim(rows, "Utilisateur", summary.byUser());
+        appendDim(rows, "Entite", summary.byEntityType());
+        appendDim(rows, "Jour", summary.byDay());
+        byte[] body = tabularExportService.export(fmt, "Audit Summary", headers, rows);
+        return org.springframework.http.ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=audit_summary." + fmt.extension)
+                .contentType(org.springframework.http.MediaType.parseMediaType(fmt.mediaType))
+                .body(body);
+    }
+
+    private void appendDim(java.util.List<java.util.List<String>> rows, String dim,
+                           java.util.List<com.oct.invoicesystem.domain.audit.dto.CountEntry> entries) {
+        for (var e : entries) {
+            rows.add(java.util.List.of(dim, e.label() == null ? "" : e.label(), String.valueOf(e.count())));
+        }
+    }
 }
