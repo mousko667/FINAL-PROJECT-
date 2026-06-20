@@ -100,7 +100,6 @@ public class DeadlineReminderJob {
         if (!overdue.isEmpty()) {
             // Effective escalation threshold = smallest active rule (0 = immediate, historical default)
             int escalationThresholdHours = escalationRuleRepository.findByActiveTrue().stream()
-                    .filter(EscalationRule::isActive)
                     .mapToInt(EscalationRule::getHoursAfterDeadline)
                     .min()
                     .orElse(0);
@@ -110,15 +109,13 @@ public class DeadlineReminderJob {
                     var invoice = step.getInvoice();
                     long hoursOverdue = ChronoUnit.HOURS.between(step.getDeadline(), now);
 
-                    if (hoursOverdue < escalationThresholdHours) continue;
-
                     Map<String, Object> vars = buildStepVars(invoice, step);
                     vars.put("hoursOverdue", hoursOverdue);
                     vars.put("approverName", step.getApprover() != null
                             ? step.getApprover().getFirstName() + " " + step.getApprover().getLastName()
                             : "Non assigné");
 
-                    // Notify the approver themselves (overdue warning)
+                    // Notify the approver themselves (overdue warning) — unconditional for every overdue step
                     if (step.getApprover() != null) {
                         emailService.sendEmail(
                                 step.getApprover().getEmail(),
@@ -128,35 +125,38 @@ public class DeadlineReminderJob {
                         );
                     }
 
-                    // Contextual escalation recipient (B1):
-                    // N1 overdue in a 2-tier dept → the N2 approver; otherwise → DAF only.
-                    User recipient = null;
-                    if (step.getStepOrder() != null && step.getStepOrder() == 1) {
-                        recipient = approvalStepRepository
-                                .findByInvoiceIdAndStepOrder(invoice.getId(), 2)
-                                .map(ApprovalStep::getApprover)
-                                .orElse(null);
+                    // Managerial escalation — gated by escalation threshold
+                    if (hoursOverdue >= escalationThresholdHours) {
+                        // Contextual escalation recipient (B1):
+                        // N1 overdue in a 2-tier dept → the N2 approver; otherwise → DAF only.
+                        User recipient = null;
+                        if (step.getStepOrder() != null && step.getStepOrder() == 1) {
+                            recipient = approvalStepRepository
+                                    .findByInvoiceIdAndStepOrder(invoice.getId(), 2)
+                                    .map(ApprovalStep::getApprover)
+                                    .orElse(null);
+                        }
+
+                        List<User> recipients = (recipient != null)
+                                ? List.of(recipient)
+                                : userRepository.findActiveUsersByRoleName("ROLE_DAF");
+
+                        for (User mgr : recipients) {
+                            emailService.sendEmail(
+                                    mgr.getEmail(),
+                                    "🚨 Escalade SLA — Facture bloquée / SLA Escalation",
+                                    "sla-escalation-manager",
+                                    vars
+                            );
+                            // In-app notification (B1)
+                            eventPublisher.publishEvent(
+                                    new ApprovalEscalationEvent(
+                                            this, invoice.getId(), mgr.getId()));
+                        }
+
+                        log.info("SLA escalation sent for invoice {} (step {}, {}h overdue)",
+                                invoice.getReferenceNumber(), step.getStepOrder(), hoursOverdue);
                     }
-
-                    List<User> recipients = (recipient != null)
-                            ? java.util.List.of(recipient)
-                            : userRepository.findActiveUsersByRoleName("ROLE_DAF");
-
-                    for (User mgr : recipients) {
-                        emailService.sendEmail(
-                                mgr.getEmail(),
-                                "🚨 Escalade SLA — Facture bloquée / SLA Escalation",
-                                "sla-escalation-manager",
-                                vars
-                        );
-                        // In-app notification (B1)
-                        eventPublisher.publishEvent(
-                                new ApprovalEscalationEvent(
-                                        this, invoice.getId(), mgr.getId()));
-                    }
-
-                    log.info("SLA escalation sent for invoice {} (step {}, {}h overdue)",
-                            invoice.getReferenceNumber(), step.getStepOrder(), hoursOverdue);
                 } catch (Exception e) {
                     log.error("SLA escalation failed for step {}: {}", step.getId(), e.getMessage());
                 }
