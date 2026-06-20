@@ -294,7 +294,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 4 | Document viewer with zoom/rotate | ✅ | DocumentViewerModal : contrôles zoom/rotation/reset (react-pdf pour PDF, transform CSS pour images) + pagination PDF. (C3) |
 | 5 | Metadata display (number, date, amount) | ✅ | Table archive : référence, fournisseur, montant, dates. |
 | 6 | Version control for invoice updates | ✅ | `version` + `supersededByDocumentId` (V53). Upload v1 vérifié. |
-| 7 | Retention policy configuration | 🟠 | `DocumentRetentionJob` configurable (`app.retention.years:10`) ; config par **propriété**, pas d'UI. Note 10 ans affichée. |
+| 7 | Retention policy configuration | ✅ | B2 : politique singleton en base (`retention_policy`, V62), UI admin `/admin/retention-policy` (durée + activation), lue à l'exécution par `DocumentRetentionJob` (fallback `app.retention.years`). ADMIN only. |
 | 8 | Archive and purge controls | 🟠 | Rétention **flag** (RETENTION_FLAG) ; **purge volontairement non automatisée** (non-destructif) ; pas de contrôle de purge en UI. |
 | 9 | Document access logs | ✅ | Audit logge les accès documents (M10). |
 | 10 | Export archived documents | ✅ | Bouton « PDF » par facture archivée + export global. |
@@ -308,13 +308,13 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 2 | Organized storage with metadata | ✅ | Métadonnées + filtres. |
 | 3 | Powerful search | ✅ | Recherche archive. |
 | 4 | Version control | ✅ | Versioning. |
-| 5 | Configurable retention | 🟠 | Property-based (voir UI #7). |
+| 5 | Configurable retention | ✅ | B2 : DB-backed, UI admin (voir UI #7). |
 | 6 | Access logging | ✅ | Audit. |
 | 7 | Export for external audits | ✅ | Export PDF + tabulaire. |
 | 8 | Reduced physical storage | ✅ | 100% numérique. |
 | 9 | Instant retrieval | ✅ | Recherche + viewer. |
 
-**Gaps M9 :** #1 pas d'arborescence dossiers ; #7 retention configurable par propriété (pas d'UI) ; #8 purge non automatisée (par design) ; #11 pas de rapport conformité archives dédié.
+**Gaps M9 :** #1 pas d'arborescence dossiers ; #8 purge non automatisée (par design) ; #11 pas de rapport conformité archives dédié. (#7 résolu en B2.)
 
 ---
 
@@ -475,7 +475,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 3 | Two-factor authentication settings | ✅ | « Politique MFA » (obligatoire tous rôles staff) + adoption 3/18. |
 | 4 | Login activity monitoring | ✅ | Audit LOGIN + comptes verrouillés/tentatives. |
 | 5 | Data backup status | ✅ | `/admin/compliance` : « Statut de sauvegarde : OK » + « Enregistrer une sauvegarde » (vérifié). |
-| 6 | Data retention policy configuration | 🟠 | Rétention = job property-based (M9) ; pas d'UI de config dans le module conformité. |
+| 6 | Data retention policy configuration | ✅ | B2 : UI admin `/admin/retention-policy` (durée + activation), config singleton en base (V62) lue par `DocumentRetentionJob`. ADMIN only. |
 | 7 | Privacy policy acceptance tracking | ✅ | `/compliance/privacy-acceptance` + bannière dashboard (vérifié 200). |
 | 8 | Security incident reporting | ✅ | Incidents (titre + sévérité LOW→CRITICAL + statut OPEN→CLOSED) — vérifié. |
 | 9 | Compliance checklist (SOX, IFRS, local) | ✅ | Checklist SOX/IFRS/LOCAL avec cases — vérifié. |
@@ -497,7 +497,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 9 | Compliance deadline management | ✅ | Calendrier. |
 | 10 | Comprehensive security monitoring | ✅ | Security health dashboard. |
 
-**Gaps M14 :** #6 config rétention sans UI (module conformité) ; #10 pas de boîte à outils d'audit dédiée (couvert indirectement) ; feat#4 statut de sauvegarde suivi mais pas de moteur backup/restore automatisé.
+**Gaps M14 :** #10 pas de boîte à outils d'audit dédiée (couvert indirectement) ; feat#4 statut de sauvegarde suivi mais pas de moteur backup/restore automatisé. (#6 résolu en B2.)
 
 ---
 

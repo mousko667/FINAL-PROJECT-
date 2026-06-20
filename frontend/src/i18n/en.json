@@ -1046,5 +1046,20 @@
     "empty": "No rules — escalation is immediate to the DAF by default.",
     "saveError": "Failed to save the rule.",
     "deleteConfirm": "Delete this rule?"
+  },
+  "retentionPolicy": {
+    "title": "Retention Policy",
+    "navTitle": "Retention",
+    "subtitle": "How long invoice documents are kept before being flagged for disposition.",
+    "note": "The sweep is non-destructive: documents past the retention period are flagged (audited) so an administrator can decide on their disposition. No automatic deletion.",
+    "years": "Retention period (years)",
+    "yearsHint": "Documents older than this period will be flagged on the next daily sweep.",
+    "active": "Sweep active",
+    "lastSweep": "Last sweep",
+    "lastFlagged": "Documents flagged",
+    "never": "Never",
+    "saved": "Policy saved.",
+    "saveError": "Failed to save the policy.",
+    "scopeNote": "Applies to archived invoice documents."
   }
 }

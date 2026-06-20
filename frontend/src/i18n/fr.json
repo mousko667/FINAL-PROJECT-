@@ -1046,5 +1046,20 @@
     "empty": "Aucune règle — l'escalade est immédiate vers le DAF par défaut.",
     "saveError": "Échec de l'enregistrement de la règle.",
     "deleteConfirm": "Supprimer cette règle ?"
+  },
+  "retentionPolicy": {
+    "title": "Politique de rétention",
+    "navTitle": "Rétention",
+    "subtitle": "Durée de conservation des documents de facture avant signalement pour disposition.",
+    "note": "Le balayage est non destructif : les documents dépassant la durée de rétention sont signalés (audit) pour qu'un administrateur décide de leur disposition. Aucune suppression automatique.",
+    "years": "Durée de rétention (années)",
+    "yearsHint": "Les documents plus anciens que cette durée seront signalés au prochain balayage quotidien.",
+    "active": "Balayage actif",
+    "lastSweep": "Dernier balayage",
+    "lastFlagged": "Documents signalés",
+    "never": "Jamais",
+    "saved": "Politique enregistrée.",
+    "saveError": "Échec de l'enregistrement de la politique.",
+    "scopeNote": "S'applique aux documents de facture archivés."
   }
 }

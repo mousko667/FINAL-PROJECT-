@@ -30,6 +30,7 @@ const AdminDelegationsPage = lazy(() => import('@/pages/admin/AdminDelegationsPa
 const AdminMatchingConfigPage = lazy(() => import('@/pages/admin/AdminMatchingConfigPage'))
 const AdminChecklistTemplatesPage = lazy(() => import('@/pages/admin/AdminChecklistTemplatesPage'))
 const EscalationRulesPage = lazy(() => import('@/pages/admin/EscalationRulesPage'))
+const AdminRetentionPolicyPage = lazy(() => import('@/pages/admin/AdminRetentionPolicyPage'))
 const SecuritySettingsPage = lazy(() => import('@/pages/admin/SecuritySettingsPage'))
 const IntegrationsPage = lazy(() => import('@/pages/admin/IntegrationsPage'))
 const MyAccessRequestsPage = lazy(() => import('@/pages/MyAccessRequestsPage'))
@@ -106,6 +107,7 @@ function AppRoutes() {
             <Route path="/admin/matching-config" element={<AdminMatchingConfigPage />} />
             <Route path="/admin/checklist-templates" element={<AdminChecklistTemplatesPage />} />
             <Route path="/admin/escalation-rules" element={<EscalationRulesPage />} />
+            <Route path="/admin/retention-policy" element={<AdminRetentionPolicyPage />} />
             <Route path="/admin/security" element={<SecuritySettingsPage />} />
             <Route path="/admin/integrations" element={<IntegrationsPage />} />
             <Route path="/admin/suppliers" element={<SuppliersPage />} />
