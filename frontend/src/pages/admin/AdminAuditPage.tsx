@@ -5,6 +5,7 @@ import apiClient from '@/services/apiClient'
 import type { ApiResponse, PagedResponse } from '@/types/invoice'
 import { Loader2, Search, ChevronLeft, ChevronRight, Activity } from 'lucide-react'
 import { ExportMenu } from '@/components/ui/ExportMenu'
+import AuditSummary from '@/components/audit/AuditSummary'
 
 interface AuditLog {
   id: string
@@ -144,6 +145,7 @@ function AnomalyPanel() {
 
 export default function AdminAuditPage() {
   const { t } = useTranslation()
+  const [tab, setTab] = useState<'journal' | 'summary'>('journal')
   const [filters, setFilters] = useState<AuditFilters>({ page: 0, size: 20 })
 
   const { data, isLoading } = useQuery({
@@ -168,10 +170,28 @@ export default function AdminAuditPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">{t('admin.audit.title')}</h1>
-        <ExportMenu endpoint="/audit-logs/export" filename="audit"
-          params={{ entityType: filters.entityType, action: filters.action }} />
+        {tab === 'journal' && (
+          <ExportMenu endpoint="/audit-logs/export" filename="audit"
+            params={{ entityType: filters.entityType, action: filters.action }} />
+        )}
       </div>
 
+      {/* M10 #12: Journal / Synthèse tabs */}
+      <div className="flex gap-2 border-b">
+        <button onClick={() => setTab('journal')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 ${tab === 'journal' ? 'border-primary text-primary' : 'border-transparent text-gray-500'}`}>
+          {t('admin.audit.summary.tabJournal')}
+        </button>
+        <button onClick={() => setTab('summary')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 ${tab === 'summary' ? 'border-primary text-primary' : 'border-transparent text-gray-500'}`}>
+          {t('admin.audit.summary.tabSummary')}
+        </button>
+      </div>
+
+      {tab === 'summary' && <AuditSummary scope="system" />}
+
+      {tab === 'journal' && (
+      <>
       {/* M10: statistical anomaly detection */}
       <AnomalyPanel />
 
@@ -292,6 +312,8 @@ export default function AdminAuditPage() {
           </>
         )}
       </div>
+      </>
+      )}
     </div>
   )
 }

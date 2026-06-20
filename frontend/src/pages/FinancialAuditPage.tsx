@@ -6,6 +6,7 @@ import type { ApiResponse, PagedResponse } from '@/types/invoice'
 import { Loader2, Search, ChevronLeft, ChevronRight, FileDown } from 'lucide-react'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { reportService } from '@/services/reportService'
+import AuditSummary from '@/components/audit/AuditSummary'
 
 interface AuditLog {
   id: string
@@ -30,6 +31,7 @@ interface AuditFilters {
 
 export default function FinancialAuditPage() {
   const { t } = useTranslation()
+  const [tab, setTab] = useState<'journal' | 'summary'>('journal')
   const [filters, setFilters] = useState<AuditFilters>({ page: 0, size: 20 })
 
   const exportMutation = useMutation({
@@ -72,16 +74,34 @@ export default function FinancialAuditPage() {
               {t('audit.financial.subtitle', 'Immutable record of all financial events — invoice submissions, approvals, rejections, payments.')}
             </p>
           </div>
-          <button
-            onClick={() => exportMutation.mutate()}
-            disabled={exportMutation.isPending}
-            className="flex items-center gap-2 px-4 py-2 border rounded-lg text-sm hover:bg-gray-50 disabled:opacity-60"
-          >
-            {exportMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
-            {t('audit.financial.exportPdf', 'Export PDF')}
+          {tab === 'journal' && (
+            <button
+              onClick={() => exportMutation.mutate()}
+              disabled={exportMutation.isPending}
+              className="flex items-center gap-2 px-4 py-2 border rounded-lg text-sm hover:bg-gray-50 disabled:opacity-60"
+            >
+              {exportMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+              {t('audit.financial.exportPdf', 'Export PDF')}
+            </button>
+          )}
+        </div>
+
+        {/* M10 #12: Journal / Synthèse tabs */}
+        <div className="flex gap-2 border-b">
+          <button onClick={() => setTab('journal')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 ${tab === 'journal' ? 'border-primary text-primary' : 'border-transparent text-gray-500'}`}>
+            {t('admin.audit.summary.tabJournal')}
+          </button>
+          <button onClick={() => setTab('summary')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 ${tab === 'summary' ? 'border-primary text-primary' : 'border-transparent text-gray-500'}`}>
+            {t('admin.audit.summary.tabSummary')}
           </button>
         </div>
 
+        {tab === 'summary' && <AuditSummary scope="financial" />}
+
+        {tab === 'journal' && (
+        <>
         {/* Filters */}
         <div className="bg-white rounded-xl border p-4 flex flex-wrap gap-3">
           <div className="flex items-center gap-2 border rounded-lg px-3 py-2 text-sm flex-1 min-w-[180px]">
@@ -193,6 +213,8 @@ export default function FinancialAuditPage() {
         <p className="text-xs text-gray-400">
           {t('audit.financial.immutableNote', 'This audit trail is immutable — records cannot be modified or deleted.')}
         </p>
+        </>
+        )}
       </div>
     </PageRoleGuard>
   )
