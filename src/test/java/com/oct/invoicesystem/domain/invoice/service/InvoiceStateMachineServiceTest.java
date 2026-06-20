@@ -7,13 +7,18 @@ import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
 import com.oct.invoicesystem.domain.invoice.repository.InvoiceRepository;
 import com.oct.invoicesystem.domain.invoice.statemachine.InvoiceEvent;
 import com.oct.invoicesystem.domain.invoice.statemachine.WorkflowExtendedStateKeys;
+import com.oct.invoicesystem.domain.notification.event.listener.EmailNotificationListener;
+import com.oct.invoicesystem.domain.notification.event.listener.PersistNotificationListener;
+import com.oct.invoicesystem.domain.notification.event.listener.WebSocketNotificationListener;
 import com.oct.invoicesystem.domain.user.model.Role;
 import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.domain.user.model.UserRole;
 import com.oct.invoicesystem.domain.user.repository.UserRepository;
+import com.oct.invoicesystem.domain.webhook.event.listener.WebhookEventPublisher;
 import com.oct.invoicesystem.domain.workflow.repository.InvoiceStatusHistoryRepository;
 import com.oct.invoicesystem.shared.exception.ValidationException;
 import com.oct.invoicesystem.shared.exception.WorkflowException;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,9 +55,27 @@ class InvoiceStateMachineServiceTest {
     @MockBean
     private InvoiceStatusHistoryRepository invoiceStatusHistoryRepository;
 
+    // Neutralize @Async @EventListener beans so they never touch shared mocks on background threads
+    @MockBean
+    private PersistNotificationListener persistNotificationListener;
+
+    @MockBean
+    private EmailNotificationListener emailNotificationListener;
+
+    @MockBean
+    private WebSocketNotificationListener webSocketNotificationListener;
+
+    @MockBean
+    private WebhookEventPublisher webhookEventPublisher;
+
     private Invoice invoice;
     private User currentUser;
     private Department department;
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
 
     @BeforeEach
     void setUp() {
