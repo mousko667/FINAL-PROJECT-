@@ -33,7 +33,7 @@ export default function MatchingDetailPage() {
   const { t } = useTranslation()
   const { invoiceId } = useParams<{ invoiceId: string }>()
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['matching-lines', invoiceId],
     queryFn: () => getMatchingLines(invoiceId!),
     enabled: !!invoiceId,
@@ -59,10 +59,12 @@ export default function MatchingDetailPage() {
           {t('matching.back')}
         </Link>
 
-        {isLoading || !data ? (
+        {isLoading ? (
           <div className="flex justify-center py-20">
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
+        ) : isError || !data ? (
+          <p className="text-sm text-red-500">{t('matching.error')}</p>
         ) : (
           <>
             <div className="flex items-center justify-between">
