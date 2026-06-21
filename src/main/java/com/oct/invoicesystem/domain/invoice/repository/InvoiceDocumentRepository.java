@@ -1,6 +1,7 @@
 package com.oct.invoicesystem.domain.invoice.repository;
 
 import com.oct.invoicesystem.domain.invoice.model.InvoiceDocument;
+import com.oct.invoicesystem.domain.invoice.model.RetentionDisposition;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -19,4 +20,8 @@ public interface InvoiceDocumentRepository extends JpaRepository<InvoiceDocument
 
     // M9 retention: documents uploaded on/before a cut-off (for the retention sweep).
     List<InvoiceDocument> findByUploadedAtBefore(java.time.Instant cutoff);
+
+    // M10 #10 refinement: expired documents still awaiting a disposition decision (retention sweep).
+    List<InvoiceDocument> findByUploadedAtBeforeAndRetentionDisposition(
+            java.time.Instant cutoff, RetentionDisposition disposition);
 }

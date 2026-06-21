@@ -2,6 +2,7 @@ package com.oct.invoicesystem.domain.invoice.scheduler;
 
 import com.oct.invoicesystem.domain.audit.service.AuditService;
 import com.oct.invoicesystem.domain.invoice.model.InvoiceDocument;
+import com.oct.invoicesystem.domain.invoice.model.RetentionDisposition;
 import com.oct.invoicesystem.domain.invoice.repository.InvoiceDocumentRepository;
 import com.oct.invoicesystem.domain.retention.model.RetentionPolicy;
 import com.oct.invoicesystem.domain.retention.service.RetentionPolicyService;
@@ -48,7 +49,7 @@ public class DocumentRetentionJob {
         int retentionYears = policy.getRetentionYears();
         Instant now = Instant.now();
         Instant cutoff = now.minus(retentionYears * 365L, ChronoUnit.DAYS);
-        List<InvoiceDocument> expired = invoiceDocumentRepository.findByUploadedAtBefore(cutoff);
+        List<InvoiceDocument> expired = invoiceDocumentRepository.findByUploadedAtBeforeAndRetentionDisposition(cutoff, RetentionDisposition.PENDING);
 
         if (expired.isEmpty()) {
             log.debug("Retention sweep: no documents past {}-year retention.", retentionYears);

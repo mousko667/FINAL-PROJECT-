@@ -2,6 +2,7 @@ package com.oct.invoicesystem.domain.invoice.scheduler;
 
 import com.oct.invoicesystem.domain.audit.service.AuditService;
 import com.oct.invoicesystem.domain.invoice.model.InvoiceDocument;
+import com.oct.invoicesystem.domain.invoice.model.RetentionDisposition;
 import com.oct.invoicesystem.domain.invoice.repository.InvoiceDocumentRepository;
 import com.oct.invoicesystem.domain.retention.model.RetentionPolicy;
 import com.oct.invoicesystem.domain.retention.service.RetentionPolicyService;
@@ -37,7 +38,7 @@ class DocumentRetentionJobTest {
 
         job.flagDocumentsPastRetention();
 
-        verify(invoiceDocumentRepository, never()).findByUploadedAtBefore(any());
+        verify(invoiceDocumentRepository, never()).findByUploadedAtBeforeAndRetentionDisposition(any(), any());
         verify(retentionPolicyService, never()).recordSweep(any(), anyInt());
     }
 
@@ -48,7 +49,7 @@ class DocumentRetentionJobTest {
         InvoiceDocument doc = new InvoiceDocument();
         doc.setId(UUID.randomUUID());
         doc.setUploadedAt(Instant.parse("2000-01-01T00:00:00Z"));
-        when(invoiceDocumentRepository.findByUploadedAtBefore(any())).thenReturn(List.of(doc));
+        when(invoiceDocumentRepository.findByUploadedAtBeforeAndRetentionDisposition(any(), eq(RetentionDisposition.PENDING))).thenReturn(List.of(doc));
 
         job.flagDocumentsPastRetention();
 
@@ -61,7 +62,7 @@ class DocumentRetentionJobTest {
     void activePolicy_noExpiredDocs_recordsZeroSweep() {
         when(retentionPolicyService.getEntity())
                 .thenReturn(RetentionPolicy.builder().retentionYears(10).active(true).build());
-        when(invoiceDocumentRepository.findByUploadedAtBefore(any())).thenReturn(List.of());
+        when(invoiceDocumentRepository.findByUploadedAtBeforeAndRetentionDisposition(any(), eq(RetentionDisposition.PENDING))).thenReturn(List.of());
 
         job.flagDocumentsPastRetention();
 
