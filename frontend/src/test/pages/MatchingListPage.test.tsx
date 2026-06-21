@@ -1,8 +1,15 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import MatchingListPage from '@/pages/matching/MatchingListPage'
+
+const mockNavigate = vi.fn()
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-router-dom')>()
+  return { ...actual, useNavigate: () => mockNavigate }
+})
 
 vi.mock('@/services/matchingService', () => ({
   listMatching: vi.fn().mockResolvedValue({
@@ -32,5 +39,12 @@ describe('MatchingListPage', () => {
     renderPage()
     expect(await screen.findByText('INV-1')).toBeInTheDocument()
     expect(screen.getByText('ACME')).toBeInTheDocument()
+  })
+
+  it('navigue vers le détail au clic sur une ligne', async () => {
+    mockNavigate.mockClear()
+    renderPage()
+    await userEvent.click(await screen.findByText('INV-1'))
+    expect(mockNavigate).toHaveBeenCalledWith('/matching/i1')
   })
 })
