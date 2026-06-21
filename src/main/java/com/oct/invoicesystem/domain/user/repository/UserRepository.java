@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.EntityGraph;
 
+import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -37,4 +38,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     @Query("SELECT COALESCE(SUM(u.failedLoginAttempts), 0) FROM User u")
     long sumFailedLoginAttempts();
+
+    // M13 #3: charge en une passe les users d'un ensemble de départements + leurs rôles (évite N+1).
+    @EntityGraph(attributePaths = {"userRoles", "userRoles.role"})
+    java.util.List<User> findByDepartmentIdIn(Collection<UUID> departmentIds);
 }
