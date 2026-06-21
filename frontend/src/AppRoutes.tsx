@@ -59,6 +59,7 @@ const PaymentAlertRulesPage = lazy(() => import('@/pages/PaymentAlertRulesPage')
 const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'))
 const GoodsReceiptsPage = lazy(() => import('@/pages/GoodsReceiptsPage'))
 const ArchivePage = lazy(() => import('@/pages/ArchivePage'))
+const MatchingListPage = lazy(() => import('@/pages/matching/MatchingListPage'))
 
 function AppRoutes() {
   // Initialize WebSocket connection for authenticated users
@@ -96,6 +97,7 @@ function AppRoutes() {
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/goods-receipts" element={<GoodsReceiptsPage />} />
             <Route path="/archive" element={<ArchivePage />} />
+            <Route path="/matching" element={<MatchingListPage />} />
             <Route path="/admin/users" element={<AdminUsersPage />} />
             <Route path="/admin/users/new" element={<AdminUserFormPage />} />
             <Route path="/admin/permissions" element={<AdminPermissionMatrixPage />} />

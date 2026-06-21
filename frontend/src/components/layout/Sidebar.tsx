@@ -30,6 +30,7 @@ import {
   Clock,
   Trash2,
   ShieldCheck,
+  GitCompare,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -128,6 +129,19 @@ export default function Sidebar() {
           'ROLE_VALIDATEUR_N2_TECH',
         ]} fallback={null}>
           <NavItem to="/invoices" icon={FileText} label={t('nav.invoices')} />
+        </RoleGuard>
+
+        {/* Staff: Three-way Matching */}
+        <RoleGuard allowedRoles={[
+          'ROLE_DAF', 'ROLE_ASSISTANT_COMPTABLE',
+          'ROLE_VALIDATEUR_N1_DRH', 'ROLE_VALIDATEUR_N1_DG',
+          'ROLE_VALIDATEUR_N1_INFO', 'ROLE_VALIDATEUR_N2_INFO',
+          'ROLE_VALIDATEUR_N1_TERM', 'ROLE_VALIDATEUR_N1_COM',
+          'ROLE_VALIDATEUR_N1_QHSSE', 'ROLE_VALIDATEUR_N1_INFRA',
+          'ROLE_VALIDATEUR_N2_INFRA', 'ROLE_VALIDATEUR_N1_TECH',
+          'ROLE_VALIDATEUR_N2_TECH',
+        ]} fallback={null}>
+          <NavItem to="/matching" icon={GitCompare} label={t('matching.pageTitle')} />
         </RoleGuard>
 
         {/* Validators: Approval Queue */}
