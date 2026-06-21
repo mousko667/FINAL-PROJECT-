@@ -148,10 +148,10 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 ### UI Elements
 | # | Élément requis | Verdict | Preuve |
 |---|----------------|---------|--------|
-| 1 | Three-way matching interface | 🟠 | Pas de **page dédiée** ; le rapprochement est **intégré au détail facture** (`/invoices/:id`) : badge + résultat via `/invoices/{id}/matching`. |
+| 1 | Three-way matching interface | ✅ | **Page dédiée** `/matching` (liste filtrable statut/recherche, dernier résultat par facture) + vue détail `/matching/:invoiceId`. Endpoint `GET /matching` (`MatchingQueryController`, staff hors SUPPLIER/ADMIN — SoD). **Fait (M5 #1, 2026-06-21)**. |
 | 2 | Purchase order (PO) data display | ✅ | PO liés affichés (lien PO sur création + `/purchase-orders`). |
 | 3 | Goods receipt note (GRN) information | ✅ | `/goods-receipts` : création + liste GRN avec items. |
-| 4 | Invoice line item comparison | 🟠 | Lignes de facture affichées (`/invoices/:id`) ; rapprochement au niveau **montant/total** (tolérance %/montant). Pas de comparaison **ligne-à-ligne PO/GRN/facture** côte à côte. |
+| 4 | Invoice line item comparison | ✅ | Comparaison **ligne-à-ligne PO/GRN/facture** côte à côte (`/matching/:invoiceId`) : qté/PU PO, qté reçue GRN, qté/PU facture, écarts %, verdict par ligne (MATCHED/WITHIN_TOLERANCE/MISMATCH/MISSING_IN_PO). Endpoint `GET /matching/{id}/lines` recompose à la volée via `MatchingComparator`. **Fait (M5 #4, 2026-06-21)**. |
 | 5 | Matching status indicators (matched, partial, mismatch) | ✅ | Badges MATCHED / PARTIAL / MISMATCH / OVERRIDDEN (composant MatchingBadge). |
 | 6 | Discrepancy identification & flagging | ✅ | Statut MISMATCH bloque la progression au-delà de SOUMIS. |
 | 7 | Tolerance threshold configuration | ✅ | `/admin/matching-config` : tolérance % + montant + requireGRN (vérifié). |
@@ -165,7 +165,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | # | Feature | Verdict | Preuve |
 |---|---------|---------|--------|
 | 1 | Automated 3-way matching (PO, GRN, Invoice) | ✅ | Déclenché à la soumission si PO lié (CLAUDE.md + code). |
-| 2 | Line-item level comparison | 🟠 | Voir UI #4 (niveau montant, pas ligne-à-ligne stricte). |
+| 2 | Line-item level comparison | ✅ | Voir UI #4 — comparaison ligne-à-ligne stricte (`/matching/:invoiceId`, `GET /matching/{id}/lines`). **Fait (M5 #4, 2026-06-21)**. |
 | 3 | Discrepancy identification & flagging | ✅ | MISMATCH. |
 | 4 | Configurable tolerance thresholds | ✅ | matching-config. |
 | 5 | Manual override with audit trail | ✅ | Override + audit. |
@@ -511,7 +511,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | M2 Dashboard | 16 | 1 | 0 | 0 | Quasi-complet |
 | M3 Réception | 19 | 2 | 0 | 0 | Très bon (XML + bulk multi-factures faits B8) |
 | M4 Validation Workflow | 19 | 2 | 0 | 0 | Bon (checklist B1 + motifs de rejet prédéfinis C1) |
-| M5 Three-Way Matching | 13 | 8 | 0 | 0 | Partiel (pas de page dédiée / ligne-à-ligne ; export fait B2) |
+| M5 Three-Way Matching | 16 | 5 | 0 | 0 | Très bon (page dédiée /matching + comparaison ligne-à-ligne M5 #1/#4, 2026-06-21 ; export fait B2) |
 | M6 Approval | 17 | 3 | 0 | 0 | Bon |
 | M7 Payment | 17 | 4 | 0 | 0 | Bon (batch B3 + alertes configurables B4 faits) |
 | M8 Supplier | 20 | 1 | 0 | 0 | Bon (catégorisation faite B5 ; onboarding sans assistant dédié) |
@@ -522,7 +522,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | M13 User/Access | 22 | 0 | 0 | 0 | Complet (M13 #3 UI dédiée dept access, 2026-06-21) |
 | M14 Security/Compliance | 18 | 3 | 0 | 0 | Très bon |
 
-> Les chiffres comptent chaque puce (UI element OU feature) du document de requirements. Total ≈ **262 items** : ~**233 ✅**, ~**43 🟠**, ~**8 ❌**, ~**0 🔴** (A1 cash-flow + A2 Mobile Money corrigés — PROB-054/055 ; motifs de rejet prédéfinis M4 #8 → C1 ; M13 #3 UI dept access → 2026-06-21).
+> Les chiffres comptent chaque puce (UI element OU feature) du document de requirements. Total ≈ **262 items** : ~**236 ✅**, ~**40 🟠**, ~**8 ❌**, ~**0 🔴** (A1 cash-flow + A2 Mobile Money corrigés — PROB-054/055 ; motifs de rejet prédéfinis M4 #8 → C1 ; M13 #3 UI dept access → 2026-06-21 ; M5 #1 page dédiée + M5 #4 comparaison ligne-à-ligne → 2026-06-21).
 
 ## RÉPONSE À « est-ce 100 % implémenté ? »
 **Non.** Le système couvre **~85 % des items à 100 %**, mais il reste :
