@@ -82,7 +82,23 @@
     "purchaseOrders": "Purchase Orders",
     "archive": "Archive",
     "goodsReceipts": "Goods Receipts",
-    "payments": "Payments"
+    "payments": "Payments",
+    "departmentAccess": "Department Access"
+  },
+  "departmentAccess": {
+    "title": "Department Access",
+    "subtitle": "Read-only view of users, roles and validation level per department.",
+    "empty": "No department.",
+    "error": "Unable to load department access.",
+    "levelN1": "N1 validation",
+    "levelN1N2": "N1 → N2 validation",
+    "counts": "{{total}} users · {{active}} active",
+    "colName": "Name",
+    "colUsername": "Username",
+    "colStatus": "Status",
+    "colRoles": "Roles",
+    "active": "Active",
+    "inactive": "Inactive"
   },
   "reportBuilder": {
     "navTitle": "Report builder",

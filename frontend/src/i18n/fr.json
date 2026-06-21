@@ -82,7 +82,23 @@
     "purchaseOrders": "Bons de Commande",
     "archive": "Archive",
     "goodsReceipts": "Bons de Réception",
-    "payments": "Paiements"
+    "payments": "Paiements",
+    "departmentAccess": "Accès par département"
+  },
+  "departmentAccess": {
+    "title": "Accès par département",
+    "subtitle": "Vue en lecture seule des utilisateurs, rôles et niveau de validation par département.",
+    "empty": "Aucun département.",
+    "error": "Impossible de charger les accès par département.",
+    "levelN1": "Validation N1",
+    "levelN1N2": "Validation N1 → N2",
+    "counts": "{{total}} utilisateurs · {{active}} actifs",
+    "colName": "Nom",
+    "colUsername": "Identifiant",
+    "colStatus": "Statut",
+    "colRoles": "Rôles",
+    "active": "Actif",
+    "inactive": "Inactif"
   },
   "reportBuilder": {
     "navTitle": "Constructeur de rapports",
