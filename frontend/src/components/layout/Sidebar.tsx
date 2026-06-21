@@ -182,6 +182,7 @@ export default function Sidebar() {
           <SectionLabel label={t('nav.admin')} />
           <NavItem to="/admin/users" icon={Users} label={t('nav.users')} />
           <NavItem to="/admin/permissions" icon={KeyRound} label={t('admin.permissions.navTitle', 'Matrice des permissions')} />
+          <NavItem to="/admin/department-access" icon={Building2} label={t('nav.departmentAccess')} />
           <NavItem to="/admin/access-requests" icon={UserCheck} label={t('accessRequests.navAdmin', 'Demandes d\'accès')} />
           <NavItem to="/admin/announcements" icon={Megaphone} label={t('admin.announcements.navTitle', 'Annonces')} />
           <NavItem to="/admin/departments" icon={Building2} label={t('nav.departments')} />
