@@ -134,4 +134,14 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
 
     // P11-53: count invoices carrying (encrypted-at-rest) supplier bank details.
     long countBySupplierBankDetailsIsNotNull();
+
+    /** Number of invoices currently in the given status (M14 #11 archive coverage). */
+    long countByStatus(InvoiceStatus status);
+
+    /** Archived invoices that have at least one stored document (M14 #11 archive coverage). */
+    @org.springframework.data.jpa.repository.Query(
+            "SELECT COUNT(DISTINCT i.id) FROM Invoice i "
+          + "WHERE i.status = com.oct.invoicesystem.domain.invoice.model.InvoiceStatus.ARCHIVE "
+          + "AND EXISTS (SELECT 1 FROM InvoiceDocument d WHERE d.invoice = i)")
+    long countArchivedWithDocument();
 }
