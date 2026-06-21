@@ -436,7 +436,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 |---|----------------|---------|--------|
 | 1 | User management console | ✅ | `/admin/users` : 18 users, créer/éditer (vérifié). |
 | 2 | Role and permission assignment | ✅ | `/admin/permissions` : matrice user×14 rôles, save par ligne. |
-| 3 | Department/team-level access control | 🟠 | Validateurs scopés à leur département (fonctionnel) ; pas d'UI dédiée de contrôle d'accès par équipe. |
+| 3 | Department/team-level access control | ✅ | `/admin/department-access` : aperçu lecture seule users×rôles×niveau N1/N2 par département (ADMIN). |
 | 4 | Data sensitivity classification | ✅ | Enum DataSensitivity (PUBLIC/INTERNAL/CONFIDENTIAL) + badge sur facture (« Interne » vérifié). |
 | 5 | User activity monitoring | ✅ | Audit (M10) + sessions actives. |
 | 6 | Account status management | ✅ | Active/inactif + verrouillage (5 échecs) + déverrouillage admin. |
@@ -452,7 +452,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 |---|---------|---------|--------|
 | 1 | Comprehensive user administration | ✅ | Console complète. |
 | 2 | Role-based access control | ✅ | 14 rôles + @PreAuthorize. |
-| 3 | Department & team-level permissions | 🟠 | Scope dept fonctionnel (voir UI #3). |
+| 3 | Department & team-level permissions | ✅ | UI dédiée d'accès par département (M13 #3, 2026-06-21). |
 | 4 | Granular data access restrictions | ✅ | DataSensitivity + RBAC + admin sans accès financier (séparation). |
 | 5 | User lifecycle management | ✅ | Créer/éditer/statut/MFA reset. |
 | 6 | Bulk user operations | ✅ | Import/export CSV. |
@@ -461,7 +461,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 9 | Role-based interface customization | ✅ | Menus par rôle. |
 | 10 | Complete user audit trail | ✅ | Audit. |
 
-**Gaps M13 :** #3 contrôle d'accès par département/équipe fonctionnel mais sans UI dédiée (scope dérivé du rôle).
+**Gaps M13 :** ~~#3 contrôle d'accès par département/équipe fonctionnel mais sans UI dédiée~~ → **résolu 2026-06-21 (M13 #3)** : page `/admin/department-access` livrée. **Aucun gap M13 restant.**
 
 ---
 
@@ -519,10 +519,10 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | M10 Audit | 21 | 1 | 0 | 0 | Très bon (rapport de synthèse agrégé M10 #12) |
 | M11 Reporting | 20 | 3 | 0 | 0 | Bon (cash-flow corrigé PROB-054 ; tendances temporelles M11 #7) |
 | M12 Integration | 7 | 9 | 0 | 0 | **Cadre + planif de synchro (B6)** ; pas de sync live externe |
-| M13 User/Access | 20 | 2 | 0 | 0 | Très bon |
+| M13 User/Access | 22 | 0 | 0 | 0 | Complet (M13 #3 UI dédiée dept access, 2026-06-21) |
 | M14 Security/Compliance | 18 | 3 | 0 | 0 | Très bon |
 
-> Les chiffres comptent chaque puce (UI element OU feature) du document de requirements. Total ≈ **262 items** : ~**231 ✅**, ~**45 🟠**, ~**8 ❌**, ~**0 🔴** (A1 cash-flow + A2 Mobile Money corrigés — PROB-054/055 ; motifs de rejet prédéfinis M4 #8 → C1).
+> Les chiffres comptent chaque puce (UI element OU feature) du document de requirements. Total ≈ **262 items** : ~**233 ✅**, ~**43 🟠**, ~**8 ❌**, ~**0 🔴** (A1 cash-flow + A2 Mobile Money corrigés — PROB-054/055 ; motifs de rejet prédéfinis M4 #8 → C1 ; M13 #3 UI dept access → 2026-06-21).
 
 ## RÉPONSE À « est-ce 100 % implémenté ? »
 **Non.** Le système couvre **~85 % des items à 100 %**, mais il reste :
