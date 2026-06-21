@@ -28,6 +28,7 @@ import {
   ListChecks,
   AlarmClock,
   Clock,
+  ShieldCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -189,6 +190,7 @@ export default function Sidebar() {
           <NavItem to="/admin/delegations" icon={UserCheck} label={t('admin.delegations.title', 'Délégations')} />
           <NavItem to="/admin/matching-config" icon={SlidersHorizontal} label={t('admin.matchingConfig.navTitle', 'Rapprochement')} />
           <NavItem to="/admin/retention-policy" icon={Clock} label={t('retentionPolicy.navTitle', 'Rétention')} />
+          <NavItem to="/admin/archive-compliance" icon={ShieldCheck} label={t('archiveCompliance.navTitle', 'Conformité archives')} />
           <NavItem to="/admin/checklist-templates" icon={ListChecks} label={t('checklist.navTitle', 'Checklists')} />
           <RoleGuard allowedRoles={['ROLE_ADMIN', 'ROLE_DAF']} fallback={null}>
             <NavItem to="/admin/escalation-rules" icon={AlarmClock} label={t('escalationRules.navTitle', 'Escalades')} />
