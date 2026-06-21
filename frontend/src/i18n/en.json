@@ -1102,6 +1102,7 @@
     "withChecksum": "With checksum",
     "missingChecksum": "Without checksum",
     "retention": "Retention",
+    "retentionStatus": "Compliance status",
     "lifecycle": "Lifecycle",
     "pending": "Pending",
     "retained": "Retained",

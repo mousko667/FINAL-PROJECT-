@@ -102,7 +102,7 @@ export default function AdminArchiveCompliancePage() {
               </Card>
 
               <Card title={t('archiveCompliance.retention', 'Rétention')}>
-                <Row label={t('archiveCompliance.retention', 'Rétention')} value={report.retention.status} />
+                <Row label={t('archiveCompliance.retentionStatus', 'Statut de conformité')} value={report.retention.status} />
                 <Row label={t('retentionPolicy.years', 'Durée de rétention (années)')} value={report.retention.retentionYears} />
               </Card>
 

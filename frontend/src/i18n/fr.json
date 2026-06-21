@@ -1102,6 +1102,7 @@
     "withChecksum": "Avec empreinte",
     "missingChecksum": "Sans empreinte",
     "retention": "Rétention",
+    "retentionStatus": "Statut de conformité",
     "lifecycle": "Cycle de vie",
     "pending": "En attente",
     "retained": "Conservés",
