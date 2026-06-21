@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import apiClient from '@/services/apiClient'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { Link } from 'react-router-dom'
@@ -21,6 +22,18 @@ export default function AdminRetentionDispositionPage() {
     queryFn: async () => {
       const { data } = await apiClient.get<{ data: PendingDocument[] }>('/retention/pending-documents')
       return data.data
+    },
+  })
+
+  const queryClient = useQueryClient()
+  const [purgeTarget, setPurgeTarget] = useState<PendingDocument | null>(null)
+
+  const disposition = useMutation({
+    mutationFn: ({ id, value }: { id: string; value: 'RETAINED' | 'PURGED' }) =>
+      apiClient.put(`/retention/documents/${id}/disposition`, { disposition: value }),
+    onSuccess: () => {
+      setPurgeTarget(null)
+      queryClient.invalidateQueries({ queryKey: ['retention-pending-documents'] })
     },
   })
 
@@ -73,10 +86,16 @@ export default function AdminRetentionDispositionPage() {
                     <td className="px-4 py-2 text-gray-600">{new Date(doc.uploadedAt).toLocaleString(i18n.language)}</td>
                     <td className="px-4 py-2">
                       <div className="flex items-center justify-end gap-2">
-                        <button className="px-3 py-1 text-xs rounded-md border hover:bg-gray-50">
+                        <button
+                          onClick={() => disposition.mutate({ id: doc.id, value: 'RETAINED' })}
+                          disabled={disposition.isPending}
+                          className="px-3 py-1 text-xs rounded-md border hover:bg-gray-50 disabled:opacity-60">
                           {t('retentionDisposition.retain', 'Conserver')}
                         </button>
-                        <button className="flex items-center gap-1 px-3 py-1 text-xs rounded-md bg-red-600 text-white hover:bg-red-700">
+                        <button
+                          onClick={() => setPurgeTarget(doc)}
+                          disabled={disposition.isPending}
+                          className="flex items-center gap-1 px-3 py-1 text-xs rounded-md bg-red-600 text-white hover:bg-red-700 disabled:opacity-60">
                           <Trash2 className="w-3.5 h-3.5" />{t('retentionDisposition.purge', 'Purger')}
                         </button>
                       </div>
@@ -88,9 +107,42 @@ export default function AdminRetentionDispositionPage() {
           </div>
         )}
 
+        {disposition.isError && (
+          <p className="text-sm text-red-600 bg-red-50 p-3 rounded-md border border-red-200">
+            {t('retentionDisposition.actionError', "Échec de la mise à jour de la disposition.")}
+          </p>
+        )}
+
+        {purgeTarget && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6 space-y-4">
+              <h2 className="text-lg font-semibold text-gray-900">
+                {t('retentionDisposition.confirmPurgeTitle', "Marquer ce document comme purgé ?")}
+              </h2>
+              <p className="text-sm text-gray-600">
+                {t('retentionDisposition.confirmPurgeBody', "Marquage de conformité ; le fichier n'est pas supprimé physiquement du stockage. Cette action est tracée dans l'audit.")}
+              </p>
+              <p className="text-sm font-medium text-gray-800">{purgeTarget.originalFilename}</p>
+              <div className="flex items-center justify-end gap-2 pt-2 border-t">
+                <button
+                  onClick={() => setPurgeTarget(null)}
+                  className="px-4 py-2 text-sm rounded-lg border hover:bg-gray-50">
+                  {t('retentionDisposition.cancel', 'Annuler')}
+                </button>
+                <button
+                  onClick={() => disposition.mutate({ id: purgeTarget.id, value: 'PURGED' })}
+                  disabled={disposition.isPending}
+                  className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-60">
+                  {t('retentionDisposition.confirm', 'Confirmer')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <p className="flex items-center gap-1.5 text-xs text-gray-400">
           <ShieldCheck className="w-3.5 h-3.5" />
-          {t('retentionDisposition.note', '« Purger » est un marquage de conformité ; aucune suppression physique.')}
+          {t('retentionDisposition.note', "« Purger » est un marquage de conformité ; aucune suppression physique.")}
         </p>
       </div>
     </PageRoleGuard>

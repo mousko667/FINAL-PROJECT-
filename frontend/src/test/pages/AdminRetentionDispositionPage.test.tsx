@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { Provider } from 'react-redux'
 import { configureStore } from '@reduxjs/toolkit'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -64,5 +64,28 @@ describe('AdminRetentionDispositionPage', () => {
   it('denies access to non-admin users', () => {
     renderPage({ id: '2', username: 'daf', email: 'daf@oct.fr', roles: ['ROLE_DAF'] })
     expect(screen.queryByText('facture-2014.pdf')).toBeNull()
+  })
+
+  it('retains a document directly via PUT RETAINED', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({ data: { data: sampleDocs } })
+    vi.mocked(apiClient.put).mockResolvedValueOnce({ data: { data: { ...sampleDocs[0], retentionDisposition: 'RETAINED' } } })
+    renderPage()
+    fireEvent.click(await screen.findByText('Conserver'))
+    await waitFor(() => {
+      expect(apiClient.put).toHaveBeenCalledWith('/retention/documents/d1/disposition', { disposition: 'RETAINED' })
+    })
+  })
+
+  it('purges only after confirming the modal', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({ data: { data: sampleDocs } })
+    vi.mocked(apiClient.put).mockResolvedValueOnce({ data: { data: { ...sampleDocs[0], retentionDisposition: 'PURGED' } } })
+    renderPage()
+    fireEvent.click(await screen.findByText('Purger'))
+    // modale ouverte, aucun PUT encore
+    expect(apiClient.put).not.toHaveBeenCalled()
+    fireEvent.click(await screen.findByText('Confirmer'))
+    await waitFor(() => {
+      expect(apiClient.put).toHaveBeenCalledWith('/retention/documents/d1/disposition', { disposition: 'PURGED' })
+    })
   })
 })
