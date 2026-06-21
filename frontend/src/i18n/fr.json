@@ -1108,5 +1108,25 @@
     "retained": "Conservés",
     "purged": "Purgés",
     "versionedDocuments": "Documents versionnés"
+  },
+  "retentionDisposition": {
+    "navTitle": "Purge",
+    "title": "Contrôles de purge",
+    "subtitle": "Documents de facture ayant dépassé la durée de rétention et en attente de décision.",
+    "note": "« Purger » est un marquage de conformité : le fichier n'est pas supprimé physiquement du stockage. La décision est tracée dans l'audit.",
+    "colFile": "Fichier",
+    "colInvoice": "Facture",
+    "colUploaded": "Déposé le",
+    "colActions": "Actions",
+    "retain": "Conserver",
+    "purge": "Purger",
+    "empty": "Aucun document à traiter.",
+    "emptyHint": "Tous les documents archivés sont dans leur durée de rétention.",
+    "confirmPurgeTitle": "Marquer ce document comme purgé ?",
+    "confirmPurgeBody": "Marquage de conformité ; le fichier n'est pas supprimé physiquement du stockage. Cette action est tracée dans l'audit.",
+    "confirm": "Confirmer",
+    "cancel": "Annuler",
+    "loadError": "Échec du chargement des documents à traiter.",
+    "actionError": "Échec de la mise à jour de la disposition."
   }
 }

@@ -1108,5 +1108,25 @@
     "retained": "Retained",
     "purged": "Purged",
     "versionedDocuments": "Versioned documents"
+  },
+  "retentionDisposition": {
+    "navTitle": "Purge",
+    "title": "Purge controls",
+    "subtitle": "Invoice documents past the retention period awaiting a decision.",
+    "note": "\"Purge\" is a compliance marking: the file is not physically deleted from storage. The decision is recorded in the audit log.",
+    "colFile": "File",
+    "colInvoice": "Invoice",
+    "colUploaded": "Uploaded",
+    "colActions": "Actions",
+    "retain": "Retain",
+    "purge": "Purge",
+    "empty": "No documents to process.",
+    "emptyHint": "All archived documents are within their retention period.",
+    "confirmPurgeTitle": "Mark this document as purged?",
+    "confirmPurgeBody": "Compliance marking; the file is not physically deleted from storage. This action is recorded in the audit log.",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "loadError": "Failed to load documents to process.",
+    "actionError": "Failed to update the disposition."
   }
 }
