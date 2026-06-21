@@ -378,6 +378,12 @@
     "bottleneckDesc": "Étapes d'approbation dépassant le SLA de 3 jours.",
     "cashFlowTitle": "Projection de trésorerie",
     "cashFlowDesc": "Obligations de paiement prévues pour les 30 prochains jours.",
+    "trends": {
+      "title": "Tendances volume / valeur",
+      "desc": "Nombre de factures et montant total par mois sur les 12 derniers mois (par date de facture).",
+      "amount": "Montant (XAF)",
+      "count": "Nb de factures"
+    },
     "dateRangeRequired": "Sélectionnez une période pour générer le rapport de conformité.",
     "noData": "Aucune donnée disponible pour la période sélectionnée.",
     "approver": "Approbateur",

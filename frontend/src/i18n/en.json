@@ -378,6 +378,12 @@
     "bottleneckDesc": "Approval steps exceeding the 3-day SLA.",
     "cashFlowTitle": "Cash Flow Projection",
     "cashFlowDesc": "Projected payment obligations for the next 30 days.",
+    "trends": {
+      "title": "Volume / value trends",
+      "desc": "Invoice count and total amount per month over the last 12 months (by invoice date).",
+      "amount": "Amount (XAF)",
+      "count": "Invoice count"
+    },
     "dateRangeRequired": "Select a date range to generate the compliance report.",
     "noData": "No data available for the selected period.",
     "approver": "Approver",
