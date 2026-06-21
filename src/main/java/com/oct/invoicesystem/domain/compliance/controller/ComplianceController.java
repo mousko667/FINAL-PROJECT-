@@ -1,8 +1,11 @@
 package com.oct.invoicesystem.domain.compliance.controller;
 
+import com.oct.invoicesystem.domain.compliance.dto.ArchiveComplianceReportDTO;
 import com.oct.invoicesystem.domain.compliance.dto.ComplianceDTOs.*;
+import com.oct.invoicesystem.domain.compliance.service.ArchiveComplianceService;
 import com.oct.invoicesystem.domain.compliance.service.ComplianceService;
 import com.oct.invoicesystem.shared.response.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
 import com.oct.invoicesystem.shared.util.SecurityHelper;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -25,6 +28,7 @@ public class ComplianceController {
 
     private final ComplianceService service;
     private final SecurityHelper securityHelper;
+    private final ArchiveComplianceService archiveComplianceService;
 
     // ── Incidents (report = any staff non-supplier; manage = ADMIN) ──
     @GetMapping("/incidents")
@@ -128,5 +132,14 @@ public class ComplianceController {
     public ResponseEntity<ApiResponse<PrivacyAcceptanceResponse>> acceptPrivacy(Authentication auth) {
         return ResponseEntity.ok(ApiResponse.success(
                 service.acceptPrivacy(securityHelper.currentUserId(auth)), "Privacy policy accepted"));
+    }
+
+    // ── Archive compliance report (ADMIN, no financial data) ──
+    @GetMapping("/archive-report")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Archive compliance report",
+            description = "Aggregated read-only archive compliance: coverage, SHA-256 integrity, retention, lifecycle. ADMIN only.")
+    public ResponseEntity<ApiResponse<ArchiveComplianceReportDTO>> archiveReport() {
+        return ResponseEntity.ok(ApiResponse.success(archiveComplianceService.generateReport()));
     }
 }
