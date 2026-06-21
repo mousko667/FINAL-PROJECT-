@@ -295,7 +295,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 5 | Metadata display (number, date, amount) | ✅ | Table archive : référence, fournisseur, montant, dates. |
 | 6 | Version control for invoice updates | ✅ | `version` + `supersededByDocumentId` (V53). Upload v1 vérifié. |
 | 7 | Retention policy configuration | ✅ | B2 : politique singleton en base (`retention_policy`, V62), UI admin `/admin/retention-policy` (durée + activation), lue à l'exécution par `DocumentRetentionJob` (fallback `app.retention.years`). ADMIN only. |
-| 8 | Archive and purge controls | 🟠 | Rétention **flag** (RETENTION_FLAG) ; **purge volontairement non automatisée** (non-destructif) ; pas de contrôle de purge en UI. |
+| 8 | Archive and purge controls | ✅ | Page ADMIN `/admin/retention-disposition` : liste les documents de facture périmés en disposition PENDING (`GET /retention/pending-documents`) et permet « Conserver » (RETAINED) ou « Purger » (PURGED, modale de confirmation) via `PUT /retention/documents/{id}/disposition`. Purge = marquage de conformité non destructif (pas de suppression MinIO), tracée à l'audit. ADMIN only (PROB-065). |
 | 9 | Document access logs | ✅ | Audit logge les accès documents (M10). |
 | 10 | Export archived documents | ✅ | Bouton « PDF » par facture archivée + export global. |
 | 11 | Compliance reporting for archives | ✅ | Rapport archives dédié (M14 #11) : `GET /api/v1/compliance/archive-report` (ADMIN, sans donnée financière) → couverture d'archivage, intégrité SHA-256, état de rétention (réutilise M10 #10), cycle de vie (dispositions/versioning). Page `/admin/archive-compliance`. |
@@ -515,14 +515,14 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | M6 Approval | 17 | 3 | 0 | 0 | Bon |
 | M7 Payment | 17 | 4 | 0 | 0 | Bon (batch B3 + alertes configurables B4 faits) |
 | M8 Supplier | 20 | 1 | 0 | 0 | Bon (catégorisation faite B5 ; onboarding sans assistant dédié) |
-| M9 Archiving | 14 | 3 | 0 | 0 | Bon (rapport conformité archives M14 #11 ; purge/folder partiels) |
+| M9 Archiving | 15 | 2 | 0 | 0 | Bon (rapport conformité archives M14 #11 ; purge UI faite M9#8 ; arborescence dossiers partielle) |
 | M10 Audit | 21 | 1 | 0 | 0 | Très bon (rapport de synthèse agrégé M10 #12) |
 | M11 Reporting | 18 | 5 | 0 | 0 | Bon (cash-flow corrigé PROB-054) |
 | M12 Integration | 7 | 9 | 0 | 0 | **Cadre + planif de synchro (B6)** ; pas de sync live externe |
 | M13 User/Access | 20 | 2 | 0 | 0 | Très bon |
 | M14 Security/Compliance | 18 | 3 | 0 | 0 | Très bon |
 
-> Les chiffres comptent chaque puce (UI element OU feature) du document de requirements. Total ≈ **262 items** : ~**228 ✅**, ~**48 🟠**, ~**8 ❌**, ~**0 🔴** (A1 cash-flow + A2 Mobile Money corrigés — PROB-054/055 ; motifs de rejet prédéfinis M4 #8 → C1).
+> Les chiffres comptent chaque puce (UI element OU feature) du document de requirements. Total ≈ **262 items** : ~**229 ✅**, ~**47 🟠**, ~**8 ❌**, ~**0 🔴** (A1 cash-flow + A2 Mobile Money corrigés — PROB-054/055 ; motifs de rejet prédéfinis M4 #8 → C1).
 
 ## RÉPONSE À « est-ce 100 % implémenté ? »
 **Non.** Le système couvre **~85 % des items à 100 %**, mais il reste :
