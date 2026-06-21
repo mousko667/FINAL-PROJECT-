@@ -79,7 +79,6 @@ export default function MatchingListPage() {
                 <th>{t('matching.supplier')}</th>
                 <th>{t('matching.poNumber')}</th>
                 <th>{t('matching.status')}</th>
-                <th>{t('matching.discrepancies')}</th>
               </tr>
             </thead>
             <tbody>
@@ -93,9 +92,6 @@ export default function MatchingListPage() {
                   <td>{m.supplierName}</td>
                   <td>{m.purchaseOrderNumber ?? '—'}</td>
                   <td>{m.status ? t(`matching.statuses.${m.status}`) : '—'}</td>
-                  <td>
-                    {m.discrepancyLineCount}/{m.lineCount}
-                  </td>
                 </tr>
               ))}
             </tbody>
