@@ -35,6 +35,7 @@ public class ThreeWayMatchingService {
 
     private final ThreeWayMatchingResultRepository matchingResultRepository;
     private final MatchingConfigRepository matchingConfigRepository;
+    private final MatchingComparator matchingComparator;
 
     /**
      * Perform three-way matching between invoice, PO, and GRN.
@@ -134,7 +135,7 @@ public class ThreeWayMatchingService {
                 allLinesPerfectMatch = false;
 
                 // Apply tolerance
-                if (isWithinTolerance(invoiceQty, poQty, invoicePrice, poPrice, config)) {
+                if (matchingComparator.isWithinTolerance(invoiceQty, poQty, invoicePrice, poPrice, config)) {
                     hasAnyLineWithinTolerance = true;
                 } else {
                     hasAnyLineOutsideTolerance = true;
@@ -150,7 +151,7 @@ public class ThreeWayMatchingService {
                     .orElse(BigDecimal.ZERO);
 
                 if (receivedQty.compareTo(invoiceQty) != 0) {
-                    if (!isWithinTolerance(receivedQty, invoiceQty, BigDecimal.ONE, BigDecimal.ONE, config)) {
+                    if (!matchingComparator.isWithinTolerance(receivedQty, invoiceQty, BigDecimal.ONE, BigDecimal.ONE, config)) {
                         hasAnyLineOutsideTolerance = true;
                     }
                 }
@@ -168,42 +169,6 @@ public class ThreeWayMatchingService {
         } else {
             return MatchingStatus.MISMATCH;
         }
-    }
-
-    /**
-     * Check if a variance is within configured tolerance.
-     *
-     * @param invoiceValue the invoice value
-     * @param poValue the PO value
-     * @param invoicePrice the invoice unit price
-     * @param poPrice the PO unit price
-     * @param config the matching config
-     * @return true if within tolerance
-     */
-    private boolean isWithinTolerance(BigDecimal invoiceValue, BigDecimal poValue, 
-                                     BigDecimal invoicePrice, BigDecimal poPrice, MatchingConfig config) {
-        BigDecimal percTolerance = config.getTolerancePercentage();
-        BigDecimal amtTolerance = config.getToleranceAmount();
-
-        // Calculate variance
-        BigDecimal qtyVariance = invoiceValue.subtract(poValue).abs();
-        BigDecimal priceVariance = invoicePrice.subtract(poPrice).abs();
-
-        // Check quantity tolerance
-        BigDecimal qtyThreshold = poValue.multiply(percTolerance).divide(new BigDecimal("100"));
-        BigDecimal qtyVarianceAmount = qtyVariance.multiply(poPrice);
-        if (qtyVariance.compareTo(qtyThreshold) > 0 && qtyVarianceAmount.compareTo(amtTolerance) > 0) {
-            return false;
-        }
-
-        // Check price tolerance
-        BigDecimal priceThreshold = poPrice.multiply(percTolerance).divide(new BigDecimal("100"));
-        BigDecimal priceVarianceAmount = priceVariance.multiply(poValue);
-        if (priceVariance.compareTo(priceThreshold) > 0 && priceVarianceAmount.compareTo(amtTolerance) > 0) {
-            return false;
-        }
-
-        return true;
     }
 
     /**

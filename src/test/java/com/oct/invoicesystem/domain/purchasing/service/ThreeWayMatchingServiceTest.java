@@ -20,6 +20,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -44,6 +45,9 @@ class ThreeWayMatchingServiceTest {
 
     @Mock
     private MatchingConfigRepository matchingConfigRepository;
+
+    @Spy
+    private MatchingComparator matchingComparator = new MatchingComparator();
 
     @InjectMocks
     private ThreeWayMatchingService threeWayMatchingService;
