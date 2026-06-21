@@ -142,7 +142,7 @@ export default function AdminRetentionDispositionPage() {
 
         <p className="flex items-center gap-1.5 text-xs text-gray-400">
           <ShieldCheck className="w-3.5 h-3.5" />
-          {t('retentionDisposition.note', "« Purger » est un marquage de conformité ; aucune suppression physique.")}
+          {t('retentionDisposition.noteFooter', "« Purger » est un marquage de conformité ; aucune suppression physique.")}
         </p>
       </div>
     </PageRoleGuard>

@@ -1114,6 +1114,7 @@
     "title": "Contrôles de purge",
     "subtitle": "Documents de facture ayant dépassé la durée de rétention et en attente de décision.",
     "note": "« Purger » est un marquage de conformité : le fichier n'est pas supprimé physiquement du stockage. La décision est tracée dans l'audit.",
+    "noteFooter": "« Purger » est un marquage de conformité ; aucune suppression physique.",
     "colFile": "Fichier",
     "colInvoice": "Facture",
     "colUploaded": "Déposé le",

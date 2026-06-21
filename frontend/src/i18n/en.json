@@ -1114,6 +1114,7 @@
     "title": "Purge controls",
     "subtitle": "Invoice documents past the retention period awaiting a decision.",
     "note": "\"Purge\" is a compliance marking: the file is not physically deleted from storage. The decision is recorded in the audit log.",
+    "noteFooter": "\"Purge\" is a compliance marking; the file is not physically deleted.",
     "colFile": "File",
     "colInvoice": "Invoice",
     "colUploaded": "Uploaded",
