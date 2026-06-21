@@ -1085,5 +1085,27 @@
     "saved": "Politique enregistrée.",
     "saveError": "Échec de l'enregistrement de la politique.",
     "scopeNote": "S'applique aux documents de facture archivés."
+  },
+  "archiveCompliance": {
+    "navTitle": "Conformité archives",
+    "title": "Conformité des archives",
+    "subtitle": "État de conformité du dépôt d'archives documentaires. Aucune donnée financière.",
+    "generatedAt": "Généré le",
+    "coverage": "Couverture d'archivage",
+    "coverageRate": "Taux de couverture",
+    "archivedInvoices": "Factures archivées",
+    "archivedWithDocument": "Avec document",
+    "archivedWithoutDocument": "Sans document",
+    "integrity": "Intégrité (SHA-256)",
+    "integrityRate": "Taux d'intégrité",
+    "totalDocuments": "Documents totaux",
+    "withChecksum": "Avec empreinte",
+    "missingChecksum": "Sans empreinte",
+    "retention": "Rétention",
+    "lifecycle": "Cycle de vie",
+    "pending": "En attente",
+    "retained": "Conservés",
+    "purged": "Purgés",
+    "versionedDocuments": "Documents versionnés"
   }
 }

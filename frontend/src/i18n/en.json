@@ -1085,5 +1085,27 @@
     "saved": "Policy saved.",
     "saveError": "Failed to save the policy.",
     "scopeNote": "Applies to archived invoice documents."
+  },
+  "archiveCompliance": {
+    "navTitle": "Archive compliance",
+    "title": "Archive compliance",
+    "subtitle": "Compliance status of the document archive repository. No financial data.",
+    "generatedAt": "Generated at",
+    "coverage": "Archival coverage",
+    "coverageRate": "Coverage rate",
+    "archivedInvoices": "Archived invoices",
+    "archivedWithDocument": "With document",
+    "archivedWithoutDocument": "Without document",
+    "integrity": "Integrity (SHA-256)",
+    "integrityRate": "Integrity rate",
+    "totalDocuments": "Total documents",
+    "withChecksum": "With checksum",
+    "missingChecksum": "Without checksum",
+    "retention": "Retention",
+    "lifecycle": "Lifecycle",
+    "pending": "Pending",
+    "retained": "Retained",
+    "purged": "Purged",
+    "versionedDocuments": "Versioned documents"
   }
 }
