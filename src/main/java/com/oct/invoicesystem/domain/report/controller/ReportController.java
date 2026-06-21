@@ -211,6 +211,15 @@ public class ReportController {
         return ApiResponse.success(reportBuilderService.preview(id, limit));
     }
 
+    @GetMapping("/volume-trend")
+    @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
+    @Operation(summary = "Get Volume/Value Trend",
+            description = "Monthly invoice count and total amount over the last N rolling months (M11 #7), aggregated on issue date")
+    public ApiResponse<com.oct.invoicesystem.domain.report.dto.VolumeTrendDTO> getVolumeTrend(
+            @RequestParam(defaultValue = "12") int months) {
+        return ApiResponse.success(reportService.getVolumeTrend(months));
+    }
+
     @GetMapping("/executive-summary")
     @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
     @Operation(summary = "Download the executive-summary PDF")

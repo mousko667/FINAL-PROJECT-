@@ -4,6 +4,7 @@ import com.oct.invoicesystem.domain.report.dto.BottleneckDTO;
 import com.oct.invoicesystem.domain.report.dto.DashboardKpiDTO;
 import com.oct.invoicesystem.domain.report.dto.ReportPreviewDTO;
 import com.oct.invoicesystem.domain.report.dto.SupplierPerformanceDTO;
+import com.oct.invoicesystem.domain.report.dto.VolumeTrendDTO;
 import com.oct.invoicesystem.domain.report.service.ReportBuilderService;
 import com.oct.invoicesystem.domain.report.service.ReportService;
 import org.junit.jupiter.api.Test;
@@ -264,6 +265,44 @@ class ReportControllerTest {
     @WithMockUser(roles = "ADMIN")
     void previewDefinition_WithAdmin_ReturnsForbidden() throws Exception {
         mockMvc.perform(get("/api/v1/reports/definitions/" + UUID.randomUUID() + "/preview"))
+                .andExpect(status().isForbidden());
+    }
+
+    // ─── Volume/value trend (M11 #7) ───────────────────────────────────────
+
+    private VolumeTrendDTO sampleTrend() {
+        return new VolumeTrendDTO(
+                LocalDate.now().minusMonths(11).withDayOfMonth(1),
+                LocalDate.now(),
+                List.of(new VolumeTrendDTO.MonthlyTrendPoint("2026-01", 2026, 1, 3L, new java.math.BigDecimal("1500.00"))));
+    }
+
+    @Test
+    @WithMockUser(roles = "DAF")
+    void getVolumeTrend_WithDaf_ReturnsSuccess() throws Exception {
+        when(reportService.getVolumeTrend(anyInt())).thenReturn(sampleTrend());
+
+        mockMvc.perform(get("/api/v1/reports/volume-trend").param("months", "12"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.points[0].monthLabel").value("2026-01"))
+                .andExpect(jsonPath("$.data.points[0].invoiceCount").value(3));
+    }
+
+    @Test
+    @WithMockUser(roles = "ASSISTANT_COMPTABLE")
+    void getVolumeTrend_WithAssistantComptable_ReturnsSuccess() throws Exception {
+        when(reportService.getVolumeTrend(anyInt())).thenReturn(sampleTrend());
+
+        mockMvc.perform(get("/api/v1/reports/volume-trend"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void getVolumeTrend_WithAdmin_ReturnsForbidden() throws Exception {
+        mockMvc.perform(get("/api/v1/reports/volume-trend"))
                 .andExpect(status().isForbidden());
     }
 }
