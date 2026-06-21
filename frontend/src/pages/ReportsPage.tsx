@@ -3,6 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { reportService } from '@/services/reportService'
 import apiClient from '@/services/apiClient'
+import VolumeTrendSection from '@/components/reports/VolumeTrendSection'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import {
   FileSpreadsheet, FileCheck, TrendingUp, AlertTriangle, Clock,
@@ -269,6 +270,9 @@ export default function ReportsPage() {
             </ResponsiveContainer>
           )}
         </Section>
+
+        {/* Volume / value trends */}
+        <VolumeTrendSection />
 
         {/* Exports */}
         <Section title="Data Exports">
