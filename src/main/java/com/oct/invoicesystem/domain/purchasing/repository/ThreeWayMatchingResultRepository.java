@@ -28,6 +28,11 @@ public interface ThreeWayMatchingResultRepository extends JpaRepository<ThreeWay
      * <p>Le {@code CAST(:status AS string)} neutralise le bug Postgres d'inférence
      * de type sur un paramètre enum nullable (PROB-038/054).</p>
      *
+     * <p>L'unicité d'une ligne par facture est garantie même en cas d'horodatage
+     * {@code createdAt} identique : on retient le résultat sans aucun autre plus récent,
+     * et, à {@code createdAt} égal, celui dont l'{@code id} est le plus grand (départage
+     * déterministe — évite les doublons de facture dans la page).</p>
+     *
      * @param status  statut de rapprochement (nullable — ignoré si null)
      * @param search  terme de recherche sur référence, fournisseur, numéro PO (nullable)
      * @param pageable pagination et tri
@@ -35,9 +40,11 @@ public interface ThreeWayMatchingResultRepository extends JpaRepository<ThreeWay
      */
     @Query("""
             SELECT r FROM ThreeWayMatchingResult r
-            WHERE r.createdAt = (
-                SELECT MAX(r2.createdAt) FROM ThreeWayMatchingResult r2
-                WHERE r2.invoice.id = r.invoice.id)
+            WHERE NOT EXISTS (
+                SELECT 1 FROM ThreeWayMatchingResult r2
+                WHERE r2.invoice.id = r.invoice.id
+                  AND (r2.createdAt > r.createdAt
+                       OR (r2.createdAt = r.createdAt AND r2.id > r.id)))
               AND (CAST(:status AS string) IS NULL OR r.status = :status)
               AND (:search IS NULL
                    OR LOWER(r.invoice.referenceNumber) LIKE LOWER(CONCAT('%', :search, '%'))
