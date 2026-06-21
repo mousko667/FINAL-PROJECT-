@@ -7,6 +7,7 @@ import com.oct.invoicesystem.domain.report.dto.CashFlowProjectionDTO;
 import com.oct.invoicesystem.domain.report.dto.DashboardKpiDTO;
 import com.oct.invoicesystem.domain.report.dto.SupplierPaymentHistoryDTO;
 import com.oct.invoicesystem.domain.report.dto.SupplierPerformanceDTO;
+import com.oct.invoicesystem.domain.report.dto.VolumeTrendDTO;
 import com.oct.invoicesystem.domain.workflow.dto.InvoiceHistoryDTO;
 import java.io.ByteArrayInputStream;
 import java.time.LocalDate;
@@ -93,4 +94,6 @@ public interface ReportService {
      * @return only the flagged department lines, highest utilisation first
      */
     java.util.List<BudgetVsActualDTO.DepartmentBudgetLine> getBudgetAlerts(double thresholdPercent);
+
+    VolumeTrendDTO getVolumeTrend(int months);
 }

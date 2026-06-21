@@ -18,6 +18,8 @@ import com.oct.invoicesystem.domain.payment.repository.PaymentRepository;
 import com.oct.invoicesystem.domain.report.dto.AgingReportDTO;
 import com.oct.invoicesystem.domain.report.dto.BottleneckDTO;
 import com.oct.invoicesystem.domain.report.dto.CashFlowProjectionDTO;
+import com.oct.invoicesystem.domain.report.dto.VolumeTrendDTO;
+import com.oct.invoicesystem.shared.exception.ValidationException;
 import com.oct.invoicesystem.domain.report.dto.CashFlowWeekDTO;
 import com.oct.invoicesystem.domain.report.dto.DashboardKpiDTO;
 import com.oct.invoicesystem.domain.report.dto.SupplierPaymentHistoryDTO;
@@ -50,6 +52,7 @@ import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -798,5 +801,44 @@ public class ReportServiceImpl implements ReportService {
                         && l.utilizationPercent().compareTo(threshold) >= 0)
                 .sorted(Comparator.comparing(BudgetVsActualDTO.DepartmentBudgetLine::utilizationPercent).reversed())
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public VolumeTrendDTO getVolumeTrend(int months) {
+        if (months < 1 || months > 60) {
+            throw new ValidationException("reports.trends.invalid_months");
+        }
+        log.info("Calculating volume/value trend over {} months", months);
+
+        YearMonth currentMonth = YearMonth.now();
+        YearMonth firstMonth = currentMonth.minusMonths(months - 1L);
+        LocalDate fromDate = firstMonth.atDay(1);
+        LocalDate toDate = LocalDate.now();
+
+        List<Invoice> invoices = invoiceRepository.findAllWithFilters(
+                null, null, fromDate, toDate, null, null, Pageable.unpaged()).getContent();
+
+        // Buckets par mois calendaire (issueDate)
+        Map<YearMonth, List<Invoice>> byMonth = invoices.stream()
+                .collect(Collectors.groupingBy(inv -> YearMonth.from(inv.getIssueDate())));
+
+        // Série continue : un point par mois de la fenêtre, vide = 0
+        List<VolumeTrendDTO.MonthlyTrendPoint> points = new java.util.ArrayList<>();
+        for (int i = 0; i < months; i++) {
+            YearMonth ym = firstMonth.plusMonths(i);
+            List<Invoice> monthInvoices = byMonth.getOrDefault(ym, java.util.Collections.emptyList());
+            BigDecimal total = monthInvoices.stream()
+                    .map(Invoice::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            points.add(new VolumeTrendDTO.MonthlyTrendPoint(
+                    ym.toString(),           // "YYYY-MM"
+                    ym.getYear(),
+                    ym.getMonthValue(),
+                    monthInvoices.size(),
+                    total));
+        }
+
+        return new VolumeTrendDTO(fromDate, toDate, points);
     }
 }

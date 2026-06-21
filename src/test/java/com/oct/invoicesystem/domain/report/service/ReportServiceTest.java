@@ -11,6 +11,8 @@ import com.oct.invoicesystem.domain.report.dto.CashFlowProjectionDTO;
 import com.oct.invoicesystem.domain.report.dto.DashboardKpiDTO;
 import com.oct.invoicesystem.domain.report.dto.BottleneckDTO;
 import com.oct.invoicesystem.domain.report.dto.SupplierPerformanceDTO;
+import com.oct.invoicesystem.domain.report.dto.VolumeTrendDTO;
+import java.time.YearMonth;
 import com.oct.invoicesystem.domain.workflow.repository.ApprovalStepRepository;
 import com.oct.invoicesystem.domain.webhook.repository.WebhookDeliveryRepository;import com.oct.invoicesystem.domain.workflow.model.ApprovalStep;
 import com.oct.invoicesystem.domain.workflow.model.ApprovalStepStatus;
@@ -542,5 +544,65 @@ class ReportServiceTest {
 
         assertEquals(0, new BigDecimal("1000.00").compareTo(result.totalBudget()));
         assertEquals(0, new BigDecimal("650.00").compareTo(result.totalActual())); // 550 + 100
+    }
+
+    private Invoice invoiceOn(LocalDate issueDate, String amount) {
+        return Invoice.builder()
+                .id(UUID.randomUUID())
+                .issueDate(issueDate)
+                .amount(new BigDecimal(amount))
+                .status(InvoiceStatus.SOUMIS)
+                .build();
+    }
+
+    @Test
+    void getVolumeTrend_AggregatesCountAndAmountPerMonth() {
+        LocalDate thisMonth = LocalDate.now().withDayOfMonth(10);
+        LocalDate lastMonth = thisMonth.minusMonths(1);
+        List<Invoice> invoices = List.of(
+                invoiceOn(thisMonth, "100.00"),
+                invoiceOn(thisMonth, "50.00"),
+                invoiceOn(lastMonth, "200.00")
+        );
+        when(invoiceRepository.findAllWithFilters(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(new PageImpl<>(invoices));
+
+        VolumeTrendDTO result = reportService.getVolumeTrend(12);
+
+        assertEquals(12, result.points().size()); // série continue de 12 mois
+        // points triés chronologiquement : le dernier est le mois courant
+        VolumeTrendDTO.MonthlyTrendPoint current = result.points().get(11);
+        assertEquals(YearMonth.from(thisMonth).toString(), current.monthLabel()); // "YYYY-MM"
+        assertEquals(2L, current.invoiceCount());
+        assertEquals(new BigDecimal("150.00"), current.totalAmount());
+        VolumeTrendDTO.MonthlyTrendPoint previous = result.points().get(10);
+        assertEquals(1L, previous.invoiceCount());
+        assertEquals(new BigDecimal("200.00"), previous.totalAmount());
+    }
+
+    @Test
+    void getVolumeTrend_FillsEmptyMonthsWithZero() {
+        when(invoiceRepository.findAllWithFilters(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        VolumeTrendDTO result = reportService.getVolumeTrend(6);
+
+        assertEquals(6, result.points().size());
+        assertTrue(result.points().stream().allMatch(p -> p.invoiceCount() == 0L));
+        assertTrue(result.points().stream().allMatch(p -> p.totalAmount().compareTo(BigDecimal.ZERO) == 0));
+    }
+
+    @Test
+    void getVolumeTrend_RejectsMonthsBelowOne() {
+        assertThrows(
+                com.oct.invoicesystem.shared.exception.ValidationException.class,
+                () -> reportService.getVolumeTrend(0));
+    }
+
+    @Test
+    void getVolumeTrend_RejectsMonthsAboveSixty() {
+        assertThrows(
+                com.oct.invoicesystem.shared.exception.ValidationException.class,
+                () -> reportService.getVolumeTrend(61));
     }
 }
