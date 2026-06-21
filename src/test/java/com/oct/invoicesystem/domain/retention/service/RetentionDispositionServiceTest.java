@@ -25,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -80,7 +81,7 @@ class RetentionDispositionServiceTest {
         assertThat(d.getRetentionDispositionAt()).isNotNull();
         assertThat(d.getRetentionDispositionBy()).isEqualTo(actor);
         verify(auditService).logAction(eq(actor.getId()), eq("INVOICE_DOCUMENT"), eq(id.toString()),
-                eq("RETENTION_DISPOSITION"), any(), any(), any(), any());
+                eq("RETENTION_DISPOSITION"), eq("PENDING"), eq("RETAINED"), isNull(), isNull());
     }
 
     @Test
