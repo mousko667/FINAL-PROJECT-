@@ -298,7 +298,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 8 | Archive and purge controls | 🟠 | Rétention **flag** (RETENTION_FLAG) ; **purge volontairement non automatisée** (non-destructif) ; pas de contrôle de purge en UI. |
 | 9 | Document access logs | ✅ | Audit logge les accès documents (M10). |
 | 10 | Export archived documents | ✅ | Bouton « PDF » par facture archivée + export global. |
-| 11 | Compliance reporting for archives | 🟠 | Module conformité (M14) existe ; pas de rapport de conformité **spécifique aux archives**. |
+| 11 | Compliance reporting for archives | ✅ | Rapport archives dédié (M14 #11) : `GET /api/v1/compliance/archive-report` (ADMIN, sans donnée financière) → couverture d'archivage, intégrité SHA-256, état de rétention (réutilise M10 #10), cycle de vie (dispositions/versioning). Page `/admin/archive-compliance`. |
 | 12 | Integration with validation workflow | ✅ | Archivage auto au paiement (PAYE→ARCHIVE vérifié). |
 
 ### Features
@@ -314,7 +314,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 8 | Reduced physical storage | ✅ | 100% numérique. |
 | 9 | Instant retrieval | ✅ | Recherche + viewer. |
 
-**Gaps M9 :** #1 pas d'arborescence dossiers ; #8 purge non automatisée (par design) ; #11 pas de rapport conformité archives dédié. (#7 résolu en B2.)
+**Gaps M9 :** #1 pas d'arborescence dossiers ; #8 purge non automatisée (par design). (#7 résolu en B2 ; #11 résolu en M14 #11.)
 
 ---
 
@@ -515,7 +515,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | M6 Approval | 17 | 3 | 0 | 0 | Bon |
 | M7 Payment | 17 | 4 | 0 | 0 | Bon (batch B3 + alertes configurables B4 faits) |
 | M8 Supplier | 20 | 1 | 0 | 0 | Bon (catégorisation faite B5 ; onboarding sans assistant dédié) |
-| M9 Archiving | 13 | 4 | 0 | 0 | Bon (zoom/rotate livré C3 ; purge/folder partiels) |
+| M9 Archiving | 14 | 3 | 0 | 0 | Bon (rapport conformité archives M14 #11 ; purge/folder partiels) |
 | M10 Audit | 21 | 1 | 0 | 0 | Très bon (rapport de synthèse agrégé M10 #12) |
 | M11 Reporting | 18 | 5 | 0 | 0 | Bon (cash-flow corrigé PROB-054) |
 | M12 Integration | 7 | 9 | 0 | 0 | **Cadre + planif de synchro (B6)** ; pas de sync live externe |
