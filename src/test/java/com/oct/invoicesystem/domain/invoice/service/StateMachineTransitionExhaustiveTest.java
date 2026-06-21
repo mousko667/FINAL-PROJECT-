@@ -10,12 +10,16 @@ import com.oct.invoicesystem.domain.invoice.repository.InvoiceDocumentRepository
 import com.oct.invoicesystem.domain.invoice.repository.InvoiceRepository;
 import com.oct.invoicesystem.domain.invoice.statemachine.InvoiceEvent;
 import com.oct.invoicesystem.domain.invoice.statemachine.WorkflowExtendedStateKeys;
+import com.oct.invoicesystem.domain.notification.event.listener.EmailNotificationListener;
+import com.oct.invoicesystem.domain.notification.event.listener.PersistNotificationListener;
+import com.oct.invoicesystem.domain.notification.event.listener.WebSocketNotificationListener;
 import com.oct.invoicesystem.domain.user.model.Role;
 import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.domain.user.model.UserRole;
 import com.oct.invoicesystem.domain.user.model.UserRoleId;
 import com.oct.invoicesystem.domain.user.repository.RoleRepository;
 import com.oct.invoicesystem.domain.user.repository.UserRepository;
+import com.oct.invoicesystem.domain.webhook.event.listener.WebhookEventPublisher;
 import com.oct.invoicesystem.domain.workflow.repository.ApprovalStepRepository;
 import com.oct.invoicesystem.domain.workflow.repository.InvoiceStatusHistoryRepository;
 import com.oct.invoicesystem.shared.exception.WorkflowException;
@@ -25,6 +29,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -76,6 +81,14 @@ class StateMachineTransitionExhaustiveTest {
     @Autowired private InvoiceStatusHistoryRepository historyRepository;
     @Autowired private JdbcTemplate jdbcTemplate;
 
+    // PROB-067: neutralize @Async @EventListener beans so their background threads never touch the
+    // real DB while the next test's @BeforeEach/cleanDb() runs (the race that caused intermittent
+    // "Transition denied" / FK-violation failures in the full suite). Same pattern as d226013.
+    @MockBean private PersistNotificationListener persistNotificationListener;
+    @MockBean private EmailNotificationListener emailNotificationListener;
+    @MockBean private WebSocketNotificationListener webSocketNotificationListener;
+    @MockBean private WebhookEventPublisher webhookEventPublisher;
+
     private User assistant;
     private User n1Drh;
     private User n1Info;
@@ -98,8 +111,9 @@ class StateMachineTransitionExhaustiveTest {
     }
 
     @AfterEach
-    void tearDown() throws InterruptedException {
-        Thread.sleep(200);
+    void tearDown() {
+        // PROB-067: the former Thread.sleep(200) guarded against late @Async notification inserts.
+        // The listeners are now @MockBean no-ops, so no background DB writes can race cleanDb().
         cleanDb();
         SecurityContextHolder.clearContext();
     }
