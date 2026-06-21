@@ -494,7 +494,7 @@
         "no": "No",
         "lastSweep": "Last sweep",
         "never": "Never",
-        "flagged": "Flagged documents",
+        "flagged": "Expired documents pending",
         "statusConforme": "Compliant",
         "statusAttention": "Warning",
         "statusNonConforme": "Non-compliant",

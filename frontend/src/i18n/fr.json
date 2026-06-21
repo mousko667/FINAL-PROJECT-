@@ -494,7 +494,7 @@
         "no": "Non",
         "lastSweep": "Dernier balayage",
         "never": "Jamais",
-        "flagged": "Documents marqués",
+        "flagged": "Documents périmés en attente",
         "statusConforme": "Conforme",
         "statusAttention": "Attention",
         "statusNonConforme": "Non conforme",
