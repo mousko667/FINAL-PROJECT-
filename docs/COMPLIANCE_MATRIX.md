@@ -365,7 +365,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 4 | Aging analysis reports | ✅ | `/reports/aging`. |
 | 5 | Payment cycle analysis | 🟠 | Cash-flow (corrigé, PROB-054) + processing-time existent ; pas de rapport « cycle de paiement » explicite. |
 | 6 | Approval bottleneck identification | ✅ | `/reports/bottlenecks` (200, par approbateur/avgDays). |
-| 7 | Volume and value trends | 🟠 | `volumeBySupplier` (top fournisseurs) ; pas de **tendance temporelle** (volume/valeur dans le temps). |
+| 7 | Volume and value trends | ✅ | Tendance temporelle volume/valeur par mois (12 mois glissants, `?months`) via `GET /api/v1/reports/volume-trend` (DAF + ASSISTANT_COMPTABLE) ; section ComposedChart (barres montant + ligne nb factures) dans `/reports`. Agrégée sur la date de facture. |
 | 8 | Budget vs actual comparison | ✅ | `/reports/budget-vs-actual` (200) + table budget/réalisé/variance/util. |
 | 9 | Custom report builder interface | ✅ | `/reports/builder` : dataset/format/fréquence/destinataires (vérifié, « Verif Invoices »). |
 | 10 | Report preview and export (PDF, Excel) | ✅ | Export CSV/Excel/PDF ✅ (vérifié .xlsx + content-types) ; aperçu in-app (bouton œil → modale colonnes + N lignes) via `GET /reports/definitions/{id}/preview` ✅ (C4). |
@@ -381,7 +381,7 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | 3 | Supplier performance tracking | ✅ | Endpoint performance. |
 | 4 | Aging & cash flow analysis | ✅ | Aging ✅ ; cash-flow opérationnel (200, PROB-054 corrigé). |
 | 5 | Bottleneck identification | ✅ | /bottlenecks. |
-| 6 | Volume & value trend analysis | 🟠 | Par fournisseur ; pas de tendance temporelle. |
+| 6 | Volume & value trend analysis | ✅ | Tendance temporelle mensuelle (volume + valeur) — voir UI #7. |
 | 7 | Budget comparison | ✅ | budget-vs-actual. |
 | 8 | Customizable report generation | ✅ | Report builder. |
 | 9 | Scheduled automated reporting | ✅ | ScheduledReportJob. |
@@ -517,12 +517,12 @@ Environnement de test : backend dev profile → PostgreSQL 5433/oct_invoice (sch
 | M8 Supplier | 20 | 1 | 0 | 0 | Bon (catégorisation faite B5 ; onboarding sans assistant dédié) |
 | M9 Archiving | 15 | 2 | 0 | 0 | Bon (rapport conformité archives M14 #11 ; purge UI faite M9#8 ; arborescence dossiers partielle) |
 | M10 Audit | 21 | 1 | 0 | 0 | Très bon (rapport de synthèse agrégé M10 #12) |
-| M11 Reporting | 18 | 5 | 0 | 0 | Bon (cash-flow corrigé PROB-054) |
+| M11 Reporting | 20 | 3 | 0 | 0 | Bon (cash-flow corrigé PROB-054 ; tendances temporelles M11 #7) |
 | M12 Integration | 7 | 9 | 0 | 0 | **Cadre + planif de synchro (B6)** ; pas de sync live externe |
 | M13 User/Access | 20 | 2 | 0 | 0 | Très bon |
 | M14 Security/Compliance | 18 | 3 | 0 | 0 | Très bon |
 
-> Les chiffres comptent chaque puce (UI element OU feature) du document de requirements. Total ≈ **262 items** : ~**229 ✅**, ~**47 🟠**, ~**8 ❌**, ~**0 🔴** (A1 cash-flow + A2 Mobile Money corrigés — PROB-054/055 ; motifs de rejet prédéfinis M4 #8 → C1).
+> Les chiffres comptent chaque puce (UI element OU feature) du document de requirements. Total ≈ **262 items** : ~**231 ✅**, ~**45 🟠**, ~**8 ❌**, ~**0 🔴** (A1 cash-flow + A2 Mobile Money corrigés — PROB-054/055 ; motifs de rejet prédéfinis M4 #8 → C1).
 
 ## RÉPONSE À « est-ce 100 % implémenté ? »
 **Non.** Le système couvre **~85 % des items à 100 %**, mais il reste :
