@@ -127,3 +127,37 @@ routage** (zone sensible) pour un gain d'ergonomie, hors périmètre PFE → YAG
 **Chemin de migration :** la garde de l'Option A (comparaison limite/montant) reste valable
 et peut alimenter la décision de saut ; il faudrait l'étendre côté machine à états plutôt que
 côté service de validation.
+
+---
+
+## M11 #7 — Tendances temporelles volume/valeur : extensions écartées
+
+**Contexte :** M11 #7 / feature #6 (2026-06-21) implémente une tendance temporelle
+**volume + valeur** par **mois** sur les **12 derniers mois glissants** (`?months`
+configurable), agrégée sur `issueDate`, affichée en `ComposedChart` (barres montant +
+ligne volume) dans une nouvelle section de `/reports`. Voir
+`docs/superpowers/specs/2026-06-21-m11-7-volume-value-trends-design.md`.
+
+**Extensions écartées pour l'instant (à reconsidérer si le besoin se confirme) :**
+- **Filtre par département / fournisseur** sur la tendance (le builder de rapports custom,
+  M11 #9, couvre déjà l'analyse sur-mesure multi-critères).
+- **Export dédié du graphe** (image/PDF) : l'export global des rapports existe déjà.
+- **Granularité hebdomadaire / trimestrielle** : le pas mensuel + `?months` couvre le besoin
+  de tendance ; d'autres granularités multiplieraient les cas sans gain métier net.
+- **Plage de dates libre (from/to)** : décision = fenêtre glissante `?months` (2 sélecteurs
+  de date = plus de surface UI et de cas limites pour un gain marginal en PFE).
+
+**Ce que cela impliquerait :**
+- Filtre dept/fournisseur : ajouter des `@RequestParam` au endpoint + passer les filtres à
+  `findAllWithFilters` (qui les supporte déjà) + sélecteurs côté front.
+- Export : générer une image serveur ou capturer le SVG recharts côté client.
+- Granularité paramétrable : un `?granularity=WEEK|MONTH|QUARTER` et un regroupement
+  temporel adapté (réutiliser le pattern `WeekFields` du cash-flow pour l'hebdo).
+
+**Pourquoi écarté pour l'instant :** la tendance mensuelle glissante répond directement à
+l'item « volume and value trends » ; les filtres et granularités supplémentaires relèvent du
+report builder déjà présent → YAGNI.
+
+**Chemin de migration :** le endpoint `GET /reports/volume-trend?months=N` peut accueillir
+des paramètres optionnels (`departmentId`, `supplierId`, `granularity`) sans rupture, et
+`findAllWithFilters` accepte déjà dept/fournisseur.
