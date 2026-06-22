@@ -272,25 +272,28 @@ docker ps --format "table {{.Names}}\t{{.Status}}"
 # e.g. `pg_isready -h localhost -p 5433`)
 ```
 
-## 4.4 Flyway Migration History — the V36–V38 gap (P3-03)
+## 4.4 Flyway Migration History — consolidated baseline (2026-06-22)
 
-The migration sequence is `V1`…`V35`, then jumps to `V39`, `V40`, … (latest `V43`).
-**`V36`, `V37`, `V38` never existed** — confirmed via
-`git log --all --diff-filter=D --name-only | grep "V3[6-8]__"` (no output: never created,
-never deleted). Flyway does not require contiguous version numbers, so `V35 → V39` applies
-cleanly with **no functional impact**.
+The original migration history grew to **60 files with churn** (create-then-revert pairs such
+as the webhook `secret_encrypted` column added in V26 and dropped in V30; repeated role/user
+seed fixes across V3/V16/V23/V31/V33; a `V36–V38` numbering gap; and data-migrations that only
+made sense against a legacy DB). During the 2026-06-22 sanitization pass this was **rewritten
+into a single contiguous, no-churn baseline of 34 migrations (`V1`…`V34`)** — each table created
+in its final shape, seeds consolidated, the numbering gap closed.
 
-**Origin (traced 2026-06-13, P11-24):** the 2026-06-06 correction plan reserved `V36`/`V37`/
-`V38` for the `purchase_orders` / `goods_receipt_notes` / `three_way_matching` migrations.
-But those exact tables had already been created earlier as **`V17__create_purchase_orders`**,
-**`V18__create_goods_receipt_notes`**, and **`V19__create_three_way_matching`** (Phase 9D
-scaffolding), so the reserved `V36–V38` numbers were redundant and simply skipped. (This
-supersedes the earlier, vaguer "covered by V17-19" note, which the audit had flagged as
-unsubstantiated — the connection is now verified against the actual migration files.)
+**Verification:** a fresh `flyway:migrate` of the consolidated set produces a schema
+structurally identical to the previous one — 46 tables, 400 columns, 68 indexes, 72 FKs, 11
+triggers, 5 check constraints (pg_dump diff empty) — and the full backend suite passes (491
+tests, 0 failures, with `ddl-auto: validate`). See `docs/DATABASE.md` for the ordered list.
 
-**Do not retroactively create `V36`–`V38`.** Continue numbering forward from the latest
-version. Per the absolute rule, never modify a migration that has already been applied
-(checksum is locked in `flyway_schema_history`; see PROB-009).
+**Important:** this baseline targets a **freshly-created database**. The removed
+data-migration steps (back-filling `suppliers` from flat invoice fields; nulling plaintext
+bank details) were no-ops on a clean DB and are intentionally gone — the consolidated set does
+not migrate a pre-existing legacy database.
+
+**Rule unchanged:** add new schema changes as the next contiguous version (`V35`, …). Never
+modify a migration that has already been applied — its checksum is locked in
+`flyway_schema_history` (see PROB-009).
 
 ---
 

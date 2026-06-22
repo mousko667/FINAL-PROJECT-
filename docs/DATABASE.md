@@ -4,29 +4,53 @@
 
 ## Migration Order
 
+> **Consolidated baseline (2026-06-22).** The migration history was rewritten from 60 churned
+> files (create-then-revert pairs, repeated seed fixes, a V36–V38 gap, legacy data-migrations)
+> into a single contiguous, no-churn set of **34 migrations**. Each table is created in its
+> final shape; seeds are consolidated. This baseline targets a freshly-created database — it
+> does **not** migrate a pre-existing legacy DB. Verified equivalent to the previous schema by
+> pg_dump diff (46 tables / 400 columns / 68 indexes / 72 FKs / 11 triggers / 5 checks) and a
+> full green test suite (491 tests).
+
 ```
-V1__create_users_roles.sql
-V2__create_departments.sql
-V3__seed_roles_and_admin.sql
-V4__create_invoices.sql
-V5__create_invoice_items.sql
-V6__create_invoice_documents.sql
-V7__create_approval_steps.sql
-V8__create_invoice_status_history.sql
-V9__create_notifications.sql
-V10__create_payments.sql
-V11__create_audit_logs.sql
-V12__add_indexes.sql
-...
-V30__remove_webhook_secret_encrypted.sql
-V31__fix_finance_approver_and_remove_auditeur.sql
-V32__seed_test_users_all_roles.sql
-V33__remove_phantom_roles.sql
-V34__fix_users_is_active.sql
-V35__encrypt_invoice_bank_details.sql
-V39__create_active_sessions.sql
-V40__create_approval_delegations.sql
+V1__create_departments.sql              -- departments (+ budget, FIN -> ROLE_DAF) + seed
+V2__create_suppliers.sql                -- suppliers (+ category)
+V3__create_users.sql                    -- users (identity + MFA + tokens + staff profile)
+V4__create_roles.sql                    -- roles + user_roles (structure)
+V5__seed_roles_and_admin.sql            -- 6 role categories + bootstrap admin
+V6__create_purchase_orders.sql          -- purchase_orders (+items)
+V7__create_goods_receipts.sql           -- goods_receipt_notes (+items)
+V8__create_invoices.sql                 -- invoices (final shape: supplier_id, PO, matching, sensitivity)
+V9__create_matching.sql                 -- three_way_matching_results + matching_config
+V10__create_invoice_items.sql
+V11__create_invoice_documents.sql        -- (versioning + retention disposition)
+V12__create_invoice_status_history.sql
+V13__create_notifications.sql
+V14__create_payments.sql                 -- payments + remittance_advice
+V15__create_audit_logs.sql
+V16__create_webhooks.sql                 -- webhooks + webhook_deliveries
+V17__create_approval_steps.sql
+V18__create_active_sessions.sql
+V19__create_approval_delegations.sql
+V20__create_security_policy.sql
+V21__create_access_requests.sql
+V22__create_document_access_log.sql
+V23__create_announcements.sql
+V24__create_supplier_relationship.sql    -- contracts + communications + documents
+V25__create_report_definitions.sql
+V26__create_integration_connectors.sql   -- (+ sync schedule)
+V27__create_payment_alert_rules.sql
+V28__create_escalation_rules.sql
+V29__create_retention_policy.sql
+V30__create_compliance.sql               -- incidents + checklist + calendar + backup + privacy
+V31__create_validation_checklists.sql    -- templates (+items) + responses (+items)
+V32__enforce_append_only_logs.sql        -- triggers: audit_logs, webhook_deliveries, document_access_log
+V33__enforce_financial_retention.sql     -- 10-year retention triggers
+V34__seed_test_users.sql                 -- DEV/TEST only: one user per role
 ```
+
+> **Rule:** add new schema changes as the next contiguous version (`V35`, …). Never modify an
+> already-applied migration (see `CLAUDE.md §13`, PROB-009).
 
 ---
 
@@ -78,7 +102,7 @@ created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 ```
 
-### Seed data for departments (V2)
+### Seed data for departments (V1)
 ```sql
 INSERT INTO departments (code, name_fr, name_en, requires_n2, n1_role, n2_role) VALUES
 ('DRH',   'Direction des Ressources Humaines', 'Human Resources Department', FALSE, 'ROLE_VALIDATEUR_N1_DRH',  NULL),
@@ -425,7 +449,7 @@ matching_status     VARCHAR(20)                          -- MATCHED|PARTIAL|MISM
 
 ## New Tables (T6 — Sessions & Delegations)
 
-### active_sessions (V39)
+### active_sessions (V18)
 ```sql
 id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
 user_id         UUID NOT NULL REFERENCES users(id)
@@ -442,7 +466,7 @@ CREATE INDEX idx_active_sessions_user    ON active_sessions(user_id) WHERE revok
 CREATE INDEX idx_active_sessions_expires ON active_sessions(expires_at) WHERE revoked = FALSE;
 ```
 
-### approval_delegations (V40)
+### approval_delegations (V19)
 ```sql
 id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
 delegator_id    UUID NOT NULL REFERENCES users(id)
