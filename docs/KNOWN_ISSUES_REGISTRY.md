@@ -829,6 +829,18 @@
 
 ---
 
+### [PROB-068] (M5 #1) `GET /api/v1/matching` renvoie 500 en runtime — paramètre `:search` nullable non typé dans `LIKE/CONCAT` (`lower(bytea)`)
+- **Catégorie :** Backend / JPA-Postgres
+- **Sévérité :** 🔴 Majeur (endpoint cassé en runtime, invisible aux tests)
+- **Découvert :** 2026-06-22 — vérification runtime de M5 #1 contre la VRAIE base (Postgres 18, `localhost:5433/oct_invoice`). `GET /api/v1/matching` (sans terme de recherche) → 500 `SQLGrammarException` ; `?search=PO` (terme non vide) → 200. Les tests `@SpringBootTest`/`@DataJpaTest` passaient (base H2/Postgres de test vide ne déclenche pas l'erreur).
+- **Symptôme :** `ERREUR: la fonction lower(bytea) n'existe pas` (PSQLException, SQLState 42883). Survient uniquement quand `search` est `null`/vide. La requête `ThreeWayMatchingResultRepository.findLatestPerInvoice` contient `LOWER(CONCAT('%', :search, '%'))` × 3.
+- **Cause racine :** même famille que PROB-038/054. Quand `:search` est `null`, Postgres ne peut pas inférer le type du paramètre lié dans `CONCAT('%', ?, '%')` → il le bind par défaut en `bytea` → `lower(bytea)` n'existe pas → échec. Le `CAST(:search AS string)` ajouté sur la seule clause `IS NULL` ne suffisait PAS : les **trois** occurrences de `:search` à l'intérieur des `CONCAT`/`LIKE` doivent AUSSI être castées, car chaque occurrence non typée est bindée en bytea indépendamment. (Premier fix partiel = CAST sur le `IS NULL` seul → toujours 500 ; fix complet = CAST sur les 4 occurrences.)
+- **Solution appliquée :** caster CHAQUE usage de `:search` → `CAST(:search AS string)` dans le `IS NULL` ET dans les trois `CONCAT('%', CAST(:search AS string), '%')`. Idem `:status` déjà casté. Vérifié en runtime : `GET /matching` (et toutes variantes status/search/pagination) → 200 ; `/lines` inconnu → 404 ; anonyme → 401 ; `supplier` → 403 sur les deux endpoints (SoD). Test repo `ThreeWayMatchingResultRepositoryTest` reste vert.
+- **Règle préventive :** dans une `@Query` JPQL/native visant Postgres, un paramètre nullable doit être casté à CHAQUE occurrence, pas seulement dans la clause `(:p IS NULL OR ...)` — `CAST(:p AS string)` partout où il apparaît (y compris dans `CONCAT`/`LIKE`/`COALESCE`). Sinon : `IS NULL` OK mais `lower(bytea)`/type-inference au runtime. **Ce type de bug est INVISIBLE aux tests sur base vide** : un test repo qui ne SEED pas de données ne déclenche pas l'évaluation des prédicats `LIKE` → toujours vert même cassé. Toute requête de recherche paginée DOIT être vérifiée en runtime contre une base Postgres peuplée (cf. PROB-038 : vérifier le trace réseau/HTTP réel, pas seulement le DOM ni le test sur base vide).
+- **Fichiers modifiés :** `src/main/java/com/oct/invoicesystem/domain/purchasing/repository/ThreeWayMatchingResultRepository.java`.
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :

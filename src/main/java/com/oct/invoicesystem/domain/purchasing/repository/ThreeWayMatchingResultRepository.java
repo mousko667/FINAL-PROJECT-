@@ -25,8 +25,11 @@ public interface ThreeWayMatchingResultRepository extends JpaRepository<ThreeWay
      * Retourne la page des derniers résultats de rapprochement (un par facture),
      * avec filtres optionnels sur le statut et un terme de recherche.
      *
-     * <p>Le {@code CAST(:status AS string)} neutralise le bug Postgres d'inférence
-     * de type sur un paramètre enum nullable (PROB-038/054).</p>
+     * <p>Les {@code CAST(:status AS string)} et {@code CAST(:search AS string)}
+     * neutralisent le bug Postgres d'inférence de type sur un paramètre nullable
+     * dans une clause {@code (:param IS NULL OR ...)} (PROB-038/054/068). Sans le CAST
+     * sur {@code search}, un appel sans terme de recherche échoue en 500
+     * (SQLGrammarException) en runtime, alors que les tests sur base vide passent.</p>
      *
      * <p>L'unicité d'une ligne par facture est garantie même en cas d'horodatage
      * {@code createdAt} identique : on retient le résultat sans aucun autre plus récent,
@@ -46,10 +49,10 @@ public interface ThreeWayMatchingResultRepository extends JpaRepository<ThreeWay
                   AND (r2.createdAt > r.createdAt
                        OR (r2.createdAt = r.createdAt AND r2.id > r.id)))
               AND (CAST(:status AS string) IS NULL OR r.status = :status)
-              AND (:search IS NULL
-                   OR LOWER(r.invoice.referenceNumber) LIKE LOWER(CONCAT('%', :search, '%'))
-                   OR LOWER(r.invoice.supplierName)    LIKE LOWER(CONCAT('%', :search, '%'))
-                   OR LOWER(r.purchaseOrder.poNumber)  LIKE LOWER(CONCAT('%', :search, '%')))
+              AND (CAST(:search AS string) IS NULL
+                   OR LOWER(r.invoice.referenceNumber) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%'))
+                   OR LOWER(r.invoice.supplierName)    LIKE LOWER(CONCAT('%', CAST(:search AS string), '%'))
+                   OR LOWER(r.purchaseOrder.poNumber)  LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')))
             ORDER BY r.createdAt DESC
             """)
     Page<ThreeWayMatchingResult> findLatestPerInvoice(@Param("status") MatchingStatus status,
