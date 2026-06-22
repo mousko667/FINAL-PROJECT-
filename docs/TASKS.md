@@ -1,1113 +1,621 @@
-# TASKS â€” Development Task List
+# TASKS — OCT Invoice System (Living Implementation Roadmap)
 
-> **How to use this file:**
-> - Work top-to-bottom, phase by phase
-> - Never start Phase N+1 until all tasks in Phase N are âœ…
-> - Mark each task âœ… only when: code written + tests pass + i18n keys added
-> - Log blockers in `docs/MEMORY.md`
-
----
-
-## Phase 0 â€” Project Bootstrap
-*Goal: Running skeleton with DB, security, and Docker*
-
-- [x] **P0-01** Initialize Spring Boot project via Spring Initializr with all dependencies from `docs/ARCHITECTURE.md Â§4`
-- [x] **P0-02** Create `docker-compose.yml` with postgres, minio, backend, frontend, mailhog services
-- [x] **P0-03** Create `Dockerfile` for backend (multi-stage: build + runtime)
-- [x] **P0-04** Create Flyway migration `V1__create_users_roles.sql`
-- [x] **P0-05** Create Flyway migration `V2__create_departments.sql` with all 9 OCT departments seeded
-- [x] **P0-06** Implement `User`, `Role`, `UserRole` entities
-- [x] **P0-07** Implement `Department` entity with `requires_n2`, `n1_role`, `n2_role` columns
-- [x] **P0-08** Configure `SecurityConfig.java` with JWT filter chain and RBAC rules
-- [x] **P0-09** Implement `JwtService` (generate + validate tokens)
-- [x] **P0-10** Implement `JwtAuthenticationFilter`
-- [x] **P0-11** Implement `AuthController` (login + refresh endpoints)
-- [x] **P0-12** Implement `GlobalExceptionHandler` with structured error responses
-- [x] **P0-13** Implement `ApiResponse<T>` and `PagedResponse<T>` wrappers
-- [x] **P0-14** Configure `MessageSource` for FR/EN with `messages_fr.properties` and `messages_en.properties`
-- [x] **P0-15** Implement `EncryptionUtil` (AES-256 encrypt/decrypt)
-- [x] **P0-16** Implement `AuditLoggingFilter`
-- [x] **P0-17** Configure `AsyncConfig` (`@EnableAsync` + thread pool)
-- [x] **P0-18** Configure OpenAPI / Swagger (`OpenApiConfig.java`)
-- [x] **P0-19** Seed admin user + all roles via `V3__seed_roles_and_admin.sql`
-- [x] **P0-20** Verify: `docker-compose up` â†’ app starts, `/api/v1/auth/login` returns JWT âœ…
-
-**Phase 0 Exit Criteria:** `docker-compose up` produces a running app, login works, Swagger UI accessible at `/swagger-ui.html`
+> **What this file is.** The single, living roadmap and implementation-status ledger for the
+> project. It replaces both the old phase-based plan (`P{X}-{XX}` tasks) and the former
+> `docs/COMPLIANCE_MATRIX.md` — those two were merged into this file on 2026-06-22 during the
+> documentation sanitization pass, because they had drifted apart and the code had moved on.
+>
+> **Source of truth order.** The **code** is ground truth. The business scope is fixed by
+> `docs/Project requirements.txt` (14 modules), `docs/REQUIREMENTS-MATRIX.md` (departmental
+> matrix, ref. 25627), and `docs/OCT_System_Briefing.md` (project identity & rules). This file
+> records *what is actually built* against that scope, plus the remaining open gaps.
+>
+> **Legend.** ✅ Conforme (vérifié) · 🟠 Partiel (manque précisé) · ❌ Absent · 🔵 Présent
+> (rendu/endpoint vérifié, chemin d'écriture non exercé à 100 %).
+>
+> **History note.** Early development followed a phase plan (`P0`…`P11`, ~190 commits). From
+> Phase 11 onward the project tracked work by module IDs (`M{N} #{n}`) against the compliance
+> matrix. Both histories are preserved in git; this file is forward-looking.
 
 ---
 
-## Phase 1 â€” User & Department Management
-*Goal: Admins can manage users and departments*
+## A. OPEN GAPS — what remains to do
 
-- [x] **P1-01** Implement `UserController` (CRUD + role assignment) â€” Admin only
-- [x] **P1-02** Implement `UserService` with BCrypt password hashing
-- [x] **P1-03** Implement `UserRepository` with `findByEmail`, `findByUsername`
-- [x] **P1-04** Implement `UserDTO`, `UserCreateRequest`, `UserUpdateRequest`
-- [x] **P1-05** Implement `UserMapper` (MapStruct)
-- [x] **P1-06** Implement `DepartmentController` (list, get, update approval config) â€” Admin only
-- [x] **P1-07** Implement `DepartmentService` + `DepartmentRepository`
-- [x] **P1-08** Add i18n keys for user and department management
-- [x] **P1-09** Write unit tests: `UserServiceTest` (create, update, assign role, deactivate)
-- [x] **P1-10** Write unit tests: `DepartmentServiceTest`
-- [x] **P1-11** Write integration tests: `UserControllerTest` (all endpoints, all roles)
-- [x] **P1-12** Write integration tests: `DepartmentControllerTest`
+These are the only items not yet satisfied against the locked Chapters 1+2 / Project
+Requirements. They supersede the old "Known Gaps — Must Be Fixed" section formerly in
+`OCT_System_Briefing.md §4.3` (OCR and JWT RS256 listed there are now **done**).
 
-**Phase 1 Exit Criteria:** Admin can create users and assign roles via API. All tests pass.
+| ID | Gap | Module / Source | Status | What to do |
+|----|-----|-----------------|--------|------------|
+| G1 | **CI pipeline (GitHub Actions)** absent | Briefing §4.1 / Tooling | ❌ | Add `.github/workflows/ci.yml`: backend `./mvnw -B verify` (Testcontainers PG), frontend `npm ci && lint && test && build`; upload JaCoCo + Playwright artifacts. |
+| G2 | **TLS keystore** not shipped (prod SSL block exists, no PKCS12) | Briefing §4.1 / Sécurité | 🟠 | Generate `keystore.p12`, document `SSL_KEYSTORE_PATH`/`_PASSWORD`, or terminate TLS at nginx; capture proof for the thesis. |
+| G3 | **OWASP ZAP baseline scan** not run | Briefing §4.2 / Sécurité | ❌ | Run ZAP baseline against the running app, commit `docs/audit/zap-report.html`, summarize findings. |
+| G4 | **SHA-256 document integrity** check (claimed in PRD Module 4) — verify/confirm in code | PRD §Module 4 | 🟠 | Confirm checksum is computed on upload + verified on download in `InvoiceDocumentService`; add column/test if missing. |
+| G5 | **Aging analysis** is basic (`/reports/aging`) | M2 #3 / M7 / M11 | 🟠 | Add bucketed aging (0-30/31-60/61-90/90+) as a dashboard widget + per-supplier rollup. |
+| G6 | **README** at repo root | Submission polish | ❌ | Write `README.md`: stack, `docker-compose up` + host-PG note, profiles, test commands, default credentials. |
+| G7 | **WCAG 2.1 AA** accessibility unverified | NFR (PRD §7) | 🟠 | Run axe/Lighthouse a11y pass on key pages; fix top issues; record results. |
 
----
-
-## Phase 2 â€” Invoice Core (CRUD + Documents)
-*Goal: Accounting assistant can create, edit, and attach documents to invoices*
-
-- [x] **P2-01** Create Flyway migrations: `V4__create_invoices.sql`, `V5__create_invoice_items.sql`, `V6__create_invoice_documents.sql`
-- [x] **P2-02** Implement `Invoice`, `InvoiceItem`, `InvoiceDocument` entities
-- [x] **P2-03** Implement `InvoiceStatus` enum (all 9 statuses FR/EN)
-- [x] **P2-04** Implement `InvoiceRepository` with paginated queries + filter support
-- [x] **P2-05** Implement `InvoiceService` (create, update, soft-delete, list, get-by-id)
-- [x] **P2-06** Implement `InvoiceValidationService` (all 10 business rules from `docs/WORKFLOW.md Â§8`)
-- [x] **P2-07** Implement `ReferenceNumberGenerator` â€” format `FAC-{YYYY}-{NNNNN}` with DB sequence
-- [x] **P2-08** Implement `InvoiceController` (CRUD endpoints)
-- [x] **P2-09** Implement `MinioStorageService` (upload, download pre-signed URL, delete)
-- [x] **P2-10** Implement `InvoiceDocumentService` (validate MIME via Tika, compute SHA-256, store in MinIO)
-- [x] **P2-11** Implement `InvoiceDocumentController` (upload, list, download)
-- [x] **P2-12** Implement `InvoiceMapper`, `InvoiceItemMapper` (MapStruct)
-- [x] **P2-13** Add all invoice-related i18n keys
-- [x] **P2-14** Write unit tests: `InvoiceServiceTest` (create, update, soft-delete, ownership)
-- [x] **P2-15** Write unit tests: `InvoiceValidationServiceTest` (all 10 rules, happy + edge cases)
-- [x] **P2-16** Write unit tests: `InvoiceDocumentServiceTest` (MIME rejection, checksum, size limit)
-- [x] **P2-17** Write integration tests: `InvoiceControllerTest` (all endpoints, ASSISTANT_COMPTABLE + ADMIN roles)
-- [x] **P2-18** Write integration tests: `InvoiceDocumentControllerTest`
-
-**Phase 2 Exit Criteria:** Accounting assistant can create a draft invoice with line items, attach a PDF, and list their invoices. All tests pass.
+> The detailed per-module status below already flags ~40 smaller 🟠 partials (config-by-property
+> instead of UI, responsive-web instead of native mobile, framework instead of live external sync).
+> Those are intentional scope decisions or low-urgency polish, not blocking gaps.
 
 ---
 
-## Phase 3 â€” Workflow Engine (BAP State Machine)
-*Goal: Full invoice lifecycle through all approval stages*
+## B. OUT OF SCOPE (assumed) — Module 12 Integration
 
-- [x] **P3-01** Create Flyway migrations: `V7__create_approval_steps.sql`, `V8__create_invoice_status_history.sql`
-- [x] **P3-02** Implement `ApprovalStep` entity
-- [x] **P3-03** Implement `InvoiceStatusHistory` entity
-- [x] **P3-04** Implement `InvoiceEvent` enum (SUBMIT, ASSIGN_REVIEWER, VALIDATE_N1, VALIDATE_N2, BON_A_PAYER, RECORD_PAYMENT, REJECT, RESUBMIT, ARCHIVE)
-- [x] **P3-05** Implement `StateMachineConfig` â€” define all states + transitions from `docs/WORKFLOW.md Â§3`
-- [x] **P3-06** Implement department-aware transition guard (1-level vs 2-level based on `Department.requires_n2`)
-- [x] **P3-07** Implement `InvoiceStateMachineService` (send event, persist state, write status history)
-- [x] **P3-08** Implement `InvoiceStateChangeListener` (writes to `invoice_status_history` on every transition)
-- [x] **P3-09** Implement `ApprovalService` (create step, record decision, check completeness, deadline tracking)
-- [x] **P3-10** Implement `ApprovalController` (assign-reviewer, validate-n1, validate-n2, bon-a-payer, reject endpoints)
-- [x] **P3-11** Implement `InvoiceController` additions: submit, resubmit endpoints
-- [x] **P3-12** Implement all transition guards (role check, rejection reason min length, document required)
-- [x] **P3-13** Add all workflow-related i18n keys (FR + EN for every state and action)
-- [x] **P3-14** Write unit tests: `InvoiceStateMachineServiceTest` (every valid transition + every invalid transition)
-- [x] **P3-15** Write unit tests: `ApprovalServiceTest` (assign, validate, reject, deadline check)
-- [x] **P3-16** Write integration tests: `ApprovalControllerTest` â€” full lifecycle for SINGLE-level dept
-- [x] **P3-17** Write integration tests: `ApprovalControllerTest` â€” full lifecycle for TWO-level dept (INFO)
-- [x] **P3-18** Write integration tests: reject + resubmit flow
-- [x] **P3-19** Write integration test: wrong-role rejection (N1 trying to do N2 action â†’ 403)
+Per `docs/REQUIREMENTS-MATRIX.md` Module 12, confirmed with the project owner on 2026-06-12,
+9 of 12 Module-12 items are **hors-scope assumé** (connectors to named third-party enterprise
+systems — SAP/Oracle/MS Dynamics/external accounting/banking/GED — plus their config/scheduling/
+testing tooling). They have no implementation and building even one is a project on its own,
+beyond a Bachelor's FYP. No PRD/WORKFLOW requirement mandates a specific external connector, so
+this exclusion does not contradict the cahier des charges.
 
-**Phase 3 Exit Criteria:** A full invoice lifecycle (BROUILLON â†’ ARCHIVE) works end-to-end for both 1-level and 2-level departments. All transitions, guards, and role checks verified by tests.
+| # | Item (REQUIREMENTS-MATRIX.md Module 12) | Status |
+|---|---|---|
+| 1 | Dashboard de config d'intégration | Hors-scope assumé |
+| 2 | Connexion ERP (SAP, Oracle, MS Dynamics) | Hors-scope assumé |
+| 3 | Intégration système d'approvisionnement | Hors-scope assumé |
+| 4 | Connexion logiciel comptable | Hors-scope assumé |
+| 5 | Intégration bancaire pour paiements | Hors-scope assumé |
+| 6 | Intégration GED (externe) | Hors-scope assumé |
+| 7 | Interface de config API | Hors-scope assumé |
+| 10 | Config de planning de sync | Hors-scope assumé |
+| 12 | Interface de test de connexion | Hors-scope assumé |
 
----
-
-## Phase 4 â€” Notifications
-*Goal: Internal email + in-app notifications on every workflow event*
-
-- [x] **P4-01** Create Flyway migration `V9__create_notifications.sql`
-- [x] **P4-02** Implement `Notification` entity + `NotificationRepository`
-- [x] **P4-03** Define domain events: `InvoiceSubmittedEvent`, `InvoiceValidatedEvent`, `InvoiceRejectedEvent`, `BonAPayerEvent`, `ApprovalDeadlineEvent`
-- [x] **P4-04** Implement `EmailNotificationListener` (`@Async @EventListener`) â€” sends via `EmailService`
-- [x] **P4-05** Implement `EmailService` with Thymeleaf templates (FR + EN)
-- [x] **P4-06** Create email templates: `invoice-submitted.html`, `invoice-rejected.html`, `invoice-approved.html`, `deadline-reminder.html`
-- [x] **P4-07** Implement `PersistNotificationListener` (`@Async @EventListener`) â€” saves to DB
-- [x] **P4-08** Configure `WebSocketConfig` (STOMP over SockJS, user-specific topics)
-- [x] **P4-09** Implement `WebSocketNotificationListener` (`@Async @EventListener`)
-- [x] **P4-10** Implement `NotificationController` (list, mark-read, mark-all-read)
-- [x] **P4-11** Implement `@Scheduled` deadline reminder job (runs daily, checks overdue approval steps)
-- [x] **P4-12** Write unit tests: all listener tests with mock `EmailService` and `SimpMessagingTemplate`
-- [x] **P4-13** Write integration tests: event publishing verified end-to-end
-
-**Phase 4 Exit Criteria:** Submitting an invoice triggers an in-app notification AND an email to the N1 approvers. Notifications persisted in DB. WebSocket delivers real-time alerts.
+**NOT excluded — items 8, 9, 11** (Webhooks, Integration status monitoring, Error log + resolution):
+a generic, correctly-architected webhook backend already exists (`WebhookController`,
+`IntegrationStatusController`, `WebhookService` — HMAC-SHA256, 3-retry backoff, admin-gated,
+append-only delivery log) **and** an admin UI exists at `/admin/integrations` (`IntegrationsPage.tsx`,
+connectors + webhooks + status). These remain normal tracked items, not scope exclusions.
 
 ---
 
-## Phase 5 â€” Payment & Archiving
-*Goal: Record payments and archive completed invoices*
+## C. IMPLEMENTATION STATUS BY MODULE (verified against code)
 
-- [x] **P5-01** Create Flyway migration `V10__create_payments.sql`
-- [x] **P5-02** Implement `Payment` entity + `PaymentRepository`
-- [x] **P5-03** Implement `PaymentService` (record payment, trigger PAYEâ†’ARCHIVE)
-- [x] **P5-04** Implement `PaymentController` (record, get, list)
-- [x] **P5-05** Write unit tests: `PaymentServiceTest`
-- [x] **P5-06** Write integration tests: `PaymentControllerTest`
+> The following is the verified module-by-module status (formerly `docs/COMPLIANCE_MATRIX.md`).
+> Method: clicked Playwright test campaign + code/endpoint verification.
 
-**Phase 5 Exit Criteria:** A BON_A_PAYER invoice can be paid and automatically archives.
 
----
+## Module 1 — User Registration & Authentication
 
-## Phase 6 â€” Audit & Reporting
-*Goal: Full audit trail and management reports*
+### UI Elements
+| # | Élément requis | Verdict | Preuve |
+|---|----------------|---------|--------|
+| 1 | Registration form with role selection | ✅ | `/admin/users/new` : formulaire avec dropdown **Rôle** (Administrator, CFO/DAF, Assistant comptable, tous N1/N2). Inscription publique = fournisseur uniquement (rôle fixe), staff créé par admin (conforme à l'exigence). |
+| 2 | Supplier-specific fields (company, tax ID, contact, bank) | ✅ | `/register` : Raison sociale, NIF/tax ID, Téléphone, Adresse, **Coordonnées bancaires** + identifiants compte. |
+| 3 | Staff-specific fields (employee ID, department, approval limits) | ✅ | Affichés dans `/profile` (lecture seule) ET **saisissables à la création** : `/admin/users/new` propose désormais **Matricule** (employee ID) + **Limite d'approbation** (en plus de Département conditionnel). Backend persiste déjà les 3 champs (DTO/mapper/service). **Corrigé (B7, 2026-06-18)** : `createUser_persistsEmployeeIdAndApprovalLimit` vérifie le round-trip. |
+| 4 | Password creation with strength indicator | ✅ | `/register` : saisie « Test1234! » → barre + libellé « Fort ». |
+| 5 | Email verification interface | ✅ | Route `/verify-email` (EmailVerificationPage) ; endpoint `/auth/verify-email` permitAll. |
+| 6 | Login page (username/email + password) | ✅ | `/login` : champs username + password, vérifié. |
+| 7 | Password recovery/reset flow | ✅ | `/forgot-password` (email → Envoyer le lien) + `/reset-password` (nouveau mot de passe). |
+| 8 | MFA setup (mandatory all roles except supplier) | ✅ | Login 2-step OTP vérifié (admin+dg) ; supplier connecté **sans** OTP. Deny-list (PROB-053). |
+| 9 | Session management & timeout controls | ✅ | `/admin/security` : « Délai d'expiration de session (60 min) » + table **Sessions actives** avec Révoquer. |
+| 10 | Role-based dashboard redirection | ✅ | staff → `/dashboard`, supplier → `/supplier/dashboard` (vérifié). |
+| 11 | Profile management screen | ✅ | `/profile` : édition email/prénom/nom/langue, section Affectation (matricule/département/limite), Rôles attribués, bloc MFA (Configurer la MFA), Enregistrer. |
+| 12 | Login attempt tracking | ✅ | `/admin/security` : « Comptes verrouillés / tentatives échouées » ; backend verrouille après 5 échecs (testé en suite). |
 
-- [x] **P6-01** Create Flyway migration `V11__create_audit_logs.sql`
-- [x] **P6-02** Implement `AuditLog` entity + `AuditRepository`
-- [x] **P6-03** Implement `AuditService` (append-only log writes)
-- [x] **P6-04** Implement `AuditController` (paginated log, filter by user/entity/action)
-- [x] **P6-05** Implement `ReportService` (KPI queries: avg processing time, volume by status, rejection rate, overdue count, top suppliers)
-- [x] **P6-06** Implement Excel export (Apache POI â€” filtered invoice list)
-- [x] **P6-07** Implement PDF export â€” individual invoice audit report (iText 7)
-- [x] **P6-08** Implement PDF export â€” compliance report for date range (iText 7)
-- [x] **P6-09** Implement `ReportController` (kpi, export-xlsx, export-pdf)
-- [x] **P6-10** Write unit tests: `ReportServiceTest` (KPI calculations with known dataset)
-- [x] **P6-11** Write integration tests: `ReportControllerTest` + `AuditControllerTest`
+### Features
+| # | Feature requise | Verdict | Preuve |
+|---|-----------------|---------|--------|
+| 1 | Secure registration suppliers (self) + staff (by admin) | ✅ | `/register` self-service + `/admin/users/new` par admin. |
+| 2 | RBAC (6 catégories de rôles) | ✅ | 14 rôles, navs différenciés par rôle (vérifié aa/dg/admin/supplier). |
+| 3 | Supplier profile mgmt (tax + bank) | ✅ | Portail fournisseur `/supplier/profile` + détail fournisseur côté admin. |
+| 4 | MFA | ✅ | Voir UI #8. |
+| 5 | Session monitoring & timeout | ✅ | Voir UI #9. |
+| 6 | Audit-ready user access tracking | ✅ | Journal d'audit logge LOGIN/MFA/ACCESS_DENIED (M10). |
+| 7 | Compliance with financial data protection | ✅ | Chiffrement AES au repos (bank details) + RBAC + audit. |
 
-**Phase 6 Exit Criteria:** DAF/Auditor can view KPI dashboard data and export reports. Audit log is complete and tamper-evident.
-
----
-
-## Phase 7 â€” Frontend (React)
-*Goal: Complete working UI for all roles*
-
-- [x] **P7-01** Bootstrap React project (Vite + TypeScript + TailwindCSS + shadcn/ui)
-- [x] **P7-02** Configure Axios client with JWT interceptor + refresh logic
-- [x] **P7-03** Configure React Query (`QueryClientProvider`)
-- [x] **P7-04** Configure Redux Toolkit (auth slice + notification slice)
-- [x] **P7-05** Configure React Router with nested routes + `ProtectedRoute` + `RoleGuard`
-- [x] **P7-06** Configure i18n (react-i18next with `fr.json` + `en.json`)
-- [x] **P7-07** Configure STOMP/WebSocket client hook (`useWebSocket.ts`)
-- [x] **P7-08** Build `LoginPage` with form validation (React Hook Form + Zod)
-- [x] **P7-09** Build app shell: sidebar, header, notification bell, language switcher
-- [x] **P7-10** Build `InvoiceListPage` (table, filters, pagination, status badges)
-- [x] **P7-11** Build `InvoiceCreatePage` (multi-step form: details â†’ line items â†’ documents)
-- [x] **P7-12** Build `InvoiceDetailPage` (full view + `InvoiceTimeline` + `InvoiceActionPanel`)
-- [x] **P7-13** Build `InvoiceActionPanel` (role-aware: shows validate/reject/bon-a-payer based on user role + invoice state)
-- [x] **P7-14** Build `DocumentUploader` (drag-and-drop, MIME preview, progress bar)
-- [x] **P7-15** Build `DashboardPage` with role-specific content
-- [x] **P7-16** Build KPI cards + Recharts charts (donut, bar, line)
-- [x] **P7-17** Build `NotificationDropdown` + unread badge
-- [x] **P7-18** Build `ReportsPage` with export panel
-- [x] **P7-19** Build Admin pages (user management, department config, audit log)
-- [x] **P7-20** Write component tests (React Testing Library): `InvoiceActionPanel`, `InvoiceTimeline`, `RoleGuard`
-- [x] **P7-21** Write API hook tests: `useInvoices`, `useAuth`
-
-**Phase 7 Exit Criteria:** All user journeys completable in the browser for all roles. FR/EN language switch works. Role guard prevents unauthorized UI actions.
+**Gap M1 :** ~~UI #3 — employee ID / approval limit non éditables via UI~~ **corrigé (B7, 2026-06-18)** : tous deux saisissables à la création dans `/admin/users/new`. (M1 désormais sans gap.)
 
 ---
 
-## Phase 8 â€” Integration, Hardening & Documentation
-*Goal: Production-ready, tested, documented*
+## Module 2 — Dashboard
 
-- [x] **P8-01** End-to-end test: full BAP lifecycle for single-level department (Playwright or Cypress)
-- [x] **P8-02** End-to-end test: full BAP lifecycle for two-level department
-- [x] **P8-03** Security audit: verify all endpoints reject unauthorized roles (automated test suite)
-- [x] **P8-04** Add rate limiting on auth endpoints (Spring Security + Bucket4j)
-- [x] **P8-05** Add HTTP security headers (X-Frame-Options, CSP, HSTS)
-- [x] **P8-06** Performance test: invoice list endpoint with 10,000 records (< 2s)
-- [x] **P8-07** Add DB indexes: `invoices(status)`, `invoices(department_id)`, `invoices(created_at)`, `audit_logs(created_at)`
-- [x] **P8-08** Write `README.md` with setup instructions, architecture overview, test commands
-- [x] **P8-09** Generate final Swagger/OpenAPI spec export
-- [x] **P8-10** Final `docker-compose up` verification — fresh machine, zero manual steps
+### UI Elements
+| # | Élément requis | Verdict | Preuve |
+|---|----------------|---------|--------|
+| 1 | Role-based dashboard views | ✅ | 4 vues distinctes vérifiées : supplier, AA (finance), validateur (manager), admin. |
+| 2 | Supplier dashboard (submitted, payment status, pending actions) | ✅ | `/supplier/dashboard` : KPIs Soumises/En attente/Validées/Payées/Rejetées + « Actions requises ». |
+| 3 | Finance staff dashboard (pending approvals, processing queue, aging) | 🟠 | AA : KPIs + « File de traitement » + KPI « Factures en retard ». **Aging complet** (table par tranches) vit dans Rapports/Paiements (M7/M11), pas en widget du dashboard. |
+| 4 | Manager dashboard (approval requests, metrics, budget alerts) | ✅ | dg : « Factures en attente de votre décision » + file d'approbation + métriques ; **BudgetAlerts** (composant DAF/AA). |
+| 5 | Summary cards (received, pending, approved, paid) | ✅ | Cartes KPI présentes sur chaque dashboard. |
+| 6 | Recent invoice activity feed | ✅ | « File de traitement » / « Actions requises » + (M10) activité récente. |
+| 7 | Quick action buttons (submit, validate, approve, report) | ✅ | Dashboard AA : « Nouvelle facture », Fournisseurs, BDC ; admin : raccourcis admin. |
+| 8 | Notification center with unread counts | ✅ | `/notifications` : « 1 non lu(s) », « Tout marquer comme lu », cloche en header. |
+| 9 | System announcements | ✅ | Composant DashboardAnnouncements (M2) + admin `/admin/announcements` (publier INFO/WARNING/CRITICAL). |
+| 10 | Processing time KPIs | ✅ | KPI « Temps de traitement moyen » (jours). |
+| 11 | Mobile-responsive layout | ✅ | Rendu testé à 390×844 (viewport mobile) : la page s'affiche sans casse. Layout Tailwind responsive. (Sidebar reste visible — pas de hamburger dédié, mais aucune rupture.) |
 
-**Phase 8 Exit Criteria:** `docker-compose up` on a fresh machine â†’ working app. All E2E tests pass. Swagger UI documents all endpoints.
+### Features
+| # | Feature requise | Verdict | Preuve |
+|---|-----------------|---------|--------|
+| 1 | Personalized dashboards | ✅ | Vues par rôle (UI #1). |
+| 2 | Real-time invoice & payment status | ✅ | KPIs + statuts live ; WebSocket notifications (PROB-051 corrigé). |
+| 3 | Pending tasks & approvals at a glance | ✅ | Files d'approbation/traitement. |
+| 4 | Quick access to processing tools | ✅ | Quick actions (UI #7). |
+| 5 | Notification integration | ✅ | Centre de notifications + WS temps réel. |
+| 6 | Visual representation of metrics | ✅ | Graphiques « Factures par statut » + « Top fournisseurs ». |
 
-
-
----
-
-## Phase 9A — Supplier Domain (Module 8 Foundation)
-*Goal: Supplier becomes a first-class entity; invoices link via FK*
-
-- [x] **P9-01** Create `V13__create_suppliers.sql` — suppliers table with
-      company name, tax ID, bank details (AES-256 encrypted), contact info,
-      status (PENDING_VERIFICATION/ACTIVE/SUSPENDED), onboarding date, soft-delete
-- [x] **P9-02** Create `V14__update_invoices_supplier_fk.sql` — add nullable
-      `supplier_id` FK to invoices; migrate existing flat text data into new
-      suppliers rows; keep flat fields nullable for backward compatibility
-- [x] **P9-03** Implement `Supplier` entity + `SupplierStatus` enum
-- [x] **P9-04** Implement `SupplierDocument` entity (tax certificates, contracts)
-      linked to supplier with MinIO storage
-- [x] **P9-05** Implement `SupplierRepository` (search by name, tax ID, status)
-- [x] **P9-06** Implement `SupplierService` (create, update, onboard, suspend,
-      soft-delete, list, get performance metrics)
-- [x] **P9-07** Implement `SupplierController` (full CRUD + onboard/suspend actions)
-- [x] **P9-08** Implement `SupplierMapper` (MapStruct)
-- [x] **P9-09** Update `InvoiceService` + `InvoiceController` to accept optional
-      `supplierId` and populate `supplier_id` FK on invoice; keep flat fields
-      populated from the linked Supplier for backward compatibility
-- [x] **P9-10** Add supplier i18n keys FR + EN
-- [x] **P9-11** Create `SupplierPerformanceTask` to periodically compute average
-      processing times and auto-suspend inactive suppliers
-- [x] **P9-12** Add basic end-to-end integration test `SupplierIntegrationTest`
-      for creating, suspending, and retrieving supplier metrics)
-
-**Phase 9A Exit Criteria:** Admin can create and manage supplier profiles.
-New invoices can be linked to a supplier via `supplier_id`.
-All tests pass. `./mvnw test` — 0 failures.
+**Gap M2 :** UI #3 — l'aging analysis n'est pas un widget du dashboard finance (présent ailleurs : M7/M11).
 
 ---
 
-## Phase 9B — Supplier Authentication & Portal (Modules 1, 2, 3)
-*Goal: Suppliers can self-register, log in, submit invoices, track status*
+## Module 3 — Invoice Reception
 
-- [x] **P9-13** Create `V15__add_supplier_user_link.sql` — add nullable
-      `supplier_id` FK to `users` table; add `mfa_enabled BOOLEAN DEFAULT FALSE`,
-      `mfa_secret VARCHAR(64)`, `mfa_verified BOOLEAN DEFAULT FALSE`,
-      `failed_login_attempts INT DEFAULT 0`, `locked_until TIMESTAMPTZ` columns
-- [x] **P9-14** Implement supplier self-registration endpoint
-      `POST /api/v1/auth/register/supplier` with email verification token flow
-      (token stored in DB, expires in 24h)
-- [x] **P9-15** Implement email verification endpoint
-      `GET /api/v1/auth/verify-email?token={token}` — activates supplier account
-- [x] **P9-16** Update `AuthService` to issue JWT with `ROLE_SUPPLIER`
-      authority on supplier login; supplier JWT includes `supplierId` claim
-- [x] **P9-17** Update `SecurityConfig` to permit registration + email
-      verification endpoints publicly
-- [x] **P9-18** Implement supplier invoice submission
-      `POST /api/v1/supplier/invoices` — suppliers upload their own invoice
-      (maps to same `Invoice` entity, sets `submitted_by` to the supplier user,
-      status starts at `BROUILLON`)
-- [x] **P9-19** Implement supplier invoice status tracking
-      `GET /api/v1/supplier/invoices` — ROLE_SUPPLIER sees only their own
-- [x] **P9-20** Implement supplier document upload ✅
-      `POST /api/v1/supplier/documents` — tax certificates, contracts
-- [x] **P9-21** Implement supplier profile self-management ✅
-      `GET/PUT /api/v1/supplier/profile`
-- [x] **P9-22** Implement supplier dashboard endpoint ✅
-      `GET /api/v1/supplier/dashboard` — counts by status, last payment date,
-      pending actions
-- [x] **P9-23** Add i18n keys for supplier portal (FR + EN) ✅
-- [x] **P9-24** Write integration tests: supplier registration → email verify →
-      login → submit invoice → track status ✅
+### UI Elements
+| # | Élément requis | Verdict | Preuve |
+|---|----------------|---------|--------|
+| 1 | Supplier-facing submission interface | ✅ | `/supplier/invoices/new` : dépôt + OCR + saisie manuelle. |
+| 2 | Invoice upload (PDF, **XML**, image) | ✅ | Accepté : `.pdf,.jpg,.jpeg,.png,.tiff` **+ `.xml`** (B8, 2026-06-19). Parseur `InvoiceXmlParser` XXE-safe → `OcrExtractionResult`, routé par `OcrService`. |
+| 3 | OCR-assisted data extraction preview | ✅ | « nous extrairons les données automatiquement » + résultat OCR (digital PDF vs image), prévisualisation avant validation. |
+| 4 | Invoice fields (number, date, amount, supplier, description) | ✅ | Formulaire manuel (`/invoices/new`) + saisie supplier : tous les champs. |
+| 5 | PO / reference number linking | ✅ | `/invoices/new` : dropdown « Purchase Order » → active le rapprochement 3-voies. |
+| 6 | Supporting document attachment | ✅ | Étape « Documents » du wizard + upload sur détail facture. |
+| 7 | Duplicate invoice detection alert | ✅ | Détection prouvée : 2 factures identiques bloquées à la soumission (M3). |
+| 8 | Submission confirmation with reference number | ✅ | « Facture soumise avec succès » + référence `FAC-YYYY-NNNNN` générée. |
+| 9 | Invoice status tracking (suppliers) | ✅ | `/supplier/invoices` : colonne « Progression de la validation » + 9 statuts. |
+| 10 | Submission history viewer | ✅ | `/supplier/invoices` liste l'historique des soumissions du fournisseur. |
+| 11 | Bulk invoice upload option | ✅ | **Bulk de documents** vers UNE facture existante (`/invoices/{id}/documents/bulk` + BulkDocumentUpload) ✅ **et bulk de plusieurs factures** (B8, 2026-06-19) : `POST /invoices/import` (CSV 1 ligne/facture ou XML multi-`<invoice>`, best-effort par ligne, ASSISTANT_COMPTABLE) + `ImportInvoicesModal` sur `InvoiceListPage`. |
+| 12 | API integration for automated submission | ✅ | API REST `/supplier/invoices` (POST) documentée Swagger ; soumission automatisée possible (utilisée lors du seed). |
 
-**Phase 9B Exit Criteria:** Supplier can register, verify email, log in,
-submit an invoice, and track its status. ROLE_SUPPLIER cannot access
-internal staff endpoints. All tests pass.
+### Features
+| # | Feature | Verdict | Preuve |
+|---|---------|---------|--------|
+| 1 | Digital submission from suppliers | ✅ | Portail fournisseur. |
+| 2 | Multiple format + OCR | ✅ | OCR ✅ ; formats PDF/image ✅ **+ XML** (B8, 2026-06-19). |
+| 3 | Automatic numbering & tracking | ✅ | Référence auto `FAC-…` (ReferenceNumberGenerator). |
+| 4 | Duplicate detection | ✅ | Vérifié. |
+| 5 | PO matching for validation | ✅ | Lien PO → matching 3-voies (M5). |
+| 6 | Submission confirmation & reference | ✅ | Vérifié. |
+| 7 | Supplier portal for status tracking | ✅ | Vérifié. |
+| 8 | Reduced manual data entry | ✅ | OCR pré-remplit. |
+| 9 | Streamlined reception process | ✅ | Wizard 3 étapes. |
+
+**Gaps M3 :** aucun — #2 format **XML** et #11 **bulk de plusieurs factures** résolus (B8, 2026-06-19, PROB-062).
 
 ---
 
-## Phase 9C — MFA / Two-Factor Authentication (Module 14)
-*Goal: TOTP-based MFA mandatory for all finance and admin roles*
+## Module 4 — Validation Workflow
 
-- [x] **P9-25** Add `dev.samstevens.totp:totp:1.7.1` dependency to `pom.xml`
-- [x] **P9-26** Implement `MfaService` — generate TOTP secret, produce QR code
-      URL (otpauth URI), verify OTP code against stored secret
-- [x] **P9-27** Implement MFA setup flow:
-      `POST /api/v1/auth/mfa/setup` — returns QR code URL (only once);
-      `POST /api/v1/auth/mfa/confirm` — verifies first OTP, sets `mfa_verified=true`
-- [x] **P9-28** Update `AuthService` login flow: if user has `mfa_enabled=true`,
-      return `{ mfa_required: true, pre_auth_token: "..." }` instead of full JWT;
-      add `POST /api/v1/auth/mfa/validate` to accept OTP + pre_auth_token,
-      return full JWT on success
-- [x] **P9-29** Implement login attempt tracking: increment `failed_login_attempts`
-      on each failed OTP; lock account (`locked_until = NOW() + 15min`)
-      after 5 failures; return 423 LOCKED when locked
-- [x] **P9-30** Enforce MFA mandatory for ALL non-supplier roles: on first login
-      after role assignment, if MFA not set up, return `mfa_setup_required: true`
-      and restrict access to setup endpoints only.
-      Roles requiring MFA: `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF`, `ROLE_ADMIN`,
-      `ROLE_VALIDATEUR_N1_*`, `ROLE_VALIDATEUR_N2_*`.
-      `ROLE_SUPPLIER` is the ONLY role exempt from MFA.
-- [x] **P9-31** Implement admin unlock endpoint
-      `POST /api/v1/users/{id}/unlock` (ROLE_ADMIN only) — resets
-      `failed_login_attempts`, clears `locked_until`
-- [x] **P9-32** Add MFA-related i18n keys FR + EN
-- [x] **P9-33** Write unit tests: `MfaServiceTest`
-      (secret generation, QR URL, valid OTP, invalid OTP, expired OTP)
-- [x] **P9-34** Write integration tests: MFA setup → confirm → login with OTP;
-      5 failed attempts → account locked → admin unlock
+### UI Elements
+| # | Élément requis | Verdict | Preuve |
+|---|----------------|---------|--------|
+| 1 | Workflow configuration interface | ✅ | `/admin/approval-matrix` : config du routage par département. |
+| 2 | Multi-level approval routing rules | ✅ | Matrice N1/N2 par dept (INFO/INFRA/TECH = 2 niveaux). |
+| 3 | Validation checklist templates | ✅ | Domaine `checklist` (V58) : admin CRUD `/admin/checklist-templates` (templates global/département + items ordonnés required), affichage interactif sur l'écran de validation (`ValidationChecklist`, coche + note, **non bloquant**), réponses persistées par facture. **Fait (B1, 2026-06-18)** : `ChecklistServiceIntegrationTest`. |
+| 4 | Automatic validation rules (PO matching, thresholds, supplier verif) | ✅ | Rapprochement auto à la soumission (M5) + seuils de tolérance (`/admin/matching-config`) + garde de limite d'approbation : `validateN1`/`validateN2` refusent (`approval.limit.exceeded`) si `approvalLimit < amount` ; DAF exempt ; `null`=illimité. Tests `ApprovalServiceTest`. |
+| 5 | Pending validation queue | ✅ | `/approvals` : file d'attente N1. |
+| 6 | Invoice review interface with key details | ✅ | `/invoices/:id` : détails + historique + parcours. |
+| 7 | Approval/Rejection with comments | ✅ | InvoiceActionPanel : commentaire à la validation + motif au rejet (vérifié runtime). |
+| 8 | Rejection reason selection | ✅ | **Liste de motifs prédéfinis obligatoire** (dropdown) + détail libre optionnel (obligatoire ≥10 car. si motif = `AUTRE`). Enum `RejectionReasonCode` (6 motifs), endpoint `GET /workflow/rejection-reasons` (libellés i18n FR/EN), motif+détail composés `[CODE] détail` dans `rejectionReason` (pas de migration, guard inchangé). **Fait (C1, 2026-06-19)** : `rejectionReasons_returnsTranslatedOptions_fr`, `reject_withCodeAndDetail_persistsBracketedReason`, validation `AUTRE`/code null → 400 ; test front dropdown. |
+| 9 | Re-submission workflow for rejected invoices | ✅ | Endpoint `/invoices/{id}/resubmit` (REJETE → SOUMIS). |
+| 10 | Approval history viewer | ✅ | `/invoices/:id` « Historique des approbations » (vérifié). |
+| 11 | Escalation rules for delayed approvals | ✅ | UI de config `/admin/escalation-rules` (B1) : délai configurable (hoursAfterDeadline), escalade hiérarchique contextuelle (N2 même dépt sinon DAF), email + notif in-app. Admin retiré des destinataires (séparation des devoirs). |
+| 12 | SLA monitoring for processing times | ✅ | `/approvals` : SLA 3 jours/niveau, code couleur rouge/ambre (vérifié). |
 
-**Phase 9C Exit Criteria:** Finance/admin roles cannot access protected endpoints
-without completing MFA. Account lockout works. All tests pass.
+### Features
+| # | Feature | Verdict | Preuve |
+|---|---------|---------|--------|
+| 1 | Configurable multi-level workflows | ✅ | Matrice d'approbation. |
+| 2 | Automated validation checks | ✅ | Matching + seuils + garde document. |
+| 3 | PO matching | ✅ | M5. |
+| 4 | Threshold-based approval routing | ✅ | Garde de limite d'approbation : `validateN1`/`validateN2` refusent (`approval.limit.exceeded`) si `approvalLimit < amount` ; DAF exempt ; `null`=illimité. Tests `ApprovalServiceTest`. |
+| 5 | Approval/rejection with audit trail | ✅ | Historique + audit (M10). |
+| 6 | Rejection reason documentation | ✅ | Motif obligatoire enregistré + affiché. |
+| 7 | Re-submission workflow | ✅ | resubmit. |
+| 8 | Escalation for delayed approvals | ✅ | Job SLA (voir UI #11). |
+| 9 | SLA compliance monitoring | ✅ | UI #12. |
+| 10 | Streamlined & transparent validation | ✅ | Parcours d'approbation complet visible. |
 
----
-
-## Phase 9D — Three-Way Matching (Module 5)
-*Goal: Automatic PO + GRN + Invoice matching with discrepancy flagging*
-
-- [ ] **P9-35** Create `V16__create_purchase_orders.sql` — purchase orders table
-      (PO number, supplier_id FK, total amount, status, created_by, dates)
-      + `purchase_order_items` (line items with quantity, unit price)
-- [ ] **P9-36** Create `V17__create_goods_receipt_notes.sql` — GRN table
-      (GRN number, po_id FK, received_by, receipt_date)
-      + `goods_receipt_items` (item_id FK to PO item, received_quantity)
-- [ ] **P9-37** Create `V18__create_three_way_matching.sql` — matching results
-      table (invoice_id FK, po_id FK, grn_id FK, status MATCHED/PARTIAL/MISMATCH,
-      discrepancy_notes, overridden_by FK, override_reason, created_at)
-      + `matching_config` table (tolerance_percentage, tolerance_amount,
-      require_grn BOOLEAN, updated_by, updated_at)
-- [ ] **P9-38** Implement `PurchaseOrder`, `PurchaseOrderItem`,
-      `GoodsReceiptNote`, `GoodsReceiptItem`, `ThreeWayMatchingResult` entities
-- [ ] **P9-39** Implement `PurchaseOrderService` (create, update, link to supplier,
-      list by supplier, get with items)
-- [ ] **P9-40** Implement `ThreeWayMatchingService`:
-      compare invoice line items vs PO quantities vs GRN received quantities;
-      apply tolerance thresholds from `matching_config`;
-      flag line-level discrepancies; return `MATCHED`, `PARTIAL`, or `MISMATCH`
-- [ ] **P9-41** Integrate matching into `InvoiceStateMachineServiceImpl`:
-      on `SUBMIT` event, if invoice has `purchaseOrderId`, auto-trigger matching;
-      if result is `MISMATCH`, block transition to `SOUMIS` and throw
-      `WorkflowException` with discrepancy detail unless override exists
-- [ ] **P9-42** Implement DAF/Admin override endpoint:
-      `POST /api/v1/invoices/{id}/matching/override` — records override reason,
-      allows invoice to proceed despite MISMATCH
-- [ ] **P9-43** Implement `PurchaseOrderController` (CRUD, ROLE_ADMIN +
-      ROLE_ASSISTANT_COMPTABLE)
-- [ ] **P9-44** Implement `MatchingConfigController` (read/update tolerance,
-      ROLE_ADMIN only)
-- [ ] **P9-45** Add matching i18n keys FR + EN
-- [ ] **P9-46** Write unit tests: `ThreeWayMatchingServiceTest`
-      (perfect match, within tolerance, outside tolerance, missing GRN,
-      override applied)
-- [ ] **P9-47** Write integration tests: PO creation → GRN creation →
-      invoice submission → matching auto-triggered → MISMATCH blocks workflow →
-      override allows progression
-
-**Phase 9D Exit Criteria:** Invoice with PO reference auto-triggers matching
-on submit. MISMATCH blocks workflow without override. All tests pass.
+**Gaps M4 :** ~~#3 checklist templates absents~~ **fait (B1)** ; ~~#8 motif de rejet en texte libre (pas une liste)~~ **fait (C1, 2026-06-19)** ; ~~#11 escalade sans UI de config~~ **fait (escalade B1, 2026-06-20)** ; ~~feat #4 routage par seuil de montant~~ **fait (A1, 2026-06-20)**.
 
 ---
 
-## Phase 9E — Payment Tracking Enhancements (Module 7)
-*Goal: Aging analysis, remittance advice, cash flow, payment alerts*
+## Module 5 — Three-Way Matching
 
-- [x] **P9-48** Create `V19__create_remittance_advice.sql` — remittance advice
-      table (payment_id FK UNIQUE, pdf_object_key, generated_at, generated_by FK)
-- [x] **P9-49** Implement aging analysis query in `ReportService`:
-      bucket overdue invoices into 0–30, 31–60, 61–90, 90+ days;
-      expose via `GET /api/v1/reports/aging`
-- [x] **P9-50** Implement `RemittanceAdviceService` — generate PDF per payment
-      using iText (supplier name, invoice ref, amount, payment date, method,
-      reference number); store in MinIO; record in `remittance_advice` table
-- [x] **P9-51** Auto-generate remittance advice when payment is recorded
-      (triggered in `PaymentServiceImpl.recordPayment`)
-- [x] **P9-52** Implement remittance download endpoint:
-      `GET /api/v1/payments/{id}/remittance` — returns pre-signed MinIO URL
-- [x] **P9-53** Implement cash flow projection endpoint:
-      `GET /api/v1/reports/cash-flow?days=30` — sum of pending invoices
-      due within N days, grouped by week
-- [x] **P9-54** Implement supplier payment history endpoint:
-      `GET /api/v1/reports/supplier/{supplierId}/payments` (DAF, AUDITEUR, ADMIN)
-- [x] **P9-55** Extend `DeadlineReminderJob` to also fire payment due date
-      alerts (7 days before `due_date`) to ASSISTANT_COMPTABLE
-- [x] **P9-56** Add payment enhancement i18n keys FR + EN
-- [x] **P9-57** Write unit tests: aging bucket calculation, remittance PDF
-      generation (verify PDF not null, contains expected data)
-- [x] **P9-58** Write integration tests: record payment → remittance auto-generated
-      → download URL returned; aging report returns correct buckets
+### UI Elements
+| # | Élément requis | Verdict | Preuve |
+|---|----------------|---------|--------|
+| 1 | Three-way matching interface | ✅ | **Page dédiée** `/matching` (liste filtrable statut/recherche, dernier résultat par facture) + vue détail `/matching/:invoiceId`. Endpoint `GET /matching` (`MatchingQueryController`, staff hors SUPPLIER/ADMIN — SoD). **Fait (M5 #1, 2026-06-21)**. |
+| 2 | Purchase order (PO) data display | ✅ | PO liés affichés (lien PO sur création + `/purchase-orders`). |
+| 3 | Goods receipt note (GRN) information | ✅ | `/goods-receipts` : création + liste GRN avec items. |
+| 4 | Invoice line item comparison | ✅ | Comparaison **ligne-à-ligne PO/GRN/facture** côte à côte (`/matching/:invoiceId`) : qté/PU PO, qté reçue GRN, qté/PU facture, écarts %, verdict par ligne (MATCHED/WITHIN_TOLERANCE/MISMATCH/MISSING_IN_PO). Endpoint `GET /matching/{id}/lines` recompose à la volée via `MatchingComparator`. **Fait (M5 #4, 2026-06-21)**. |
+| 5 | Matching status indicators (matched, partial, mismatch) | ✅ | Badges MATCHED / PARTIAL / MISMATCH / OVERRIDDEN (composant MatchingBadge). |
+| 6 | Discrepancy identification & flagging | ✅ | Statut MISMATCH bloque la progression au-delà de SOUMIS. |
+| 7 | Tolerance threshold configuration | ✅ | `/admin/matching-config` : tolérance % + montant + requireGRN (vérifié). |
+| 8 | Manual override with justification | ✅ | Détail facture : formulaire override (motif obligatoire), réservé DAF/ADMIN/AA ; statut → OVERRIDDEN. |
+| 9 | Matching history viewer | 🟠 | `ThreeWayMatchingResult` append-only ; **dernier** résultat affiché. Pas de viewer listant l'historique des tentatives. |
+| 10 | Unmatched items resolution workflow | 🟠 | Résolution via **override** (déblocage MISMATCH). Pas de workflow de résolution ligne-par-ligne dédié. |
+| 11 | Export matching reports | ✅ | `GET /invoices/{id}/matching/export?format=csv\|excel\|pdf` (via `TabularExportService`) + bouton `ExportMenu` sur le panneau matching de `InvoiceDetailPage`. **Fait (B2, 2026-06-18)** : CSV/Excel vérifiés (`testExportMatchingReport`). |
+| 12 | Integration with procurement & inventory | 🟠 | PO + GRN internes ✅ ; connecteurs procurement/inventory externes = M12 (type connecteur, pas de sync réelle). |
 
-**Phase 9E Exit Criteria:** Remittance advice auto-generated on payment.
-Aging report groups invoices correctly. Cash flow projection works.
-All tests pass.
+### Features
+| # | Feature | Verdict | Preuve |
+|---|---------|---------|--------|
+| 1 | Automated 3-way matching (PO, GRN, Invoice) | ✅ | Déclenché à la soumission si PO lié (CLAUDE.md + code). |
+| 2 | Line-item level comparison | ✅ | Voir UI #4 — comparaison ligne-à-ligne stricte (`/matching/:invoiceId`, `GET /matching/{id}/lines`). **Fait (M5 #4, 2026-06-21)**. |
+| 3 | Discrepancy identification & flagging | ✅ | MISMATCH. |
+| 4 | Configurable tolerance thresholds | ✅ | matching-config. |
+| 5 | Manual override with audit trail | ✅ | Override + audit. |
+| 6 | Unmatched item resolution workflow | 🟠 | Via override. |
+| 7 | Complete matching history | 🟠 | Append-only en base ; pas de viewer complet. |
+| 8 | Reduced overpayment & fraud risk | ✅ | Blocage MISMATCH + override tracé. |
+| 9 | Streamlined validation accuracy | ✅ | Matching auto + seuils. |
 
----
-
-## Phase 9F — Webhooks / ERP Integration (Module 12)
-*Goal: External systems receive real-time events via signed webhook calls*
-
-- [x] **P9-59** Create `V20__create_webhooks.sql` — webhooks table
-      (id, name, url, secret_hash VARCHAR(64), events TEXT[] or VARCHAR(500),
-      is_active, created_by FK, created_at, updated_at)
-      + `webhook_deliveries` table (webhook_id FK, event_type, payload TEXT,
-      response_status INT, attempt_count, last_attempted_at,
-      success BOOLEAN, created_at) — append-only
-- [x] **P9-60** Implement `Webhook`, `WebhookDelivery` entities
-- [x] **P9-61** Implement `WebhookService`:
-      register/update/delete (logical) webhooks;
-      build signed payload (HMAC-SHA256 with stored secret);
-      deliver via `RestTemplate` with 5s timeout;
-      retry 3× with backoff 5s/25s/125s;
-      log every attempt to `webhook_deliveries`
-- [x] **P9-62** Publish webhook events by adding `WebhookEventPublisher`
-      as an additional `@Async @EventListener` alongside existing listeners:
-      fire on `InvoiceSubmittedEvent`, `InvoiceValidatedEvent`,
-      `InvoiceRejectedEvent`, `BonAPayerEvent`
-- [x] **P9-63** Implement `WebhookController`:
-      `GET/POST/DELETE /api/v1/integrations/webhooks` (ROLE_ADMIN only);
-      `GET /api/v1/integrations/webhooks/{id}/deliveries` (delivery log)
-- [x] **P9-64** Implement integration health endpoint:
-      `GET /api/v1/integrations/status` — lists all active webhooks
-      with last delivery status
-- [x] **P9-65** Add webhook i18n keys FR + EN
-- [x] **P9-66** Write unit tests: `WebhookServiceTest`
-      (payload signing, delivery success, delivery failure + retry,
-      max retries exceeded → logged as failed)
-- [x] **P9-67** Write integration tests: register webhook → trigger invoice
-      event → verify delivery logged; failed endpoint → verify retry count = 3
-
-**Phase 9F Exit Criteria:** Admin can register webhooks. Invoice state changes
-fire signed HTTP POSTs. Failures retry and are logged. All tests pass.
+**Gaps M5 :** ~~#11 export rapport matching absent~~ **fait (B2)** ; #1/#4 pas de **page dédiée** ni comparaison **ligne-à-ligne** stricte (rapprochement au niveau montant) ; #9/#10 history & résolution = via override, pas de viewer/workflow dédiés.
 
 ---
 
-## Phase 9G — Dashboard & Reporting Enhancements (Module 2, 11)
-*Goal: Bottleneck detection, budget comparison, supplier performance analytics*
+## Module 6 — Approval Workflow
 
-- [x] **P9-68** Add approval bottleneck detection to `ReportService`:
-      `GET /api/v1/reports/bottlenecks` — average days spent per approval step
-      type (N1, N2, DAF) per department; flag steps exceeding SLA (3 business days)
-- [x] **P9-69** Add supplier performance report:
-      `GET /api/v1/reports/supplier/{supplierId}/performance` — invoice accuracy
-      rate (% matched on first submission), rejection rate, average payment time
-- [x] **P9-70** Extend `GET /api/v1/reports/kpis` to include:
-      `overdueByBucket` (0-30/31-60/61-90/90+ count + value),
-      `averageN1ApprovalDays`, `averageN2ApprovalDays`, `averageDafApprovalDays`,
-      `webhookDeliverySuccessRate` (last 7 days)
-- [x] **P9-71** Add supplier dashboard enhancements (requires Phase 9B):
-      `GET /api/v1/supplier/dashboard` extended with matching status breakdown
-      and next expected payment date
-- [x] **P9-72** Add i18n keys for new report labels FR + EN
-- [x] **P9-73** Write unit tests: `ReportServiceTest` extensions
-      (bottleneck calculation, supplier performance metrics, extended KPIs)
-- [x] **P9-74** Write integration tests: `ReportControllerTest` extensions
-      (bottleneck endpoint, supplier performance endpoint, extended KPI shape)
+### UI Elements
+| # | Élément requis | Verdict | Preuve |
+|---|----------------|---------|--------|
+| 1 | Approval dashboard with pending items | ✅ | `/approvals` + dashboard validateur « Votre file d'approbation ». |
+| 2 | Invoice detail view for approvers | ✅ | `/invoices/:id` (détails + actions). |
+| 3 | Approval/Rejection interface with comments | ✅ | InvoiceActionPanel (vérifié runtime : validate-n1 + bon-a-payer). |
+| 4 | Multi-level approval visualization | ✅ | Timeline verticale « Parcours d'approbation » (6 étapes vues). |
+| 5 | Approval delegation settings | ✅ | `/my-delegations` (self) + `/admin/delegations` (admin). |
+| 6 | Escalation rules configuration | ✅ | idem M4 #11 (B1) : UI `/admin/escalation-rules`, délai configurable, escalade contextuelle, Admin retiré. |
+| 7 | Approval history viewer | ✅ | Historique des approbations sur le détail. |
+| 8 | Mobile approval interface | 🟠 | Web responsive (testé 390px), **pas d'interface mobile dédiée**. |
+| 9 | Approval notifications | ✅ | Notifications in-app + e-mail + WS (PROB-051). |
+| 10 | SLA tracking for approvals | ✅ | `/approvals` (3j/niveau, code couleur). |
+| 11 | Approval analytics | ✅ | `/workflow/my-stats` → approuvées / traitées ce mois (dashboard validateur). |
 
-**Phase 9G Exit Criteria:** KPI dashboard includes bottleneck and aging data.
-Supplier performance reports return correct metrics. All tests pass.
-`./mvnw test` — 0 failures. `git push origin main`.
+### Features
+| # | Feature | Verdict | Preuve |
+|---|---------|---------|--------|
+| 1 | Configurable multi-level approval | ✅ | Matrice d'approbation. |
+| 2 | Role-based approval routing | ✅ | Routage par dept → rôle N1/N2. |
+| 3 | Delegation for absence | ✅ | Délégations self + admin (dates + délégataire). |
+| 4 | Escalation for pending | ✅ | Job SLA → DAF+Admin. |
+| 5 | Mobile approval for managers | 🟠 | Web responsive, pas d'app mobile. |
+| 6 | Comments & audit trail | ✅ | Commentaires + audit. |
+| 7 | Real-time approval notifications | ✅ | WS + e-mail. |
+| 8 | Approval history & analytics | ✅ | Historique + my-stats. |
+| 9 | Streamlined decision-making | ✅ | File + actions en un écran. |
 
----
-
-## Phase 10 — Critical Gap Remediation
-*Goal: Close all 5 known implementation gaps from `OCT_System_Briefing.md §4.3` before final submission*
-
-### P10-A — OCR Implementation 🔴 Critical
-
-- [x] **P10-01** Add `net.sourceforge.tess4j:tess4j` dependency to `pom.xml`
-      Also added `org.apache.pdfbox:pdfbox:3.0.3` for PDF text-layer extraction.
-- [x] **P10-02** Implement `OcrService` (`domain/ocr/service/OcrService.java`):
-      - Tika detects MIME type for routing
-      - PDFBox extracts text layer from digital PDFs (fallback to OCR if < 50 chars)
-      - Tess4J runs OCR on scanned PDFs (each page rendered at 300 DPI via PDFRenderer)
-        and on image files (JPEG, PNG, TIFF)
-      - `parseFields()` extracts invoice number, date, total amount, supplier ID,
-        PO reference, and line items via regex patterns supporting FR+EN formats
-- [x] **P10-03** Add `POST /api/v1/ocr/extract` endpoint (`domain/ocr/controller/OcrController.java`)
-      — SUPPLIER, ASSISTANT_COMPTABLE, ADMIN — returns `OcrExtractionResult` for confirmation
-- [x] **P10-04** OCR config added to `application.yaml`: `ocr.tessdata-path` and `ocr.language`
-      — defaults `tessdata` / `fra+eng`; override via `OCR_TESSDATA_PATH` / `OCR_LANGUAGE` env vars
-- [x] **P10-05** i18n keys: OCR labels use standard ApiResponse message keys; extend
-      `messages_fr.properties` / `messages_en.properties` with `ocr.*` keys as needed
-- [x] **P10-06** `OcrServiceTest` written with 8 unit tests covering: invoice number extraction
-      (EN + FR labels), date extraction, amount parsing, PO reference, supplier ID (NIF),
-      empty text, digitalPdf flag, and rawText pass-through
-
-**P10-A Exit Criteria:** Supplier can upload an invoice file and see OCR-extracted fields pre-populated for confirmation before submission.
+**Gaps M6 :** ~~#6 escalade sans UI de config~~ **fait (escalade B1, 2026-06-20)** ; #8 pas d'interface mobile dédiée (web responsive).
 
 ---
 
-### P10-B — JWT RS256 Migration 🟠 High
+## Module 7 — Payment Tracking
 
-- [x] **P10-07** RSA-2048 key pair loaded from environment variables `JWT_PRIVATE_KEY` (PKCS#8 Base64)
-      and `JWT_PUBLIC_KEY` (X.509 Base64). Test key pair embedded in test profile. Production
-      keys must be generated with openssl and stored in a secrets manager — never committed.
-- [x] **P10-08** `JwtService` fully rewritten for RS256:
-      - `getPrivateKey()` decodes Base64 → PKCS8EncodedKeySpec → RSA PrivateKey
-      - `getPublicKey()` decodes Base64 → X509EncodedKeySpec → RSA PublicKey
-      - `buildToken()` uses `.signWith(privateKey, SignatureAlgorithm.RS256)`
-      - `extractAllClaims()` uses `.verifyWith(publicKey)`
-      - HS256 `getSignInKey()` and `jwt.secret` property removed entirely
-- [x] **P10-09** `application.yaml` updated: `jwt.secret` replaced by `jwt.private-key` / `jwt.public-key`;
-      test profile has embedded test key pair; `ProdSecretConfigValidator` validates both keys
-- [x] **P10-10** `JwtServiceTest` — existing tests exercise token generation and validation;
-      RS256 sign+verify roundtrip covered by the integration test suite (MfaIntegrationTest)
-- [x] **P10-11** Login → JWT → protected endpoint flow covered by `ApprovalControllerTest`,
-      `InvoiceControllerTest`, and `MfaIntegrationTest`
+### UI Elements
+| # | Élément requis | Verdict | Preuve |
+|---|----------------|---------|--------|
+| 1 | Payment tracking dashboard | ✅ | `/payments` : factures à payer + historique. |
+| 2 | Invoice aging analysis | ✅ | `/reports/aging` (AgingReportDTO, tranches par jours de retard) ; affiché dans Rapports. |
+| 3 | Payment due date monitoring | ✅ | KPI « Factures en retard » + dates d'échéance + job de rappel (DeadlineReminderJob). |
+| 4 | Payment status (scheduled, processed, paid, overdue) | 🟠 | Statuts facture (BON_A_PAYER/PAYE) + overdue suivis. Pas de statut intermédiaire « scheduled/processed » distinct côté paiement. |
+| 5 | Payment batch processing interface | ✅ | `POST /payments/batch` (best-effort, résultat par ligne) + UI `PaymentsPage` : sélection multi-factures BON_A_PAYER, méthode/date communes, modale de résultat par ligne. **Fait (B3, 2026-06-18)** : `BatchPaymentIntegrationTest`. |
+| 6 | Payment confirmation recording | ✅ | Enregistrement paiement vérifié (VIREMENT, réf, montant → PAYE→ARCHIVE). |
+| 7 | Remittance advice generation | ✅ | Bouton « Avis » → PDF pré-signé MinIO (vérifié runtime). |
+| 8 | Payment method tracking (bank transfer, check, **mobile money**) | ✅ | Backend : VIREMENT, CHEQUE, ESPECES, **MOBILE_MONEY** (ajouté). Front aligné sur les noms d'enum + libellés i18n FR/EN. **Corrigé (PROB-055, 2026-06-18)** : 200 vérifié pour MOBILE_MONEY (`recordPayment_AcceptsMobileMoney`). |
+| 9 | Payment history by supplier | ✅ | `/payments` liste + filtre département ; historique par fournisseur. |
+| 10 | Cash flow impact analysis | ✅ | `/reports/cash-flow` (CashFlowProjectionDTO, projection par semaine) + UI cashFlowTitle/Desc. **Corrigé (PROB-054, 2026-06-18)** : 500 `SQLGrammarException $5` résolu par `CAST` des paramètres date nullables dans `findAllWithFilters` ; **200** vérifié par `CashFlowProjectionIntegrationTest` sur vrai PostgreSQL. |
+| 11 | Export payment reports | ✅ | `GET /payments/export?format=csv\|excel\|pdf` (via `TabularExportService`) + bouton `ExportMenu` (CSV/Excel/PDF) dans l'en-tête « Historique des paiements ». **Fait (C2, 2026-06-19)** : filtre `departmentCode` respecté ; tests d'intégration (200, filtre, 403). |
+| 12 | Payment alert configuration | ✅ | Règles d'alerte J-N configurables (`PaymentAlertRule`, V59) : CRUD `/payments/alert-rules` (DAF + ASSISTANT_COMPTABLE), seuils actifs/inactifs lus par `DeadlineReminderJob.sendPaymentDueAlerts` (fallback 7 j). **Fait (B4, 2026-06-18)** : `PaymentAlertRuleServiceTest` + `PaymentDueAlertJobTest`. |
 
-**P10-B Exit Criteria:** All JWTs signed with RS256. HS256 shared secret removed. Tests pass.
+### Features
+| # | Feature | Verdict | Preuve |
+|---|---------|---------|--------|
+| 1 | Tracking approval→settlement | ✅ | Parcours complet jusqu'à PAYE/ARCHIVE. |
+| 2 | Aging analysis | ✅ | `/reports/aging`. |
+| 3 | Due date monitoring & alerts | ✅ | Job rappel + escalade. |
+| 4 | Payment batch processing | ✅ | Fait (B3) — voir UI #5. |
+| 5 | Remittance advice generation | ✅ | PDF pré-signé. |
+| 6 | Multiple payment method support | ✅ | 4 méthodes backend (VIREMENT/CHEQUE/ESPECES/MOBILE_MONEY) ; mobile money ajouté (PROB-055). |
+| 7 | Payment confirmation & reconciliation | ✅ | Enregistrement + statut. Réconciliation auto limitée. |
+| 8 | Supplier payment history | ✅ | Historique. |
+| 9 | Cash flow visibility | ✅ | Endpoint cash-flow opérationnel (200) — voir UI #10 (PROB-054 corrigé). |
+| 10 | Reduced payment delays | ✅ | Rappels + SLA. |
 
----
-
-### P10-C — GitHub Actions CI Pipeline 🟡 Medium
-
-- [x] **P10-12** `.github/workflows/ci.yml` created with 3 parallel jobs:
-      - **backend**: Java 21 + PostgreSQL 18 + MinIO service containers; `mvn compile` then
-        `mvn test`; JaCoCo report uploaded as artifact
-      - **frontend**: Node 20; `npm ci` → `npm test -- --run` (Vitest) → `npm run build`
-      - **docker**: depends on backend+frontend; `docker compose build --no-cache`
-      - Triggers: push to main, pull_request to main
-
-**P10-C Exit Criteria:** `.github/workflows/ci.yml` exists and passes on a clean push to main.
-
----
-
-### P10-D — TLS 1.3 Spring Boot Configuration 🟡 Medium
-
-- [x] **P10-13** TLS 1.3 config added to the `prod` profile section of `application.yaml`
-      under `server.ssl` (enabled, protocol TLSv1.3, PKCS12 keystore via env vars).
-      `ProdSecretConfigValidator` now validates `server.ssl.key-store` and
-      `server.ssl.key-store-password` on startup.
-- [x] **P10-14** `SSL_KEYSTORE_PATH` and `SSL_KEYSTORE_PASSWORD` documented in `application.yaml`
-      comments with keytool command example for generating a certificate.
-
-**P10-D Exit Criteria:** `application-prod.yml` enforces TLS 1.3 at the application layer.
+**Gaps M7 :** ~~#5 batch payments absent~~ **fait (B3)** ; ~~#8 MOBILE_MONEY bug front/back~~ **corrigé (PROB-055)** ; ~~#10 cash-flow CASSÉ (500)~~ **corrigé (PROB-054)** ; ~~#12 alertes paiement configurables absentes~~ **fait (B4)** ; ~~#11 export paiement dédié manquant~~ **fait (C2, 2026-06-19)**. Plus aucun gap M7 ouvert.
 
 ---
 
-### P10-E — OWASP ZAP Security Scan 🟡 Medium
+## Module 8 — Supplier Management
 
-- [x] **P10-15** `.github/workflows/security-scan.yml` created as a separate workflow:
-      - Triggers after CI passes on main, or manually via workflow_dispatch
-      - Starts application under test profile (TLS disabled for scan)
-      - Runs OWASP ZAP baseline scan via `zaproxy/action-baseline@v0.12.0`
-      - Fails job if any HIGH or CRITICAL alerts found (`fail_action: true`)
-      - Uploads HTML + JSON report as artifact
-- [x] **P10-16** `.github/zap-rules.tsv` documents accepted-risk informational alerts
-      (CSP/HSTS/X-Frame-Options — handled by HttpSecurityHeadersFilter in code)
+### UI Elements
+| # | Élément requis | Verdict | Preuve |
+|---|----------------|---------|--------|
+| 1 | Supplier directory with search & filters | ✅ | `/admin/suppliers` : recherche + filtre statut (vérifié). |
+| 2 | Supplier profile management | ✅ | Détail fournisseur (onglet Informations) + édition. |
+| 3 | Bank account & payment details | ✅ | Coordonnées bancaires (chiffrées AES). |
+| 4 | Tax information & certificates | ✅ | NIF + onglet Documents (attestations fiscales). |
+| 5 | Contract and agreement tracking | ✅ | Onglet « Contrats & communications » (contrat VERIF-C1 ACTIVE vérifié). |
+| 6 | Supplier performance metrics | ✅ | Onglet Performance : accuracy rate, rejection rate, avg payment time (`/suppliers/{id}/performance`). |
+| 7 | Supplier communication log | ✅ | Journal de communication (NOTE/EMAIL/PHONE/MEETING) — vérifié. |
+| 8 | Supplier categorization & segmentation | ✅ | Enum `SupplierCategory` (GOODS/SERVICES/WORKS/CONSULTING) + colonne `category` (V57) sur `Supplier`. Saisie au formulaire (création + édition), filtre déroulant + colonne dans l'annuaire, colonne dans l'export. **Fait (B5, 2026-06-18)** : `shouldPersistAndFilterByCategory`. |
+| 9 | Document repository per supplier | ✅ | Onglet Documents + upload par type. |
+| 10 | Supplier onboarding workflow | 🟠 | Cycle de statut PENDING_VERIFICATION→ACTIVE→SUSPENDED + onboardedBy/At. Pas d'assistant d'onboarding multi-étapes dédié. |
+| 11 | Supplier self-service portal access | ✅ | Portail fournisseur complet (M3). |
+| 12 | Export supplier reports | ✅ | `/suppliers/export` CSV/Excel/PDF (vérifié bouton Exporter). |
 
-**P10-E Exit Criteria:** ZAP scan runs automatically on CI. No HIGH/CRITICAL findings unaddressed. ✅
+### Features
+| # | Feature | Verdict | Preuve |
+|---|---------|---------|--------|
+| 1 | Comprehensive supplier info mgmt | ✅ | Profil + onglets. |
+| 2 | Secure bank/tax storage | ✅ | Chiffrement AES (EncryptionAttributeConverter). |
+| 3 | Contract & agreement tracking | ✅ | Onglet contrats. |
+| 4 | Supplier performance monitoring | ✅ | Métriques performance. |
+| 5 | Communication logging | ✅ | Journal communications. |
+| 6 | Self-service portal | ✅ | Portail. |
+| 7 | Onboarding workflow | 🟠 | Statut-based (voir UI #10). |
+| 8 | Centralized supplier database | ✅ | Annuaire. |
+| 9 | Enhanced supplier relationship mgmt | ✅ | Contrats + comms + performance. |
 
----
-
-**Phase 10 Exit Criteria:** All 5 gaps from `OCT_System_Briefing.md §4.3` resolved.
-OCR implemented. JWT uses RS256. CI pipeline runs. TLS 1.3 configured. OWASP ZAP scan integrated.
-`./mvnw test` — 0 failures. Final system is production-ready and compliant with all project requirements.
-
----
-
-## Phase 11 — Audit Correction Cycle
-*Goal: Resolve all 35 actionable findings from `docs/audit/ISSUES.md` (2026-06-11/12 audit cycle).
-Sequencing rationale and decisions for every sub-phase are in `docs/audit/PLAN-CORRECTIONS.md`.*
-
-### P11-A — Audit Log Dead Code 🔴 Critical
-
-- [x] **P11-01** Fix `AuditController`'s `/audit-logs/system` and `/audit-logs/financial`
-      endpoints (REQ-17): extend `AuditLoggingFilter.classifyAction()` so it actually
-      produces entries matching `SYSTEM_ACTIONS`/`FINANCIAL_ACTIONS`, so both endpoints
-      return non-empty results for realistic traffic. Add a test asserting non-empty results.
-      — Done 2026-06-12: see PROB-021 in `docs/KNOWN_ISSUES_REGISTRY.md`.
-
-**P11-A Exit Criteria:** `/audit-logs/system` and `/audit-logs/financial` return real data;
-`FinancialAuditPage.tsx` displays entries.
+**Gaps M8 :** ~~#8 catégorisation/segmentation absente~~ **fait (B5)** ; #10 onboarding = cycle de statut (pas d'assistant dédié).
 
 ---
 
-### P11-B — Security Fixes 🟠 High
+## Module 9 — Digital Archiving
 
-- [x] **P11-02** Fix `SupplierPortalController` profile endpoint (P2-02): map `Supplier` →
-      `SupplierResponse` instead of returning the raw entity, so `bankDetails` is never
-      serialized. Add integration test asserting `bankDetails`/`bank_details` absent from JSON.
-      — Done 2026-06-12: see PROB-022 in `docs/KNOWN_ISSUES_REGISTRY.md`.
-- [x] **P11-03** Fix `AuditLoggingFilter.resolveUserId()` (REQ-18): extract the authenticated
-      user's ID from `SecurityContext` instead of hardcoded `null`. Add test asserting new
-      audit log entries from authenticated requests have non-null `user_id`.
-      — Done 2026-06-12: see PROB-023 in `docs/KNOWN_ISSUES_REGISTRY.md`. Fixing this surfaced a
-      regression (`audit_logs.user_id` FK now populated, breaking `ApprovalControllerTest.cleanDb()`'s
-      `userRepository.deleteAll()`) — resolved via `@OnDelete(action = OnDeleteAction.SET_NULL)` on
-      `AuditLog.user` + `V42__audit_logs_user_fk_on_delete_set_null.sql`; see PROB-024.
+### UI Elements
+| # | Élément requis | Verdict | Preuve |
+|---|----------------|---------|--------|
+| 1 | Document repository with folder structure | 🟠 | `/archive` : dépôt indexé par métadonnées (recherche/filtres) ; **pas d'arborescence de dossiers** littérale. |
+| 2 | Invoice storage by date, supplier, status | ✅ | Filtres date/département + recherche fournisseur/référence (vérifié). |
+| 3 | Advanced search and filter | ✅ | Recherche plein-texte (bug 500 corrigé) + filtres dept + plage de dates. |
+| 4 | Document viewer with zoom/rotate | ✅ | DocumentViewerModal : contrôles zoom/rotation/reset (react-pdf pour PDF, transform CSS pour images) + pagination PDF. (C3) |
+| 5 | Metadata display (number, date, amount) | ✅ | Table archive : référence, fournisseur, montant, dates. |
+| 6 | Version control for invoice updates | ✅ | `version` + `supersededByDocumentId` (V53). Upload v1 vérifié. |
+| 7 | Retention policy configuration | ✅ | B2 : politique singleton en base (`retention_policy`, V62), UI admin `/admin/retention-policy` (durée + activation), lue à l'exécution par `DocumentRetentionJob` (fallback `app.retention.years`). ADMIN only. |
+| 8 | Archive and purge controls | ✅ | Page ADMIN `/admin/retention-disposition` : liste les documents de facture périmés en disposition PENDING (`GET /retention/pending-documents`) et permet « Conserver » (RETAINED) ou « Purger » (PURGED, modale de confirmation) via `PUT /retention/documents/{id}/disposition`. Purge = marquage de conformité non destructif (pas de suppression MinIO), tracée à l'audit. ADMIN only (PROB-065). |
+| 9 | Document access logs | ✅ | Audit logge les accès documents (M10). |
+| 10 | Export archived documents | ✅ | Bouton « PDF » par facture archivée + export global. |
+| 11 | Compliance reporting for archives | ✅ | Rapport archives dédié (M14 #11) : `GET /api/v1/compliance/archive-report` (ADMIN, sans donnée financière) → couverture d'archivage, intégrité SHA-256, état de rétention (réutilise M10 #10), cycle de vie (dispositions/versioning). Page `/admin/archive-compliance`. |
+| 12 | Integration with validation workflow | ✅ | Archivage auto au paiement (PAYE→ARCHIVE vérifié). |
 
-**P11-B Exit Criteria:** No JPA entity with `bankDetails` ever leaves the API; audit logs
-record the acting user for authenticated requests. — MET 2026-06-12 (P11-02, P11-03). Full
-`mvnw test` run: 258 tests, 25 failures + 2 errors = 27, identical to the post-P11-01 set, all
-pre-existing per `docs/audit/BASELINE.md`.
+### Features
+| # | Feature | Verdict | Preuve |
+|---|---------|---------|--------|
+| 1 | Secure digital archiving | ✅ | MinIO + SHA-256 d'intégrité. |
+| 2 | Organized storage with metadata | ✅ | Métadonnées + filtres. |
+| 3 | Powerful search | ✅ | Recherche archive. |
+| 4 | Version control | ✅ | Versioning. |
+| 5 | Configurable retention | ✅ | B2 : DB-backed, UI admin (voir UI #7). |
+| 6 | Access logging | ✅ | Audit. |
+| 7 | Export for external audits | ✅ | Export PDF + tabulaire. |
+| 8 | Reduced physical storage | ✅ | 100% numérique. |
+| 9 | Instant retrieval | ✅ | Recherche + viewer. |
 
----
-
-### P11-C — Performance Fixes 🟠 High
-
-- [x] **P11-04** Paginate `GET /api/v1/purchase-orders` without `supplierId` (P3-01): use
-      `Pageable`/`Page<T>`, return `PagedResponse<PurchaseOrderResponse>`.
-      Done 2026-06-12 — see [PROB-025](KNOWN_ISSUES_REGISTRY.md). New
-      `PurchaseOrderRepository.findAllActive(Pageable)`, `PurchaseOrderService.listAll(Pageable)`,
-      `PurchaseOrderController.listPurchaseOrders` now returns
-      `ApiResponse<PagedResponse<PurchaseOrderDTO>>` for both the unfiltered and `supplierId`
-      branches. New `PurchaseOrderControllerTest` (3 tests, all pass). Full suite: 261 tests,
-      25 failures + 2 errors = 27, identical to the post-P11-03/PROB-024 baseline set.
-- [x] **P11-05** Add Flyway migration `V43__add_invoices_supplier_id_index.sql` (P3-02):
-      `CREATE INDEX idx_invoices_supplier_id ON invoices(supplier_id)`. (Renumbered from V42 to
-      V43 — V42 was used by PROB-024's `audit_logs.user_id` FK fix during P11-03.)
-      Done 2026-06-12 — see [PROB-026](KNOWN_ISSUES_REGISTRY.md). Not exercised by `mvnw test`
-      (test profile uses `ddl-auto: create-drop`, Flyway disabled); applies to production/staging.
-- [x] **P11-06** Fix `WebhookService` delivery timeouts/retry (P3-04): wire
-      `deliveryTimeoutSeconds` into a `RestTemplate` `ClientHttpRequestFactory` with
-      connect/read timeouts; replace blocking `Thread.sleep` retry with a non-blocking
-      scheduled retry, preserving the 5s/25s/125s backoff contract from CLAUDE.md §9.
-      Done 2026-06-12 — see [PROB-027](KNOWN_ISSUES_REGISTRY.md). `WebConfig` now provides a
-      `ClientHttpRequestFactory` (connect/read timeout = `webhook.delivery.timeout.seconds`)
-      used by `RestTemplate`. `WebhookService` injects `TaskScheduler` and schedules retries via
-      `taskScheduler.schedule(..., Instant)` instead of `Thread.sleep`. 2 new tests in
-      `WebhookServiceTest` (10 total, all pass).
-
-**P11-C Exit Criteria:** Purchase orders list is paginated; `invoices.supplier_id` is
-indexed; webhook delivery no longer blocks a thread/DB connection for up to 755s. MET
-2026-06-12. Full `mvnw test` run: 263 tests, 25 failures + 2 errors = 27, identical failure/error
-set to the post-P11-03/PROB-024 baseline (verified via diff of sorted test names — zero new
-regressions across P11-04/05/06).
+**Gaps M9 :** #1 pas d'arborescence dossiers ; #8 purge non automatisée (par design). (#7 résolu en B2 ; #11 résolu en M14 #11.)
 
 ---
 
-### P11-D — Controller → Service Layer Refactor 🟠 High
+## Module 10 — Audit Trail
 
-- [x] **P11-07** Refactor `AdminSessionController` (P1-05): create
-      `AdminSessionService`, move repository access out of the controller.
-      Completed 2026-06-12 (PROB-028). New `ActiveSessionDTO` record (field names
-      match frontend `ActiveSession` interface exactly, no frontend change needed),
-      new `AdminSessionService` (`domain/auth/service/`), controller now depends
-      only on the service. New `AdminSessionControllerTest` (4 tests: list as
-      ADMIN/non-ADMIN, revoke as ADMIN/non-ADMIN) — all pass.
-- [x] **P11-08** Refactor `IntegrationStatusController` (P1-05): create
-      `IntegrationStatusService`, move repository access out of the controller.
-      Completed 2026-06-13 (PROB-029). Reused existing `WebhookService` instead of
-      a new service (already covers this domain) — new `getIntegrationStatus()`
-      method encapsulates `WebhookRepository`/`WebhookDeliveryRepository` access
-      and the `Webhook`→`WebhookStatusResponse` mapping. Controller now depends
-      only on `WebhookService`. New `IntegrationStatusControllerTest` (2 tests:
-      ADMIN returns 200 with correct shape, non-ADMIN returns 403) +
-      2 new `WebhookServiceTest` tests for `getIntegrationStatus()` — all pass.
-- [x] **P11-09** Refactor `WebhookController` (P1-05): move direct repository access
-      into the existing `WebhookService`. Completed 2026-06-13 (PROB-030). Added
-      `WebhookService.listActiveWebhooks()` (active webhooks → `WebhookResponse` via
-      `WebhookMapper`) and `getDeliveryLog(UUID, Pageable)` (404 check +
-      `WebhookDeliveryRepository.findByWebhookOrderByCreatedAtDesc` →
-      `PagedResponse<WebhookDeliveryResponse>`); `deactivateWebhook` now throws
-      `ResourceNotFoundException` (404) instead of `IllegalArgumentException` (400),
-      preserving the controller's prior 404 behaviour. Controller now depends only on
-      `WebhookService`. `WebhookControllerTest` (7 tests) rewritten to mock
-      `WebhookService` instead of repositories; `WebhookServiceTest` gained 4 new tests
-      (`testDeactivateWebhook_NotFound`, `testListActiveWebhooks`, `testGetDeliveryLog`,
-      `testGetDeliveryLog_NotFound`) — all pass.
-- [x] **P11-10** Refactor `DelegationController` (P1-05): move direct repository access
-      into the existing `DelegationService`. Completed 2026-06-13 (PROB-031). Controller
-      injected `UserRepository` directly and resolved the delegator/delegatee `User`
-      entities itself in `createDelegation`. Added a UUID-based overload
-      `DelegationService.createDelegation(UUID delegatorId, UUID delegateeId, ...)` that
-      resolves both users via `UserRepository` (new service dependency), throwing
-      `ResourceNotFoundException` ("Delegator/Delegatee not found", preserving the prior
-      404 behaviour) before delegating to the existing entity-based overload. Controller
-      now depends only on `DelegationService` + `SecurityHelper`. New typed `DelegationDTO`
-      record replaces the prior inline `Map<String,Object>` responses (superset of the old
-      fields — backward-compatible). `DelegationServiceTest` gained 3 new tests
-      (`createDelegationByIds_valid_resolvesUsersAndPersists`,
-      `createDelegationByIds_delegatorNotFound_throwsResourceNotFound`,
-      `createDelegationByIds_delegateeNotFound_throwsResourceNotFound`); new
-      `DelegationControllerTest` (6 tests: create as ADMIN → 201 with `DelegationDTO`,
-      create as non-ADMIN → 403, unknown user → 404, list active as ADMIN, revoke as ADMIN,
-      revoke as non-ADMIN → 403) — all pass. New
-      `DelegationControllerTest` (6 tests covering create/list/revoke as ADMIN and
-      non-ADMIN, plus a 404 case) — all pass.
-- [x] **P11-11** Refactor `InvoiceDocumentController` (P1-05): move direct repository
-      access into the existing document service. Completed 2026-06-13 (PROB-032). Controller
-      injected `UserRepository` and resolved the uploader's id from the authenticated
-      username in a private `getActorId(Authentication)`. Added a username-based overload
-      `InvoiceDocumentService.upload(UUID invoiceId, MultipartFile file, String username)`
-      that resolves the uploader via `userRepository.findByUsername` (throwing
-      `ResourceNotFoundException` if absent) and delegates to the existing UUID-based
-      `upload`. Controller now injects only `InvoiceDocumentService` and passes
-      `authentication.getName()`. `InvoiceDocumentControllerTest` updated (dropped its
-      `@MockBean UserRepository`; service mock now matches `eq("assistant")`);
-      `InvoiceDocumentServiceTest` gained 2 new tests
-      (`uploadByUsername_resolvesUserAndDelegates`,
-      `uploadByUsername_unknownUser_throwsResourceNotFound`) — all pass.
+### UI Elements
+| # | Élément requis | Verdict | Preuve |
+|---|----------------|---------|--------|
+| 1 | Comprehensive audit log viewer | ✅ | `/admin/audit` : 626 pages de logs, colonnes sémantiques (vérifié). |
+| 2 | User action timeline with filters | ✅ | « Activité récente » + filtres user/entité/action. |
+| 3 | Invoice modification history | ✅ | Actions INVOICE_* + parcours d'approbation par facture. |
+| 4 | Approval decision tracking | ✅ | APPROVE/REJECT loggés + historique d'approbation. |
+| 5 | Payment status change log | ✅ | Transitions de statut loggées (audit financier DAF). |
+| 6 | Document access records | ✅ | Accès documents audités. |
+| 7 | User login/logout activity | ✅ | LOGIN / MFA / ACCESS_DENIED (vérifié). |
+| 8 | Export audit trail function | ✅ | `/audit-logs/export` CSV/Excel/PDF (ExportMenu). |
+| 9 | Anomaly detection alerts | ✅ | Panneau « Anomalies détectées » (HIGH_VOLUME, EXCESSIVE_ACCESS_DENIED) — vérifié. |
+| 10 | Retention period compliance display | ✅ | Carte « Conformité de la rétention » sur /admin/audit (onglet Journal) : statut CONFORME/ATTENTION/NON_CONFORME calculé (GET /retention-policy/compliance, ADMIN, SoD), période, dernier balayage, docs marqués. Le compteur « périmés » reflète les documents EN ATTENTE de disposition (PENDING) ; le statut s'éteint après traitement via PUT /retention/documents/{id}/disposition (RETAINED/PURGED), ADMIN. |
+| 11 | Real-time monitoring dashboard | ✅ | « Activité récente / En direct ». |
+| 12 | Audit summary reports | ✅ | Rapport de synthese agrege (totaux par action/utilisateur/entite/jour, plage de dates) en onglet "Synthese" sur /admin/audit (ADMIN, systeme) et /audit/financial (DAF, financier) ; export csv/excel/pdf ; endpoints /audit-logs/summary/{system,financial,export} avec garde SoD. |
 
-**P11-D Exit Criteria:** Zero controllers inject a `*Repository` directly
-(`grep -rn "Repository" src/main/java/**/controller/*.java` shows only DTO/service types).
-✅ Met 2026-06-13 — verified after P11-11: no `*Controller` under `src/main/java/**/controller/`
-imports or injects a `*Repository` (the prior offenders `AdminSessionController`,
-`IntegrationStatusController`, `WebhookController`, `DelegationController`,
-`InvoiceDocumentController` were all refactored in P11-07..P11-11).
+### Features
+| # | Feature | Verdict | Preuve |
+|---|---------|---------|--------|
+| 1 | Complete tracking of invoice activities | ✅ | Actions sémantiques. |
+| 2 | Creation/modification/deletion history | ✅ | INVOICE_CREATE/UPDATE + soft-delete tracé. |
+| 3 | Approval/rejection documentation | ✅ | Décisions + commentaires. |
+| 4 | Payment status change tracking | ✅ | Audit financier. |
+| 5 | Document access monitoring | ✅ | Logs accès. |
+| 6 | User activity logging | ✅ | Login/MFA/denied. |
+| 7 | Security incident detection | ✅ | Anomalies + M14 incidents. |
+| 8 | Regulatory compliance documentation | ✅ | Export + séparation système/financier. |
+| 9 | Forensic investigation support | ✅ | Détails (IP, durée, méthode, statut). |
+| 10 | Real-time anomaly detection | ✅ | AuditAnomalyService. |
+
+**Gaps M10 :** #10 pas d'indicateur de rétention sur l'écran audit ; #12 pas de rapport de synthèse audit agrégé dédié.
 
 ---
 
-### P11-E — Docker/Infra Cleanup 🟠 High
+## Module 11 — Reporting & Analytics
 
-- [x] **P11-12** Remove `docker-compose.yml`'s orphaned `postgres` service (lines 13-33)
-      and `postgres_data` volume (P5-01, Option B — confirmed 2026-06-12). Completed
-      2026-06-13. Removed the `postgres` service block and `postgres_data` volume entry;
-      updated the file's header usage comment to note PostgreSQL is host-native and point
-      to `docs/ARCHITECTURE.md §4.3`. `docker compose config` confirms no `postgres`
-      service remains (only `DB_USER: postgres`, the database username).
-- [x] **P11-13** Fix `MINIO_SECRET_KEY` default mismatch (P5-02): change the `backend`
-      service's `${MINIO_SECRET_KEY:-dany}` to `${MINIO_SECRET_KEY:-dany1234}`.
-      Completed 2026-06-13 (PROB-033). **Correction:** an earlier pass had marked this done
-      and described the change as being on `minio_init`, but the actual offending default —
-      the `backend` service's `MINIO_SECRET_KEY` (`dany`) — was never changed and still
-      mismatched the `minio` server's `MINIO_ROOT_PASSWORD` default (`dany1234`). Caught by
-      verifying against the file rather than the checkbox. Now all three (`minio`,
-      `minio_init`, `backend`) default to `dany1234`; verified via
-      `docker compose --env-file <empty> config` → `MINIO_SECRET_KEY: dany1234` and
-      `MINIO_ROOT_PASSWORD: dany1234` resolve identically with `.env` unset.
-- [x] **P11-14** Add `docs/ARCHITECTURE.md §4.3` prerequisite documentation: host-native
-      PostgreSQL 18 (port 5433, db `oct_invoice`) must be running before `docker-compose up`.
-      Completed 2026-06-13. New "Prerequisite: host-native PostgreSQL" subsection added at
-      the top of §4.3; the stale "Verify all services healthy" `docker ps` example (which
-      listed `oct_postgres`) updated to list the current compose services and to verify
-      host Postgres separately via `pg_isready -h localhost -p 5433`.
+### UI Elements
+| # | Élément requis | Verdict | Preuve |
+|---|----------------|---------|--------|
+| 1 | Analytics dashboard with KPI cards | ✅ | `/reports` : KPI cards (total, retard, temps moyen, taux rejet). |
+| 2 | Invoice processing time reports | ✅ | `averageProcessingTimeDays` (SOUMIS→BON_A_PAYER). |
+| 3 | Supplier performance analytics | ✅ | `/reports/supplier/{id}/performance`. |
+| 4 | Aging analysis reports | ✅ | `/reports/aging`. |
+| 5 | Payment cycle analysis | 🟠 | Cash-flow (corrigé, PROB-054) + processing-time existent ; pas de rapport « cycle de paiement » explicite. |
+| 6 | Approval bottleneck identification | ✅ | `/reports/bottlenecks` (200, par approbateur/avgDays). |
+| 7 | Volume and value trends | ✅ | Tendance temporelle volume/valeur par mois (12 mois glissants, `?months`) via `GET /api/v1/reports/volume-trend` (DAF + ASSISTANT_COMPTABLE) ; section ComposedChart (barres montant + ligne nb factures) dans `/reports`. Agrégée sur la date de facture. |
+| 8 | Budget vs actual comparison | ✅ | `/reports/budget-vs-actual` (200) + table budget/réalisé/variance/util. |
+| 9 | Custom report builder interface | ✅ | `/reports/builder` : dataset/format/fréquence/destinataires (vérifié, « Verif Invoices »). |
+| 10 | Report preview and export (PDF, Excel) | ✅ | Export CSV/Excel/PDF ✅ (vérifié .xlsx + content-types) ; aperçu in-app (bouton œil → modale colonnes + N lignes) via `GET /reports/definitions/{id}/preview` ✅ (C4). |
+| 11 | Scheduled report configuration | ✅ | Fréquence MANUAL/Quotidien/Hebdo/Mensuel + ScheduledReportJob. |
+| 12 | Report distribution manager | ✅ | Champ destinataires (e-mails) + envoi e-mail avec pièce jointe (EmailService). |
+| 13 | Executive summary generator | ✅ | `/reports/executive-summary` (200) + bouton « Résumé exécutif (PDF) ». |
 
-**P11-E Exit Criteria:** `docker compose config` shows no `postgres` service; a fresh clone
-with `.env` unset for `MINIO_SECRET_KEY` still has `minio_init` succeed; ARCHITECTURE.md
-documents the host-Postgres prerequisite. ✅ Met 2026-06-13 — verified via `docker compose
-config` (no `postgres` service; `MINIO_SECRET_KEY: dany1234` resolves identically for
-`minio`, `minio_init`, and `backend` with `.env` unset, per the PROB-033 correction) and
-`docs/ARCHITECTURE.md §4.3` prerequisite subsection.
+### Features
+| # | Feature | Verdict | Preuve |
+|---|---------|---------|--------|
+| 1 | Comprehensive reporting | ✅ | Multiples rapports. |
+| 2 | Processing time & efficiency | ✅ | avgProcessingTime. |
+| 3 | Supplier performance tracking | ✅ | Endpoint performance. |
+| 4 | Aging & cash flow analysis | ✅ | Aging ✅ ; cash-flow opérationnel (200, PROB-054 corrigé). |
+| 5 | Bottleneck identification | ✅ | /bottlenecks. |
+| 6 | Volume & value trend analysis | ✅ | Tendance temporelle mensuelle (volume + valeur) — voir UI #7. |
+| 7 | Budget comparison | ✅ | budget-vs-actual. |
+| 8 | Customizable report generation | ✅ | Report builder. |
+| 9 | Scheduled automated reporting | ✅ | ScheduledReportJob. |
+| 10 | Data-driven process optimization | ✅ | Bottlenecks + KPIs. |
 
----
-
-### P11-F — IAM / Permission Gaps 🟠 High
-
-> **DEFERRED (2026-06-13, by user decision).** P11-F's 4 items are net-new "enterprise IAM
-> platform" features with no PRD/WORKFLOW mandate (per REQ-23's own audit text) and require
-> design decisions that don't exist yet. Per `PLAN-CORRECTIONS.md`, P11-F is independent of
-> every other sub-phase and can run at any time, so it is deferred until P11-G/H/I (concrete,
-> fully-specified corrections) are done. Revisit with a proper design pass.
-
-- [x] **P11-15** Add data-sensitivity classification to financial records (REQ-23 item 1):
-      new enum + column via Flyway migration; surface in relevant list/detail views.
-      Completed 2026-06-14. New `DataSensitivity` enum (PUBLIC/INTERNAL/CONFIDENTIAL, bilingual) on
-      `Invoice` (`@Enumerated(STRING)`, default INTERNAL) via migration `V46`. Exposed in `InvoiceDTO`
-      (MapStruct auto-map; fixed the one manual `new InvoiceDTO(...)` in `SupplierPortalController`).
-      New `PATCH /api/v1/invoices/{id}/sensitivity` (`@PreAuthorize` DAF + ASSISTANT_COMPTABLE) +
-      `UpdateSensitivityRequest`. Frontend: a `SensitivityBadge` + classification `<select>` (edit for
-      DAF/Assistant, read-only badge otherwise) on the invoice detail, and a red lock icon next to the
-      reference in the list for CONFIDENTIAL invoices. i18n `sensitivity.*` (FR/EN, parity 605/605).
-      3 `InvoiceSensitivityTest` (default INTERNAL, PATCH persists as assistant, 403 for unauthorised
-      role). Runtime-verified via Playwright (default INTERNAL, PATCH→CONFIDENTIAL persists, UI select +
-      badge, role gating). Suite GREEN 316/0/0.
-- [x] **P11-16** Add bulk user import/export (CSV) (REQ-23 item 2): new
-      `UserController` endpoint(s) + `AdminUsersPage.tsx` UI. Completed 2026-06-14.
-      `GET /api/v1/users/export/csv` (ADMIN, no passwords) + `POST /api/v1/users/import/csv`
-      (ADMIN, multipart, create-only). New `UserCsvService` (RFC-4180 parser/escaper, no extra
-      lib) + `UserImportResultDTO` (per-row error report with 1-based line numbers). Import is
-      create-only: duplicate username/email rows are rejected and reported (valid rows still
-      imported); each created user gets a random undisclosed password and must use the
-      forgot-password flow. `AdminUsersPage` gained an Export/Import toolbar + import-report modal.
-      i18n `admin.users.*` (FR/EN, parity 600/600). 4 `UserCsvServiceTest` (import outcomes,
-      missing-field reporting, export round-trip with no password leak, quoted-field parsing).
-      Runtime-verified via Playwright (export 200 text/csv no password leak; import report
-      created/failed with exact line numbers; UI toolbar + modal). Found+fixed a
-      LazyInitializationException in export (added `@Transactional(readOnly=true)`). Suite GREEN 312/0/0.
-- [x] **P11-17** Add self-service access-request workflow (REQ-23 item 3): new entity +
-      approval-lite flow for users requesting role/department access changes. Completed 2026-06-14.
-      New `access` domain: `AccessRequest` entity + `AccessRequestStatus` enum
-      (PENDING/APPROVED/REJECTED, bilingual) via migration `V47`. Flow: staff
-      `POST /api/v1/access-requests` (one additional role + reason, created PENDING) →
-      ADMIN `GET /api/v1/access-requests?status=PENDING` (review queue) → ADMIN
-      `PATCH /api/v1/access-requests/{id}` (approve/reject + optional comment). **Approval grants the
-      requested role to the requester** (reuses the explicit-`UserRoleId` composite-key pattern from
-      UserService — PROB-040). Guards: unknown role / ROLE_SUPPLIER / already-held role / duplicate
-      pending → `ValidationException` (400); already-reviewed → 400. Security: create + `/mine` =
-      any authenticated staff (`!hasRole('SUPPLIER')`); queue + review = ADMIN only. Frontend:
-      `MyAccessRequestsPage` (`/access-requests`, request form + own-requests table, in "Compte")
-      and `AdminAccessRequestsPage` (`/admin/access-requests`, status-filtered queue + approve/reject,
-      in Admin). i18n `accessRequests.*` (FR/EN, parity 633/633). 12 tests
-      (`AccessRequestServiceIntegrationTest` ×6 real-DB flush incl. role grant on approval,
-      `AccessRequestControllerTest` ×6 role-gating). Runtime-verified via Playwright end-to-end:
-      POST→201, queue shows request, PATCH approve→200, **DB confirmed `ROLE_DAF` added to `aa`**
-      (then reverted). Suite GREEN 328/0/0.
-- [x] **P11-18** Add visual permission-matrix editor (REQ-23 item 4): frontend grid over
-      the existing `PUT /{id}/roles` endpoint. Completed 2026-06-14. New `AdminPermissionMatrixPage`
-      (users × roles grid of checkboxes, per-row Save, ADMIN-only) at `/admin/permissions` +
-      sidebar entry. Shared `constants/roles.ts` (DRY — AdminUserFormPage now imports it). Added a
-      minimal `GET /api/v1/roles` (RoleController/RoleService/RoleDTO, ADMIN) to resolve role
-      name→UUID, required because `PUT /{id}/roles` takes role UUIDs. i18n `admin.permissions.*`
-      (FR/EN, parity 593/593). Verified at runtime (GET 200, PUT 200, persistence after reload,
-      bilingual). **Found + fixed a pre-existing 500 bug (PROB-040):** `assignRoles` built a
-      `UserRole` without its `UserRoleId` @EmbeddedId → flush NPE; added a `UserServiceIntegrationTest`
-      regression test. Full suite GREEN 308/0/0.
-
-**P11-F Exit Criteria:** All 4 sub-items implemented, tested, and added to
-`docs/REQUIREMENTS-MATRIX.md` as newly-implemented.
+**Gaps M11 :** ~~#4/feat#4 cash-flow cassé (500)~~ **corrigé (PROB-054)** ; #5 cycle de paiement non explicite ; #7 pas de tendances temporelles ; ~~#10 pas d'aperçu avant export~~ **corrigé (C4)**.
 
 ---
 
-### P11-G — Documentation Corrections 🟡 Medium
+## Module 12 — Integration
 
-- [x] **P11-19** Fix package names in `docs/ARCHITECTURE.md` §2/§10 (P1-01):
-      `matching`→`purchasing`, `integration`→`webhook`, `reporting`→`report`; add 6
-      missing packages. Completed 2026-06-13. §2 rewritten as the complete, accurate tree:
-      all 15 `domain/` packages (renamed `reporting`→`report`; added the 6 previously-missing
-      `mfa`, `ocr`, `purchasing`, `supplier`, `webhook`, and `config/security/`), and the
-      stale `config/` file list corrected (`JwtConfig`/`MinioConfig`/`MailConfig` removed —
-      they don't exist; `WebConfig`, `ProdSecretConfigValidator`, `config/security/` filters
-      added). §10's stale "New Domain Modules" tree (which still used `matching`/`integration`)
-      replaced with a name-mapping lookup table pointing to §2 as the single source of truth.
-      Verified against the actual package listing on disk.
-- [x] **P11-20** Rewrite `docs/ARCHITECTURE.md` §4.1 "Known Implementation Gaps" table (P1-02):
-      all 8 entries are stale/resolved. Completed 2026-06-13. Re-verified each gap against the
-      codebase: GAP 1 (OCR), 2 (JWT RS256), 3 (CI `ci.yml`), 4 (TLS 1.3 in `application.yaml`
-      `server.ssl`), 5 (ZAP `security-scan.yml`+`zap-rules.tsv`), 7 (audit sub-typing), 8
-      (archive search) are all **resolved** — marked ✅ with the proof location. Only GAP 6
-      (Approval Delegation) remains, and only its **frontend** — backend (V40 + entity +
-      service + controller + tests) is complete; no delegation UI exists in `frontend/src`.
-      Table rewritten accordingly; intro updated to note the 2026-06-06 version was stale.
-- [x] **P11-21** Redraw `docs/ARCHITECTURE.md` §5 security filter chain diagram (P1-03):
-      add 3 missing filters, correct relative order, fix CORS placement. Completed 2026-06-13.
-      Verified against `SecurityConfig.java:71-75`: actual chain is `HttpSecurityHeadersFilter`
-      → `RateLimitingFilter` → `JwtAuthenticationFilter` → [UPAF] → `MfaSetupEnforcementFilter`
-      → `AuditLoggingFilter` → authorization. Added the 3 previously-undocumented filters,
-      corrected the order, and removed `CorsFilter` from the chain entirely — CORS is a
-      `WebMvcConfigurer` (MVC layer), not a security filter — with an explanatory note.
-- [x] **P11-22** Add "Inter-domain Dependencies" subsection to `docs/ARCHITECTURE.md` §2
-      (P1-06): document the `invoice`↔`purchasing` bidirectional dependency. Completed
-      2026-06-13. New §2.1 documents the verified cycle: `invoice` (`InvoiceController`,
-      `InvoiceService`, `InvoiceStateMachineServiceImpl`) imports purchasing's
-      `ThreeWayMatchingService`/repositories/DTOs, and `purchasing`
-      (`ThreeWayMatchingResult`, `ThreeWayMatchingService`) imports `invoice.model.Invoice`/
-      `InvoiceItem` — verified by grepping actual imports both directions. Notes it's
-      intentional (matching at SUBMIT) and that new cross-domain calls go service→service.
-- [x] **P11-23** Replace `ApprovalController.getApprovalSteps`'s `List<Map<String,Object>>`
-      return type (P1-07) with a typed `ApprovalStepResponse` DTO. Completed 2026-06-13. New
-      `ApprovalStepResponse` record (12 fields matching the prior map keys exactly, so the JSON
-      shape is unchanged for the frontend). `ApprovalService` interface, `ApprovalServiceImpl`
-      (now maps via a stream, dropping the `Map`/`LinkedHashMap`/`ArrayList` building), and
-      `ApprovalController` all return the typed list. 2 new `ApprovalServiceTest` tests
-      (`getApprovalSteps_mapsEntityFieldsToTypedDto`,
-      `getApprovalSteps_nullApprover_yieldsNullUsernameAndName`) — pass. (The lone
-      `ApprovalServiceTest` failure remaining, `assignReviewer_..._ThrowsAccessDenied`, is the
-      pre-existing baseline failure, unrelated.)
-- [x] **P11-24** Document the Flyway V36-V38 gap (P3-03): add a note to
-      `docs/ARCHITECTURE.md` migration history explaining V35→V39 is intentional. Completed
-      2026-06-13. New §4.4 records that V36–V38 never existed (no functional impact) and —
-      going beyond the audit's "unknown origin" verdict — traces the real origin: the
-      2026-06-06 plan reserved V36/V37/V38 for purchase-orders/GRN/three-way-matching, but
-      those tables already existed as V17/V18/V19, so the numbers were skipped. Supersedes the
-      unsubstantiated "covered by V17-19" note (now verified against the actual files) and adds
-      a "do not retroactively create V36–V38" instruction.
+> Note transverse : les connecteurs sont un **cadre configurable** (entité IntegrationConnector + test de connexion avec garde SSRF). Le type **MOCK simule** une connexion saine ; les connecteurs ERP/banking/etc. réels ne réalisent pas de synchronisation effective (pas d'appel métier réel vers SAP/Oracle/banque). C'est une base d'intégration, pas une intégration live.
 
-**P11-G Exit Criteria:** `docs/ARCHITECTURE.md` accurately reflects the current codebase
-for §2, §4.1, §5, §10, and migration history; `ApprovalController` returns a typed DTO.
-✅ Met 2026-06-13 — §2 (P11-19), §4.1 (P11-20), §5 (P11-21), §2.1 inter-domain (P11-22),
-§4.4 migration history (P11-24) all corrected against the codebase; `ApprovalController`
-returns `List<ApprovalStepResponse>` (P11-23).
+### UI Elements
+| # | Élément requis | Verdict | Preuve |
+|---|----------------|---------|--------|
+| 1 | Integration configuration dashboard | ✅ | `/admin/integrations` (vérifié). |
+| 2 | ERP connection (SAP, Oracle, MS Dynamics) | 🟠 | Type générique **ERP** (pas de connecteurs SAP/Oracle/Dynamics nommés ni de sync réelle). |
+| 3 | Procurement system integration | 🟠 | Pas de type « procurement » distinct ; PO/GRN gérés en interne (M5). |
+| 4 | Accounting software connection | 🟠 | Type **ACCOUNTING** (cadre, pas de sync réelle). |
+| 5 | Banking system integration for payments | 🟠 | Type **BANKING** (cadre, pas de virement réel). |
+| 6 | Document management system integration | 🟠 | Type **DMS** (cadre) ; stockage interne = MinIO. |
+| 7 | API configuration interface | ✅ | Formulaire connecteur (nom/type/endpoint) + webhooks. |
+| 8 | Webhook management | ✅ | « Ajouter un webhook » + CRUD + signature HMAC. |
+| 9 | Integration status monitoring | ✅ | `/integrations/status` + statut UP/DOWN par connecteur (vérifié « Verif Mock → UP »). |
+| 10 | Sync schedule configuration | ✅ | `PUT /integrations/connectors/{id}/sync-schedule` (intervalle minutes ; null = désactivé) + `POST /{id}/sync` (sync now) + `ConnectorSyncJob` `@Scheduled` qui synchronise les connecteurs activés dont l'intervalle est échu. UI : colonne « Synchronisation » dans `/admin/integrations`. **Fait (B6, 2026-06-19)** : orchestration réelle (planif/déclenchement/journal) ; payload échangé = cadre jusqu'au branchement d'un vrai connecteur. |
+| 11 | Error log and resolution | ✅ | `/webhooks/{id}/deliveries` : journal de livraison (succès/échec, retries). |
+| 12 | Test connection interface | ✅ | Test de connexion (vérifié → UP) + garde SSRF (PROB-08x). |
+
+### Features
+| # | Feature | Verdict | Preuve |
+|---|---------|---------|--------|
+| 1 | Seamless integration with enterprise systems | 🟠 | Cadre de connecteurs, pas de sync live. |
+| 2 | ERP connectivity | 🟠 | Type ERP (cadre). |
+| 3 | Procurement integration for PO matching | 🟠 | PO/GRN internes (pas de système procurement externe). |
+| 4 | Accounting connection (GL) | 🟠 | Type ACCOUNTING (cadre). |
+| 5 | Banking integration for payments | 🟠 | Type BANKING (cadre). |
+| 6 | DMS linkage | 🟠 | Type DMS (cadre) ; MinIO interne. |
+| 7 | API & webhook support | ✅ | Webhooks HMAC + delivery log + retry (5s/25s/125s). |
+| 8 | Integration health monitoring | ✅ | Status + test connexion. |
+| 9 | Error handling and logging | ✅ | Delivery log. |
+| 10 | Scalable integration architecture | ✅ | Entité connecteur générique extensible. |
+
+**Gaps M12 :** connecteurs ERP/procurement/accounting/banking/DMS = **cadre configurable (MOCK/typé), sans synchronisation réelle** (payload métier échangé hors périmètre PFE). Webhooks + test + status + error log + **planification de synchro (B6)** = réels. ~~#10 sync schedule absent~~ → **fait (B6, 2026-06-19)**.
 
 ---
 
-### P11-H — i18n Sweep 🟡 Medium
+## Module 13 — User & Access Management
 
-- [x] **P11-25** Add missing `supplier.register.*` keys (13) to `en.json`/`fr.json` (P4-01).
-      Completed 2026-06-13. Added a `supplier.register` block (15 keys — the audit's 13 from
-      `SupplierRegisterPage.tsx` plus `isSupplier`/`linkText` from `LoginPage.tsx`) to both
-      locale files; EN from the source fallbacks, FR composed in the existing formal tone.
-      Parity verified: 433/433 keys, 0 EN-only/FR-only.
-- [x] **P11-26** Add missing `supplier.verify.*` keys (5) to `en.json`/`fr.json` (P4-01).
-      Completed 2026-06-13. New `supplier.verify` block, 6 keys (verifying, successTitle,
-      successMessage, errorTitle, errorMessage, retryRegister) from `EmailVerificationPage.tsx`;
-      EN from fallbacks, FR composed.
-- [x] **P11-27** Add missing `supplier.tracking.*` keys (8) to `en.json`/`fr.json` (P4-01).
-      Completed 2026-06-13. New `supplier.tracking` block, 9 keys incl. nested `step.*`
-      (submitted/validation/approved/paid) + title/subtitle/draft/rejectionReason/progress from
-      `SupplierInvoicesPage.tsx`. Source fallbacks were French here, so FR from source, EN composed.
-- [x] **P11-28** Add missing `supplier.portal.*` keys (3) to `en.json`/`fr.json` (P4-01).
-      Completed 2026-06-13. Added `invoices`/`profile`/`documents` to the existing
-      `supplier.portal` block (referenced by `SupplierLayout.tsx`); FR from source, EN composed.
-      Parity after P11-26..28: 451/451 keys, 0 EN-only/FR-only.
-- [x] **P11-29** Add missing `mfa.*` keys (16) to `en.json`/`fr.json` (P4-01). Completed
-      2026-06-13. New top-level `mfa` block, 16 keys from `ProfilePage.tsx` (MFA setup section).
-      Source fallbacks were French, so FR from source, EN composed. Parity 467/467.
-- [x] **P11-30** Add missing `payments.*` keys (7) to `en.json`/`fr.json` (P4-01). Completed
-      2026-06-13. New top-level `payments` block, 7 keys from `PaymentsPage.tsx` (FR fallbacks →
-      FR from source, EN composed).
-- [x] **P11-31** Add missing `archive.*` keys (6) to `en.json`/`fr.json` (P4-01). Completed
-      2026-06-13. New top-level `archive` block, 6 keys from `ArchivePage.tsx` (FR fallbacks →
-      FR from source, EN composed).
-- [x] **P11-32** Add missing `auth.*` keys incl. password-strength indicator (6) to
-      `en.json`/`fr.json` (P4-01). Completed 2026-06-13. `auth.email` + `auth.passwordStrength.*`
-      (weak/fair/good/strong/hint). Added programmatically (round-trip-clean JSON), parity held.
-- [x] **P11-33** Add missing `grn.*` keys (6) to `en.json`/`fr.json` (P4-01). Completed
-      2026-06-13. New top-level `grn` block, 6 keys from `GoodsReceiptsPage.tsx` (FR fallbacks →
-      FR from source, EN composed). Parity after P11-30/31/33: 486/486.
-- [x] **P11-34** Add missing `invoice.*` keys (6) to `en.json`/`fr.json` (P4-01). Completed
-      2026-06-13. `exportPdf`, `noStepsYet`, `overdue`, `stepApproved`, `stepPending`,
-      `stepRejected` (FR fallbacks → FR from source, EN composed).
-- [x] **P11-35** Add missing `dashboard.*` keys (4) to `en.json`/`fr.json` (P4-01). Completed
-      2026-06-13. `deptMatrix`, `manageAccounts`, `securityLogs`, `supplierRegistry`.
-- [x] **P11-36** Add missing `admin.*` keys (3) to `en.json`/`fr.json` (P4-01). Completed
-      2026-06-13. `admin.departments.{currency,matrixNote,subtitle}`.
-- [x] **P11-37** Add missing `nav.*`, `register.*`, `notifications.*`, `profile.*` keys
-      (7 total) to `en.json`/`fr.json` (P4-01). Completed 2026-06-13. `nav.{archive,goodsReceipts,
-      payments}`, `register.supplierOnly.{title,note}`, `notifications.hint`,
-      `profile.staffAssignment`. All 26 keys (P11-32/34/35/36/37) added programmatically;
-      verified 0 referenced `t()` keys missing from either file, parity 512/512.
-- [x] **P11-38** Add full `t()` coverage to `ForgotPasswordPage.tsx`/`ResetPasswordPage.tsx`
-      (REQ-01) — currently zero `t()` calls, requires NEW keys in both locale files. Completed
-      2026-06-13. Both pages now use `useTranslation`; wrapped every string. New keys:
-      `auth.backToLogin` (shared), `auth.forgotPassword.{title,subtitle,success,submit,error}`,
-      `auth.resetPassword.{title,subtitle,success,newPassword,submit,error}`; the email label
-      reuses `auth.email`. Frontend `tsc --noEmit` passes.
-- [x] **P11-39** Add `alt={t('mfa.qrCodeAlt', ...)}` to the MFA QR `<img>` (P4-04) — new
-      95th i18n key in `en.json`/`fr.json`. Completed 2026-06-13. `ProfilePage.tsx` QR `<img>`
-      `alt` was hardcoded "QR Code MFA"; now `t('mfa.qrCodeAlt', ...)`; key added to both files.
+### UI Elements
+| # | Élément requis | Verdict | Preuve |
+|---|----------------|---------|--------|
+| 1 | User management console | ✅ | `/admin/users` : 18 users, créer/éditer (vérifié). |
+| 2 | Role and permission assignment | ✅ | `/admin/permissions` : matrice user×14 rôles, save par ligne. |
+| 3 | Department/team-level access control | ✅ | `/admin/department-access` : aperçu lecture seule users×rôles×niveau N1/N2 par département (ADMIN). |
+| 4 | Data sensitivity classification | ✅ | Enum DataSensitivity (PUBLIC/INTERNAL/CONFIDENTIAL) + badge sur facture (« Interne » vérifié). |
+| 5 | User activity monitoring | ✅ | Audit (M10) + sessions actives. |
+| 6 | Account status management | ✅ | Active/inactif + verrouillage (5 échecs) + déverrouillage admin. |
+| 7 | Bulk user import/export | ✅ | `/admin/users` : Importer CSV + Exporter (CSV/Excel/PDF) — vérifié. |
+| 8 | Access request workflow | ✅ | `/access-requests` (demande) + `/admin/access-requests` (approbation auto-attribue le rôle). |
+| 9 | Permission matrix editor | ✅ | `/admin/permissions` (vérifié). |
+| 10 | Session management overview | ✅ | `/admin/security` : table sessions actives + Révoquer (vérifié). |
+| 11 | User audit trail viewer | ✅ | Journal d'audit filtrable par user. |
+| 12 | Role-based menu configuration | ✅ | Sidebar via RoleGuard (navs différenciés vérifiés aa/dg/admin/supplier). |
 
-**P11-H Exit Criteria:** Node.js diff script (per `PHASE4-FRONTEND.md` methodology) shows
-0 `t()` calls with keys missing from either locale file; both locale files remain in
-perfect key-parity.
-✅ Met 2026-06-13 — extractor over `frontend/src` shows 426 referenced `t()` keys, **0 missing**
-from either `en.json`/`fr.json`; both files at **525/525** keys with 0 EN-only/FR-only. Frontend
-`tsc --noEmit` exit 0.
+### Features
+| # | Feature | Verdict | Preuve |
+|---|---------|---------|--------|
+| 1 | Comprehensive user administration | ✅ | Console complète. |
+| 2 | Role-based access control | ✅ | 14 rôles + @PreAuthorize. |
+| 3 | Department & team-level permissions | ✅ | UI dédiée d'accès par département (M13 #3, 2026-06-21). |
+| 4 | Granular data access restrictions | ✅ | DataSensitivity + RBAC + admin sans accès financier (séparation). |
+| 5 | User lifecycle management | ✅ | Créer/éditer/statut/MFA reset. |
+| 6 | Bulk user operations | ✅ | Import/export CSV. |
+| 7 | Access request & approval workflows | ✅ | Workflow demandes d'accès. |
+| 8 | User activity monitoring | ✅ | Audit + sessions. |
+| 9 | Role-based interface customization | ✅ | Menus par rôle. |
+| 10 | Complete user audit trail | ✅ | Audit. |
+
+**Gaps M13 :** ~~#3 contrôle d'accès par département/équipe fonctionnel mais sans UI dédiée~~ → **résolu 2026-06-21 (M13 #3)** : page `/admin/department-access` livrée. **Aucun gap M13 restant.**
 
 ---
 
-### P11-I — Frontend Correctness Fixes 🟡 Medium
+## Module 14 — Security & Compliance
 
-- [x] **P11-40** Wire `SecuritySettingsPage.tsx`'s security-policy form to a real backend
-      (REQ-02). Completed 2026-06-13 (PROB-036). New `SecurityPolicy` entity + `V44` migration
-      (singleton, seeded with the former hardcoded defaults) + `SecurityPolicyService` +
-      `SecurityPolicyController` (`GET`/`PUT /api/v1/admin/security-policy`, ADMIN). **Enforcement
-      made real:** `AuthService` reads `maxLoginAttempts` from the policy (was a constant);
-      `MfaSetupEnforcementFilter` honours `mfaRequired` (toggle off → no MFA forced);
-      `minPasswordLength` validated programmatically at all 3 password-set points (create user,
-      reset, supplier register) replacing the static `@Size`; `sessionTimeout` sets the
-      access-token lifetime on every new sign-in (`JwtService` overload), with an honest UI note
-      that already-issued tokens keep their TTL (scope chosen by the user). `getActivePolicy()`
-      falls back to safe defaults if no row exists — auth must never break on a missing policy.
-      `SecuritySettingsPage` now loads via GET and saves via PUT; "simulation only" banner removed.
-      Tests: `SecurityPolicyServiceTest` (5), `SecurityPolicyControllerTest` (3), `UserServiceTest`
-      updated. Full suite: **299 tests, 27 baseline failures**, zero new regressions; frontend
-      `tsc --noEmit` exit 0.
-      **Hardening (2026-06-13, post-review — PROB-037):** addressed 6 review points: (1) the
-      session timeout is now a **real inactivity timeout** — server-side `ActiveSession` expiry +
-      `/auth/refresh` rejection when expired (sliding), and a frontend `useSessionTimeout` hook
-      that signs the user out after inactivity and proactively refreshes while active;
-      `LoginResponse` exposes `session_timeout_minutes`. (2) `mfaRequired=false` now also skips the
-      OTP at login for accounts that already have MFA (reversible). (4) a startup `@EventListener`
-      seeds a default policy if none exists (WARNING) and `getActivePolicy()` falls back to
-      defaults **with a WARNING** (never silent masking) — `updated_by` nullable (`V45`). (5) added `SecurityPolicyIntegrationTest`
-      (real PUT round-trip + versioning; refresh-after-expiry → 401). (6) `SecuritySettingsPage`
-      now **100% bilingual** (20 keys, parity 585/585). (#3 left as-is per the user.) Full suite:
-      **303 tests, 27 baseline failures**, zero new regressions; frontend `tsc --noEmit` + `npm run
-      build` OK. (Manual UI run pending — needs the full host-Postgres/MinIO stack.)
-- [x] **P11-41** Fix `LoginPage.tsx` to branch on HTTP 423 (`account.locked`) (REQ-03):
-      show a distinct, translated "account locked, contact admin" message instead of the
-      generic invalid-credentials text. Completed 2026-06-13. Error display now branches on
-      `loginMutation.error.response.status === 423` → `t('auth.accountLocked', ...)` (new key
-      EN+FR), else the generic `auth.loginError`.
-- [x] **P11-42** Wire validator/manager dashboard KPI tiles "Traitées ce mois" and
-      "Approuvées" (REQ-04) to a **validator-scoped** endpoint, replacing the `—` placeholders.
-      Completed 2026-06-13 (PROB-035). **Revised after self-review:** the first pass wired the
-      tiles to the global `getKpis` (system-wide counts shown under a validator's *personal*
-      tiles — misleading, arguably worse than `—`). Replaced with a real scoped backend:
-      `ApprovalStepRepository.countByApproverIdAndStatus` +
-      `...AndStatusInAndActionAtGreaterThanEqual`, `ApprovalService.getValidatorStats(UUID)`
-      (returns `ValidatorStatsResponse` — `approvedTotal` all-time, `processedThisMonth` =
-      APPROVED+REJECTED since the 1st of the month), exposed at `GET /api/v1/workflow/my-stats`
-      via a new `ValidatorStatsController` (P1-05-clean; `@PreAuthorize isAuthenticated() and
-      !hasRole('SUPPLIER')`). Dashboard now queries `/workflow/my-stats` (only for validators;
-      `canViewKpis` reverted to AA/DAF), restoring the honest "ce mois" label
-      (`dashboard.processedThisMonth`). Tests: `getValidatorStats` service test +
-      `ValidatorStatsControllerTest` (200 for validator, 403 for supplier).
-- [x] **P11-43** Add the missing `onClick` handler to `ArchivePage.tsx:150-152`'s
-      "Download PDF" button (REQ-15), reusing the download logic from
-      `InvoiceDetailPage.tsx`. Completed 2026-06-13. Added a `downloadPdf(inv)` handler
-      (`GET /invoices/{id}/export/pdf` as blob → object URL → anchor click, same as
-      InvoiceDetailPage) with per-row `downloadingId` spinner state. Frontend `tsc --noEmit`
-      exit 0 for all three.
+### UI Elements
+| # | Élément requis | Verdict | Preuve |
+|---|----------------|---------|--------|
+| 1 | Role-based permission matrix | ✅ | `/admin/permissions` (partagé M13). |
+| 2 | Data encryption status indicators | ✅ | `/admin/security` : « Chiffrement au repos : Activé ». |
+| 3 | Two-factor authentication settings | ✅ | « Politique MFA » (obligatoire tous rôles staff) + adoption 3/18. |
+| 4 | Login activity monitoring | ✅ | Audit LOGIN + comptes verrouillés/tentatives. |
+| 5 | Data backup status | ✅ | `/admin/compliance` : « Statut de sauvegarde : OK » + « Enregistrer une sauvegarde » (vérifié). |
+| 6 | Data retention policy configuration | ✅ | B2 : UI admin `/admin/retention-policy` (durée + activation), config singleton en base (V62) lue par `DocumentRetentionJob`. ADMIN only. |
+| 7 | Privacy policy acceptance tracking | ✅ | `/compliance/privacy-acceptance` + bannière dashboard (vérifié 200). |
+| 8 | Security incident reporting | ✅ | Incidents (titre + sévérité LOW→CRITICAL + statut OPEN→CLOSED) — vérifié. |
+| 9 | Compliance checklist (SOX, IFRS, local) | ✅ | Checklist SOX/IFRS/LOCAL avec cases — vérifié. |
+| 10 | Audit preparation tools | 🟠 | Export PDF rapport conformité (`/reports/export/pdf/compliance`) + checklist ; pas de « boîte à outils » audit dédiée. |
+| 11 | Compliance calendar and deadlines | ✅ | Calendrier de conformité (échéances) — vérifié (« Verif deadline 2026-12-31 »). |
+| 12 | Security health dashboard | ✅ | `/admin/security` : Santé de la sécurité (chiffrement, MFA, comptes verrouillés, webhooks). |
 
-**P11-I Exit Criteria:** No page contains a fake/simulation-only form, a dead button, or
-a static `—` KPI placeholder where a real value is available.
-⚠️ Partially met 2026-06-13 — the dead Archive download button (P11-43) and the static validator
-KPI `—` placeholders (P11-42) are fixed. The remaining item is **P11-40** (the
-`SecuritySettingsPage` simulation-only form), which is **deferred** as a backend feature
-(SecurityPolicy entity/controller/migration + enforcement) for a dedicated design pass.
+### Features
+| # | Feature | Verdict | Preuve |
+|---|---------|---------|--------|
+| 1 | Granular RBAC | ✅ | 14 rôles + @PreAuthorize + séparation des devoirs. |
+| 2 | Data encryption (sensitive financial) | ✅ | AES-GCM (bank details). |
+| 3 | MFA mandatory all roles except supplier | ✅ | Deny-list (PROB-053) vérifié (supplier exempt, staff OTP). |
+| 4 | Automated backup and recovery | 🟠 | Statut de sauvegarde suivi/enregistré ; pas de moteur de sauvegarde/restauration automatisé intégré. |
+| 5 | Data retention policy enforcement | ✅ | DocumentRetentionJob (flag à 10 ans). |
+| 6 | Regulatory compliance monitoring (SOX, IFRS) | ✅ | Checklist + calendrier. |
+| 7 | Security incident detection & reporting | ✅ | Incidents + anomalies d'audit (M10). |
+| 8 | Audit-ready documentation | ✅ | Export audit + rapport conformité PDF. |
+| 9 | Compliance deadline management | ✅ | Calendrier. |
+| 10 | Comprehensive security monitoring | ✅ | Security health dashboard. |
+
+**Gaps M14 :** #10 pas de boîte à outils d'audit dédiée (couvert indirectement) ; feat#4 statut de sauvegarde suivi mais pas de moteur backup/restore automatisé. (#6 résolu en B2.)
 
 ---
 
-### P11-J — Backend-Complete / Frontend-Absent UIs 🟡 Medium
+# SYNTHÈSE GLOBALE
 
-- [x] **P11-44** Build Approval Delegation UI (P4-02): new section in `ProfilePage.tsx`
-      (or dedicated page) — list active delegations, create form (target user + date
-      range), revoke button. Uses `DelegationController`'s existing 3 endpoints. Completed
-      2026-06-13. Chose a **dedicated admin page** (not ProfilePage) because all 3 endpoints
-      are `hasRole('ADMIN')` and the create payload specifies both delegator and delegatee —
-      this is admin-managed, not self-service. New `AdminDelegationsPage.tsx` (route
-      `/admin/delegations`, sidebar entry, `PageRoleGuard ROLE_ADMIN`): department selector →
-      lists active delegations (`GET /approvals/delegations?departmentCode=`) with revoke
-      (`DELETE /{id}`), and a create form (delegator/delegatee from `GET /users`, department,
-      from/to dates, optional reason → `POST`). Client-side guards (same-user, date range,
-      required fields). 21 `admin.delegations.*` i18n keys added (parity 549/549). Frontend
-      `tsc --noEmit` exit 0. **Closes GAP 6** — the one real remaining gap from P11-20
-      (ARCHITECTURE.md §4.1 updated to ✅).
-- [x] **P11-45** Build MatchingConfig UI (REQ-08): admin page to view/edit
-      `matching_config` tolerance thresholds. Completed 2026-06-13. New
-      `AdminMatchingConfigPage.tsx` (route `/admin/matching-config`, sidebar entry,
-      `PageRoleGuard ROLE_ADMIN`): loads the active config via `GET /api/v1/matching-config`
-      and edits tolerance % / tolerance amount / require-GRN via `POST /api/v1/matching-config`
-      (ADMIN-only). Client-side validation (0–100 %, amount ≥ 0), shows last-updated. 14
-      `admin.matchingConfig.*` i18n keys (parity 554/554). `tsc --noEmit` exit 0.
-- [x] **P11-46** Build Remittance Advice UI (REQ-11): page/section to view & download
-      remittance advices for processed payments. Completed 2026-06-13. `PaymentsPage.tsx`
-      already had a per-payment "Avis" button in the payment-history table, but it was **dead**
-      (no `onClick`, same pattern as the P11-43 archive button). Wired it: `downloadRemittance`
-      calls `GET /api/v1/payments/{paymentId}/remittance` (returns a pre-signed URL) and opens
-      it in a new tab, with a per-row spinner and a graceful "no remittance available yet"
-      banner on error. 1 new key `payments.remittanceError` (parity 555/555). `tsc --noEmit`
-      exit 0.
-- [x] **P11-47** Build Webhooks/Integration Status UI (REQ-22): new admin page wrapping
-      `WebhookController` (register/list/update/delete, delivery log) and
-      `IntegrationStatusController` (integration health). Depends on P11-08/P11-09
-      (service-layer refactor) landing first. Completed 2026-06-13. `IntegrationsPage.tsx`
-      (route `/admin/integrations`) already had webhook register/list/delete; **extended** it
-      with the two missing pieces: an **Integration Health** section (`GET /integrations/status`
-      → per-webhook last-delivery success/HTTP/timestamp) and a per-webhook **delivery log**
-      (toggle "Logs" → `GET /integrations/webhooks/{id}/deliveries` → event/HTTP/attempts/result/
-      time table). 11 new `admin.integrations.*` i18n keys (parity 566/566). `tsc --noEmit`
-      exit 0.
+## Verdict par module (UI elements + features)
 
-**P11-J Exit Criteria:** All 4 backends have a corresponding, reachable frontend page
-with nav entry and i18n coverage.
-✅ Met 2026-06-13 — P11-44 Delegation (`/admin/delegations`), P11-45 MatchingConfig
-(`/admin/matching-config`), P11-46 Remittance (wired in `PaymentsPage`), P11-47 Webhooks +
-Integration health/delivery-log (`/admin/integrations`). All ADMIN-reachable, sidebar/nav
-present, i18n-covered, frontend `tsc --noEmit` clean.
+| Module | ✅ Conforme | 🟠 Partiel | ❌ Absent | 🔴 Cassé | Note globale |
+|--------|:---------:|:---------:|:--------:|:-------:|--------------|
+| M1 Authentification | 19 | 0 | 0 | 0 | Complet (B7 : employee ID + approval limit éditables) |
+| M2 Dashboard | 16 | 1 | 0 | 0 | Quasi-complet |
+| M3 Réception | 19 | 2 | 0 | 0 | Très bon (XML + bulk multi-factures faits B8) |
+| M4 Validation Workflow | 19 | 2 | 0 | 0 | Bon (checklist B1 + motifs de rejet prédéfinis C1) |
+| M5 Three-Way Matching | 16 | 5 | 0 | 0 | Très bon (page dédiée /matching + comparaison ligne-à-ligne M5 #1/#4, 2026-06-21 ; export fait B2) |
+| M6 Approval | 17 | 3 | 0 | 0 | Bon |
+| M7 Payment | 17 | 4 | 0 | 0 | Bon (batch B3 + alertes configurables B4 faits) |
+| M8 Supplier | 20 | 1 | 0 | 0 | Bon (catégorisation faite B5 ; onboarding sans assistant dédié) |
+| M9 Archiving | 15 | 2 | 0 | 0 | Bon (rapport conformité archives M14 #11 ; purge UI faite M9#8 ; arborescence dossiers partielle) |
+| M10 Audit | 21 | 1 | 0 | 0 | Très bon (rapport de synthèse agrégé M10 #12) |
+| M11 Reporting | 20 | 3 | 0 | 0 | Bon (cash-flow corrigé PROB-054 ; tendances temporelles M11 #7) |
+| M12 Integration | 7 | 9 | 0 | 0 | **Cadre + planif de synchro (B6)** ; pas de sync live externe |
+| M13 User/Access | 22 | 0 | 0 | 0 | Complet (M13 #3 UI dédiée dept access, 2026-06-21) |
+| M14 Security/Compliance | 18 | 3 | 0 | 0 | Très bon |
 
----
+> Les chiffres comptent chaque puce (UI element OU feature) du document de requirements. Total ≈ **262 items** : ~**236 ✅**, ~**40 🟠**, ~**8 ❌**, ~**0 🔴** (A1 cash-flow + A2 Mobile Money corrigés — PROB-054/055 ; motifs de rejet prédéfinis M4 #8 → C1 ; M13 #3 UI dept access → 2026-06-21 ; M5 #1 page dédiée + M5 #4 comparaison ligne-à-ligne → 2026-06-21).
 
-### P11-K — Larger Feature Builds 🟡 Medium
+## RÉPONSE À « est-ce 100 % implémenté ? »
+**Non.** Le système couvre **~85 % des items à 100 %**, mais il reste :
+- **0 bug runtime (🔴)** : les 2 bugs A1/A2 sont corrigés (cash-flow 500 → PROB-054 ; Mobile Money front/back → PROB-055, 2026-06-18).
+- **éléments absents (❌) restants** : *(aucun)*. *(Faits : checklist templates M4→B1, export rapport matching M5→B2, catégorisation fournisseur M8→B5, batch payments M7→B3, alertes paiement configurables M7→B4, sync schedule connecteurs M12→B6.)*
+- **~49 partiels (🟠)** : surtout des éléments présents mais incomplets (config par propriété au lieu d'UI, web responsive au lieu d'app mobile dédiée, framework au lieu de sync live, etc.).
 
-- [x] **P11-48** Build bulk/multi-file invoice upload (REQ-05): new endpoint accepting
-      multiple files + frontend multi-select upload UI. Completed 2026-06-15.
-      `POST /api/v1/invoices/{id}/documents/bulk` (ASSISTANT_COMPTABLE, multipart, `files`)
-      delegates per-file to the existing `upload(...)` and returns a per-file report
-      (`BulkUploadResultDTO`: uploaded list + per-file errors with reason) — valid files are
-      stored even when others fail (not all-or-nothing; same philosophy as the CSV import).
-      Frontend `BulkDocumentUpload` component (reuses `DocumentUploader`) wired into the invoice
-      detail page. i18n `invoice.bulkUpload.*`. 2 `InvoiceDocumentServiceTest` cases. Runtime: 201
-      with correct report (MIME rejection + per-file isolation) — happy-path storage covered by the
-      mocked-MinIO unit test (Docker/MinIO unavailable in-session).
-- [x] **P11-49** Correct `ArchivePage.tsx`'s misleading SHA-256/retention-policy text
-      (REQ-14, partial scope per `PLAN-CORRECTIONS.md` §5). Completed 2026-06-15.
-      `archive.retentionNote` (FR/EN + tsx fallback) rewritten to state only the truth: a SHA-256
-      checksum is computed+stored at upload (integrity reference); 10-year retention is a policy
-      target, not auto-enforced. Deferred re-verify-on-download (**PROB-042**) and automated
-      retention job (**PROB-043**) logged to `docs/KNOWN_ISSUES_REGISTRY.md`.
-- [x] **P11-50** Add append-only `document_access_log` table + logging hook in
-      `InvoiceDocumentController.download()` (REQ-16, partial scope). Completed 2026-06-15.
-      Migration `V48` (table + append-only triggers reusing V25's `prevent_append_only_mutation()`),
-      `DocumentAccessLog` entity + repository. `download()` now calls `generateDownloadUrlAndLog`
-      recording who/what/when/where (IP via shared `ClientIpResolver`). Deferred versioning
-      (**PROB-044**) and in-app viewer (**PROB-045**) logged. 1 `InvoiceDocumentServiceTest` case.
-- [x] **P11-51** Add an auto-refreshing "recent activity" panel to `AdminAuditPage.tsx`
-      (REQ-19, partial scope). Completed 2026-06-15. Live feed (react-query `refetchInterval` 15s)
-      over the existing `/audit-logs` endpoint, relative timestamps + live indicator. Deferred
-      statistical/ML anomaly detection (**PROB-046**) logged. i18n `admin.audit.recent.*`.
-      Runtime-verified (panel renders with 8 live entries + "En direct").
-- [x] **P11-52** Add `Department.budget` column via Flyway (REQ-20) + a budget-vs-actual
-      comparison report (REQ-21, partial scope). Completed 2026-06-15. Migration `V49`
-      (`departments.budget` NUMERIC(15,2) nullable), exposed in `DepartmentDTO` + settable via the
-      department update endpoint. `GET /api/v1/reports/budget-vs-actual` (DAF + ASSISTANT_COMPTABLE):
-      per-department budget vs committed spend (sum excluding BROUILLON/REJETE), variance,
-      utilization %. New `BudgetVsActualDTO`; "Budget vs Actual" section on `ReportsPage`. i18n
-      `reports.budget*`. Deferred report-builder/scheduling/distribution/executive-summary
-      (**PROB-047**) logged. 1 `ReportServiceTest` case. Runtime-verified: PUT budget 200+persists,
-      report 200 (assistant) / 403 (admin — separation of duties).
-- [x] **P11-53** Add encryption-status indicator widget + security-health dashboard
-      (REQ-24, partial scope — 2 of 8 items). Completed 2026-06-15. `GET /api/v1/admin/security-health`
-      (ADMIN): at-rest encryption coverage, MFA adoption %, login-failure trend (locked accounts +
-      failed attempts), webhook delivery success rate (7d). New `SecurityHealthService` +
-      `SecurityHealthDTO` + controller; count queries on `UserRepository` / `InvoiceRepository`.
-      "Security health" metrics panel on `SecuritySettingsPage`. i18n `admin.security.health.*`.
-      Deferred backup status / privacy-policy / incident reporting / SOX-IFRS checklist / compliance
-      calendar (**PROB-048**) logged. 2 `SecurityHealthServiceTest` cases. Runtime-verified: 200
-      (admin, all metrics) / 403 (assistant).
+## Bugs réels découverts pendant cette campagne (à corriger)
+1. **✅ Cash-flow projection** (`/reports/cash-flow`) : ~~500 `SQLGrammarException`~~ **CORRIGÉ (PROB-054, 2026-06-18)** — `CAST` des paramètres date/status/dept nullables dans `findAllWithFilters` ; 200 vérifié sur vrai PostgreSQL (`CashFlowProjectionIntegrationTest`). Impactait M7 #10 et M11.
+2. **✅ Mobile Money** : ~~`PaymentsPage` propose `MOBILE_MONEY` mais l'enum backend ne le contient pas~~ **CORRIGÉ (PROB-055, 2026-06-18)** — `MOBILE_MONEY` ajouté à l'enum + front aligné sur les noms d'enum (i18n FR/EN) ; 200 vérifié. Le mismatch touchait en fait les 4 méthodes (front EN vs enum FR).
 
-**P11-K Exit Criteria:** All 6 tasks delivered to their stated partial/full scope; every
-deferred remainder has a corresponding `docs/KNOWN_ISSUES_REGISTRY.md` entry per the
-Living Documentation Rule (CLAUDE.md §12).
-✅ Met 2026-06-15 — P11-48 bulk upload, P11-49 archive text fix, P11-50 access log (V48),
-P11-51 recent-activity panel, P11-52 budget-vs-actual (V49), P11-53 security-health dashboard.
-All deferred remainders logged as PROB-042 … PROB-048. Backend suite GREEN 334/0/0; frontend
-`tsc --noEmit` clean; i18n FR/EN parity 661/661.
+## Écarts fonctionnels (absents — décision d'implémentation requise)
+| Réf | Élément | Module |
+|-----|---------|--------|
+| ~~A1~~ | ~~Modèles de checklist de validation~~ — **fait (B1, 2026-06-18)** | M4 |
+| ~~A2~~ | ~~Export de rapport de rapprochement~~ — **fait (B2, 2026-06-18)** | M5 |
+| ~~A3~~ | ~~Traitement par lot des paiements (batch)~~ — **fait (B3, 2026-06-18)** | M7 |
+| ~~A4~~ | ~~Configuration d'alertes de paiement~~ — **fait (B4, 2026-06-18)** | M7 |
+| ~~A5~~ | ~~Catégorisation / segmentation fournisseurs~~ — **fait (B5, 2026-06-18)** | M8 |
+| ~~A6~~ | ~~Planification de synchronisation des connecteurs~~ — **fait (B6, 2026-06-19)** | M12 |
+| ~~A7~~ | ~~Champs *employee ID* / *approval limit* éditables (UI)~~ — **fait (B7, 2026-06-18)** | M1 |
+| ~~A8~~ | ~~Format **XML** en réception + bulk de plusieurs factures~~ — **fait (B8, 2026-06-19)** | M3 |
 
----
+## Limites de cette vérification (honnêteté)
+- Vérification = rendu d'écran + endpoints + chemins nominaux cliqués + lecture de code ciblée. **Tous les cas d'erreur et toutes les combinaisons rôle×champ n'ont pas été exhaustivement exercés.**
+- « Responsive » testé à 390px (rendu OK) mais pas la qualité visuelle mobile complète.
+- Les connecteurs M12 sont un **cadre** : aucun système externe réel n'a été contacté.
 
-**Phase 11 Exit Criteria:** All 53 `P11-NN` tasks resolved or honestly left `[ ]` with
-their severity intact (no silent TODOs). `./mvnw test` — 0 failures. Frontend builds
-without TS errors. None of CLAUDE.md §3's 10 absolute rules violated by any new code.
-All deferred-scope items logged in `docs/KNOWN_ISSUES_REGISTRY.md`. This checklist is
-executed by Phase 10 of the audit cycle (`docs/audit/PLAN-CORRECTIONS.md`); once complete,
-the audit cycle proceeds to its own Phase 11 (project documentation updates).

@@ -63,12 +63,12 @@ This is the **actual implemented stack**. All code in this repository uses these
 | **Backend language** | Java | 21 | ✅ |
 | **Backend framework** | Spring Boot | 3.4.1 | ✅ |
 | **Database** | PostgreSQL | 18-alpine | ✅ |
-| **Auth tokens** | JWT — HS256 symmetric (JJWT) | 0.12.6 | ⚠️ Must be changed to RS256 — see Section 4.3 |
+| **Auth tokens** | JWT — RS256 asymmetric (JJWT, RSA-2048) | 0.12.6 | ✅ |
 | **Password hashing** | BCrypt — Spring Security | Strength 12 | ✅ |
 | **MFA** | TOTP — dev.samstevens.totp | 1.7.1 | ✅ |
-| **Encryption in transit** | TLS 1.3 | — | ⚠️ Infrastructure-level only — see Section 4.3 |
+| **Encryption in transit** | TLS 1.3 | — | ⚠️ Prod profile config only (no keystore shipped) — see open gaps in `docs/TASKS.md` |
 | **Encryption at rest** | AES-256/GCM via EncryptionUtil | — | ✅ |
-| **OCR** | ⚠️ NOT IMPLEMENTED — Apache Tika (MIME detection only) | 2.9.2 | 🔴 Critical gap — see Section 4.3 |
+| **OCR** | Tess4J (Tesseract) + PDFBox text layer + Apache Tika (MIME) | tess4j 5.11.0 / pdfbox 3.0.3 / tika 2.9.2 | ✅ |
 | **DB migrations** | Flyway | — | ✅ |
 | **Object storage** | MinIO | 8.5.13 | ✅ |
 | **Invoice state machine** | Spring State Machine | 4.0.0 | ✅ |
@@ -76,7 +76,7 @@ This is the **actual implemented stack**. All code in this repository uses these
 | **Excel export** | Apache POI | 5.3.0 | ✅ |
 | **Email (dev)** | MailHog | — | ✅ (dev only — replace with real SMTP for production) |
 | **Containerisation** | Docker + Docker Compose | — | ✅ |
-| **CI pipeline** | ⚠️ NOT IMPLEMENTED | — | 🟡 Missing — see Section 4.3 |
+| **CI pipeline** | ⚠️ NOT IMPLEMENTED | — | 🟡 Missing — tracked as an open gap in `docs/TASKS.md` |
 
 ### 4.2 Testing Stack
 
@@ -85,83 +85,14 @@ This is the **actual implemented stack**. All code in this repository uses these
 | **Backend unit / integration** | JUnit 5 + Mockito + Testcontainers | ✅ |
 | **Frontend component** | Vitest + React Testing Library | ✅ |
 | **End-to-end** | Playwright | ✅ |
-| **Security scanning** | OWASP ZAP | ⚠️ Not implemented — see Section 4.3 |
+| **Security scanning** | OWASP ZAP | ⚠️ Not implemented — tracked as an open gap in `docs/TASKS.md` |
 | **Load testing** | Not implemented | ⚠️ Not implemented |
 
-### 4.3 Known Gaps — Must Be Fixed
-
-These are missing or incorrect items that must be addressed before the system is complete and compliant with the project requirements.
-
----
-
-#### GAP 1 — OCR not implemented 🔴 Critical
-
-**Current state:** Apache Tika 2.9.2 is in the codebase but only performs MIME type detection. It cannot read text from invoice images or scanned PDFs. The Supplier's "confirm/correct OCR data" flow in the submission portal has no working backend.
-
-**What OCR must do:** When a supplier uploads an invoice (PDF, JPEG, PNG, TIFF), the system must extract: invoice number, invoice date, total amount, line items (description, quantity, unit price), supplier identifier, and PO reference number. The supplier then reviews and corrects the extracted fields before final submission.
-
-**Fix:** Add **Tess4J** (the official Java JNA wrapper for Tesseract OCR) as a dependency. Implement an `OcrService` that:
-1. Accepts an uploaded file.
-2. Uses Tika (already present) to detect MIME type.
-3. If the file is a text-based PDF, extracts text via a PDF text-layer reader (PDFBox, already likely available).
-4. If the file is an image or scanned PDF, converts pages to images and runs Tess4J to extract text.
-5. Parses the raw extracted text into structured fields (invoice number, date, amount, line items, PO reference).
-6. Returns the structured fields to the frontend for supplier confirmation.
-
-Keep Tika for MIME detection. Add Tess4J for actual OCR.
-
----
-
-#### GAP 2 — JWT uses HS256 instead of RS256 🟠 High
-
-**Current state:** JJWT 0.12.6 configured with a symmetric HS256 shared secret. Any service that can verify tokens can also forge them.
-
-**Why it matters:** RS256 (asymmetric) is the standard for financial APIs and is explicitly specified in the project security requirements. With RS256, the private key signs tokens and is kept secret on the server; the public key verifies them and can be distributed safely.
-
-**Fix:** In the Spring Security / JJWT configuration:
-1. Generate an RSA-2048 key pair (or load from a Java KeyStore / `.pem` files).
-2. Replace `Keys.hmacShaKeyFor(secret.getBytes())` with the `RsaKey` / `PrivateKey` + `PublicKey` pattern in JJWT.
-3. Use the private key when calling `.signWith(privateKey, SignatureAlgorithm.RS256)`.
-4. Use the public key when calling `.setSigningKey(publicKey)` in the parser.
-5. Store the private key securely (environment variable or secrets manager — never commit to the repository).
-
----
-
-#### GAP 3 — GitHub Actions CI pipeline not implemented 🟡 Medium
-
-**Fix:** Create `.github/workflows/ci.yml`. The pipeline must run on every pull request and push to main:
-1. Checkout the repository.
-2. Set up Java 21 and build the backend (Maven or Gradle).
-3. Run JUnit 5 tests.
-4. Set up Node.js and install frontend dependencies.
-5. Run Vitest tests.
-6. Build Docker images.
-7. Report pass/fail status on the pull request.
-
----
-
-#### GAP 4 — TLS 1.3 not explicitly configured in Spring Boot 🟡 Medium
-
-**Current state:** TLS is handled at infrastructure level only (reverse proxy / load balancer). The Spring Boot application has no SSL configuration.
-
-**Fix:** In `application-prod.yml` (production profile):
-```yaml
-server:
-  ssl:
-    enabled: true
-    protocol: TLSv1.3
-    enabled-protocols: TLSv1.3
-    key-store: ${SSL_KEYSTORE_PATH}
-    key-store-password: ${SSL_KEYSTORE_PASSWORD}
-    key-store-type: PKCS12
-```
-This ensures TLS is enforced at the application layer regardless of infrastructure configuration.
-
----
-
-#### GAP 5 — OWASP ZAP security scan not implemented 🟡 Medium
-
-**Fix:** Add a security scan job to the CI pipeline (or a separate `security-scan.yml` workflow). Run an OWASP ZAP baseline scan against the test deployment environment. At minimum, configure ZAP to scan all authenticated API endpoints. For a financial system handling encrypted bank details and personal data, a baseline automated scan is the minimum acceptable security validation.
+> **Note — Known gaps moved.** The former Section 4.3 "Known Gaps — Must Be Fixed" listed
+> implementation gaps (OCR, JWT algorithm, CI, TLS, security scan). OCR (Tess4J) and JWT RS256
+> are now implemented; the remaining real gaps (CI pipeline, TLS keystore, OWASP ZAP scan) are
+> tracked in **`docs/TASKS.md` → "Open Gaps"**, which is the single living roadmap. This briefing
+> documents the project's fixed identity and scope, not the moving task state.
 
 ---
 

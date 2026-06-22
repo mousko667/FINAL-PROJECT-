@@ -18,7 +18,7 @@ Critical gaps closed after the original audit:
 - Supplier email verification now sends an email template during registration.
 - Supplier registration has a password-strength indicator while BCrypt strength 12 remains enforced server-side.
 - Staff profile fields were added to user persistence and DTOs: employee ID, department ID, and approval limit.
-- Required production RBAC roles are now seeded through Flyway, including `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF`, `ROLE_AUDITEUR`, and department validator roles.
+- Required production RBAC roles are now seeded through Flyway, including `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF`, and department validator roles. *(Updated 2026-06-22: `ROLE_AUDITEUR` was subsequently removed — see migrations V31/V33. The system has exactly 6 role categories; audit access is split between DAF (financial trail) and ADMIN (system/security trail). Older "auditor" mentions below are historical and superseded by this note.)*
 - Invoice create/update DTOs and supplier submission now carry `purchaseOrderId`; matching visibility is exposed through `GET /api/v1/invoices/{id}/matching`.
 - Matching overrides are append-only and DAF/Admin restricted; matching results no longer overwrite previous decisions.
 - Own-invoice approval is blocked in approval workflow logic.
@@ -26,7 +26,7 @@ Critical gaps closed after the original audit:
 - Supplier portal routing, profile, documents, submit, resubmit, and dashboard API contract gaps were closed.
 - Supplier admin document endpoints and supplier performance fallback response were added.
 - Audit logs and webhook deliveries are protected by append-only Flyway triggers.
-- Webhook secrets are encrypted at rest while retaining SHA-256 hash storage.
+- Webhook secrets: only the SHA-256 hash is stored (sufficient for HMAC verification). *(Updated 2026-06-22: the recoverable encrypted-secret column was removed in V30 — the raw secret is shown once at registration and is not re-derivable from the DB.)*
 - AES encryption now uses explicit AES/GCM/NoPadding with 32-byte key validation.
 - Missing controller method authorization annotations were added where the audit found public-looking gaps.
 - Role-selection registration, staff profile, role-specific dashboard/queue views, invoice history, automatic archive enforcement, 10-year DB retention triggers, and production secret validation were completed in the final remediation pass.

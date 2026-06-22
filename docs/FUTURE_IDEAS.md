@@ -40,7 +40,7 @@ par défaut » d'un futur modèle multi-règles, sans perte de données.
 **niveau montant/total** avec tolérance %/montant. Le résultat est intégré au détail facture
 (`/invoices/:id`, panneau via `GET /invoices/{id}/matching`), pas dans une page dédiée.
 `ThreeWayMatchingResult` est stocké en **append-only** ; l'UI n'affiche que le **dernier**
-résultat. Items 🟠 restants dans `COMPLIANCE_MATRIX.md` (M5) : UI #1, #4, #9, #10 + Features #2, #6, #7.
+résultat. Items 🟠 restants dans `docs/TASKS.md §C` (M5) : UI #1, #4, #9, #10 + Features #2, #6, #7.
 
 **Évolutions écartées pour l'instant (à reconsidérer si le besoin métier se confirme) :**
 - **#4 Comparaison ligne-à-ligne** : afficher PO / GRN / facture côte à côte, ligne par ligne,
@@ -78,7 +78,7 @@ d'historique se branche sans changement de modèle.
 **Contexte :** la balance âgée complète (table par tranches d'ancienneté) **existe déjà**
 côté back (`AgingReportDTO`) et est exposée dans Rapports/Paiements. Le dashboard de
 l'Assistant Comptable (finance) n'affiche aujourd'hui qu'un KPI « Factures en retard », pas
-la table d'aging par tranches. Item 🟠 dans `COMPLIANCE_MATRIX.md` (M2/M6 UI #3).
+la table d'aging par tranches. Item 🟠 dans `docs/TASKS.md §C` (M2/M6 UI #3) ; voir aussi gap **G5**.
 
 **Évolution écartée pour l'instant (à reconsidérer si le besoin se confirme) :** remonter un
 **widget aging** (table/graphe par tranches : 0-30 / 31-60 / 61-90 / 90+ jours) directement

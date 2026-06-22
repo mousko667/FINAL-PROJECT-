@@ -10,7 +10,7 @@
 **Name:** Système de Gestion des Factures Fournisseurs — OCT  
 **Client:** Owendo Container Terminal (OCT)  
 **Type:** Final Year Bachelor Project (enterprise-grade quality expected)  
-**Stack:** Spring Boot 3.x · PostgreSQL 15 · React 18 + TypeScript · MinIO · Docker  
+**Stack:** Spring Boot 3.4 · Java 21 · PostgreSQL 18 · React 19 + TypeScript · MinIO · Flyway · Docker  
 **Languages:** French (primary UI) + English (secondary) — all user-facing text must be bilingual  
 
 ---
@@ -25,20 +25,25 @@ Before touching any file, read these documents in order:
 4. `docs/DATABASE.md` — schema, naming, constraints
 5. `docs/API.md` — endpoint contract
 6. `docs/CONVENTIONS.md` — code style, naming, patterns
-7. `docs/TASKS.md` — current phase and next task
+7. `docs/TASKS.md` — living implementation roadmap: current status by module + open gaps
 8. `docs/TESTING.md` — what tests are required for every feature
-## CRITICAL — No autonomous planning
 
-The development plan already exists in full in `docs/TASKS.md`.
+> **Sources of truth (business scope, fixed):** `docs/Project requirements.txt` (14 modules),
+> `docs/REQUIREMENTS-MATRIX.md` (departmental matrix, ref. 25627), `docs/OCT_System_Briefing.md`
+> (project identity & rules). **Ground truth for *what is built*:** the code itself, recorded in
+> `docs/TASKS.md` (§A Open Gaps · §B Out of Scope · §C status by module).
 
-- Do NOT create your own implementation plan
-- Do NOT reorder, rename, or reinterpret tasks  
-- Do NOT add tasks that don't exist in docs/TASKS.md
-- Do NOT skip tasks because they seem "already done"
-- Execute tasks EXACTLY as written, in the order they appear
-- If a task is ambiguous, check docs/WORKFLOW.md and docs/ARCHITECTURE.md
-  before making any assumption — never invent a solution
-- If genuinely blocked, STOP and report the blocker — do not work around it
+## Planning discipline
+
+`docs/TASKS.md` is the single living roadmap. The original phase plan (`P{X}-{XX}`) and the
+former `docs/COMPLIANCE_MATRIX.md` were merged into it on 2026-06-22.
+
+- Work from `docs/TASKS.md §A Open Gaps` for what remains; respect `§B Out of Scope`.
+- Do NOT silently invent scope: anything not in the Project Requirements / Briefing needs a decision.
+- Keep `docs/TASKS.md` current: when a gap is closed or a module status changes, update it.
+- If a requirement is ambiguous, check `docs/WORKFLOW.md` then `docs/PRD.md` / the Briefing
+  before making any assumption — never invent a solution.
+- If genuinely blocked, STOP and report the blocker — do not work around it.
 
 ---
 
@@ -75,27 +80,26 @@ The development plan already exists in full in `docs/TASKS.md`.
 ---
 ## 4. File Creation Rules — Strict
 
-### Only create files that are explicitly listed in docs/TASKS.md or directly requested.
+### Only create files that the task at hand needs, or that the developer directly requested.
 
 **Never create unrequested files such as:**
 - Extra markdown docs (NOTES.md, SETUP.md, CHANGELOG.md, TODO.md, SUMMARY.md…)
-- Example or sample files not in the task
+- Example or sample files not needed by the task
 - Duplicate config files
-- "Helper" scripts not in the task list
-- README files until task P8-08 explicitly asks for it
+- "Helper" scripts not needed by the task
 
-**When completing a task, create ONLY:**
-1. The exact files the task describes
+**When implementing a feature/gap, create ONLY:**
+1. The exact files the feature needs
 2. The test file that corresponds to it
-3. The Flyway migration if the task says "Create migration"
+3. The Flyway migration if a schema change is required (next contiguous version number)
 
-**If you think an extra file would be useful**, add it as a new task
-at the bottom of the current phase in `docs/TASKS.md` instead of
-creating it immediately. Let the developer decide.
+**If you think an extra file would be useful**, note it as a new item under
+`docs/TASKS.md §A Open Gaps` instead of creating it immediately. Let the developer decide.
 
 **The only files you may always update without being asked:**
-- `docs/TASKS.md` — mark tasks ✅
+- `docs/TASKS.md` — update module status / close open gaps
 - `docs/MEMORY.md` — append discoveries
+- `docs/KNOWN_ISSUES_REGISTRY.md` — log every bug found and fixed (MANDATORY)
 - `messages_fr.properties` and `messages_en.properties` — add new keys
 ---
 
@@ -134,8 +138,10 @@ Final: ARCHIVE
 **Departments requiring ONE approval level (N1 only):**
 - DRH, Direction Générale, Finance, Terminal, Communication & RSE, QHSSE
 
-**There is NO supplier portal.** Suppliers send invoices by email. The system is internal only.  
-**There are NO notifications to suppliers.** All notifications are internal.
+**⚠ CORRECTION (verified 2026-06-06) :** A supplier portal DOES exist at `/supplier/*`.
+Suppliers can self-register, log in, submit their own invoices, and track status.
+Supplier notifications (submission confirmed, rejected, paid) ARE implemented via email + in-app.
+The CLAUDE.md original statement was incorrect and has been superseded by actual implementation.
 
 ---
 
@@ -145,9 +151,10 @@ After completing any feature or task:
 
 1. **Self-check** — run through `docs/FEEDBACK_LOOP.md` checklist
 2. **Test first** — run `./mvnw test` before marking a task done
-3. **Update state** — mark the task in `docs/TASKS.md` as ✅ Done
+3. **Update state** — update the relevant module status / close the gap in `docs/TASKS.md`
 4. **Log issues** — append any discovered issues to `docs/MEMORY.md` under "Known Issues"
-5. **Never skip** — a task is not done until tests pass and the checklist is clean
+5. **Log bugs** — if you fixed a bug, add it to `docs/KNOWN_ISSUES_REGISTRY.md` BEFORE committing
+6. **Never skip** — a task is not done until tests pass and the checklist is clean
 
 ---
 
@@ -156,7 +163,7 @@ After completing any feature or task:
 - Ambiguous business rule? → Check `docs/WORKFLOW.md` first, then `docs/PRD.md`
 - Ambiguous technical decision? → Check `docs/ARCHITECTURE.md`
 - Unknown endpoint shape? → Check `docs/API.md`
-- Not sure which task is next? → Check `docs/TASKS.md` for the first unchecked item in the current phase
+- Not sure what to work on next? → Check `docs/TASKS.md §A Open Gaps`
 
 ---
 
@@ -168,7 +175,7 @@ A feature is complete when:
 - [ ] Integration test covers the endpoint with correct role
 - [ ] French + English translation keys added
 - [ ] Swagger `@Operation` annotation added to the endpoint
-- [ ] Task marked ✅ in `docs/TASKS.md`
+- [ ] `docs/TASKS.md` updated (module status / open gap closed)
 - [ ] No compiler warnings
 - [ ] `./mvnw test` passes with 0 failures
 
@@ -182,10 +189,9 @@ to `docs/MEMORY.md` in this exact format:
 ```
 ## Session Checkpoint
 **Date:** {date}
-**Last completed task:** P{X}-{XX}
-**Phase:** {phase number and name}
-**Next task:** P{X}-{XX}
-**Branch:** main
+**Last completed work:** {module / gap ID, e.g. "G1 CI pipeline" or "M5 #4"}
+**Next work:** {module / gap ID}
+**Branch:** {branch}
 **Last commit:** {commit hash}
 **Notes:** {any blockers, decisions, or context needed to resume}
 ```
@@ -210,9 +216,8 @@ Instead, report the blocker in this exact format:
 
 ---
 BLOCKER REPORT
-Current task: P{X}-{XX} — {task name from docs/TASKS.md}
-Phase: {phase number and name}
-Last successful task: P{X}-{XX}
+Current work: {module / gap ID — e.g. "G1 CI pipeline"}
+Last successful work: {module / gap ID}
 Last commit: {hash}
 
 What I was doing:
@@ -233,6 +238,77 @@ Then STOP and wait for instructions.
 Never run more than 2 fix attempts before issuing a blocker report.
 Never run commands just to gather diagnostic information —
 read existing log files instead.
+
+---
+
+## 12. Living Documentation Rule — MANDATORY
+
+> This rule applies to every agent, every session, every project that uses these instruction files.
+
+**Every time a problem is encountered AND resolved, the agent MUST:**
+
+1. Add the problem to `docs/KNOWN_ISSUES_REGISTRY.md` (before committing the fix) with:
+   - Root cause (WHY it happened, not just what happened)
+   - Exact solution (which files, which changes)
+   - Preventive rule (how to never reproduce it)
+
+2. If the problem reveals a missing rule, update the relevant doc:
+   - Bug about entity naming → add to `docs/CONVENTIONS.md`
+   - Bug about security → add to `docs/ARCHITECTURE.md §5` and `CLAUDE.md §3`
+   - Bug about deployment → add to `docs/ARCHITECTURE.md §4.3`
+   - Bug about testing → add to `docs/TESTING.md`
+   - Bug about workflow logic → add to `docs/WORKFLOW.md`
+
+3. If the problem was caused by an INCORRECT rule in these docs, CORRECT the rule.
+   Do not preserve wrong information because it was the original instruction.
+
+**Why this matters:** These files are used as reference instructions for future projects.
+Each bug fixed and documented here prevents the same bug from happening again.
+An instruction file that does not reflect real-world experience is less useful than one that does.
+
+**Format for the update:**
+```
+// In the relevant section, add:
+// ⚠ LESSON LEARNED (PROB-NNN, date): {short description}
+// See docs/KNOWN_ISSUES_REGISTRY.md for full context.
+```
+
+---
+
+## 13. Known Bug Prevention Rules (from KNOWN_ISSUES_REGISTRY.md)
+
+These rules were derived from real bugs encountered on this project. Apply them preemptively.
+
+### Frontend — Auth & Routing
+- **NEVER** initialise `user: null` in Redux if a JWT token exists in localStorage → always rehydrate via `GET /profile` at app startup (see PROB-001)
+- **ALWAYS** create separate route guards per role category: `ProtectedRoute` (staff), `SupplierRoute` (suppliers) — never one guard for all (see PROB-002)
+- **ALWAYS** use `RoleGuard` with `fallback={null}` in navigation items, `PageRoleGuard` with error UI on page-level guards (see PROB-004)
+
+### Backend — Entities & Mapping
+- **NEVER** name boolean fields `boolean isXxx` with Lombok — Lombok generates `isIsXxx()` (double prefix). Name it `boolean xxx` → Lombok generates `isXxx()` correctly (see PROB-003)
+- **ALWAYS** compile + test immediately after any field rename — use class-specific replacements, not global regex (see PROB-010)
+
+### Backend — Flyway
+- **NEVER** modify the content of a migration that has already been applied. Its checksum is locked in `flyway_schema_history`. Any change requires a NEW migration with the next version number (see PROB-009)
+
+### Backend — iText 8 PDF
+- **NEVER** use `Cell.setBorderColor(color)` — it does not exist in iText 8. Use `Cell.setBorder(new SolidBorder(color, width))` (see PROB-012)
+- **NEVER** use `BigDecimal.valueOf(BigDecimal)` — use `.longValue()` or `.doubleValue()` to convert (see PROB-013)
+
+### Frontend — Error Display
+- **ALWAYS** pass backend error messages through `t(key)` before display — the backend may return i18n keys as error strings (see PROB-006)
+- **ALWAYS** add a silent error handler on WebSocket/STOMP connections to prevent console spam (see PROB-007)
+
+### Security
+- **NEVER** allow a user to change their own email via a simple PUT — email changes require confirmation flow (see PROB-008)
+
+### Infrastructure — Docker Deploy
+- Frontend deploy procedure: `npm run build` → `docker cp dist/. oct_frontend:/usr/share/nginx/html/` → `docker exec oct_frontend nginx -s reload`
+- Backend deploy procedure: `mvnw.cmd -DskipTests package` → `docker cp target/*.jar oct_backend:/app/app.jar` → `docker restart oct_backend`
+- NEVER assume `docker restart` updates static files in nginx — the files must be explicitly copied (see PROB-011)
+
+### Audit Log
+- **ALWAYS** check the actual endpoint and field names when an audit/list page shows empty — the issue is usually a wrong endpoint or a wrong field name, not an empty database (see PROB-005)
 
 ---
 
