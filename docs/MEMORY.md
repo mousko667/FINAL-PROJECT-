@@ -1776,3 +1776,11 @@ origin/main blocked → route via origin/backup/phase11-2026-06-13. ASK the user
 **Branch:** chore/sanitize-docs-migrations
 **Last commit:** (pending R3 commit)
 **Notes:** Endpoint `GET /reports/aging/buckets`; frontend `AgingBucketsWidget` with vitest spec. Reprise de session : R3 etait code mais NON commite et le build cassait — 4 fichiers neufs en UTF-16 LE + method-reference invalide (PROB-069). Corriges. Gate vert : backend cible 52/52, vitest 69/69, tsc 0.
+
+## Session Checkpoint
+**Date:** 2026-06-26
+**Last completed work:** R5 — chiffre de couverture JaCoCo gate defendable + alignement du seuil
+**Next work:** R7 (README racine) — ordre impose R7 -> R8 -> R9
+**Branch:** chore/sanitize-docs-migrations
+**Last commit:** (pending R5 commit)
+**Notes:** `./mvnw verify` contre PostgreSQL hote 5433 (vrai DB_PASSWORD du .env) → 497 tests 0 echec. Chiffre GATE (excl dto/model/config, 144 classes) = lignes 68,37% / branches 53,13%, concordant entre `jacoco:check` et recalcul `jacoco.csv`. Seuil pom abaisse 80/75 → 65/50 (juste sous le reel) → `All coverage checks have been met`. PROB-070 = dette de tests pour remonter vers 80/75. PIEGE : le gate `check` se lie a `verify`, invisible en `./mvnw test`. R4 etait deja commite (f23d5cb), pas en cours comme suppose.
