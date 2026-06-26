@@ -77,7 +77,7 @@ export default function AgingBucketsWidget() {
       </div>
       <div className="p-5">
         {isEmpty ? (
-          <p data-testid="aging-buckets-empty" className="text-sm text-center text-gray-400 py-6">
+          <p data-testid="aging-buckets-empty" className="text-sm text-center text-gray-500 py-6">
             {t('dashboard.agingBuckets.empty')}
           </p>
         ) : (

@@ -66,7 +66,7 @@ function NavItem({
 
 function SectionLabel({ label }: { label: string }) {
   return (
-    <p className="px-3 pt-4 pb-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+    <p className="px-3 pt-4 pb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">
       {label}
     </p>
   )
@@ -220,7 +220,7 @@ export default function Sidebar() {
 
       {/* Footer */}
       <div className="px-4 py-3 border-t border-white/10 flex items-center justify-between">
-        <span className="text-[10px] text-slate-500">v1.0.0 · OCT</span>
+        <span className="text-[10px] text-slate-400">v1.0.0 · OCT</span>
         <div className="w-1.5 h-1.5 rounded-full bg-green-400" title="Système opérationnel" />
       </div>
     </aside>

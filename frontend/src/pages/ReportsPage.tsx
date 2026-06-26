@@ -20,7 +20,7 @@ function KpiCard({ title, value, sub, icon, color }: { title: string; value: str
       <div>
         <p className="text-xs text-muted-foreground uppercase tracking-wide">{title}</p>
         <p className="text-2xl font-bold text-gray-900 mt-0.5">{value}</p>
-        {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+        {sub && <p className="text-xs text-gray-500 mt-0.5">{sub}</p>}
       </div>
     </div>
   )
@@ -111,16 +111,16 @@ export default function ReportsPage() {
         {/* Date range selector */}
         <div className="bg-white rounded-xl border p-5 flex flex-wrap items-end gap-4">
           <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{t('reports.startDate')}</label>
-            <input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)}
+            <label htmlFor="reports-from-date" className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{t('reports.startDate')}</label>
+            <input id="reports-from-date" type="date" value={fromDate} onChange={e => setFromDate(e.target.value)}
               className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{t('reports.endDate')}</label>
-            <input type="date" value={toDate} onChange={e => setToDate(e.target.value)}
+            <label htmlFor="reports-to-date" className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{t('reports.endDate')}</label>
+            <input id="reports-to-date" type="date" value={toDate} onChange={e => setToDate(e.target.value)}
               className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
           </div>
-          <p className="text-xs text-gray-400 self-center">Date range applies to exports only. Live metrics show all-time data.</p>
+          <p className="text-xs text-gray-500 self-center">{t('reports.dateRangeHint')}</p>
         </div>
 
         {/* KPIs */}
@@ -143,7 +143,7 @@ export default function ReportsPage() {
           {budgetLoading ? (
             <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
           ) : !budget?.lines?.length ? (
-            <p className="text-sm text-center text-gray-400 py-4">{t('reports.noData')}</p>
+            <p className="text-sm text-center text-gray-500 py-4">{t('reports.noData')}</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -197,7 +197,7 @@ export default function ReportsPage() {
           {agingLoading ? (
             <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
           ) : !aging?.buckets?.length ? (
-            <p className="text-sm text-center text-gray-400 py-4">{t('reports.noData')}</p>
+            <p className="text-sm text-center text-gray-500 py-4">{t('reports.noData')}</p>
           ) : (
             <div className="space-y-3">
               {aging.buckets.map(b => (
@@ -224,7 +224,7 @@ export default function ReportsPage() {
           {bnLoading ? (
             <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
           ) : !bottlenecks?.length ? (
-            <p className="text-sm text-center text-gray-400 py-4">No SLA breaches detected — all approvals are within the 3-day SLA.</p>
+            <p className="text-sm text-center text-gray-500 py-4">No SLA breaches detected — all approvals are within the 3-day SLA.</p>
           ) : (
             <table className="w-full text-sm">
               <thead>
@@ -257,7 +257,7 @@ export default function ReportsPage() {
           {cfLoading ? (
             <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
           ) : !cashFlow?.weeks?.length ? (
-            <p className="text-sm text-center text-gray-400 py-4">{t('reports.noData')}</p>
+            <p className="text-sm text-center text-gray-500 py-4">{t('reports.noData')}</p>
           ) : (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={cashFlow.weeks}>

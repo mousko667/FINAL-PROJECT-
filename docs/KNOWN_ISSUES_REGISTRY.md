@@ -867,6 +867,18 @@
 
 ---
 
+### [PROB-071] (R8) Violations WCAG 2.1 AA : champs date sans label + contrastes de texte insuffisants
+- **Categorie :** Frontend / Accessibilite
+- **Severite :** 🟠 Moyen (1 critique `label`, plusieurs `color-contrast` serieux) — bloquant pour la conformite WCAG 2.1 AA annoncee comme NFR.
+- **Decouvert :** 2026-06-26 — R8, passe axe-core 4.10.2 en runtime (Playwright) sur les pages cles.
+- **Symptome :** axe signale `label` (critical) sur les filtres `<input type="date">` (liste factures, rapports) et `color-contrast` (serious) sur du texte gris/rouge clair : sidebar `text-slate-500` sur fond #0f2540 (3.24), etats vides `text-gray-400` sur blanc (2.53), message d'erreur `text-red-500` (3.76) — tous sous le seuil 4.5:1.
+- **Cause racine :** (1) des inputs date crees sans `<label>` associe ni `aria-label` (un label visuel pose a cote ne suffit pas si non lie par `htmlFor`/`id` ou wrapping). (2) usage par defaut des teintes Tailwind les plus claires (`gray-400`, `slate-500`, `red-500`) pour du texte secondaire, qui ne passent pas le contraste AA sur leur fond respectif.
+- **Solution appliquee :** (1) `aria-label` (via i18n) ou association `label[htmlFor]`↔`input[id]` sur tous les champs concernes ; clés `invoice.filterFromDate/ToDate/Status` + `reports.dateRangeHint` (FR+EN). (2) remonter les teintes : `gray-400`→`gray-500`, `slate-500`→`slate-400` (fond sombre), `red-500`→`red-600`. Re-scan axe : **0 violation** sur login/MFA/dashboard/factures/rapports/paiements/profil. Vitest 69/69, tsc 0. Detail : `docs/audit/wcag-a11y-audit.md`.
+- **Regle preventive :** tout `<input>`/`<select>` doit avoir un label programmatique (`<label htmlFor>` lie OU `aria-label`), jamais seulement un texte adjacent. Pour le texte secondaire, ne pas descendre sous `gray-500`/`slate-400` sur blanc, et verifier le contraste sur fond sombre (sidebar) au cas par cas. Lancer une passe axe-core en runtime avant toute revendication WCAG.
+- **Fichiers modifies :** `Sidebar.tsx`, `AgingBucketsWidget.tsx`, `InvoiceListPage.tsx`, `ReportsPage.tsx`, `PaymentsPage.tsx`, `i18n/fr.json`, `i18n/en.json`.
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :

@@ -281,6 +281,9 @@
       "unreadable_file": "Le fichier est illisible ou dans un format non supporté."
     },
     "reference": "Référence",
+    "filterFromDate": "Filtrer à partir du",
+    "filterToDate": "Filtrer jusqu'au",
+    "filterStatus": "Filtrer par statut",
     "supplier": "Fournisseur",
     "selectSupplier": "— Sélectionner un fournisseur —",
     "purchaseOrder": "Bon de commande",
@@ -393,6 +396,7 @@
     "exportPdfComplianceDesc": "Conformité de la séquence d'approbation, respect des SLA, exceptions et substitutions pour la période sélectionnée.",
     "startDate": "Date de début",
     "endDate": "Date de fin",
+    "dateRangeHint": "La plage de dates s'applique uniquement aux exports. Les indicateurs en direct affichent toutes les données.",
     "generating": "Génération en cours...",
     "downloadReady": "Téléchargement prêt",
     "kpiTitle": "Indicateurs clés de performance",

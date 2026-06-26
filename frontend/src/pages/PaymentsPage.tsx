@@ -372,7 +372,7 @@ export default function PaymentsPage() {
           {paymentsLoading ? (
             <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
           ) : paymentList.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-400">
+            <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-500">
               <CreditCard className="w-8 h-8" />
               <p className="text-sm">{t('payments.noHistory', 'Aucun paiement enregistré')}</p>
             </div>

@@ -142,6 +142,7 @@ export default function InvoiceListPage() {
         {tab === 'all' && (
           <select
             id="filter-status"
+            aria-label={t('invoice.filterStatus')}
             className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 min-w-[160px]"
             onChange={(e) => handleFilterChange('status', e.target.value)}
           >
@@ -155,12 +156,14 @@ export default function InvoiceListPage() {
         <input
           id="filter-from-date"
           type="date"
+          aria-label={t('invoice.filterFromDate')}
           className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           onChange={(e) => handleFilterChange('fromDate', e.target.value)}
         />
         <input
           id="filter-to-date"
           type="date"
+          aria-label={t('invoice.filterToDate')}
           className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           onChange={(e) => handleFilterChange('toDate', e.target.value)}
         />
@@ -175,7 +178,7 @@ export default function InvoiceListPage() {
         )}
 
         {isError && (
-          <div className="text-center py-20 text-red-500 text-sm">{t('app.error')}</div>
+          <div className="text-center py-20 text-red-600 text-sm">{t('app.error')}</div>
         )}
 
         {!isLoading && !isError && (

@@ -1792,3 +1792,11 @@ origin/main blocked → route via origin/backup/phase11-2026-06-13. ASK the user
 **Branch:** chore/sanitize-docs-migrations
 **Last commit:** (pending R7 commit)
 **Notes:** R7 etait DEJA satisfait : le README.md racine cree pendant R2 couvre tout (stack, PG hote 5433/oct_invoice, docker compose, profils dev/test/prod, TLS, tests, comptes Test1234!). Verifie factuellement : 14 usernames du README presents dans le seed V34 ; profils dev/test/prod confirmes dans application.yaml ; baseline Flyway V1-V34 (34 migrations) exacte. G6 -> ✅. Seul changement : doc (TASKS/MEMORY), pas de code.
+
+## Session Checkpoint
+**Date:** 2026-06-26
+**Last completed work:** R8 — audit accessibilite WCAG 2.1 AA (axe-core runtime) + correctifs
+**Next work:** R9 (OPTIONNEL — historique matching) puis cloture du lot R2-R9
+**Branch:** chore/sanitize-docs-migrations
+**Last commit:** (pending R8 commit)
+**Notes:** Audit axe-core 4.10.2 via Playwright sur app reelle (front :3000 + back :8080 dev). 7 pages auditees → 0 violation apres fix (login/MFA/dashboard/factures/rapports/paiements/profil). Corrige : labels date manquants (aria-label/htmlFor) + contrastes (gray-400→500, slate-500→400, red-500→600). PROB-071. Resultats : docs/audit/wcag-a11y-audit.md. Vitest 69/69, tsc 0. IMPORTANT ENV : pour demarrer le backend en local il a fallu (a) DB_HOST=localhost (pas host.docker.internal → pg_hba 192.168.x refuse), (b) `mvnw flyway:repair` sur oct_invoice (checksums post-consolidation V1-V34 vs DB en v63). Auth front en MEMOIRE (pas localStorage) → tout hard-reload deconnecte : naviguer par clics SPA. Ecrans validateur non audites (MFA TOTP).

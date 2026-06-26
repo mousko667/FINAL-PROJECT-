@@ -281,6 +281,9 @@
       "unreadable_file": "The file is unreadable or in an unsupported format."
     },
     "reference": "Reference",
+    "filterFromDate": "Filter from",
+    "filterToDate": "Filter until",
+    "filterStatus": "Filter by status",
     "supplier": "Supplier",
     "selectSupplier": "— Select supplier —",
     "purchaseOrder": "Purchase Order",
@@ -393,6 +396,7 @@
     "exportPdfComplianceDesc": "Approval sequence compliance, SLA adherence, exceptions and overrides for the selected period.",
     "startDate": "Start Date",
     "endDate": "End Date",
+    "dateRangeHint": "Date range applies to exports only. Live metrics show all-time data.",
     "generating": "Generating...",
     "downloadReady": "Download ready",
     "kpiTitle": "Key Performance Indicators",
