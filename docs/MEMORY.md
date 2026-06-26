@@ -1784,3 +1784,11 @@ origin/main blocked → route via origin/backup/phase11-2026-06-13. ASK the user
 **Branch:** chore/sanitize-docs-migrations
 **Last commit:** (pending R5 commit)
 **Notes:** `./mvnw verify` contre PostgreSQL hote 5433 (vrai DB_PASSWORD du .env) → 497 tests 0 echec. Chiffre GATE (excl dto/model/config, 144 classes) = lignes 68,37% / branches 53,13%, concordant entre `jacoco:check` et recalcul `jacoco.csv`. Seuil pom abaisse 80/75 → 65/50 (juste sous le reel) → `All coverage checks have been met`. PROB-070 = dette de tests pour remonter vers 80/75. PIEGE : le gate `check` se lie a `verify`, invisible en `./mvnw test`. R4 etait deja commite (f23d5cb), pas en cours comme suppose.
+
+## Session Checkpoint
+**Date:** 2026-06-26
+**Last completed work:** R7 — README racine (etait deja ecrit par R2, verifie + complete)
+**Next work:** R8 (accessibilite WCAG 2.1 AA via axe/Lighthouse) puis R9 (optionnel matching)
+**Branch:** chore/sanitize-docs-migrations
+**Last commit:** (pending R7 commit)
+**Notes:** R7 etait DEJA satisfait : le README.md racine cree pendant R2 couvre tout (stack, PG hote 5433/oct_invoice, docker compose, profils dev/test/prod, TLS, tests, comptes Test1234!). Verifie factuellement : 14 usernames du README presents dans le seed V34 ; profils dev/test/prod confirmes dans application.yaml ; baseline Flyway V1-V34 (34 migrations) exacte. G6 -> ✅. Seul changement : doc (TASKS/MEMORY), pas de code.
