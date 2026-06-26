@@ -1,637 +1,759 @@
-# PROJECT_REPORT.md — OCT Invoice System Technical Audit
+# PROJECT_REPORT.md — OCT Invoice System
 
-> **Purpose:** Source material for Chapters 3 (Design) and 4 (Implementation) of the Bachelor's thesis "Digital and Secure Supplier Invoice Validation Management System" for Owendo Container Terminal (OCT).
-> **Method:** Code is ground truth. `docs/TASKS.md` is treated as a stale planning artifact. Every claim below cites `file:line` from the repository root `invoice-system/`.
-> **Scope of scan:** All tracked source plus gitignored config (`.env`, `application.yaml` profiles, `CLAUDE.md`, `docs/MEMORY.md`). All secret values redacted as `***REDACTED***`.
-> **Audit date:** 2026-06-22. **Git:** accessible, 318 commits, 2026-03-21 → 2026-06-22, branch `fix/a1-cashflow-sqlgrammar` (off `main`).
+**Project:** Digital and Secure Supplier Invoice Validation Management System — Owendo Container Terminal (OCT)
+**Repository:** `invoice-system/` (git, branch `main`, HEAD `74a92c2`)
+**Purpose of this document:** Technical audit of the code base against the locked Chapters 1 + 2 of the thesis, formatted as ready-to-paste source material for Chapter 3 (Design) and Chapter 4 (Implementation).
+**Method:** Direct reading of source (entities, controllers, migrations, security filters, state machine, frontend routes, configuration including git-ignored files). Every assertion is backed by a `file:line` citation. "NOT IMPLEMENTED" is used literally; nothing is invented.
 
----
-
-## 0. KEY FINDINGS UP FRONT (read this first)
-
-1. **Six roles in code, "seven actors" in the locked thesis brief.** The `ROLE_AUDITEUR` actor was deliberately removed (`V31__fix_finance_approver_and_remove_auditeur.sql`, `V33__remove_phantom_roles.sql`). `docs/PRD.md:31` explicitly states "exactly **six roles**… No more, no less." **If Chapters 1+2 list a 7th actor "Auditeur", the thesis conflicts with the code.** Auditor duties were split: financial audit → DAF only, system/security audit → ADMIN only (`AuditController.java:60-185`). This is the single biggest thesis-vs-code conflict — see **R1**.
-2. **TASKS.md was abandoned as the planning artifact around Phase 9.** Commit prefixes shift from `P{X}-{XX}` (TASKS-driven, ~190 commits) to `M{N} #{n}` (driven by `docs/COMPLIANCE_MATRIX.md`, the real living plan). Migration numbering diverged as early as V16 (TASKS says V16=purchase_orders; code V16=add_role_supplier).
-3. **The system is far larger than TASKS.md describes:** 47 JPA entities, 63 Flyway migrations, 39 REST controllers, ~492 `@Test` methods, 64 frontend routes/pages. Whole modules (compliance, retention disposition, escalation rules, announcements, supplier contracts, integration connectors, report builder, payment alert rules, checklists) exist with **no task in TASKS.md**.
-4. **Most Chapter 1+2 claims are VERIFIED in code.** OCR, duplicate detection, three-way matching, MFA, RBAC, AES-256-GCM, immutable audit trail, archiving, notifications, reporting/export, webhooks, supplier portal are all implemented. PARTIAL/weak spots: TLS (config-only, no keystore shipped), aging analysis depth, duplicate-detection heuristic (supplier+description, not invoice number), WCAG.
-5. **Test coverage:** JaCoCo CSV totals = **66.8 % instruction / 52.8 % branch** (`target/site/jacoco/jacoco.csv`). The HTML `index.html` shows "37 %" but reflects a stale/partial 8-class run — the CSV is authoritative.
+> **Scope note on the workflow.** The thesis describes the BAP chain as
+> `BROUILLON → SOUMIS → EN_VALIDATION_N1 → (EN_VALIDATION_N2 for IT/Infra/Workshop) → VALIDE → BON_A_PAYER → PAYE → ARCHIVE` with `REJETE` at any review step. The code implements exactly this (see §7).
 
 ---
 
-## 1. EXECUTIVE STATUS — TASKS.md Reconciliation
+## 1. EXECUTIVE STATUS
 
-`docs/TASKS.md` defines Phases 0–9G plus remediation Phases 10–11. Verification of the ✅ marks against code:
+The project was originally developed against a phase plan (`P0…P11`, ~190 commits) and from Phase 11 onward tracked by module IDs (`M1…M14`) against a compliance matrix. Both histories are preserved in git. The forward-looking roadmap is `docs/TASKS.md`. Because the question is framed in phases (Phase 0–9G), the table below maps each historical phase to the **code that proves it exists today** rather than to a ✅ in a planning file.
 
-### Phases verified as genuinely implemented (spot-checked against code)
+| Phase | Theme | Proof in code (today) |
+|-------|-------|------------------------|
+| **P0** | Project scaffold, build, Docker | `pom.xml` (Spring Boot 3.4.1 / Java 21), `docker-compose.yml`, `Dockerfile`, `mvnw` |
+| **P1** | Schema baseline + Flyway | `src/main/resources/db/migration/V1__create_departments.sql` … `V34__seed_test_users.sql` (34 migrations, consolidated baseline) |
+| **P2** | Auth, JWT, RBAC | `config/SecurityConfig.java:51`, `domain/auth/service/JwtService.java`, `domain/auth/filter/JwtAuthenticationFilter.java` |
+| **P3** | Users, roles, departments | `domain/user/model/User.java`, `Role.java`, `UserRole.java`, `domain/department/model/Department.java`, `V1`/`V3`/`V4`/`V5` |
+| **P4** | Invoice reception + OCR | `domain/invoice/model/Invoice.java`, `domain/ocr/service/OcrService.java` (PDFBox + Tess4J), `OcrController.java` |
+| **P5** | Validation workflow + state machine | `config/StateMachineConfig.java`, `domain/invoice/statemachine/InvoiceEvent.java`, `domain/workflow/guard/*` |
+| **P6** | Approval workflow (N1/N2), delegation, escalation | `domain/workflow/controller/ApprovalController.java`, `DelegationController.java`, `EscalationRuleController.java` |
+| **P7** | Payments, aging, remittance | `domain/payment/model/Payment.java`, `RemittanceAdvice.java`, `PaymentController.java`, `report/.../aging` |
+| **P8** | Audit trail (append-only) | `domain/audit/model/AuditLog.java`, `shared/filter/AuditLoggingFilter.java`, `V32__enforce_append_only_logs.sql` |
+| **P9 / 9A–9G** | Supplier domain, MFA TOTP, three-way matching, integration/webhooks | `domain/supplier/*`, `domain/mfa/service/MfaService`, `domain/purchasing/*` (3-way matching), `domain/webhook/*` (HMAC webhooks) |
+| **P10** | Reporting & analytics | `domain/report/controller/ReportController.java` (23 endpoints), `ReportDefinition.java`, scheduled reports |
+| **P11 / M1–M14** | IAM gaps, security policy, retention, compliance, checklists, dept access | `domain/auth/model/SecurityPolicy.java`, `domain/retention/*`, `domain/compliance/*`, `domain/checklist/*`, `domain/department/controller/DepartmentAccessController.java` |
 
-| Phase | Scope | Code evidence | Verdict |
-|---|---|---|---|
-| 0 — Bootstrap | Spring Boot, JWT, Flyway, Swagger, docker-compose | `pom.xml`, `SecurityConfig.java`, `application.yaml:144-152`, `docker-compose.yml` | ✅ real |
-| 1 — User & Dept mgmt | Users, roles, departments | `UserController.java`, `DepartmentController.java`, `V1/V2/V3` | ✅ real |
-| 2 — Invoice core | CRUD + docs + ref-number + MinIO | `InvoiceController.java`, `InvoiceDocumentService.java`, `StorageService` | ✅ real |
-| 3 — Workflow engine | Spring State Machine BAP | `StateMachineConfig.java:48-117`, guards in `domain/workflow/guard/` | ✅ real |
-| 4 — Notifications | Email + WebSocket + DB | `domain/notification/`, `WebSocketConfig.java`, `templates/email/*.html` (12 templates) | ✅ real |
-| 5 — Payment & archiving | Payment record + auto-archive | `PaymentController.java`, `RemittanceAdvice`, `InvoiceStatus.ARCHIVE` | ✅ real |
-| 6 — Audit & reporting | Audit log + KPI + export | `AuditController.java`, `ReportController.java` (24 endpoints) | ✅ real |
-| 7 — Frontend | React/TS, FR/EN, role guards | `AppRoutes.tsx` (64 routes), `i18n/`, `ProtectedRoute`/`SupplierRoute` | ✅ real |
-| 8 — Integration/hardening | docker-compose, e2e, Swagger | `docker-compose.yml`, `frontend/e2e/*.spec.ts` (3 specs) | ✅ real |
-| 9A–9G — Supplier/MFA/Matching/Webhooks | see modules | `domain/supplier/`, `domain/mfa/`, `domain/purchasing/`, `domain/webhook/` | ✅ real |
-| 10A — OCR | Tess4J + PDFBox | `OcrService.java:1-249` | ✅ real |
-| 10B — JWT RS256 | RSA-2048 asymmetric | `JwtService.java:105` `SignatureAlgorithm.RS256` | ✅ real |
-| 10D — TLS | prod-profile SSL block | `application.yaml:332-338` | ⚠ PARTIAL (config only, keystore not provided) |
+**Overall progress (against the 14-module Project Requirements, per `docs/TASKS.md` SYNTHÈSE).**
+≈ **262 requirement bullets** total; ≈ **236 ✅ fully implemented**, ≈ **40 🟠 partial**, **0 ❌ absent**, **0 🔴 broken**. The partials are intentional scope decisions (responsive web instead of a native mobile app; a configurable connector *framework* instead of a live SAP/Oracle/bank sync — see §2.B of TASKS / §3(o) here) or low-urgency polish.
 
-### Tasks marked ✅ that are NOT (or not verifiably) implemented — false positives
-
-| Task | Claim | Reality |
-|---|---|---|
-| **P10-C — GitHub Actions CI Pipeline** | "CI pipeline" ticked | `.github/workflows/` in repo root contains only a `java-upgrade` helper, not a build/test CI for this app. **No working build-and-test CI workflow is present.** → **R12** |
-| **P10-E — OWASP ZAP Security Scan** | security scan ticked | No ZAP config, no scan report artifact in repo. Unverifiable / not present. → **R13** |
-| **P8-08 README** | CLAUDE.md §4 says README created at P8-08 | No root `README.md` in `invoice-system/`. → **R14** |
-
-### Tasks marked ✅ where implementation diverges materially from description — drift
-
-| Task area | Planned (TASKS.md) | Actual (code) | One-line diff |
-|---|---|---|---|
-| Roles | 7th "Auditeur" actor in original brief | `ROLE_AUDITEUR` dropped; duties split DAF/ADMIN | Auditor removed (`V31`, `V33`) |
-| Migration order | TASKS: V16=purchase_orders, V17=GRN, V18=3-way, V19=remittance, V20=webhooks | Code: V17=PO, V18=GRN, V19=3-way, V20=remittance, V22=webhooks | Whole V16+ block shifted by ≥1 |
-| Duplicate detection | implied "duplicate invoice" check | `countDuplicatesBySupplierAndDescription` — same **supplier + description**, not invoice number (`InvoiceRepository.java:36`, `InvoiceStateMachineServiceImpl.java:137-154`) | Heuristic, not exact-number match |
-| Webhook secret | V26 "add_encrypted_webhook_secret" | Reversed by `V30__remove_webhook_secret_encrypted.sql` | Encrypted-column approach abandoned |
-| Matching trigger | "auto-trigger on BROUILLON→SOUMIS" | Implemented but `matching_status` is a plain `String` column on Invoice (`Invoice.java:128`), not an enum | Looser typing than implied |
-
----
-
-## 1bis. UNDOCUMENTED CHANGES — what the developer did outside TASKS.md
-
-TASKS.md stops describing reality around Phase 9. From ~commit 190 onward the developer worked from `docs/COMPLIANCE_MATRIX.md` (the genuine living plan) with `M{N} #{n}` commit IDs.
-
-### (a) Implemented but never planned in TASKS.md
-
-Entire domains/modules present in code with no corresponding TASKS.md task:
-
-| Feature | Evidence (file:line) |
-|---|---|
-| Compliance module (incidents, checklist, calendar, backup status, privacy acceptance, archive report) | `domain/compliance/controller/ComplianceController.java:34-139` ; entities `compliance/model/*` ; `V56__create_compliance.sql` |
-| Retention policy + disposition (PENDING/RETAINED/PURGED) | `RetentionDispositionController.java:31-39` ; `V62__create_retention_policy.sql` ; `V63__add_retention_disposition.sql` |
-| Escalation rules (SLA) | `EscalationRuleController.java:33-59` ; `V61__create_escalation_rules.sql` |
-| Announcements | `AnnouncementController.java:33-75` ; `V51__create_announcements.sql` |
-| Supplier contracts & communications | `SupplierRelationshipController.java:31-63` ; `V52__create_supplier_contracts_and_comms.sql` |
-| Integration connectors + scheduled sync | `IntegrationConnectorController.java:30-79` ; `V55` ; `V60__add_connector_sync_schedule.sql` |
-| Report builder (saved definitions, run, preview) | `ReportController.java:167-205` ; `V54__create_report_definitions.sql` |
-| Payment alert rules | `PaymentAlertRuleController.java:40-66` ; `V59__create_payment_alert_rules.sql` |
-| Validation checklists (templates + per-invoice responses) | `ChecklistTemplateController.java`, `InvoiceChecklistController.java` ; `V58__create_validation_checklists.sql` |
-| Access requests (self-service access elevation) | `AccessRequestController.java:41-80` ; `V47__create_access_requests.sql` |
-| Document access log (who downloaded what) | `DocumentAccessLog.java` ; `V48__create_document_access_log.sql` |
-| Approval delegation (out-of-office) | `DelegationController.java:32-128` ; `V40__create_approval_delegations.sql` |
-| Active session management + admin force-logout | `AdminSessionController.java:24-32` ; `V39__create_active_sessions.sql` |
-| Security policy (configurable max-login-attempts, MFA toggle) | `SecurityPolicyController.java:32-40` ; `V44__create_security_policy.sql` |
-| Data sensitivity classification on invoices | `Invoice.java:104-107` ; `V46__add_invoices_data_sensitivity.sql` |
-| Department budget + budget-vs-actual / budget-alerts reports | `V49__add_departments_budget.sql` ; `ReportController.java:149-158` |
-| Dedicated matching page (list + line-by-line) | `MatchingQueryController.java:30-44` ; `pages/matching/MatchingListPage.tsx`, `MatchingDetailPage.tsx` |
-| Volume/value trend + executive summary reports | `ReportController.java:214-224` |
-| Department-access read-only admin view | `DepartmentAccessController.java:27-28` |
-| Invoice import (CSV/bulk) | `InvoiceController.java:192-193` ; `InvoiceImportService.java` |
-| XML structured-invoice parsing path in OCR | `OcrService.java:64-68` ; `InvoiceXmlParser.java` |
-
-### (b) Refactored away from the plan
-
-| Planned | Actual | Diff |
-|---|---|---|
-| `auditeur` role | removed | duties split DAF/ADMIN (`V31`,`V33`) |
-| Webhook `secret_encrypted` column | dropped; HMAC secret stored differently | `V26`→`V30` reversal |
-| Single route guard | two guards `ProtectedRoute` + `SupplierRoute` | per PROB-002 (`AppRoutes.tsx:3,81,130`) |
-| MFA endpoints under generic auth | dedicated `/auth/mfa/{setup,confirm,validate}` two-step pre-auth token flow | `AuthController.java:84-102` |
-| `matching_status` enum | plain `String` column | `Invoice.java:128` |
-
-### (c) Removed / abandoned
-
-- `ROLE_AUDITEUR` and any "phantom" roles — `V31`, `V33`.
-- Webhook encrypted-secret column — `V26` added, `V30` removed.
-- Migration versions **V36, V37, V38 do not exist** (numbering gap; see (d)). No evidence of deleted-then-recreated migrations — they were simply skipped.
-
-### (d) Migrations beyond / diverging from TASKS.md numbers
-
-> **⚠ Updated 2026-06-22 — migrations consolidated.** This section describes the migration set
-> **as it was at audit time** (60 churned files, V1–V63 with a V36–V38 gap). That set has since
-> been rewritten into a clean, contiguous **34-migration baseline (V1…V34)** — see
-> `docs/DATABASE.md` and `docs/ARCHITECTURE.md §4.4`. The specific `V##` numbers cited below and
-> in Section 5 refer to the **pre-consolidation** history and are kept for traceability. The
-> consolidated schema is verified identical to the one analysed here (pg_dump diff empty; 491
-> tests green).
-
-- **TASKS.md references up to ~V20 (with wrong mapping) plus V42, V43.** Code contained (pre-consolidation) **63 migration versions V1–V63 with a gap at V36/V37/V38** (60 files); now a clean V1–V34 baseline.
-- **Extras not in TASKS.md:** V21, V23–V35, V39–V63 — i.e. **40+ migrations are undocumented by TASKS.md.** Full list and purpose in **Section 5**.
-- **Numbering gap:** `V36__`, `V37__`, `V38__` are absent — Flyway tolerates non-contiguous versions, so the schema is valid, but the gap should be explained in the thesis (likely squashed/abandoned during development).
-
-### (e) Dependencies added beyond TASKS.md
-
-Backend (`pom.xml`) notable libs not called out by early TASKS: `bucket4j-core` 7.6.0 (rate limiting), `dev.samstevens.totp` 1.7.1 (MFA), `tess4j` 5.11.0 + `pdfbox` 3.0.3 (OCR), `apache.tika` 2.9.2 (MIME), `poi-ooxml` 5.3.0 (Excel), `itext-core` 8.0.5 (PDF), `spring-statemachine` 4.0.0, `minio` 8.5.13, `springdoc` 2.7.0. Full list in **Section 2**.
-Frontend (`frontend/package.json`) notable: `recharts` 3.8.1 (charts), `react-pdf` 9.2.1 (doc viewer), `@stomp/stompjs` 7.3.0 + `sockjs-client` 1.6.1 (WS), `@reduxjs/toolkit`, `@tanstack/react-query`, `zod`, `react-hook-form`, `i18next`.
-
-### (f) Reconstructed chronological "real history" (git accessible)
-
-Timeline from `git log` (318 commits, 2026-03-21 → 2026-06-22):
-
-1. **2026-03-21 — `4945ec2` Initial commit**, then `a350110` Phase 0 bootstrap (JWT, security, Flyway, Swagger).
-2. **Phase 2 burst** (`bf579c9`…`051ed30`): P2-01…P2-12 invoice core, MinIO, mappers — the most disciplined TASKS-aligned stretch (20 `P2-` commits).
-3. **Phases 1,3,4,5,6,7** in `P{X}-{XX}` order (15× P3-, 10× P4-, 10× P1-, 5× P7-…).
-4. **Phase 9 (A–G)** — heaviest TASKS phase (**64× `P9-`** commits): supplier domain, MFA, three-way matching, webhooks.
-5. **Phase 10–11 remediation** (**43× `P11-`** commits): audit corrections, IAM gaps, refactors, i18n sweep.
-6. **Post-TASKS era (`M{N} #{n}` commits)** — the project switches planning artifact to `docs/COMPLIANCE_MATRIX.md`: M7 (payments export), M11 (reporting trends/executive summary), M9 (retention/purge), M4/M6 (escalation/approval-limit), M13 #3 (department access), M14 #11 (archive compliance), M5 #1/#4 (dedicated matching page). The HEAD branch `fix/a1-cashflow-sqlgrammar` fixes a cash-flow SQL grammar bug and PROB-068 (matching list 500 on `lower(bytea)`).
-
-**Interpretation for the thesis:** Development was plan-driven (TASKS.md) through Phase 11, then transitioned to a compliance-matrix-driven cadence. TASKS.md was frozen; COMPLIANCE_MATRIX.md is the true completion ledger.
+**What the system does end-to-end today.** A supplier self-registers at `/register/supplier`, logs in, and submits an invoice (PDF / image / XML) through the portal; OCR (PDFBox text layer, Tesseract fallback) pre-fills the fields and a duplicate check runs at submission. An Assistant Comptable can also key invoices in (or bulk-import CSV/XML). On submission the invoice enters the BAP state machine: `SOUMIS → EN_VALIDATION_N1`, then either straight to `VALIDE` (single-level departments) or `EN_VALIDATION_N2 → VALIDE` for IT / Infrastructure / Workshop. If a Purchase Order is linked, automated three-way matching (PO/GRN/Invoice) runs with DB-configured tolerance and blocks `MISMATCH` invoices until a DAF/Admin override with justification. The DAF marks `BON_A_PAYER`; the Assistant Comptable records the payment (`PAYE`) producing a remittance-advice PDF; the invoice is then archived (`ARCHIVE`). Throughout, every action is written to an append-only audit trail, notifications fire by email + WebSocket, dashboards are role-specific, reports/exports (PDF/Excel/CSV) are available to finance roles, and admins manage users/roles, retention, compliance, and integration connectors. MFA (TOTP) is mandatory for all staff roles, supplier excluded; bank details are AES-256-GCM encrypted at rest.
 
 ---
 
 ## 2. STACK & VERSIONS
 
 ### Backend (`pom.xml`)
-- **Java:** 21 (`java.version`, `maven.compiler.source/target`)
-- **Spring Boot:** 3.4.1 (parent)
-- **Spring Security** (starter, BOM-managed) — `@EnableWebSecurity`, `@EnableMethodSecurity`
-- **JWT:** io.jsonwebtoken jjwt **0.12.6** (api/impl/jackson)
-- **Rate limiting:** com.github.vladimir-bukhtoyarov bucket4j-core **7.6.0**
-- **MFA TOTP:** dev.samstevens.totp **1.7.1**
-- **DB driver:** PostgreSQL (runtime, BOM-managed)
-- **Migrations:** Flyway core + flyway-database-postgresql (BOM-managed)
-- **Workflow:** spring-statemachine-core & -data-jpa **4.0.0**
-- **Object storage:** io.minio **8.5.13**
-- **MIME detection:** Apache Tika core **2.9.2**
-- **OCR:** net.sourceforge.tess4j **5.11.0**; org.apache.pdfbox **3.0.3**
-- **Email/templating:** spring-boot-starter-mail + -thymeleaf
-- **WebSocket:** spring-boot-starter-websocket
-- **Excel export:** org.apache.poi poi-ooxml **5.3.0**
-- **PDF export:** com.itextpdf itext-core **8.0.5**
-- **Mapping/boilerplate:** MapStruct **1.6.3**, Lombok **1.18.36**
-- **API docs:** springdoc-openapi-starter-webmvc-ui **2.7.0**
-- **Build tooling:** Maven (wrapper `.mvn/`), maven-compiler-plugin, spring-boot-maven-plugin, maven-surefire-plugin, flyway-maven-plugin
-- **Test:** spring-boot-starter-test (JUnit 5/Mockito/AssertJ), spring-security-test, Testcontainers junit-jupiter + postgresql **1.20.4**, H2 (test runtime)
-- **Coverage:** jacoco-maven-plugin **0.8.12**
+| Component | Version |
+|-----------|---------|
+| Spring Boot (parent) | **3.4.1** |
+| Java | **21** (`maven.compiler.source/target = 21`) |
+| Spring Boot starters | web, data-jpa, validation, actuator, security, mail, thymeleaf, websocket, devtools, test (managed by parent 3.4.1) |
+| JJWT (`io.jsonwebtoken` api/impl/jackson) | **0.12.6** |
+| Spring Statemachine (core + data-jpa) | **4.0.0** |
+| bucket4j-core (auth rate limiting) | **7.6.0** |
+| dev.samstevens.totp (MFA TOTP) | **1.7.1** |
+| PostgreSQL JDBC driver | runtime (managed by parent) |
+| Flyway (core + database-postgresql) | managed by parent |
+| MinIO SDK | **8.5.13** |
+| Apache Tika core (MIME detection) | **2.9.2** |
+| Tess4J (Tesseract OCR JNA wrapper) | **5.11.0** |
+| Apache PDFBox | **3.0.3** |
+| Apache POI (poi-ooxml, Excel export) | **5.3.0** |
+| iText core (PDF export) | **8.0.5** |
+| Lombok | **1.18.36** |
+| MapStruct | **1.6.3** (componentModel=spring) |
+| springdoc-openapi (Swagger UI) | **2.7.0** |
+| Testcontainers (junit-jupiter + postgresql) | **1.20.4** (test) |
+| H2 | test scope (fast unit tests) |
+| spring-security-test | test scope |
+
+**Build/test tooling.** Maven (wrapper `mvnw`); JUnit 5 (Jupiter) via spring-boot-starter-test; Testcontainers (real PostgreSQL for integration tests); **JaCoCo 0.8.12** with an enforced gate (`pom.xml:309-358`): LINE ≥ 0.80, BRANCH ≥ 0.75, excluding `dto/`, `model/`, `config/`, `*Application`. Surefire forces `spring.profiles.active=test`.
 
 ### Frontend (`frontend/package.json`)
-- **React** 19.2.4, **react-dom** 19.2.4, **TypeScript** ~6.0.2, **Vite** 8.0.4
-- **Routing:** react-router-dom 7.14.0
-- **State/data:** @reduxjs/toolkit 2.11.2, react-redux 9.2.0, @tanstack/react-query 5.96.2
-- **Forms/validation:** react-hook-form 7.72.1, @hookform/resolvers 5.2.2, zod 4.3.6
-- **HTTP:** axios 1.14.0
-- **WebSocket:** @stomp/stompjs 7.3.0, sockjs-client 1.6.1
-- **i18n:** i18next 26.0.3, react-i18next 17.0.2, i18next-browser-languagedetector 8.2.1
-- **Charts:** recharts 3.8.1 ; **PDF viewer:** react-pdf 9.2.1 ; **Icons:** lucide-react 1.7.0
-- **Styling:** tailwindcss 3.4.19, tailwind-merge, class-variance-authority, tailwindcss-animate
-- **Test:** vitest 4.1.2, @testing-library/react 16.3.2, jsdom; **E2E:** @playwright/test 1.59.1
-- *(Note: `bcryptjs`, `pg`, `@types/pg` appear in devDeps — used by Playwright DB-seed/e2e helpers, not by the app bundle.)*
+| Component | Version |
+|-----------|---------|
+| React / React-DOM | **19.2.4** |
+| TypeScript | **~6.0.2** |
+| Vite | **8.0.4** |
+| Redux Toolkit / react-redux | **2.11.2** / **9.2.0** |
+| React Router DOM | **7.14.0** |
+| @tanstack/react-query | **5.96.2** |
+| axios | **1.14.0** |
+| react-hook-form / @hookform/resolvers / zod | **7.72.1** / **5.2.2** / **4.3.6** |
+| i18next / react-i18next / browser-languagedetector | **26.0.3** / **17.0.2** / **8.2.1** |
+| @stomp/stompjs / sockjs-client | **7.3.0** / **1.6.1** (WebSocket) |
+| react-pdf | **9.2.1** (document viewer) |
+| recharts | **3.8.1** (charts) |
+| lucide-react | **1.7.0** (icons) |
+| tailwindcss | **3.4.19** (+ tailwind-merge 3.5.0, class-variance-authority 0.7.1) |
+| **Test:** Vitest | **4.1.2** |
+| @playwright/test (e2e) | **1.59.1** |
+| @testing-library/react / jest-dom / user-event | **16.3.2** / **6.9.1** / **14.6.1** |
+| ESLint | **9.39.4** (typescript-eslint 8.58.0) |
 
-### Infra (`docker-compose.yml`, `.env`, `application.yaml`)
-- **PostgreSQL:** **host-native PG 18 on port 5433**, db `oct_invoice` — *NOT* containerized (compose comment + `.env:12-17`). Test/dev default profile points at `oct_invoice_dev` on 5432 (`application.yaml:175,235`).
-- **MinIO:** `minio/minio:latest`, console `minio/mc:latest` bucket-init, ports 9000/9001, bucket `oct-invoices`.
-- **MailHog:** `mailhog/mailhog:latest`, SMTP 1025 / UI 8025 (dev email catcher).
-- **Backend image:** built from `./Dockerfile` target `runtime`, port 8080.
-- **Frontend image:** built from `./frontend/Dockerfile` (nginx), port 3000→80.
+### Infrastructure (`docker-compose.yml`)
+| Service | Image / Tag | Notes |
+|---------|-------------|-------|
+| MinIO | `minio/minio:latest` | object storage, ports 9000 / 9001; bucket `oct-invoices` |
+| MinIO init | `minio/mc:latest` | one-shot bucket creation |
+| MailHog | `mailhog/mailhog:latest` | dev SMTP catcher (1025 / 8025) |
+| Backend | built from `Dockerfile` (`target: runtime`) | port 8080, profile from `SPRING_PROFILES_ACTIVE` |
+| Frontend | built from `frontend/Dockerfile` | nginx, port 3000→80 |
+| **PostgreSQL** | **NOT in compose** | A host-native **PostgreSQL 18** on port **5433** (db `oct_invoice`) is required; compose reaches it via `host.docker.internal`. CI uses `postgres:18-alpine`. |
+
+CI runners (`.github/workflows/ci.yml`): `postgres:18-alpine`, Java 21, Node 20.
 
 ---
 
 ## 3. CHAPTER 1 + 2 CLAIM VERIFICATION
 
-| # | Claim | Verdict | Proof (file:line) |
-|---|---|---|---|
-| a | OCR-assisted extraction (PDF/XML/image) | **VERIFIED** | `OcrService.java:60-94` (PDFBox text layer → Tess4J fallback; image OCR; XML structural parse at `:64-68`); `OcrController.java:28` `POST /api/v1/ocr/extract` |
-| b | Duplicate detection at submission | **VERIFIED (heuristic)** | `InvoiceStateMachineServiceImpl.java:85-87,137-154` blocks on `countDuplicatesBySupplierAndDescription` (`InvoiceRepository.java:24-36`). Matches **supplier+description**, not exact invoice number → see R9 |
-| c | Three-way matching (Invoice/PO/GRN) + configurable tolerance + override w/ justification | **VERIFIED** | `domain/purchasing/` (`ThreeWayMatchingResult`, `MatchingComparator`, `MatchingConfig` table); tolerance in DB (`MatchingConfigController.java:36-46`); override `InvoiceController.java:259-260` `POST /{id}/matching/override` (DAF/ADMIN) |
-| d | Configurable multi-level routing + departmental matrix; sequential N1→N2 for IT/Infra/Workshop | **VERIFIED** | `StateMachineConfig.java:62-78` (N1→N2 vs N1→VALIDE via `DepartmentTransitionGuard.requiresN2`); matrix `ApprovalMatrixPage.tsx`; `ApprovalController.java:72-99` |
-| e | MFA mandatory for finance/approval roles | **VERIFIED** | `AuthService.java:368-382` deny-list: mandatory for every non-SUPPLIER role; TOTP `MfaService.java:21-89`; two-step pre-auth `AuthController.java:84-102` |
-| f | RBAC enforced at every endpoint | **VERIFIED** | `@EnableMethodSecurity` (`SecurityConfig.java:28`) + `@PreAuthorize` on every mapping (audited across all 39 controllers — Section 6) |
-| g | AES-256 at rest for supplier bank details | **VERIFIED** | `EncryptionUtil.java:17-22` AES-256-GCM; `Invoice.java:79-81` `@Convert(EncryptionAttributeConverter)` on `supplier_bank_details`; `V35__encrypt_invoice_bank_details.sql` |
-| h | TLS in transit (config evidence) | **PARTIAL** | `application.yaml:332-338` prod SSL `protocol: TLSv1.3`, but keystore externalized (`${SSL_KEYSTORE_PATH}`) and **not provided in repo**; dev/test run plain HTTP → R5 |
-| i | Immutable, exportable audit trail | **VERIFIED** | `AuditLoggingFilter.java:45-57` persists writes/denials; append-only DB triggers `V25__enforce_append_only_logs.sql`; export `AuditController.java:125-126,184-185` |
-| j | Real-time tracking dashboards per actor | **VERIFIED** | `DashboardPage.tsx`, `SupplierDashboardPage.tsx`; WS push `WebSocketConfig.java` + `useWebSocket` hook; report KPIs `ReportController.java:43-58` |
-| k | Payment tracking with aging analysis | **VERIFIED** | `PaymentController.java`; aging `ReportController.java:112-113` `/reports/aging`; alert rules `PaymentAlertRuleController.java`. Aging present but basic → R10 |
-| l | Digital archiving + metadata search + retention policy | **VERIFIED** | `ArchivePage.tsx`, `InvoiceController.java:272-273` `/invoices/archive`; retention `V62/V63`, `RetentionDispositionController.java`; MinIO storage. SHA-256 integrity claimed in PRD §Module4 — verify in `InvoiceDocument`/storage → R11 |
-| m | Email + WebSocket notifications | **VERIFIED** | `domain/notification/`; 12 Thymeleaf templates `templates/email/*.html`; WS via STOMP |
-| n | Reporting & analytics with export (PDF/Excel) | **VERIFIED** | `ReportController.java:64-97` Excel (POI) + PDF (iText); 24 report endpoints |
-| o | Documented RESTful API for ERP/banking integration (webhooks) | **VERIFIED** | Swagger `application.yaml:144-152`; webhooks `WebhookController.java` HMAC-SHA256 (`WebhookService.java:64,260-264`); integration connectors `IntegrationConnectorController.java` |
-| p | Supplier self-service portal (register/submit/track) | **VERIFIED** | `SupplierPortalController.java:48-240` (`/api/v1/supplier/*`, `hasRole('SUPPLIER')`); `AppRoutes.tsx:130-139`; self-register `AuthController.java:52` |
+| # | Claim | Verdict | Proof |
+|---|-------|---------|-------|
+| (a) | OCR-assisted extraction (PDF/XML/image) | **VERIFIED** | `domain/ocr/service/OcrService.java:60` (`extract`), PDFBox text-layer + Tess4J OCR fallback (`OcrService.java:6-12, 75, 110`); XML via `InvoiceXmlParser.java` (XXE-safe); endpoint `OcrController.java:28` `POST /api/v1/ocr/extract` |
+| (b) | Duplicate detection at submission | **VERIFIED** | `domain/invoice/service/InvoiceStateMachineServiceImpl.java:87` (`performDuplicateCheck` on SUBMIT), repository `countDuplicatesBySupplierAndDescription` (`:143`); blocks with explicit error (`:148`) |
+| (c) | Three-way matching (Invoice/PO/GRN) + configurable tolerance + override w/ justification | **VERIFIED** | Entities `purchasing/model/ThreeWayMatchingResult.java`, `MatchingConfig.java` (tolerance %/amount, requireGrn); `MatchingConfigController.java` (`GET/POST /matching-config`); override `InvoiceController.java:259` `POST /invoices/{id}/matching/override` (DAF/ADMIN, reason required → status `OVERRIDDEN`); line comparison `MatchingQueryController.java:43` `GET /matching/{id}/lines` |
+| (d) | Configurable multi-level routing + departmental matrix; sequential N1 then N2 for IT/Infra/Workshop | **VERIFIED** | `Department.requiresN2 / n1Role / n2Role` (`Department.java:798-806`); state-machine guard `StateMachineConfig.java:66` (`requiresN2`) vs `:72` (`isSingleLevel`); seeded matrix `V1__create_departments.sql`; admin UI route `/admin/approval-matrix` |
+| (e) | MFA mandatory for finance/approval roles | **VERIFIED** | `config/security/MfaSetupEnforcementFilter.java:79-86` (deny-list: mandatory for every role except `ROLE_SUPPLIER`); two-step login `AuthController.java:101` `POST /auth/mfa/validate`; policy toggle `SecurityPolicy.mfaRequired` |
+| (f) | RBAC enforced at every endpoint | **VERIFIED** | `@EnableMethodSecurity` (`SecurityConfig.java:28`); `@PreAuthorize` present on every controller method audited in §6 (e.g. class-level `UserController.java:35`, method-level throughout); `.anyRequest().authenticated()` (`SecurityConfig.java:71`) |
+| (g) | AES-256 at rest for supplier bank details | **VERIFIED** | `shared/util/EncryptionUtil.java:18` `AES/GCM/NoPadding`, 32-byte key (`:19,33`), 128-bit tag; applied via `EncryptionAttributeConverter` on `Supplier.bankDetails` (`Supplier.java:58-60`), `Invoice.supplierBankDetails` (`Invoice.java:986-988`), and `User.mfaSecret` (`User.java:108-111`) |
+| (h) | TLS in transit | **PARTIAL** | Config exists: `application.yaml:332-338` (prod `server.ssl` TLSv1.3, PKCS12 keystore from `SSL_KEYSTORE_PATH`). **No keystore is shipped** (`docs/TASKS.md` G2). Evidence of config present; runtime TLS proof not yet produced → roadmap **R2** |
+| (i) | Immutable, exportable audit trail | **VERIFIED** | Append-only enforced at DB by triggers `V32__enforce_append_only_logs.sql` (audit_logs, webhook_deliveries, document_access_log — UPDATE/DELETE raise exception); export `AuditController.java:125` `GET /audit-logs/export` (CSV/Excel/PDF) |
+| (j) | Real-time tracking via dashboards for every actor | **VERIFIED** | `frontend/src/pages/DashboardPage.tsx` (role-routed) + `supplier/SupplierDashboardPage.tsx`; live updates via WebSocket (`useWebSocket` hook in `AppRoutes.tsx:7,67`); KPIs from `ReportController.java:43` `/reports/kpis` |
+| (k) | Payment tracking with aging analysis | **VERIFIED (aging basic)** | `PaymentController.java` (record/batch/history/export); aging `ReportController.java:112` `GET /reports/aging` (`AgingReportDTO`). Bucketed aging widget (0-30/31-60/61-90/90+) not yet a dashboard widget → roadmap **R3** |
+| (l) | Digital archiving with metadata search + retention policy | **VERIFIED** | Archive `InvoiceController.java:272` `GET /invoices/archive` (date/dept/search filters); retention `RetentionPolicy.java` + `RetentionPolicyController.java`; disposition `RetentionDispositionController.java`; document viewer `/archive` (react-pdf zoom/rotate) |
+| (m) | Email + WebSocket notifications | **VERIFIED** | `Notification.java` entity; listeners `EmailNotificationListener`, `WebSocketNotificationListener`, `PersistNotificationListener` (tests present); STOMP config; `NotificationController.java` (`/notifications`, `/unread-count`, read/read-all) |
+| (n) | Reporting & analytics with export (PDF/Excel) | **VERIFIED** | `ReportController.java` 23 endpoints (kpis, aging, cash-flow, bottlenecks, budget-vs-actual, volume-trend, executive-summary, builder, scheduled); export via `shared/export/TabularExportService` (CSV/Excel/PDF), `report/export/excel` + `report/export/pdf/*` |
+| (o) | Documented RESTful API for ERP/banking integration (webhooks count) | **PARTIAL** | REST API documented via springdoc/Swagger (`application.yaml:144`, `/swagger-ui.html`). Webhooks fully implemented (`WebhookController.java`, HMAC-SHA256, 3-retry backoff, append-only delivery log). ERP/banking connectors are a **configurable framework** (`IntegrationConnector` type ERP/ACCOUNTING/BANKING/DMS/MOCK) **with no live external sync** — declared out-of-scope in `docs/TASKS.md §B`. Documented + webhooks = real; live ERP/bank sync = NOT IMPLEMENTED (by scope) |
+| (p) | Supplier self-service portal (registration, submit, track) | **VERIFIED** | `SupplierPortalController.java` (`/api/v1/supplier/*`, class-level `@PreAuthorize hasRole('SUPPLIER')`): register via `AuthController.java:52` `/auth/register/supplier`; submit `:71` `POST /supplier/invoices`; track `:87` `GET /supplier/invoices`; dashboard `:166`; frontend routes `/supplier/*` (`AppRoutes.tsx:130-139`) |
 
-**Net:** 14 VERIFIED, 2 PARTIAL (h TLS, and the heuristic nature of b). No claim is fully NOT IMPLEMENTED. SHA-256 doc integrity (l) and aging depth (k) need confirmation/hardening — see roadmap.
+**Summary:** 13 VERIFIED, 2 PARTIAL ((h) TLS keystore, (o) live ERP/bank sync), 0 fully NOT IMPLEMENTED. The two partials map to roadmap items **R2** and (for (o)) an explicit out-of-scope decision.
 
 ---
 
 ## 4. DOMAIN MODEL (Chapter 3 class diagram)
 
-47 `@Entity` classes (table / relationship counts / lifecycle flags). `audited` = `@EntityListeners(AuditingEntityListener.class)` (createdAt/updatedAt); `soft-del` = has `deleted_at`.
+46 JPA `@Entity` classes. All use Lombok (`@Getter/@Setter/@Builder/@NoArgsConstructor/@AllArgsConstructor`) and UUID PKs (`@GeneratedValue(strategy = UUID)`) unless noted. Auditing via `@EntityListeners(AuditingEntityListener.class)` + `@CreatedDate/@LastModifiedDate`, or Hibernate `@CreationTimestamp/@UpdateTimestamp`. Soft-delete = nullable `deleted_at`.
 
-| Entity | Table | Relationships | Lifecycle |
-|---|---|---|---|
-| User | users | @ManyToOne(department-via-id), @OneToMany(userRoles) | soft-del, audited |
-| Role | roles | — | audited |
-| UserRole | user_roles | 3× @ManyToOne (user, role, assignedBy) | audited |
-| Department | departments | — | audited |
-| Invoice | invoices | 3× @ManyToOne (department, submittedBy:User, supplier), 2× @OneToMany (items, documents) | **soft-del, audited, @Version (optimistic lock)** |
-| InvoiceItem | invoice_items | @ManyToOne(invoice) | — |
-| InvoiceDocument | invoice_documents | 3× @ManyToOne | — |
-| InvoiceStatusHistory | invoice_status_history | 2× @ManyToOne (invoice, changedBy) | — |
-| DocumentAccessLog | document_access_log | 2× @ManyToOne | — |
-| ApprovalStep | (no @Table — default `approval_step`) | 2× @ManyToOne | — |
-| ApprovalDelegation | approval_delegations | 3× @ManyToOne (delegator, delegatee, createdBy) | audited |
-| EscalationRule | escalation_rules | @ManyToOne | audited |
-| Supplier | suppliers | @ManyToOne(user link) | soft-del, audited |
-| SupplierContract | supplier_contracts | — | — |
-| SupplierCommunication | supplier_communications | — | — |
-| SupplierDocument | supplier_documents | 2× @ManyToOne | audited |
-| PurchaseOrder | purchase_orders | 2× @ManyToOne, @OneToMany(items) | soft-del, audited |
-| PurchaseOrderItem | purchase_order_items | @ManyToOne | audited |
-| GoodsReceiptNote | goods_receipt_notes | 2× @ManyToOne, @OneToMany(items) | soft-del, audited |
-| GoodsReceiptItem | goods_receipt_items | 2× @ManyToOne | audited |
-| ThreeWayMatchingResult | three_way_matching_results | 4× @ManyToOne (invoice, po, grn, performedBy) | audited (append-only via `V27`) |
-| MatchingConfig | matching_config | @ManyToOne | audited |
-| Payment | payments | @ManyToOne(invoice), @OneToOne(remittance) | audited |
-| RemittanceAdvice | remittance_advice | @ManyToOne, @OneToOne | audited |
-| PaymentAlertRule | payment_alert_rules | @ManyToOne | audited |
-| Notification | notifications | 2× @ManyToOne | audited |
-| AuditLog | audit_logs | @ManyToOne(user, on-delete-set-null via `V42`) | — (append-only via `V25`) |
-| ActiveSession | active_sessions | @ManyToOne(user) | audited |
-| SecurityPolicy | security_policy | @ManyToOne(updatedBy) | audited |
-| AccessRequest | access_requests | 2× @ManyToOne | audited |
-| Announcement | announcements | @ManyToOne | — |
-| Webhook | webhooks | @ManyToOne | audited |
-| WebhookDelivery | webhook_deliveries | @ManyToOne(webhook) | audited (append-only) |
-| IntegrationConnector | integration_connectors | — | — |
-| ReportDefinition | report_definitions | — | — |
-| RetentionPolicy | retention_policy | @ManyToOne | audited |
-| ChecklistTemplate | checklist_templates | @ManyToOne, @OneToMany(items) | audited |
-| ChecklistTemplateItem | checklist_template_items | @ManyToOne | — |
-| ChecklistResponse | checklist_responses | 2× @ManyToOne, @OneToMany(items) | audited |
-| ChecklistResponseItem | checklist_response_items | @ManyToOne | — |
-| SecurityIncident | security_incidents | — | — |
-| ComplianceChecklistItem | compliance_checklist_items | — | — |
-| ComplianceCalendarEntry | compliance_calendar | — | — |
-| BackupStatus | backup_status | — | — |
-| PrivacyPolicyAcceptance | privacy_policy_acceptances | — | — |
+### Package `domain.user`
+**User** (`users`) — implements `UserDetails`. Fields: `id:UUID @Id`; `username:String @Column(unique,nf,100)`; `email:String @Column(unique,nf,255)`; `password:String @Column(name=password_hash,nf,255)`; `firstName/lastName:String`; `preferredLang:String(2)`; `employeeId:String`; `departmentId:UUID`; `approvalLimit:BigDecimal(15,2)`; `active:boolean`; `mfaEnabled:boolean`; `mfaSecret:String @Convert(EncryptionAttributeConverter)`; `mfaVerified:boolean`; `failedLoginAttempts:int`; `lockedUntil:Instant`; `emailVerificationToken(+expiry)`; `passwordResetToken(+expiry)`; `createdAt/updatedAt/deletedAt`. **Relations:** `@OneToMany(mappedBy=user) Set<UserRole> roles` (cascade ALL, orphanRemoval); `@ManyToOne Supplier supplier`. Auditing: yes. Soft-delete: yes.
+**Role** (`roles`): `id`; `name:String(unique,nf,100)`; `description:String(255)`; `createdAt`. Auditing: createdAt.
+**UserRole** (`user_roles`): `@EmbeddedId UserRoleId id`; `@ManyToOne User user`; `@ManyToOne Role role`; `@ManyToOne User assignedBy`; `assignedAt`. (Join entity for User↔Role many-to-many.)
 
-**Invoice key fields** (`Invoice.java`): `id UUID` (PK), `referenceNumber` (unique, len 20), `department`/`submittedBy`/`supplier` (FK), flat `supplierName/Email/TaxId`, `supplierBankDetails` (AES-GCM `@Convert`), `amount` (numeric 15,2), `currency` (default XAF), `issueDate`, `dueDate`, `status` (enum `InvoiceStatus`), `dataSensitivity` (enum, default INTERNAL), `version` (`@Version`), `createdAt/updatedAt/deletedAt`, `purchaseOrderId`, `matchingStatus` (String). For per-field detail of remaining entities, read `domain/**/model/*.java` (each is small and Lombok-annotated).
+### Package `domain.department`
+**Department** (`departments`): `id`; `code:String(unique,nf,20)`; `nameFr/nameEn:String(nf,255)`; `requiresN2:boolean`; `n1Role:String(nf,100)`; `n2Role:String(100)`; `isActive:boolean`; `budget:BigDecimal(15,2)`; `createdAt/updatedAt` (`@PrePersist/@PreUpdate`).
+
+### Package `domain.supplier`
+**Supplier** (`suppliers`): `id`; `companyName:String(nf,255)`; `taxId:String(unique,nf,100)`; `contactEmail:String(nf,255)`; `contactPhone:String(50)`; `bankDetails:String @Convert(Encryption…) TEXT`; `address:TEXT`; `status:SupplierStatus @Enumerated(STRING)`; `category:SupplierCategory @Enumerated(STRING)`; `@ManyToOne User onboardedBy`; `onboardedAt`; `createdAt/updatedAt/deletedAt`; `@OneToMany(mappedBy=supplier) documents` (cascade ALL, orphanRemoval). Soft-delete: yes.
+**SupplierContract** (`supplier_contracts`): `id`; `supplierId:UUID`; `reference(nf,100)`; `title(nf,255)`; `startDate/endDate:LocalDate`; `status:String(20)`; `notes(2000)`; `createdBy:UUID`; `createdAt @CreationTimestamp`.
+**SupplierCommunication** (`supplier_communications`): `id`; `supplierId:UUID`; `type:String(20)`; `subject(nf,255)`; `body(2000)`; `loggedBy:UUID`; `loggedAt @CreationTimestamp`.
+**SupplierDocument** (`supplier_documents`): `id`; `@ManyToOne Supplier supplier`; `documentType:SupplierDocumentType @Enumerated`; `originalFilename`; `minioObjectKey(unique,500)`; `fileSizeBytes:Long`; `checksumSha256(64)`; `@ManyToOne User uploadedBy`; `uploadedAt @CreatedDate`; `expiresAt`.
+
+### Package `domain.invoice`
+**Invoice** (`invoices`): `id`; `referenceNumber:String(unique,nf,20)`; `@ManyToOne(opt=false) Department department`; `@ManyToOne(opt=false) User submittedBy`; `@ManyToOne Supplier supplier`; flat legacy `supplierName/supplierEmail/supplierTaxId`; `supplierBankDetails:String @Convert(Encryption…) TEXT`; `amount:BigDecimal(15,2)`; `currency:String(3)='XAF'`; `issueDate/dueDate:LocalDate`; `description:TEXT`; `status:InvoiceStatus @Enumerated(STRING)`; `dataSensitivity:DataSensitivity @Enumerated`; `@Version Integer version`; `createdAt/updatedAt/deletedAt`; `purchaseOrderId:UUID`; `matchingStatus:String(20)`. **Relations:** `@OneToMany(mappedBy=invoice) List<InvoiceItem> items`; `@OneToMany(mappedBy=invoice) List<InvoiceDocument> documents` (both cascade ALL, orphanRemoval). Optimistic locking (`@Version`); soft-delete; auditing.
+**InvoiceItem** (`invoice_items`): `id`; `@ManyToOne(opt=false) Invoice invoice`; `lineNumber:Integer`; `description:TEXT`; `quantity:BigDecimal(10,3)`; `unitPrice:BigDecimal(15,2)`; `totalPrice:BigDecimal(15,2)`; `createdAt`.
+**InvoiceDocument** (`invoice_documents`): `id`; `@ManyToOne(opt=false) Invoice invoice`; `originalFilename(nf,255)`; `minioObjectKey(unique,nf,500)`; `fileType(nf,100)`; `fileSizeBytes:Long`; `checksumSha256(nf,64)`; `@ManyToOne(opt=false) User uploadedBy`; `uploadedAt`; `version:int=1`; `supersededByDocumentId:UUID`; `retentionDisposition:RetentionDisposition @Enumerated`; `retentionDispositionAt`; `@ManyToOne User retentionDispositionBy`. (Versioning + retention disposition.)
+**DocumentAccessLog** (`document_access_log`): `id`; `@ManyToOne InvoiceDocument document @OnDelete(CASCADE)`; `invoiceId:UUID`; `@ManyToOne User accessedBy @OnDelete(SET_NULL)`; `action:String(50)='DOWNLOAD'`; `ipAddress/userAgent`; `accessedAt @CreationTimestamp`. **Append-only** (V32 triggers).
+
+### Package `domain.purchasing`
+**PurchaseOrder** (`purchase_orders`): `id`; `poNumber(unique,nf,50)`; `@ManyToOne(opt=false) Supplier supplier`; `totalAmount:BigDecimal(15,2)`; `status:PurchaseOrderStatus @Enumerated`; `@ManyToOne(opt=false) User createdBy`; `createdAt/updatedAt/deletedAt`; `@OneToMany(mappedBy=purchaseOrder) items`. Soft-delete.
+**PurchaseOrderItem** (`purchase_order_items`): `id`; `@ManyToOne(opt=false) PurchaseOrder purchaseOrder`; `itemDescription(nf,255)`; `quantity:BigDecimal(10,2)`; `unitPrice:BigDecimal(15,2)`; `lineTotal:BigDecimal(15,2)`; `createdAt`.
+**GoodsReceiptNote** (`goods_receipt_notes`): `id`; `grnNumber(unique,nf,50)`; `@ManyToOne(opt=false) PurchaseOrder purchaseOrder`; `@ManyToOne(opt=false) User receivedBy`; `receiptDate:LocalDate`; `createdAt/updatedAt/deletedAt`; `@OneToMany(mappedBy=goodsReceiptNote) items`. Soft-delete.
+**GoodsReceiptItem** (`goods_receipt_items`): `id`; `@ManyToOne(opt=false) GoodsReceiptNote goodsReceiptNote`; `@ManyToOne(opt=false) PurchaseOrderItem purchaseOrderItem`; `receivedQuantity:BigDecimal(10,2)`; `createdAt`.
+**MatchingConfig** (`matching_config`): `id`; `tolerancePercentage:BigDecimal(5,2)`; `toleranceAmount:BigDecimal(15,2)`; `requireGrn:Boolean`; `isActive:Boolean`; `@ManyToOne(opt=false) User updatedBy`; `updatedAt @LastModifiedDate`.
+**ThreeWayMatchingResult** (`three_way_matching_results`): `id`; `@ManyToOne(opt=false) Invoice invoice`; `@ManyToOne(opt=false) PurchaseOrder purchaseOrder`; `@ManyToOne GoodsReceiptNote goodsReceiptNote`; `status:MatchingStatus @Enumerated`; `discrepancyNotes:TEXT`; `@ManyToOne User overriddenBy`; `overrideReason(500)`; `createdAt/updatedAt`. **Append-only by design.**
+
+### Package `domain.workflow`
+**ApprovalStep** (`approval_steps`): `id`; `@ManyToOne(opt=false) Invoice invoice`; `stepOrder:Integer`; `stepNameFr/stepNameEn:String(255)`; `@ManyToOne User approver`; `departmentCode(nf,20)`; `status:@Enumerated(STRING,20)`; `comments:TEXT`; `rejectionReason:TEXT`; `deadline:Instant`; `actionAt`; `createdAt`.
+**InvoiceStatusHistory** (`invoice_status_history`): `id`; `@ManyToOne(opt=false) Invoice invoice`; `fromStatus/toStatus:String(30)`; `@ManyToOne(opt=false) User changedBy`; `changeReason:TEXT`; `changedAt`.
+**ApprovalDelegation** (`approval_delegations`): `id`; `@ManyToOne(opt=false) User delegator`; `@ManyToOne(opt=false) User delegatee`; `departmentCode(nf,20)`; `fromDate/toDate:LocalDate`; `reason:TEXT`; `@ManyToOne(opt=false) User createdBy`; `createdAt`; `revoked:boolean`; `revokedAt`.
+**EscalationRule** (`escalation_rules`): `id`; `hoursAfterDeadline:int`; `label(255)`; `active:boolean`; `@ManyToOne User createdBy`; `createdAt/updatedAt`.
+
+### Package `domain.payment`
+**Payment** (`payments`): `id`; `@OneToOne(opt) Invoice invoice (unique)`; `amountPaid:BigDecimal(15,2)`; `paymentDate:Instant`; `paymentMethod:PaymentMethod @Enumerated(STRING,50)`; `reference(100)`; `@ManyToOne User recordedBy`; `deleted:boolean` (soft-delete flag); `createdAt/updatedAt`.
+**RemittanceAdvice** (`remittance_advice`): `id`; `@OneToOne(opt=false) Payment payment (unique)`; `pdfObjectKey(nf,255)`; `generatedAt:Instant`; `@ManyToOne(opt=false) User generatedBy`; `createdAt/updatedAt`.
+**PaymentAlertRule** (`payment_alert_rules`): `id`; `daysBeforeDue:int`; `label(255)`; `active:boolean`; `@ManyToOne User createdBy`; `createdAt/updatedAt`.
+
+### Package `domain.notification`
+**Notification** (`notifications`): `id`; `@ManyToOne User user`; `@ManyToOne Invoice invoice`; `titleFr/titleEn:String(255)`; `messageFr/messageEn:TEXT`; `type:NotificationType @Enumerated(STRING,50)`; `isRead:boolean`; `readAt`; `createdAt @CreatedDate`.
+
+### Package `domain.audit`
+**AuditLog** (`audit_logs`): `id`; `@ManyToOne User user @OnDelete(SET_NULL)`; `entityType(nf,50)`; `entityId(nf,100)`; `action(nf,100)`; `oldValue/newValue:String @JdbcTypeCode(JSON) jsonb`; `ipAddress(50)`; `userAgent`; `createdAt @CreationTimestamp`. **Append-only** (V32).
+
+### Package `domain.auth`
+**ActiveSession** (`active_sessions`): `id`; `@ManyToOne(opt=false) User user`; `refreshToken(unique,nf,1024)`; `ipAddress(50)`; `userAgent:TEXT`; `createdAt @CreatedDate`; `expiresAt`; `revoked:boolean`; `revokedAt`.
+**SecurityPolicy** (`security_policy`): `id`; `mfaRequired:Boolean=true`; `sessionTimeoutMinutes:Integer=60`; `maxLoginAttempts:Integer=5`; `minPasswordLength:Integer=8`; `isActive:Boolean=true`; `@ManyToOne User updatedBy`; `updatedAt @LastModifiedDate`. (Singleton, versioned.)
+
+### Package `domain.access`
+**AccessRequest** (`access_requests`): `id`; `@ManyToOne(opt) User requester`; `requestedRole(nf,100)`; `reason(nf,1000)`; `status:AccessRequestStatus @Enumerated(STRING,20)`; `@ManyToOne User reviewedBy`; `reviewComment(1000)`; `createdAt @CreatedDate`; `reviewedAt` (`@PrePersist`).
+
+### Package `domain.announcement`
+**Announcement** (`announcements`): `id`; `title(nf,200)`; `body(nf,2000)`; `severity:String(20)='INFO'`; `active:boolean`; `@ManyToOne User createdBy @OnDelete(SET_NULL)`; `createdAt @CreationTimestamp`; `expiresAt`.
+
+### Package `domain.checklist`
+**ChecklistTemplate** (`checklist_templates`): `id`; `name(nf,255)`; `departmentId:UUID` (null=global); `active:boolean`; `@ManyToOne User createdBy`; `@OneToMany(mappedBy=template) items @OrderBy(displayOrder)`; `createdAt/updatedAt`.
+**ChecklistTemplateItem** (`checklist_template_items`): `id`; `@ManyToOne(opt=false) ChecklistTemplate template`; `label(nf,500)`; `required:boolean`; `displayOrder:int`.
+**ChecklistResponse** (`checklist_responses`): `id`; `invoiceId:UUID`; `@ManyToOne(opt=false) ChecklistTemplate template`; `@ManyToOne User respondedBy`; `@OneToMany(mappedBy=response) items` (cascade ALL, orphanRemoval); `respondedAt @CreatedDate`.
+**ChecklistResponseItem** (`checklist_response_items`): `id`; `@ManyToOne(opt=false) ChecklistResponse response`; `templateItemId:UUID`; `checked:boolean`; `note(1000)`.
+
+### Package `domain.compliance`
+**SecurityIncident** (`security_incidents`): `id`; `title(nf,255)`; `description(4000)`; `severity:String(20)='MEDIUM'`; `status:String(20)='OPEN'`; `reportedBy:UUID`; `reportedAt @CreationTimestamp`; `resolvedAt`.
+**ComplianceChecklistItem** (`compliance_checklist_items`): `id`; `framework:String(30)` (SOX/IFRS/LOCAL); `label(nf,500)`; `completed:boolean`; `notes(2000)`; `updatedAt @UpdateTimestamp`.
+**ComplianceCalendarEntry** (`compliance_calendar`): `id`; `title(nf,255)`; `dueDate:LocalDate`; `description(2000)`; `completed:boolean`; `createdAt @CreationTimestamp`.
+**BackupStatus** (`backup_status`): `id:Integer=1` (singleton, no UUID); `lastBackupAt:Instant`; `status:String(20)='UNKNOWN'`; `detail(1000)`.
+**PrivacyPolicyAcceptance** (`privacy_policy_acceptances`): `id`; `userId:UUID`; `policyVersion(nf,40)`; `acceptedAt @CreationTimestamp`.
+
+### Package `domain.retention`
+**RetentionPolicy** (`retention_policy`): `id`; `retentionYears:int`; `active:boolean`; `lastSweepAt:Instant`; `lastFlaggedCount:Integer`; `@ManyToOne User updatedBy`; `createdAt/updatedAt`. (Singleton.)
+
+### Package `domain.report`
+**ReportDefinition** (`report_definitions`): `id`; `name(nf,150)`; `dataset:String(40)` (INVOICES/SUPPLIERS/AUDIT/BUDGET); `format:String(10)`; `frequency:String(20)`; `recipients(2000)` (comma-separated); `active:boolean`; `createdBy:UUID`; `createdAt @CreationTimestamp`; `lastRunAt`.
+
+### Package `domain.webhook`
+**Webhook** (`webhooks`): `id`; `name(nf,100)`; `url(nf,1000)`; `secretHash(nf,64)`; `events(nf,500)`; `isActive:Boolean`; `@ManyToOne User createdBy`; `createdAt/updatedAt`.
+**WebhookDelivery** (`webhook_deliveries`): `id`; `@ManyToOne Webhook webhook`; `eventType(nf,100)`; `payload:TEXT`; `responseStatus:Integer`; `attemptCount:int`; `lastAttemptedAt`; `success:Boolean`; `createdAt`. **Append-only** (V32).
+**IntegrationConnector** (`integration_connectors`): `id`; `name(nf,150)`; `type:String(30)` (ERP/ACCOUNTING/BANKING/DMS/MOCK); `endpoint(500)`; `config(4000)`; `enabled:boolean`; `lastStatus(20)`; `lastCheckedAt`; `lastMessage(1000)`; `syncIntervalMinutes:Integer`; `lastSyncAt`; `lastSyncStatus(20)`; `lastSyncMessage(1000)`; `createdBy:UUID`; `createdAt @CreationTimestamp`.
 
 ---
 
 ## 5. DATABASE (Chapter 3 ERD + data dictionary)
 
-### 5.1 Flyway migration ledger (V1–V63, gap at V36–V38)
+### 5.1 Flyway migration log (V1 → V34)
+`ddl-auto: validate` (Hibernate validates only; Flyway owns the schema — `application.yaml:14`). Migrations are a **consolidated baseline** (commit `e12d6c6` folded ~60 churned migrations into V1..V34).
 
-| Version | File | Effect |
-|---|---|---|
-| V1 | create_users_roles | `users`, `roles` tables |
-| V2 | create_departments | `departments` |
-| V3 | seed_roles_and_admin | seed roles + admin user |
-| V4 | create_invoices | `invoices` |
-| V5 | create_invoice_items | `invoice_items` |
-| V6 | create_invoice_documents | `invoice_documents` |
-| V7 | create_approval_steps | `approval_steps` |
-| V8 | create_invoice_status_history | `invoice_status_history` |
-| V9 | create_notifications | `notifications` |
-| V10 | create_payments | `payments` |
-| V11 | create_audit_logs | `audit_logs` |
-| V12 | add_indexes | indexes on `invoices(status)` etc. |
-| V13 | create_suppliers | `suppliers` |
-| V14 | update_invoices_supplier_fk | add `supplier_id` FK to invoices |
-| V15 | add_supplier_user_link | link `users`↔supplier |
-| V16 | add_role_supplier | seed `ROLE_SUPPLIER` |
-| V17 | create_purchase_orders | `purchase_orders` |
-| V18 | create_goods_receipt_notes | `goods_receipt_notes` |
-| V19 | create_three_way_matching | `three_way_matching_results` |
-| V20 | create_remittance_advice | `remittance_advice` |
-| V21 | add_matching_columns_to_invoices | `purchase_order_id`, `matching_status` |
-| V22 | create_webhooks | `webhooks`, `webhook_deliveries` |
-| V23 | seed_required_workflow_roles | seed N1/N2 dept roles |
-| V24 | add_password_reset_tokens | reset-token cols on users |
-| V25 | enforce_append_only_logs | **triggers blocking UPDATE/DELETE on `audit_logs`** |
-| V26 | add_encrypted_webhook_secret | (later reversed) |
-| V27 | make_matching_results_append_only | triggers on `three_way_matching_results` |
-| V28 | add_staff_profile_fields | staff profile cols |
-| V29 | enforce_financial_retention | trigger blocking delete of financial invoices |
-| V30 | remove_webhook_secret_encrypted | drop `secret_encrypted` |
-| V31 | fix_finance_approver_and_remove_auditeur | DAF=Finance N1; **remove ROLE_AUDITEUR** |
-| V32 | seed_test_users_all_roles | seed test users (all roles) |
-| V33 | remove_phantom_roles | delete stray roles |
-| V34 | fix_users_is_active | normalize `is_active` |
-| V35 | encrypt_invoice_bank_details | migrate bank details to AES |
-| *(V36–V38)* | **— absent —** | numbering gap (explain in thesis) |
-| V39 | create_active_sessions | `active_sessions` |
-| V40 | create_approval_delegations | `approval_delegations` |
-| V41 | increase_active_sessions_refresh_token_length | widen refresh token col |
-| V42 | audit_logs_user_fk_on_delete_set_null | FK ON DELETE SET NULL |
-| V43 | add_invoices_supplier_id_index | index |
-| V44 | create_security_policy | `security_policy` |
-| V45 | security_policy_updated_by_nullable | nullable updated_by |
-| V46 | add_invoices_data_sensitivity | `data_sensitivity` col |
-| V47 | create_access_requests | `access_requests` |
-| V48 | create_document_access_log | `document_access_log` |
-| V49 | add_departments_budget | `budget` col |
-| V50 | widen_mfa_secret | widen `mfa_secret` (for AES-GCM blob) |
-| V51 | create_announcements | `announcements` |
-| V52 | create_supplier_contracts_and_comms | `supplier_contracts`, `supplier_communications` |
-| V53 | add_invoice_document_versioning | doc version cols |
-| V54 | create_report_definitions | `report_definitions` |
-| V55 | create_integration_connectors | `integration_connectors` |
-| V56 | create_compliance | `security_incidents`, `compliance_*`, `backup_status`, `privacy_policy_acceptances` |
-| V57 | add_supplier_category | `category` col on suppliers |
-| V58 | create_validation_checklists | `checklist_templates/_items`, `checklist_responses/_items` |
-| V59 | create_payment_alert_rules | `payment_alert_rules` |
-| V60 | add_connector_sync_schedule | sync-interval cols |
-| V61 | create_escalation_rules | `escalation_rules` |
-| V62 | create_retention_policy | `retention_policy` |
-| V63 | add_retention_disposition | disposition enum + cols on `invoice_documents` |
+| Version | File | Creates / Alters |
+|---------|------|------------------|
+| V1 | create_departments | `departments` + seed of the OCT departmental matrix (codes, n1/n2 roles, requires_n2) |
+| V2 | create_suppliers | `suppliers` (+`category`, `idx_suppliers_category`) |
+| V3 | create_users | `users` (identity + MFA + login tracking + tokens + staff profile); deferred FK `suppliers.onboarded_by → users` |
+| V4 | create_roles | `roles`, `user_roles` (join) |
+| V5 | seed_roles_and_admin | seed 14 roles + admin user + role grant |
+| V6 | create_purchase_orders | `purchase_orders`, `purchase_order_items` |
+| V7 | create_goods_receipts | `goods_receipt_notes`, `goods_receipt_items` |
+| V8 | create_invoices | `invoices` (+ supplier_id FK, purchase_order_id, matching_status, data_sensitivity) |
+| V9 | create_matching | `three_way_matching_results`, `matching_config` |
+| V10 | create_invoice_items | `invoice_items` |
+| V11 | create_invoice_documents | `invoice_documents` (checksum, version, retention disposition) |
+| V12 | create_invoice_status_history | `invoice_status_history` |
+| V13 | create_notifications | `notifications` |
+| V14 | create_payments | `payments`, `remittance_advice` |
+| V15 | create_audit_logs | `audit_logs` |
+| V16 | create_webhooks | `webhooks`, `webhook_deliveries` |
+| V17 | create_approval_steps | `approval_steps` |
+| V18 | create_active_sessions | `active_sessions` |
+| V19 | create_approval_delegations | `approval_delegations` |
+| V20 | create_security_policy | `security_policy` |
+| V21 | create_access_requests | `access_requests` |
+| V22 | create_document_access_log | `document_access_log` |
+| V23 | create_announcements | `announcements` |
+| V24 | create_supplier_relationship | `supplier_contracts`, `supplier_communications`, `supplier_documents` |
+| V25 | create_report_definitions | `report_definitions` |
+| V26 | create_integration_connectors | `integration_connectors` |
+| V27 | create_payment_alert_rules | `payment_alert_rules` |
+| V28 | create_escalation_rules | `escalation_rules` |
+| V29 | create_retention_policy | `retention_policy` |
+| V30 | create_compliance | `security_incidents`, `compliance_checklist_items`, `compliance_calendar`, `backup_status`, `privacy_policy_acceptances` |
+| V31 | create_validation_checklists | `checklist_templates`, `checklist_template_items`, `checklist_responses`, `checklist_response_items` |
+| V32 | enforce_append_only_logs | trigger fn `prevent_append_only_mutation()` + BEFORE UPDATE/DELETE triggers on `audit_logs`, `webhook_deliveries`, `document_access_log` |
+| V33 | enforce_financial_retention | financial-record retention enforcement (DB-level guards on financial tables) |
+| V34 | seed_test_users | seed test users for the 7 actors (password `Test1234!`) |
 
-### 5.2 Data-dictionary tables (paste-ready)
+### 5.2 Data-dictionary tables (paste-ready) — core tables
 
-Authoritative column detail lives in the migration SQL. For Chapter 3, generate per-table dictionaries by reading each `Vn__*.sql` — the key central table is reproduced here as the template; replicate the format for the other 40+ tables.
+**`invoices`** (`V8`)
+| Column | SQL type | Null | Default | Key |
+|--------|----------|------|---------|-----|
+| id | UUID | NO | gen_random_uuid() | PK |
+| reference_number | VARCHAR(20) | NO | — | UNIQUE |
+| department_id | UUID | NO | — | FK→departments(id) |
+| submitted_by | UUID | NO | — | FK→users(id) |
+| supplier_name | VARCHAR(255) | YES | — | (legacy) |
+| supplier_email | VARCHAR(255) | YES | — | (legacy) |
+| supplier_tax_id | VARCHAR(100) | YES | — | (legacy) |
+| supplier_bank_details | TEXT | YES | — | AES-GCM ciphertext |
+| amount | NUMERIC(15,2) | NO | — | |
+| currency | VARCHAR(3) | NO | 'XAF' | |
+| issue_date | DATE | NO | — | |
+| due_date | DATE | NO | — | |
+| description | TEXT | YES | — | |
+| status | VARCHAR(30) | NO | 'BROUILLON' | idx |
+| version | INTEGER | NO | 0 | optimistic lock |
+| created_at | TIMESTAMPTZ | NO | NOW() | idx |
+| updated_at | TIMESTAMPTZ | NO | NOW() | |
+| deleted_at | TIMESTAMPTZ | YES | — | soft-delete |
+| supplier_id | UUID | YES | — | FK→suppliers(id) |
+| purchase_order_id | UUID | YES | — | FK→purchase_orders(id) |
+| matching_status | VARCHAR(20) | YES | — | idx |
+| data_sensitivity | VARCHAR(20) | NO | 'INTERNAL' | |
 
-**Table `invoices`** (`V4` + `V14`,`V21`,`V35`,`V46`)
+*Indexes:* status; department_id; created_at; (status, created_at DESC); supplier_id; purchase_order_id; matching_status.
 
-| Column | SQL type | Null | Default | Key / Notes |
-|---|---|---|---|---|
-| id | uuid | NO | gen | PK |
-| reference_number | varchar(20) | NO | — | UNIQUE (`FAC-{YEAR}-{NNNNN}`) |
-| department_id | uuid | NO | — | FK → departments |
-| submitted_by | uuid | NO | — | FK → users |
-| supplier_id | uuid | YES | — | FK → suppliers (nullable, backward-compat) |
-| supplier_name | varchar(255) | NO | — | flat copy |
-| supplier_email | varchar(255) | NO | — | flat copy |
-| supplier_tax_id | varchar(100) | YES | — | |
-| supplier_bank_details | text | YES | — | **AES-256-GCM ciphertext** (`GCM:iv:cipher`) |
-| amount | numeric(15,2) | NO | — | |
-| currency | varchar(3) | NO | 'XAF' | |
-| issue_date | date | NO | — | |
-| due_date | date | NO | — | |
-| description | text | YES | — | |
-| status | varchar(30) | NO | 'BROUILLON' | enum InvoiceStatus |
-| data_sensitivity | varchar(20) | NO | 'INTERNAL' | enum (`V46`) |
-| version | int | NO | 0 | optimistic lock |
-| created_at | timestamptz | NO | now | audit |
-| updated_at | timestamptz | NO | now | audit |
-| deleted_at | timestamptz | YES | — | soft delete |
-| purchase_order_id | uuid | YES | — | FK → purchase_orders (`V21`) |
-| matching_status | varchar(20) | YES | — | (`V21`) |
+**`suppliers`** (`V2`)
+| Column | SQL type | Null | Default | Key |
+|--------|----------|------|---------|-----|
+| id | UUID | NO | gen_random_uuid() | PK |
+| company_name | VARCHAR(255) | NO | — | |
+| tax_id | VARCHAR(100) | NO | — | UNIQUE |
+| contact_email | VARCHAR(255) | NO | — | |
+| contact_phone | VARCHAR(50) | YES | — | |
+| bank_details | TEXT | YES | — | AES-GCM ciphertext |
+| address | TEXT | YES | — | |
+| status | VARCHAR(30) | NO | 'PENDING_VERIFICATION' | |
+| onboarded_by | UUID | YES | — | FK→users(id) |
+| onboarded_at | TIMESTAMPTZ | YES | — | |
+| created_at | TIMESTAMPTZ | NO | NOW() | |
+| updated_at | TIMESTAMPTZ | NO | NOW() | |
+| deleted_at | TIMESTAMPTZ | YES | — | soft-delete |
+| category | VARCHAR(30) | YES | — | idx_suppliers_category |
 
-*Append-only enforcement:* `audit_logs` (`V25`), `three_way_matching_results` (`V27`); *retention guard:* `invoices` financial delete blocked (`V29`).
+**`users`** (`V3`)
+| Column | SQL type | Null | Default | Key |
+|--------|----------|------|---------|-----|
+| id | UUID | NO | gen_random_uuid() | PK |
+| username | VARCHAR(100) | NO | — | UNIQUE |
+| email | VARCHAR(255) | NO | — | UNIQUE |
+| password_hash | VARCHAR(255) | NO | — | BCrypt(12) |
+| first_name | VARCHAR(100) | NO | — | |
+| last_name | VARCHAR(100) | NO | — | |
+| preferred_lang | VARCHAR(2) | YES | 'fr' | |
+| is_active | BOOLEAN | NO | TRUE | |
+| created_at / updated_at | TIMESTAMPTZ | NO | NOW() | |
+| deleted_at | TIMESTAMPTZ | YES | — | soft-delete |
+| supplier_id | UUID | YES | — | FK→suppliers(id) |
+| mfa_enabled | BOOLEAN | YES | FALSE | |
+| mfa_secret | VARCHAR(255) | YES | — | AES-GCM ciphertext |
+| mfa_verified | BOOLEAN | YES | FALSE | |
+| failed_login_attempts | INTEGER | YES | 0 | |
+| locked_until | TIMESTAMPTZ | YES | — | |
+| email_verification_token (+_expiry) | VARCHAR(255)/TIMESTAMPTZ | YES | — | idx |
+| password_reset_token (+_expiry) | VARCHAR(255)/TIMESTAMPTZ | YES | — | idx |
+| employee_id | VARCHAR(100) | YES | — | idx |
+| department_id | UUID | YES | — | FK→departments(id) |
+| approval_limit | NUMERIC(15,2) | YES | — | |
+
+> The remaining 43 tables follow the field shapes documented per-entity in §4 (column names = snake_case of the field; types map BigDecimal→NUMERIC, Instant→TIMESTAMPTZ, LocalDate→DATE, UUID→UUID, String(n)→VARCHAR(n)/TEXT, boolean→BOOLEAN, enum→VARCHAR). For Chapter 3 the three tables above plus `departments`, `three_way_matching_results`, `payments`, `approval_steps`, and `audit_logs` are the diagram-worthy core; the others are reference/config/log tables.
 
 ---
 
 ## 6. API SURFACE (Chapter 3 use cases / Chapter 4 listings)
 
-All paths prefixed `/api/v1`. Roles from `@PreAuthorize`. (39 controllers; grouped.)
+All paths are prefixed `/api/v1`. All responses are wrapped in `ApiResponse<T>` (CLAUDE.md §3). Roles below are the literal `@PreAuthorize` expressions. `SC` = `ASSISTANT_COMPTABLE`. `!SUPPLIER && !ADMIN` reflects the separation-of-duties rule (Admin has no financial/invoice data access).
 
-### Auth & MFA — `AuthController`
+### Auth (`/auth`) — `AuthController`
 | Method | Path | Role | Purpose |
-|---|---|---|---|
-| POST | /auth/login | permitAll | login; may return `mfaRequired` + pre-auth token |
-| POST | /auth/refresh | permitAll | refresh JWT |
-| POST | /auth/register/supplier | permitAll | supplier self-register |
-| GET | /auth/verify-email | permitAll | email verification |
-| POST | /auth/forgot-password | permitAll | request reset |
-| POST | /auth/reset-password | permitAll | reset with token |
-| POST | /auth/mfa/setup | isAuthenticated | begin TOTP enrolment (QR) |
-| POST | /auth/mfa/confirm | isAuthenticated | confirm TOTP |
-| POST | /auth/mfa/validate | permitAll | submit OTP w/ pre-auth token → full JWT |
+|--------|------|------|---------|
+| POST | /auth/login | permitAll | Login step 1 (returns JWT or `mfa_required`+pre-auth token) |
+| POST | /auth/refresh | permitAll | Refresh access token |
+| POST | /auth/register/supplier | permitAll | Supplier self-registration |
+| GET | /auth/verify-email | permitAll | Email verification |
+| POST | /auth/forgot-password | permitAll | Request reset link |
+| POST | /auth/reset-password | permitAll | Confirm new password |
+| POST | /auth/mfa/setup | isAuthenticated | Begin MFA enrolment (QR/secret) |
+| POST | /auth/mfa/confirm | isAuthenticated | Confirm MFA enrolment with OTP |
+| POST | /auth/mfa/validate | permitAll | Login step 2 (OTP → full JWT) |
 
-### Invoices — `InvoiceController` (`/invoices`)
-| Method | Path | Role |
-|---|---|---|
-| GET | / | auth, not SUPPLIER/ADMIN |
-| GET | /export | auth, not SUPPLIER/ADMIN |
-| GET | /{id} | auth, not SUPPLIER/ADMIN |
-| GET | /pending-validation | ADMIN/DAF/ASSISTANT_COMPTABLE (+ N1/N2 authorities) |
-| GET | /{id}/matching | auth, not SUPPLIER/ADMIN |
-| GET | /{id}/matching/export | auth, not SUPPLIER/ADMIN |
-| GET | /{id}/history | auth, not SUPPLIER/ADMIN |
-| POST | / | ASSISTANT_COMPTABLE |
-| POST | /import | ASSISTANT_COMPTABLE |
-| PUT | /{id} | ASSISTANT_COMPTABLE |
-| PATCH | /{id}/sensitivity | DAF/ASSISTANT_COMPTABLE |
-| DELETE | /{id} | ASSISTANT_COMPTABLE (soft) |
-| POST | /{id}/submit | ASSISTANT_COMPTABLE |
-| POST | /{id}/resubmit | ASSISTANT_COMPTABLE |
-| POST | /{id}/matching/override | DAF/ADMIN |
-| GET | /archive | ADMIN/DAF/ASSISTANT_COMPTABLE |
-| GET | /{id}/export/pdf | auth, not SUPPLIER |
+### Security policy & sessions
+| Method | Path | Role | Purpose |
+|--------|------|------|---------|
+| GET/PUT | /admin/security-policy | ADMIN | Read/update singleton security policy |
+| GET | /admin/security-health | ADMIN | Encryption/MFA/lockouts/webhooks health |
+| GET | /admin/sessions | ADMIN | List active sessions |
+| DELETE | /admin/sessions/user/{userId} | ADMIN | Revoke a user's sessions |
 
-### Invoice documents / checklist — `InvoiceDocumentController`, `InvoiceChecklistController`
-POST `/invoices/{id}/documents` (+`/bulk`) ASSISTANT_COMPTABLE; GET list & `/{docId}/download` isAuthenticated; checklist GET/POST auth & not SUPPLIER.
+### Users / roles / profile / access
+| Method | Path | Role | Purpose |
+|--------|------|------|---------|
+| GET/POST/PUT | /users, /users/{id} | ADMIN (class-level) | CRUD users |
+| PATCH | /users/{id}/activate | ADMIN | Toggle active |
+| PUT | /users/{id}/roles | ADMIN | Assign roles |
+| POST | /users/{id}/unlock, /users/{id}/mfa/reset | ADMIN | Unlock / reset MFA |
+| GET | /users/export, /export/csv | ADMIN | Export (CSV/Excel/PDF) |
+| POST | /users/import/csv | ADMIN | Bulk import |
+| GET | /roles | ADMIN | List roles |
+| GET/PUT | /profile | isAuthenticated | Self profile |
+| POST | /access-requests | auth && !SUPPLIER | Request a role |
+| GET | /access-requests/mine | auth && !SUPPLIER | My requests |
+| GET | /access-requests | ADMIN | All requests |
+| PATCH | /access-requests/{id} | ADMIN | Approve/reject |
 
-### Workflow — `ApprovalController` (`/invoices/{invoiceId}/workflow`)
-| Method | Path | Role |
-|---|---|---|
-| GET | /rejection-reasons | auth, not SUPPLIER |
-| GET | /steps | auth, not SUPPLIER |
-| POST | /assign | ASSISTANT_COMPTABLE/DAF/ADMIN (+authorities) |
-| POST | /validate-n1 | DAF (+ N1 authorities) |
-| POST | /validate-n2 | N2 authorities (INFO/INFRA/TECH) |
-| POST | /bon-a-payer | DAF/ADMIN |
-| POST | /reject | DAF/ADMIN (+ N1/N2 authorities) |
+### Departments & department access
+| Method | Path | Role | Purpose |
+|--------|------|------|---------|
+| GET | /departments, /departments/{id} | isAuthenticated | List/detail |
+| POST/PUT | /departments, /departments/{id} | ADMIN | CRUD |
+| PATCH | /departments/{id}/activate | ADMIN | Toggle |
+| GET | /admin/department-access | ADMIN | Read-only users×roles×N1/N2 per dept |
 
-### Delegations / Escalation / Validator stats
-`DelegationController` (`/approvals/delegations`) ADMIN + approver self-service; `EscalationRuleController` (`/escalation-rules`) ADMIN/DAF; `ValidatorStatsController` (`/workflow/my-stats`) auth not SUPPLIER.
+### Invoices (`/invoices`) — `InvoiceController`, `InvoiceDocumentController`
+| Method | Path | Role | Purpose |
+|--------|------|------|---------|
+| GET | /invoices | auth && !SUPPLIER && !ADMIN | List (filters) |
+| GET | /invoices/export | same | Export list |
+| GET | /invoices/{id} | same | Detail |
+| GET | /invoices/pending-validation | ADMIN/DAF/SC (+validators) | Validation queue |
+| GET | /invoices/{id}/matching | same as detail | Matching result |
+| GET | /invoices/{id}/matching/export | same | Export matching report |
+| GET | /invoices/{id}/history | same | Status history |
+| POST | /invoices | SC | Create |
+| POST | /invoices/import | SC | Bulk CSV/XML import |
+| PUT | /invoices/{id} | SC | Update |
+| PATCH | /invoices/{id}/sensitivity | DAF/SC | Set data sensitivity |
+| DELETE | /invoices/{id} | SC | Soft-delete |
+| POST | /invoices/{id}/submit | SC | BROUILLON→SOUMIS |
+| POST | /invoices/{id}/resubmit | SC | REJETE→SOUMIS |
+| POST | /invoices/{id}/matching/override | DAF/ADMIN | Override MISMATCH (reason) |
+| GET | /invoices/archive | ADMIN/DAF/SC | Archive search |
+| GET | /invoices/{id}/export/pdf | auth && !SUPPLIER | PDF export |
+| POST | /invoices/{invoiceId}/documents | SC | Upload doc |
+| POST | /invoices/{invoiceId}/documents/bulk | SC | Bulk docs |
+| GET | /invoices/{invoiceId}/documents | isAuthenticated | List docs |
+| GET | /invoices/{invoiceId}/documents/{docId}/download | isAuthenticated | Presigned download (logged) |
 
-### Purchasing & Matching
-`PurchaseOrderController` (`/purchase-orders`) ADMIN/ASSISTANT_COMPTABLE(/DAF read); `GoodsReceiptController` (`/goods-receipts`); `MatchingConfigController` (`/matching-config`, write ADMIN); `MatchingQueryController` (`/matching`, list + `/{invoiceId}/lines`).
+### OCR
+| POST | /ocr/extract | SUPPLIER/SC/ADMIN | OCR/XML field extraction |
 
-### Payments
-`PaymentController` (`/payments`) record/batch ASSISTANT_COMPTABLE; reads ASSISTANT_COMPTABLE/DAF/ADMIN; remittance + export. `PaymentAlertRuleController` DAF/ASSISTANT_COMPTABLE.
+### Workflow / approval (`/invoices/{invoiceId}/workflow`) — `ApprovalController`
+| Method | Path | Role | Purpose |
+|--------|------|------|---------|
+| GET | /workflow/rejection-reasons | auth && !SUPPLIER | i18n rejection-reason codes |
+| GET | /workflow/steps | auth && !SUPPLIER | Approval timeline |
+| POST | /workflow/assign | SC/DAF/ADMIN (+validators) | SOUMIS→EN_VALIDATION_N1 |
+| POST | /workflow/validate-n1 | DAF (+N1 validators) | N1 decision |
+| POST | /workflow/validate-n2 | N2 validators (INFO/INFRA/TECH) | N2 decision |
+| POST | /workflow/bon-a-payer | DAF/ADMIN | VALIDE→BON_A_PAYER |
+| POST | /workflow/reject | DAF/ADMIN (+validators) | →REJETE (reason required) |
 
-### Suppliers & Portal
-`SupplierController` (`/suppliers`) ADMIN/ASSISTANT_COMPTABLE(/DAF read), activate/suspend, performance, documents; `SupplierRelationshipController` contracts/communications; `SupplierPortalController` (`/supplier/*`) `hasRole('SUPPLIER')`: submit/list/resubmit invoices, profile, dashboard, documents.
+### Delegations & escalation & validator stats
+| Method | Path | Role | Purpose |
+|--------|------|------|---------|
+| POST/GET/DELETE | /approvals/delegations(+/{id}) | ADMIN | Admin-managed delegations |
+| POST/GET/DELETE | /approvals/delegations/mine(+/{id}) | approver roles | Self delegations |
+| GET | /approvals/delegations/eligible-delegatees | approver roles | Pick delegatee |
+| GET/POST/PUT/DELETE | /escalation-rules(+/{id}) | ADMIN/DAF | Escalation config |
+| GET | /workflow/my-stats | auth && !SUPPLIER | Approver KPIs |
 
-### Reports — `ReportController` (`/reports`, all DAF/ASSISTANT_COMPTABLE)
-kpis, summary, activity, export/excel, export/pdf/audit/{id}, export/pdf/compliance, aging, cash-flow, supplier/{id}/payments, bottlenecks, supplier/{id}/performance, budget-vs-actual, budget-alerts, definitions (CRUD+run+preview), volume-trend, executive-summary.
+### Three-way matching (`/matching`, `/matching-config`, `/goods-receipts`, `/purchase-orders`)
+| Method | Path | Role | Purpose |
+|--------|------|------|---------|
+| GET | /matching | auth && !SUPPLIER && !ADMIN | Matching list (latest per invoice) |
+| GET | /matching/{invoiceId}/lines | same | Line-by-line PO/GRN/Invoice comparison |
+| GET | /matching-config | ADMIN/SC | Read tolerance config |
+| POST | /matching-config | ADMIN | Update tolerance config |
+| POST/GET | /goods-receipts(+/{id}) | ADMIN/SC (read +DAF) | GRN create/list/detail |
+| POST/GET/PUT/DELETE | /purchase-orders(+/{id}) | ADMIN/SC (read +DAF) | PO CRUD |
 
-### Audit — `AuditController` (`/audit-logs`)
-/system (ADMIN), /financial (DAF), / (ADMIN|DAF), /anomalies (ADMIN), /export (ADMIN|DAF), /summary/{system,financial,export}. **Separation of duties: ADMIN never sees financial; DAF never sees system.**
+### Payments (`/payments`, `/payment-alert-rules`)
+| Method | Path | Role | Purpose |
+|--------|------|------|---------|
+| POST | /payments/invoice/{invoiceId} | SC | Record payment |
+| POST | /payments/batch | SC | Batch payments |
+| GET | /payments/invoice/{invoiceId} | SC/DAF/ADMIN | Payment by invoice |
+| GET | /payments | SC/DAF/ADMIN | History (dept filter) |
+| GET | /payments/{paymentId}/remittance | SC/DAF/ADMIN | Remittance advice PDF |
+| GET | /payments/export | SC/DAF/ADMIN | Export (CSV/Excel/PDF) |
+| GET/POST/PUT/DELETE | /payment-alert-rules(+/{id}) | DAF/SC | Alert-rule config |
 
-### Admin/config
-`UserController` (`/users`, ADMIN — incl. unlock, mfa/reset, import/export CSV), `RoleController` (ADMIN), `UserProfileController` (`/profile`, isAuthenticated), `AdminSessionController` (`/admin/sessions`, ADMIN), `SecurityPolicyController` (`/admin/security-policy`, ADMIN), `DepartmentController`, `DepartmentAccessController` (`/admin/department-access`, ADMIN), `AnnouncementController`, `AccessRequestController`, `ComplianceController` (`/compliance`, mostly ADMIN), `RetentionDispositionController` (ADMIN), `ChecklistTemplateController` (ADMIN).
+### Suppliers (`/suppliers`, `/supplier` portal)
+| Method | Path | Role | Purpose |
+|--------|------|------|---------|
+| POST/PUT/GET | /suppliers(+/{id}) | ADMIN/SC (read +DAF) | Supplier CRUD |
+| GET | /suppliers/export | ADMIN/SC/DAF | Export directory |
+| POST/PATCH | /suppliers/{id}/activate, /suspend | ADMIN/SC | Status lifecycle |
+| DELETE | /suppliers/{id} | ADMIN | Soft-delete |
+| GET | /suppliers/{id}/performance | ADMIN/SC/DAF | Performance metrics |
+| GET/POST | /suppliers/{id}/documents | ADMIN/SC/DAF (read) | Docs |
+| GET/POST/DELETE | /suppliers/{id}/contracts | ADMIN/SC (read +DAF) | Contracts |
+| GET/POST | /suppliers/{id}/communications | ADMIN/SC (read +DAF) | Comms log |
+| POST/GET | /supplier/invoices(+/submit,/resubmit) | SUPPLIER | Portal submit/track |
+| POST | /supplier/invoices/{id}/documents | SUPPLIER | Portal doc upload |
+| GET/PUT | /supplier/profile | SUPPLIER | Portal profile |
+| GET | /supplier/dashboard | SUPPLIER | Portal dashboard |
+| POST/GET | /supplier/documents | SUPPLIER | Portal documents |
 
-### Integration — `WebhookController`, `IntegrationConnectorController`, `IntegrationStatusController` (all `/integrations/*`, ADMIN)
-Webhooks CRUD + deliveries; connectors CRUD + test + sync-schedule + sync + enable; status.
+### Reports (`/reports`) — `ReportController` (DAF/SC only — Admin excluded)
+kpis · summary · activity · export/excel · export/pdf/audit/{id} · export/pdf/compliance · aging · cash-flow · supplier/{id}/payments · bottlenecks · supplier/{id}/performance · budget-vs-actual · budget-alerts · definitions (GET/POST/DELETE) · definitions/{id}/run · definitions/{id}/preview · volume-trend · executive-summary. (All `hasAnyRole('DAF','ASSISTANT_COMPTABLE')`.)
 
-### Notifications & OCR
-`NotificationController` (`/notifications`, isAuthenticated): list, unread-count, read, read-all. `OcrController` (`/ocr/extract`, SUPPLIER/ASSISTANT_COMPTABLE/ADMIN).
+### Audit (`/audit-logs`)
+| GET | /audit-logs/system | ADMIN | System audit |
+| GET | /audit-logs/financial | DAF | Financial audit (SoD) |
+| GET | /audit-logs | ADMIN/DAF | Combined list |
+| GET | /audit-logs/anomalies | ADMIN | Anomaly detection |
+| GET | /audit-logs/export | ADMIN/DAF | Export |
+| GET | /audit-logs/summary/{system,financial,export} | ADMIN / DAF / ADMIN+DAF | Aggregated summaries |
+
+### Compliance / retention / archive
+| GET/POST/PATCH/DELETE | /compliance/incidents,/checklist,/calendar | ADMIN (incident create: any non-supplier) | Compliance management |
+| GET/POST | /compliance/backup-status | ADMIN | Backup status |
+| GET/POST | /compliance/privacy-acceptance | isAuthenticated | Privacy acceptance |
+| GET | /compliance/archive-report | ADMIN | Archive compliance report (no financial data) |
+| GET/PUT | /retention-policy(+/compliance) | ADMIN | Retention policy + compliance status |
+| GET | /retention/pending-documents | ADMIN | Documents past horizon |
+| PUT | /retention/documents/{id}/disposition | ADMIN | RETAIN/PURGE |
+
+### Notifications / announcements / checklists
+| GET | /notifications, /unread-count | isAuthenticated | Inbox |
+| PATCH | /notifications/{id}/read, /read-all | isAuthenticated | Mark read |
+| GET/POST/PUT/PATCH/DELETE | /announcements (+/all,/{id}/active) | isAuthenticated (read) / ADMIN (write) | Announcements |
+| GET/POST/PUT/DELETE | /checklist-templates(+/{id}) | ADMIN | Template CRUD |
+| GET/POST | /invoices/{invoiceId}/checklist | auth && !SUPPLIER | Validator checklist responses |
+
+### Integration (`/integrations`)
+| GET/POST/PUT/PATCH/DELETE | /integrations/connectors(+/{id}/test,/sync-schedule,/sync,/enabled) | ADMIN | Connector framework |
+| GET | /integrations/status | ADMIN | Connector health |
+| POST/GET/DELETE | /integrations/webhooks(+/{id}/deliveries) | ADMIN | Webhooks + delivery log |
 
 ---
 
-## 7. WORKFLOW STATE MACHINE (Chapter 3 activity + sequence)
+## 7. WORKFLOW STATE MACHINE (Chapter 3 activity + sequence diagrams)
 
-From `StateMachineConfig.java:48-117`. Initial = `BROUILLON`, end = `ARCHIVE`.
+Source: `config/StateMachineConfig.java` (Spring Statemachine 4.0.0). Initial state `BROUILLON`; end state `ARCHIVE`. Guards: `DocumentRequiredGuard`, `RoleMatchGuard`, `DepartmentTransitionGuard` (`requiresN2` / `isSingleLevel`), `RejectionReasonGuard`.
 
-| From | Event | To | Guard | Role (endpoint) |
-|---|---|---|---|---|
-| BROUILLON | SUBMIT | SOUMIS | `documentRequiredGuard` | ASSISTANT_COMPTABLE / SUPPLIER (portal) |
-| SOUMIS | ASSIGN_REVIEWER | EN_VALIDATION_N1 | `roleMatchGuard` | ASSISTANT_COMPTABLE/DAF/ADMIN |
-| EN_VALIDATION_N1 | VALIDATE_N1 | EN_VALIDATION_N2 | `requiresN2(ctx) && roleMatch` | DAF / N1 authority |
-| EN_VALIDATION_N1 | VALIDATE_N1 | VALIDE | `isSingleLevel(ctx) && roleMatch` | DAF / N1 authority |
-| EN_VALIDATION_N2 | VALIDATE_N2 | VALIDE | `roleMatchGuard` | N2 authority (INFO/INFRA/TECH) |
-| VALIDE | BON_A_PAYER | BON_A_PAYER | `roleMatchGuard` | DAF/ADMIN |
+| From | Event | To | Guard | Role (from `@PreAuthorize`) |
+|------|-------|-----|-------|------------------------------|
+| BROUILLON | SUBMIT | SOUMIS | DocumentRequiredGuard (also triggers duplicate check + matching) | ASSISTANT_COMPTABLE |
+| SOUMIS | ASSIGN_REVIEWER | EN_VALIDATION_N1 | RoleMatchGuard | SC / DAF / ADMIN (+ validators) |
+| EN_VALIDATION_N1 | VALIDATE_N1 | EN_VALIDATION_N2 | `requiresN2(ctx) && RoleMatch` | DAF (+ N1 validators) |
+| EN_VALIDATION_N1 | VALIDATE_N1 | VALIDE | `isSingleLevel(ctx) && RoleMatch` | DAF (+ N1 validators) |
+| EN_VALIDATION_N2 | VALIDATE_N2 | VALIDE | RoleMatchGuard | N2 validators (INFO/INFRA/TECH) |
+| VALIDE | BON_A_PAYER | BON_A_PAYER | RoleMatchGuard | DAF / ADMIN |
 | BON_A_PAYER | RECORD_PAYMENT | PAYE | — | ASSISTANT_COMPTABLE |
-| PAYE | ARCHIVE | ARCHIVE | — | system (auto) |
-| EN_VALIDATION_N1 | REJECT | REJETE | `rejectionReason && roleMatch` | DAF/ADMIN/N1 |
-| EN_VALIDATION_N2 | REJECT | REJETE | `rejectionReason && roleMatch` | N2 |
-| VALIDE | REJECT | REJETE | `rejectionReason && roleMatch` | DAF/ADMIN |
-| REJETE | RESUBMIT | SOUMIS | — | ASSISTANT_COMPTABLE / SUPPLIER |
+| PAYE | ARCHIVE | ARCHIVE | — | (system on payment) |
+| EN_VALIDATION_N1 | REJECT | REJETE | `RejectionReason && RoleMatch` | DAF / ADMIN (+ validators) |
+| EN_VALIDATION_N2 | REJECT | REJETE | `RejectionReason && RoleMatch` | DAF / ADMIN (+ validators) |
+| VALIDE | REJECT | REJETE | `RejectionReason && RoleMatch` | DAF / ADMIN (+ validators) |
+| REJETE | RESUBMIT | SOUMIS | — | ASSISTANT_COMPTABLE |
 
-**N2 departments** (`DepartmentTransitionGuard`): Informatique, Infrastructure, Atelier/Direction Technique. Guards: `DocumentRequiredGuard` (≥1 attachment before submit), `RoleMatchGuard` (actor role ∈ allowed for transition), `RejectionReasonGuard` (mandatory reason), `DepartmentTransitionGuard` (1-level vs 2-level routing).
-*Note:* the state machine has no `VALIDE→REJETE` at the AA-validation stage explicitly (rejection at SOUMIS is via assign/reject path); confirm against thesis activity diagram.
+Two-level departments (`requiresN2=true`, seeded in V1): **Informatique** (RSI→DSI), **Infrastructure** (Resp. INFRA→Directeur INFRA), **Atelier/Direction Technique** (Resp. Atelier→Directeur Technique). All others are single-level. This matches the locked Chapter 1+2 BAP definition exactly.
 
 ---
 
 ## 8. SECURITY IMPLEMENTATION (Chapter 4)
 
-| Control | File:line | Summary (2 lines) |
-|---|---|---|
-| JWT issuance/refresh | `JwtService.java:78,100-105,117` | RS256 (RSA-2048) signing with PKCS#8 private key; access 24h / refresh 7d (`application.yaml:85-86`); claims include roles, supplierId, departmentId. |
-| MFA TOTP | `MfaService.java:21-89`; `AuthService.java:95-173,288-311` | dev.samstevens.totp, SHA1, 6 digits, 30s period, ±1 window; two-step login (pre-auth token 5 min) then OTP validate. |
-| Password hashing | `SecurityConfig.java:90-92` | BCrypt strength 12 via `BCryptPasswordEncoder`. |
-| AES-256 encryption | `EncryptionUtil.java:17-55`; `EncryptionAttributeConverter` | AES/GCM/NoPadding, 256-bit key, random 12-byte IV, 128-bit tag, stored `GCM:iv:cipher`; applied to bank details + MFA secret. |
-| RBAC enforcement | `SecurityConfig.java:28,55-71` + `@PreAuthorize` everywhere | `@EnableMethodSecurity`; stateless; permitAll only for auth/swagger/actuator/ws; method-level role checks on every endpoint. |
-| Input validation | `spring-boot-starter-validation`; DTO `@Valid`; `GlobalExceptionHandler` (`shared/exception/`) | Bean Validation on request DTOs; centralized error mapping to i18n messages. |
-| Audit logging filter | `AuditLoggingFilter.java:23-119` | OncePerRequestFilter persists all non-GET + 401/403 to `audit_logs` with action/entity classification, IP, UA; failures never break response. |
-| File MIME validation | `InvoiceDocumentService.java`, `OcrService.java:61` | Apache Tika content-type detection before storage; OCR re-detects to route PDF/image/XML. |
-| Account lockout | `AuthService.java:384-398`; `User.java:117-122,170` | Failed-attempt counter; locks `locked_until` after `securityPolicy.maxLoginAttempts` (configurable) for `ACCOUNT_LOCK_MINUTES`; ADMIN unlock endpoint. |
-| Rate limiting | `RateLimitingFilter.java` (bucket4j 7.6.0) | Token-bucket throttling on auth endpoints. |
-| Security headers | `HttpSecurityHeadersFilter.java` | Adds standard hardening headers pre-auth. |
-| WS auth | `WebSocketAuthChannelInterceptor.java` | JWT validated on STOMP CONNECT frame (handshake permitAll at HTTP layer). |
-| Prod secret guard | `ProdSecretConfigValidator.java` | Fails startup in prod if required secrets are absent. |
+| Mechanism | File:line | Summary (algorithm) |
+|-----------|-----------|---------------------|
+| JWT issuance/refresh | `domain/auth/service/JwtService.java:99-107` | RS256 (RSA-2048) asymmetric signing; private key signs (`getPrivateKey :121`), public key verifies (`getPublicKey :131`); access 24 h, refresh 7 d, pre-auth 5 min (`:45-52`). |
+| MFA TOTP | `domain/mfa/service/MfaService` + `AuthController.java:84-102` + `MfaSetupEnforcementFilter.java:79-86` | `dev.samstevens.totp` time-based OTP; setup→confirm→validate; secret AES-encrypted (`User.mfaSecret`). Deny-list filter forces MFA setup for every non-supplier role before any protected call. |
+| Password hashing | `config/SecurityConfig.java:90-92` | `BCryptPasswordEncoder(strength=12)`. |
+| AES-256 encryption util | `shared/util/EncryptionUtil.java:18-55` | AES/GCM/NoPadding, 32-byte key, random 12-byte IV per value, 128-bit auth tag, `GCM:` prefix + Base64; applied via `EncryptionAttributeConverter` JPA converter. |
+| RBAC enforcement | `config/SecurityConfig.java:28,55-71` + `@PreAuthorize` on every controller | Method security enabled; permit-list for auth/swagger/actuator/ws, everything else authenticated; per-method role checks (§6); SoD: Admin excluded from financial/invoice data. |
+| Input validation | `spring-boot-starter-validation` + DTO `@Valid` (controllers) + `GlobalExceptionHandler` | Bean Validation on request DTOs; centralized error translation to i18n messages. |
+| Audit logging filter | `shared/filter/AuditLoggingFilter.java:23-57` | `OncePerRequestFilter` after auth; classifies entity/action from URI+method+status and writes an `AuditLog` (user, IP, UA) via `AuditService.logAction`. |
+| File MIME validation | `domain/invoice/service/InvoiceDocumentService.java:267-270` | Apache Tika `tika.detect(content)` against `ALLOWED_MIME_TYPES` allow-list (PDF/JPEG/PNG/TIFF/XML); rejects disguised files. SHA-256 checksum computed on upload (`:91,283`). |
+| Account lockout | `domain/auth/service/AuthService.java:389-405` | Increment `failedLoginAttempts`; at `>= maxLoginAttempts` (policy, default 5) set `lockedUntil = now + 15 min` and throw `AccountLockedException`; reset on success. |
+| Rate limiting (auth) | `config/security/RateLimitingFilter.java:4-30` | bucket4j token-bucket per client on `/auth/login` + `/auth/refresh`. |
+| HTTP security headers | `config/security/HttpSecurityHeadersFilter.java` | Adds security response headers (CSP/HSTS/X-Frame-Options family) ahead of the auth filters. |
+| TLS in transit | `application.yaml:332-338` (prod) | `server.ssl` TLSv1.3, PKCS12 keystore from env. **Keystore not shipped** → roadmap **R2**. |
 
 ---
 
 ## 9. FRONTEND PAGE INVENTORY (Chapter 4 screenshots)
 
-From `AppRoutes.tsx`. Guards: `ProtectedRoute` (staff) / `SupplierRoute` (suppliers). Page-level role gating via `PageRoleGuard` inside components. Capture FR locale by default.
+Routes from `frontend/src/AppRoutes.tsx`. Guards: `ProtectedRoute` (staff, wraps `AppShell`), `SupplierRoute` (suppliers, wraps `SupplierLayout`); fine-grained per-role visibility via `RoleGuard`/`PageRoleGuard` inside pages and nav.
 
-**Public:** `/login` (LoginPage — incl. OTP second step), `/register` (RegisterPage), `/forgot-password`, `/reset-password`, `/register/supplier` (SupplierRegisterPage), `/verify-email`.
+### Public
+| Route | Component | Allowed | Screenshot |
+|-------|-----------|---------|-----------|
+| /login | LoginPage | all | Login + (step 2) OTP screen |
+| /register | RegisterPage | all | Staff/registration form |
+| /register/supplier | SupplierRegisterPage | all | Supplier self-registration (company, tax ID, bank) |
+| /forgot-password | ForgotPasswordPage | all | Request reset link |
+| /reset-password | ResetPasswordPage | all | New password + strength bar |
+| /verify-email | EmailVerificationPage | all | Email verification result |
 
-**Staff (ProtectedRoute + AppShell):**
-| Route | Component | Roles (effective) | Screenshot |
-|---|---|---|---|
-| /dashboard | DashboardPage | all staff | role-aware KPI dashboard |
-| /profile | ProfilePage | all | profile + MFA setup + language switcher |
-| /access-requests | MyAccessRequestsPage | staff | my access requests |
-| /my-delegations | MyDelegationsPage | approvers | delegation list |
-| /invoices, /invoices/new, /invoices/:id | InvoiceList/Create/Detail | AA + approvers (not SUPPLIER/ADMIN) | list, create form, detail w/ timeline + action panel |
-| /approvals | ApprovalQueuePage | approvers | pending validation queue |
-| /financial-audit | FinancialAuditPage | DAF | financial audit trail |
-| /purchase-orders | PurchaseOrdersPage | AA/DAF/ADMIN | PO list |
-| /goods-receipts | GoodsReceiptsPage | AA/DAF/ADMIN | GRN list |
-| /matching, /matching/:invoiceId | MatchingList/Detail | not SUPPLIER/ADMIN | 3-way match list + line-by-line |
-| /reports, /reports/builder | Reports/ReportBuilder | DAF/AA | charts, exports, saved report builder |
-| /payments, /payments/alert-rules | Payments/PaymentAlertRules | AA/DAF/ADMIN | payment register + aging, alert rules |
-| /notifications | NotificationsPage | all | notification center |
-| /archive | ArchivePage | AA/DAF/ADMIN | searchable archive |
-| /admin/users(+/new) | AdminUsers/Form | ADMIN | user CRUD, unlock, MFA reset |
-| /admin/permissions | AdminPermissionMatrixPage | ADMIN | permission matrix |
-| /admin/access-requests | AdminAccessRequestsPage | ADMIN | approve access requests |
-| /admin/announcements | AdminAnnouncementsPage | ADMIN | announcements |
-| /admin/compliance | AdminCompliancePage | ADMIN | incidents/checklist/calendar/backup |
-| /admin/departments(+/new) | AdminDepartments/Form | ADMIN | dept CRUD + budget |
-| /admin/audit | AdminAuditPage | ADMIN | system/security audit |
-| /admin/approval-matrix | ApprovalMatrixPage | ADMIN | dept→approver matrix |
-| /admin/delegations | AdminDelegationsPage | ADMIN | all delegations |
-| /admin/matching-config | AdminMatchingConfigPage | ADMIN | tolerance thresholds |
-| /admin/checklist-templates | AdminChecklistTemplatesPage | ADMIN | checklist templates |
-| /admin/escalation-rules | EscalationRulesPage | ADMIN/DAF | SLA escalation rules |
-| /admin/retention-policy | AdminRetentionPolicyPage | ADMIN | retention policy |
-| /admin/archive-compliance | AdminArchiveCompliancePage | ADMIN | archive compliance report |
-| /admin/retention-disposition | AdminRetentionDispositionPage | ADMIN | purge/retain controls |
-| /admin/security | SecuritySettingsPage | ADMIN | security policy + health |
-| /admin/integrations | IntegrationsPage | ADMIN | webhooks + connectors + status |
-| /admin/department-access | DepartmentAccessPage | ADMIN | read-only access-by-dept |
-| /admin/suppliers(+/new,/:id,/:id/edit) | Suppliers/Detail/Form | ADMIN/AA/DAF | supplier CRUD, performance, docs |
+### Staff (ProtectedRoute → AppShell)
+| Route | Component | Allowed | Screenshot |
+|-------|-----------|---------|-----------|
+| /dashboard | DashboardPage | all staff (role-routed) | Role-specific KPI dashboard |
+| /profile | ProfilePage | all staff | Profile + MFA setup block + role assignments |
+| /access-requests | MyAccessRequestsPage | non-supplier | My role requests |
+| /my-delegations | MyDelegationsPage | approvers | Self delegation list |
+| /invoices | InvoiceListPage | SC/DAF | Invoice list + filters + import modal |
+| /invoices/new | InvoiceCreatePage | SC | 3-step create wizard (OCR, PO link, docs) |
+| /invoices/:id | InvoiceDetailPage | SC/DAF | Detail + InvoiceActionPanel + timeline + matching panel |
+| /approvals | ApprovalQueuePage | validators/DAF | Approval queue + SLA colour coding |
+| /financial-audit | FinancialAuditPage | DAF | Financial audit + summary tab |
+| /purchase-orders | PurchaseOrdersPage | SC/ADMIN | PO list/create |
+| /goods-receipts | GoodsReceiptsPage | SC/ADMIN | GRN create + list |
+| /matching | MatchingListPage | SC/DAF | Matching list (filters, badges) |
+| /matching/:invoiceId | MatchingDetailPage | SC/DAF | Line-by-line PO/GRN/Invoice comparison |
+| /reports | ReportsPage | DAF/SC | Analytics dashboard + charts (volume trend, status) |
+| /reports/builder | ReportBuilderPage | DAF/SC | Custom report builder + preview |
+| /payments | PaymentsPage | SC/DAF | Payments + batch + remittance |
+| /payments/alert-rules | PaymentAlertRulesPage | DAF/SC | Alert-rule config |
+| /notifications | NotificationsPage | all staff | Notification center |
+| /archive | ArchivePage | ADMIN/DAF/SC | Archive search + DocumentViewerModal |
+| /admin/users · /admin/users/new | AdminUsersPage / AdminUserFormPage | ADMIN | User console + create form (employee ID, approval limit) |
+| /admin/permissions | AdminPermissionMatrixPage | ADMIN | user×role matrix editor |
+| /admin/access-requests | AdminAccessRequestsPage | ADMIN | Approve/reject access requests |
+| /admin/announcements | AdminAnnouncementsPage | ADMIN | Publish announcements |
+| /admin/compliance | AdminCompliancePage | ADMIN | Incidents/checklist/calendar/backup |
+| /admin/departments · /new | AdminDepartmentsPage / Form | ADMIN | Department CRUD |
+| /admin/audit | AdminAuditPage | ADMIN | Audit viewer + anomalies + retention card + summary tab |
+| /admin/approval-matrix | ApprovalMatrixPage | ADMIN | Departmental N1/N2 routing matrix |
+| /admin/delegations | AdminDelegationsPage | ADMIN | Admin delegations |
+| /admin/matching-config | AdminMatchingConfigPage | ADMIN | Tolerance config |
+| /admin/checklist-templates | AdminChecklistTemplatesPage | ADMIN | Checklist template CRUD |
+| /admin/escalation-rules | EscalationRulesPage | ADMIN/DAF | Escalation config |
+| /admin/retention-policy | AdminRetentionPolicyPage | ADMIN | Retention policy |
+| /admin/archive-compliance | AdminArchiveCompliancePage | ADMIN | Archive compliance report |
+| /admin/retention-disposition | AdminRetentionDispositionPage | ADMIN | Retain/purge expired docs |
+| /admin/security | SecuritySettingsPage | ADMIN | Security health + sessions + policy |
+| /admin/integrations | IntegrationsPage | ADMIN | Connectors + webhooks + status |
+| /admin/department-access | DepartmentAccessPage | ADMIN | Read-only dept access overview |
+| /admin/suppliers (+/new,/:id,/:id/edit) | SuppliersPage / Detail / Form | ADMIN/SC | Supplier directory + detail tabs |
 
-**Supplier (SupplierRoute + SupplierLayout):** /supplier/dashboard, /supplier/invoices, /supplier/invoices/new, /supplier/profile, /supplier/documents.
+### Supplier (SupplierRoute → SupplierLayout)
+| /supplier/dashboard | SupplierDashboardPage | SUPPLIER | Supplier KPIs + required actions |
+| /supplier/invoices | SupplierInvoicesPage | SUPPLIER | Submission history + progress |
+| /supplier/invoices/new | SupplierInvoiceSubmitPage | SUPPLIER | Submit invoice (OCR preview) |
+| /supplier/profile | SupplierProfilePage | SUPPLIER | Profile (tax + bank) |
+| /supplier/documents | SupplierDocumentsPage | SUPPLIER | Document repository |
 
-**Non-page components worth capturing:** NotificationDropdown, DocumentUploader, InvoiceTimeline, InvoiceActionPanel, MFA setup (in ProfilePage), language switcher (AppShell header), DocumentViewer (react-pdf zoom/rotate).
+### Sub-page components worth capturing
+- **NotificationDropdown** (header bell, unread count, real-time) — `components/.../Notification*`
+- **DocumentUploader / BulkDocumentUpload** (drag-drop + MIME feedback)
+- **InvoiceTimeline** (vertical 6-step approval journey)
+- **InvoiceActionPanel** (validate-n1/n2, bon-a-payer, reject with reason dropdown)
+- **MFA setup** (QR + OTP confirm, in ProfilePage)
+- **Language switcher** (FR/EN, i18next)
+- **MatchingBadge**, **DocumentViewerModal** (zoom/rotate, react-pdf), **AuditSummary**, **VolumeTrendSection**, **RetentionComplianceCard**, **BudgetAlerts** (all have vitest specs).
 
 ---
 
 ## 10. TESTS INVENTORY (Chapter 4 testing section)
 
-- **Backend test files:** 85 (`src/test`). **`@Test` methods:** **492**.
-- **Frontend unit (vitest):** specs under `frontend/src/test/**` and `pages/admin/__tests__` (≈67 passing per memory ledger).
-- **E2E (Playwright):** 3 specs — `frontend/e2e/bap-single-level.spec.ts` (single-level BAP happy path), `bap-two-level.spec.ts` (N1→N2 path), `security-audit.spec.ts` (RBAC 403 assertions).
-- **Key backend integration/unit tests by name:**
-  - `StateMachineTransitionExhaustiveTest` — every transition + guard (exhaustive).
-  - `InvoiceStateMachineServiceTest` — submit, duplicate check, matching trigger.
-  - Controller slice/integration tests per domain (auth, invoice, payment, supplier, webhook, report, audit) asserting `@PreAuthorize` enforcement (Testcontainers PostgreSQL).
-- **Coverage (JaCoCo, `target/site/jacoco/jacoco.csv`):** **Instructions 66.8 %** (22 031/32 979), **Branches 52.8 %** (1 130/2 140), **Lines 4 348 covered / 1 878 missed**. *(The `index.html` "37 %" is a stale partial run; the CSV is the full figure.)* To regenerate: `./mvnw test jacoco:report` (requires a reachable PostgreSQL on 5432 `oct_invoice_dev`).
+- **Backend `@Test` methods:** **492** across **89 test classes** under `src/test` (unit + integration). Integration tests extend `support/AbstractPostgresIntegrationTest` (Testcontainers PostgreSQL).
+- **Frontend unit (Vitest):** **67** test cases across 11 spec files (`frontend/src/**/*.test.tsx`).
+- **Playwright e2e:** **3 spec files / 30 test cases** — `e2e/bap-single-level.spec.ts`, `e2e/bap-two-level.spec.ts`, `e2e/security-audit.spec.ts`.
+
+**Most important integration tests:**
+| Test | Covers |
+|------|--------|
+| `ThreeWayMatchingIntegrationTest` | PO/GRN/Invoice matching, tolerance, MISMATCH blocking |
+| `MatchingQueryControllerIntegrationTest` | `/matching` + line comparison, SoD |
+| `StateMachineTransitionExhaustiveTest` | every BAP transition + guard |
+| `InvoiceStateMachineServiceTest` | submit, duplicate check, matching trigger |
+| `MfaIntegrationTest` | two-step login, OTP, deny-list enforcement |
+| `SecurityPolicyIntegrationTest` | policy CRUD, lockout thresholds |
+| `BatchPaymentIntegrationTest` / `PaymentIntegrationTest` | batch + single payment, PAYE→ARCHIVE |
+| `CashFlowProjectionIntegrationTest` | cash-flow 200 on real PostgreSQL (PROB-054 regression) |
+| `SupplierPortalIntegrationTest` / `SupplierIntegrationTest` | portal submit/track, category filter |
+| `ArchiveComplianceControllerIntegrationTest` | archive compliance report (no financial data) |
+| `RetentionDispositionControllerIntegrationTest` / `RetentionPolicyControllerIntegrationTest` | retention RETAIN/PURGE, compliance status |
+| `InvoiceImportIntegrationTest` | CSV/XML bulk import |
+| `AuditSummaryControllerTest` / `AuditLogSummaryRepositoryTest` | aggregated audit summaries, SoD |
+| `EscalationRuleServiceTest` / `ApprovalServiceTest` | escalation + approval-limit guard |
+
+**Coverage (existing JaCoCo report `target/site/jacoco/index.html`).** Overall **LINE 66 %** (10,948 of 32,979 missed → 22,031 covered) and **BRANCH 52 %** (1,010 of 2,140 missed). NB: this aggregate report **includes** the `dto/model/config` packages; the enforced JaCoCo gate (`pom.xml`) **excludes** those and requires LINE ≥ 80 % / BRANCH ≥ 75 % on the business code, which is why the gate can pass while the all-packages aggregate reads 66 %. A fresh `./mvnw jacoco:report` was not re-run for this audit (it requires the host PostgreSQL on 5433 for the Testcontainers/integration suite); the committed report is the current evidence. For an apples-to-apples thesis number, re-run with the gate exclusions applied → roadmap **R5**.
 
 ---
 
-## 11. NON-VERSIONED CONFIG (values redacted)
+## 11. NON-VERSIONED CONFIG (secrets redacted)
 
-| File | In VCS? | Purpose | Keys present (values redacted) |
-|---|---|---|---|
-| `.env` | No (.gitignore) | runtime secrets for docker-compose | APP_PORT, FRONTEND_PORT, SPRING_PROFILES_ACTIVE, DB_HOST/PORT/NAME/USER, DB_PASSWORD=`***REDACTED***`, MINIO_ENDPOINT/ACCESS_KEY, MINIO_SECRET_KEY=`***REDACTED***`, MINIO_BUCKET/CONSOLE_PORT, JWT_PRIVATE_KEY=`***REDACTED***`, JWT_PUBLIC_KEY=`***REDACTED***`, JWT_EXPIRATION_MS, JWT_REFRESH_EXPIRATION_MS, ENCRYPTION_KEY=`***REDACTED***`, MAIL_HOST/PORT, MAIL_USERNAME=`***REDACTED***`, MAIL_PASSWORD=`***REDACTED***`, MAIL_FROM/_NAME, MAILHOG_*, VITE_API_BASE_URL, VITE_WS_URL |
-| `src/main/resources/application.yaml` | Yes | Spring profiles (base/dev/test/prod) | jpa.ddl-auto=validate, flyway.*, jwt.{private-key,public-key,expiration-ms,refresh,pre-auth}=env refs, encryption.key=env ref, ocr.{tessdata-path,language}, minio.*, management.health.mail.enabled=false, server.ssl(prod)={protocol TLSv1.3, key-store=`${SSL_KEYSTORE_PATH}`, key-store-password=`***REDACTED***`}. **Note:** test profile embeds a hard-coded RSA test key pair + `encryption.key: TestEncryptionKey...` (`application.yaml:259-266`) — acceptable for tests but should be flagged as non-prod. |
-| `src/test/resources/application-test.yml` | Yes | test overrides | datasource (localhost:5432 oct_invoice_dev, user postgres, password=`***REDACTED***`) |
-| `CLAUDE.md` | Yes | AI-agent directives | project identity, mandatory reading order, architecture/security/quality constraints, BAP workflow rules, MFA/matching/webhook constraints, bug-prevention rules (PROB-001…013) |
-| `docs/MEMORY.md` | Yes (101 KB) | session-checkpoint ledger | per-task checkpoints, last commit, blockers; **not secrets** |
-| `.cursor/rules/` , `.github/`, `.superpowers/` | Yes | IDE/agent rules, workflows, SDD | cursor rules, GH java-upgrade helper, superpowers SDD specs/plans |
-| `qa-audit/`, `.playwright-mcp/`, root `*.png/*.jpeg` | mixed | QA screenshots / MCP artifacts | non-config images |
+> Per the task, every secret value below is shown as `***REDACTED***` while key names remain visible. `.env` and `target/` are git-ignored (`.gitignore`).
 
-**Secret-hygiene findings for the thesis security chapter:** the dev `.env` ships a real RSA key pair, a 32-char AES key, and DB/MinIO passwords in plaintext (dev defaults), and `pom.xml` flyway plugin hard-codes `password=dany`. These are dev conveniences but should be called out as "must be replaced by a secrets manager in production" (the code already supports env-injection in the prod profile). → **R6**.
+### `invoice-system/.env` (git-ignored)
+```
+APP_PORT=8080
+FRONTEND_PORT=3000
+SPRING_PROFILES_ACTIVE=dev
+DB_HOST=host.docker.internal
+DB_PORT=5433
+DB_NAME=oct_invoice
+DB_USER=postgres
+DB_PASSWORD=***REDACTED***
+MINIO_ENDPOINT=http://localhost:9000
+MINIO_ACCESS_KEY=***REDACTED***
+MINIO_SECRET_KEY=***REDACTED***
+MINIO_BUCKET=oct-invoices
+MINIO_CONSOLE_PORT=9001
+JWT_PRIVATE_KEY=***REDACTED***          # Base64 PKCS#8 RSA-2048 private key
+JWT_PUBLIC_KEY=***REDACTED***           # Base64 X.509 RSA-2048 public key
+JWT_EXPIRATION_MS=86400000
+JWT_REFRESH_EXPIRATION_MS=604800000
+ENCRYPTION_KEY=***REDACTED***           # 32-char AES-256 key
+MAIL_HOST=mailhog
+MAIL_PORT=1025
+MAIL_USERNAME=***REDACTED***
+MAIL_PASSWORD=***REDACTED***
+MAIL_FROM=***REDACTED***
+MAIL_FROM_NAME=OCT Invoice System
+MAILHOG_SMTP_PORT=1025
+MAILHOG_UI_PORT=8025
+VITE_API_BASE_URL=http://localhost:8080/api/v1
+VITE_WS_URL=http://localhost:8080/ws
+```
+> **Security note for the thesis:** the committed `.env` and `application.yaml` **test profile** currently embed a real RSA-2048 keypair and `ENCRYPTION_KEY`/`DB_PASSWORD`/`MINIO` credentials in plaintext. They are dev/test values, but should be rotated and never reused in production (the prod profile already reads them from env). See roadmap **R6**.
+
+### `src/main/resources/application.yaml` (versioned, but profile-specific keys)
+Profiles `dev` / `test` / `prod`. Keys (values from env in prod): `spring.datasource.{url,username,password}`, `jwt.{private-key,public-key,expiration-ms,refresh-expiration-ms,pre-auth-expiration-ms}`, `encryption.key`, `minio.{endpoint,access-key,secret-key,bucket,presigned-url-expiry-minutes}`, `ocr.{tessdata-path,language}`, `app.cors.allowed-origins`, `app.mail.{from,from-name}`, `app.security.mfa.enforce-secret-check`, `server.ssl.{enabled,protocol,key-store,key-store-password,key-store-type}` (prod), `management.health.mail.enabled=false`. **Test-profile JWT keys + `encryption.key=***REDACTED***`** are hardcoded for tests (lines 256-266) — flagged in R6.
+
+### `src/test/resources/application-test.yml` (versioned)
+Test datasource + Flyway clean settings (PostgreSQL `localhost:5432`). No new secrets beyond the test keys above.
+
+### `CLAUDE.md` (versioned, AI directive)
+Primary agent ruleset: project identity, mandatory reading order, architecture/security constraints, BAP workflow rules, MFA mandate, three-way matching rules, webhook rules, git discipline, bug-prevention rules. No secrets.
+
+### `docs/MEMORY.md` (versioned, AI memory)
+Session checkpoints + accumulated context. Note: its header still reads "Current Phase: Phase 9D" (stale — the project is well past Phase 9). Informational only; not a build input.
+
+### `.cursor/rules`, `invoice-system/.cursor/rules` (IDE, git-tracked dir)
+Cursor IDE rule files mirroring CLAUDE.md guidance. No secrets.
+
+### `.github/workflows/` (versioned) — **discrepancy with TASKS.md**
+- `ci.yml` — backend job (Java 21 + `postgres:18-alpine` + MinIO + `mvnw -B verify`), frontend job (Node 20 + Vitest), docker build check. **Present** (created 2026-06-07).
+- `security-scan.yml` — OWASP ZAP baseline scan triggered after CI on main / manual. **Present**, with `zap-rules.tsv`.
+> `docs/TASKS.md §A` marks **G1 (CI)** and **G3 (ZAP)** as ❌ absent. The files exist in the repo. TASKS.md is stale on these two — see roadmap **R1**.
+
+### `.superpowers/sdd`, `.mvn/wrapper`, `.idea/`, `.vscode/`, `.antigravity/`
+- `.mvn/wrapper` — Maven wrapper (`maven-wrapper.properties`), versioned. No secrets.
+- `.idea/`, `.vscode/` (root) — present but empty / ignored by `.gitignore` (except whitelisted `extensions.json`/`settings.json`). No content of note.
+- `.superpowers/sdd` — skill scaffolding; not a build input.
 
 ---
 
 ## 12. COMPLETION ROADMAP — what remains to do
 
-Ordered by priority then dependency. Every gap from Sections 1, 1bis, 3 is included.
+The system covers Chapters 1+2 in code; what remains is **submission-truthfulness polish**: two thesis claims are PARTIAL (§3 (h), (o)), the planning file is stale on CI/ZAP, and a few `🟠` items would strengthen credibility. Ordered by priority then dependency.
 
-| ID | Source | What is missing / partial | Why needed | Suggested implementation | Effort | Prio | Deps |
-|---|---|---|---|---|---|---|---|
-| **R1** | Thesis Ch.1/2 "7 actors" vs PRD §3 "6 roles" | The locked brief lists an **Auditeur** actor; code removed it (`V31`,`V33`), splitting audit between DAF & ADMIN | Thesis truthfulness — a class/use-case diagram showing 7 actors would not match the system | **Decision required (you):** (a) re-introduce `ROLE_AUDITEUR` as a read-only audit role → new migration `V64__reintroduce_auditeur_role.sql`, seed user, add `@PreAuthorize hasAnyRole('AUDITEUR',...)` to `AuditController` read endpoints, frontend route `/audit (read-only)`, tests; **OR** (b) amend the thesis text to 6 roles with a one-paragraph justification of the DAF/ADMIN split. Recommend (b) if Ch.1/2 are truly locked but you can footnote; (a) if the diagram must show 7. | (a) M / (b) S | **P0** | — |
-| **R2** | §1 false-positive | No build-and-test **CI** for this app (P10-C ticked but absent) | Ch.4 "DevOps/CI" claim must be backed | Add `.github/workflows/ci.yml`: jobs `backend` (`./mvnw -B verify`, Testcontainers PG) and `frontend` (`npm ci && npm run lint && npm run test && npm run build`); upload JaCoCo + Playwright artifacts | S | **P0** | — |
-| **R3** | §3(h) PARTIAL | **TLS** is prod-config only; no keystore, dev/test plain HTTP; no evidence artifact | Ch.1/2 "secure / TLS in transit" claim needs proof | Generate self-signed `keystore.p12` (script in `docs/`), document `SSL_KEYSTORE_PATH/PASSWORD`, add a profile or nginx TLS termination, capture a `curl -v https://` / browser-lock screenshot for Ch.4 | S | **P0** | — |
-| **R4** | §3(l), PRD Module 4 | **SHA-256 document integrity** claimed but not confirmed in code | Archiving claim ("SHA-256 integrity check") must exist | Verify/Add: compute SHA-256 on upload in `InvoiceDocumentService`, store `checksum` column (`V64`/`V65`), verify on download, surface in UI; unit test | M | **P0** | — |
-| **R5** | §1bis(d) | Migration **gap V36–V38** undocumented | A data dictionary with a numbering gap invites a viva question | Add a one-line note in `docs/DATABASE.md` and thesis Ch.3 explaining the squashed/abandoned versions; no code change | S | P1 | — |
-| **R6** | §11 | Dev secrets (RSA key, AES key, DB/MinIO pw, flyway `password=dany`) committed as defaults | Security chapter credibility | Move flyway creds to env in `pom.xml`; add a `docs/SECURITY.md` "secrets management" section; confirm prod profile uses only env refs (it does). Rotate the embedded dev key before any public submission | S | P1 | — |
-| **R7** | §1bis(a) | ~20 implemented modules have **no design coverage** in TASKS/thesis | Ch.3 must describe what the code does | For each undocumented module (compliance, retention, escalation, announcements, contracts, connectors, report-builder, alert-rules, checklists, access-requests, delegation, sessions), add a short design subsection + include their entities in the ERD (already enumerated in Section 4/5) | L | P1 | — |
-| **R8** | §3(b) drift | **Duplicate detection** is supplier+description, not invoice-number | Thesis likely claims duplicate-invoice detection; current heuristic is weaker | Strengthen: add `(supplier_id, supplier_invoice_number)` uniqueness check; new column if needed (`V64`), update `performDuplicateCheck`, tests; or document the heuristic precisely in Ch.4 | M | P1 | — |
-| **R9** | §3(k) | **Aging analysis** is basic (`/reports/aging`) | "Aging analysis" is a named Ch.1/2 feature | Add bucketed aging (0-30/31-60/61-90/90+), per-supplier rollup, chart in ReportsPage; backend service method + endpoint test | M | P1 | R7 |
-| **R10** | §1 false-positive | **OWASP ZAP** scan (P10-E) ticked, no artifact | If thesis cites a security scan, an artifact is expected | Run ZAP baseline against the running app, commit `docs/audit/zap-report.html`, summarize findings in Ch.4; or remove the claim | S | P1 | R2,R3 |
-| **R11** | §1 false-positive | No root **README** (P8-08 ticked) | Submission polish / reproducibility | Write `invoice-system/README.md`: stack, `docker-compose up` + host-PG note, profiles, test commands, default credentials | S | P2 | — |
-| **R12** | NFR PRD §7 | **WCAG 2.1 AA** accessibility unverified | NFR claim | Run axe/Lighthouse a11y pass on key pages, fix top issues (labels, contrast, focus), note results in Ch.4 | M | P2 | — |
-| **R13** | §7 note | State machine lacks explicit **AA-stage rejection** transition from validation start | Activity diagram completeness | Confirm rejection-at-SOUMIS path; if business requires AA reject before N1, add transition + guard + test | S | P2 | — |
-| **R14** | §3(m)/infra | Email in dev relies on MailHog; prod Gmail SMTP untested | Notifications NFR | Document prod SMTP setup + a screenshot of a delivered email for Ch.4 | S | P2 | — |
+| ID | Source | What is missing / partial | Why needed | Suggested implementation | Effort | Priority | Deps |
+|----|--------|---------------------------|-----------|--------------------------|--------|----------|------|
+| **R1** | TASKS.md §A G1/G3 vs repo | `docs/TASKS.md §A` marks CI (G1) and ZAP (G3) as ❌, but `.github/workflows/ci.yml` and `security-scan.yml` **exist**. Doc contradicts code. | A thesis must not claim work absent that is present (and vice-versa). | Edit `docs/TASKS.md §A`: mark G1 ✅ (cite `ci.yml`), G3 🟠/✅ (cite `security-scan.yml`+`zap-rules.tsv`); verify the workflows actually run green on a push and capture a screenshot/log for Chapter 4. No code change. | S | **P0** | — |
+| **R2** | Thesis claim (h); TASKS.md G2 | TLS config exists (prod `server.ssl`) but **no PKCS12 keystore** is shipped, so TLS-in-transit is unproven. | Chapter 1+2 claims TLS in transit; needs runtime evidence. | Generate `keystore.p12` via the `keytool` command already in `application.yaml:329-331`; document `SSL_KEYSTORE_PATH`/`SSL_KEYSTORE_PASSWORD` in `.env` + README; OR terminate TLS at nginx and document that. Capture a `https://` handshake screenshot. Files: `.env`, `README.md`, optionally `frontend/nginx.conf`. | S | **P0** | — |
+| **R3** | TASKS.md G5 / M2 #3 / M7 #2 | Aging analysis is a single `/reports/aging` list; no bucketed widget (0-30/31-60/61-90/90+) on the finance dashboard, and no per-supplier rollup. | Claim (k) reads stronger with explicit aging buckets; minor UI gap. | Backend: add `bucketedAging()` to `ReportService` returning 4 buckets + per-supplier rollup; new endpoint `GET /reports/aging/buckets` (DAF/SC). Frontend: add an `AgingBucketsWidget` to `DashboardPage` (finance) using recharts. Tests: extend `ReportServiceTest` + a vitest spec. No migration. | M | P1 | — |
+| **R4** | TASKS.md G4 / PRD Module 4 | SHA-256 is computed on **upload** (`InvoiceDocumentService.java:91`) but integrity is **not re-verified on download**. | PRD Module 4 claims document integrity verification. | In `InvoiceDocumentController` download path / `InvoiceDocumentService`, recompute SHA-256 of the fetched object and compare to `checksum_sha256`; log/raise on mismatch. Test: `InvoiceDocumentServiceTest#download_verifiesChecksum`. No migration (column exists). | S | P1 | — |
+| **R5** | TASKS.md / TESTING | Coverage number for the thesis is ambiguous (aggregate 66 % vs gated ≥80 %). | Chapter 4 needs one defensible coverage figure. | Run `./mvnw -P… jacoco:report` with the host PostgreSQL up; report the **gated** business-code figure (exclusions per `pom.xml`) and paste the JaCoCo summary screenshot. No code change unless coverage gate fails. | S | P1 | R1 |
+| **R6** | Audit finding (this report §11) | Real RSA keypair + `ENCRYPTION_KEY` + DB/MinIO creds embedded in committed `.env` and the test profile of `application.yaml`. | Hard-coded secrets are a security-review red flag in a thesis on a *secure* system. | Rotate dev/test secrets; keep only placeholders in committed files; confirm prod reads all from env (already true). Document the secret-management story in Chapter 4 / README. Files: `.env`, `application.yaml` (test block), README. | S | P1 | — |
+| **R7** | TASKS.md G6 | No root `README.md` for the actual project repo. | Submission polish; graders expect run instructions. | Write `invoice-system/README.md`: stack, `docker-compose up` + host-PostgreSQL note, profiles, test commands, default credentials (`Test1234!`). | S | P2 | R2 |
+| **R8** | TASKS.md G7 | WCAG 2.1 AA accessibility unverified. | NFR (PRD §7); credibility for a quality FYP. | Run axe/Lighthouse on login, dashboard, invoice detail, approvals; fix top issues; record results in Chapter 4. Frontend only. | M | P2 | — |
+| **R9** | TASKS.md M5 #9/#10, M9 #1 | 🟠 polish: matching-history viewer (only latest shown), line-by-line resolution workflow (only override), archive folder tree (metadata search only). | Nice-to-have; current behaviour is defensible by design. | Optional. If pursued: add `GET /matching/{invoiceId}/history` listing all `ThreeWayMatchingResult` rows + a viewer; everything else is documented scope. | M | P2 | **DÉCISION (2026-06-26) : écarté pour le PFE, documenté comme choix de périmètre — `docs/FUTURE_IDEAS.md` § R9** (données append-only déjà conservées ; aucune perte). |
 
-**Suggested execution order (1–3 sprints):**
-- **Sprint 1 (truthfulness, P0):** R1 (decide roles) → R2 (CI) → R3 (TLS) → R4 (SHA-256 integrity). These remove every claim that would otherwise be untrue in the thesis.
-- **Sprint 2 (credibility, P1):** R5 (doc the gap) → R6 (secrets) → R7 (design coverage for undocumented modules) → R8 (duplicate detection) → R9 (aging) → R10 (ZAP). R7 is the largest; start it early in the sprint and run in parallel with the smaller items.
-- **Sprint 3 (polish, P2):** R11 (README) → R12 (WCAG) → R13 (workflow edge) → R14 (email proof).
+**Suggested execution order:** **R1 → R2 → R6 → R4 → R3 → R5 → R7 → R8 → R9.** Do R1 first (pure doc-vs-code reconciliation, unblocks an honest status), then close the two PARTIAL thesis claims (R2 TLS proof, then R6 secret hygiene which pairs naturally with the security chapter, then R4 integrity-on-download). R3 (aging buckets) and R5 (clean coverage number) strengthen Chapters 3/4; R5 depends on R1's green pipeline. R7/R8/R9 are P2 polish. None of R2–R9 require a new Flyway migration (all needed columns/entities already exist).
 
 ---
 
 ## 13. CONSOLIDATED GAP TABLE
 
 | Thesis claim | Code reality | Action |
-|---|---|---|
-| 7 actors incl. Auditeur | 6 roles; Auditeur removed, audit split DAF/ADMIN (`V31`,`V33`; PRD §3) | **R1** |
-| CI/CD pipeline | none for the app (only a java-upgrade helper) | **R2** |
-| TLS in transit | prod-profile config only, no keystore, dev plain HTTP (`application.yaml:332-338`) | **R3** |
-| SHA-256 document integrity (archiving) | claimed in PRD; not confirmed in `InvoiceDocumentService`/storage | **R4** |
-| Complete, contiguous schema history | V36–V38 missing (numbering gap) | **R5** |
-| Secure secrets handling | dev RSA/AES/DB secrets committed as defaults; flyway pw hard-coded | **R6** |
-| Designed feature set = built feature set | ~20 modules built beyond TASKS/thesis design coverage | **R7** |
-| Duplicate invoice detection | heuristic on supplier+description, not invoice number | **R8** |
-| Payment aging analysis | basic `/reports/aging`, no buckets | **R9** |
-| OWASP security scan performed | P10-E ticked, no artifact | **R10** |
-| README / reproducible setup | no root README (P8-08 ticked) | **R11** |
-| WCAG 2.1 AA | unverified | **R12** |
-| Rejection at every review stage | N1/N2/VALIDE covered; AA-stage rejection unclear | **R13** |
-| Email notifications (prod) | works via MailHog in dev; prod SMTP unproven | **R14** |
-| OCR (PDF/XML/image) | VERIFIED (`OcrService.java`) | none |
-| Three-way matching + tolerance + override | VERIFIED (`domain/purchasing/`, `InvoiceController.java:259`) | none |
-| MFA mandatory finance/approval | VERIFIED (`AuthService.java:368-382`, `MfaService.java`) | none |
-| RBAC every endpoint | VERIFIED (`@PreAuthorize` on all 39 controllers) | none |
-| AES-256 bank details | VERIFIED (`EncryptionUtil.java` AES-GCM-256) | none |
-| Immutable exportable audit trail | VERIFIED (`AuditLoggingFilter.java`, `V25`, export endpoints) | none |
-| Dashboards / WebSocket / email notif | VERIFIED | none |
-| Reporting + PDF/Excel export | VERIFIED (`ReportController.java`, POI+iText) | none |
-| Webhooks (ERP/banking integration) | VERIFIED (HMAC-SHA256, `WebhookService.java`) | none |
-| Supplier self-service portal | VERIFIED (`SupplierPortalController.java`) | none |
+|--------------|--------------|--------|
+| (a) OCR PDF/XML/image | Implemented (PDFBox+Tess4J+XML parser, `OcrService`) | none — covered |
+| (b) Duplicate detection | Implemented at SUBMIT (`InvoiceStateMachineServiceImpl:87`) | none — covered |
+| (c) 3-way matching + tolerance + override | Implemented (`MatchingConfig`, override DAF/ADMIN) | none — covered |
+| (d) Multi-level routing + dept matrix, N1→N2 for IT/Infra/Workshop | Implemented (state-machine guards, seeded matrix) | none — covered |
+| (e) MFA mandatory for finance/approval | Implemented (deny-list filter, TOTP) | none — covered |
+| (f) RBAC at every endpoint | Implemented (`@PreAuthorize` everywhere, method security) | none — covered |
+| (g) AES-256 at rest for bank details | Implemented (AES-GCM converter) | none — covered |
+| (h) TLS in transit | Config present (prod `server.ssl`); **no keystore shipped** | **R2** |
+| (i) Immutable, exportable audit trail | Implemented (DB triggers V32 + export) | none — covered |
+| (j) Real-time dashboards per actor | Implemented (role dashboards + WebSocket) | none — covered |
+| (k) Payment tracking + aging | Implemented; aging is basic (no buckets/rollup) | **R3** |
+| (l) Archiving + metadata search + retention | Implemented (archive search, retention policy + disposition) | none — covered |
+| (m) Email + WebSocket notifications | Implemented (3 listeners + STOMP) | none — covered |
+| (n) Reporting/analytics + PDF/Excel export | Implemented (23 report endpoints + TabularExportService) | none — covered |
+| (o) Documented REST API for ERP/banking (webhooks) | API documented (Swagger) + webhooks (HMAC, retries, log); **ERP/bank live sync = framework only (out of scope)** | none for webhooks/docs; live sync is an explicit scope exclusion (TASKS §B) |
+| (p) Supplier self-service portal | Implemented (`/supplier/*`, register/submit/track) | none — covered |
+| Document integrity (PRD Module 4) | SHA-256 on upload only; not re-verified on download | **R4** |
+| CI pipeline / ZAP scan (Briefing) | **Exist** in `.github/workflows`; TASKS.md still says absent | **R1** |
+| Secret management (security NFR) | Real secrets committed in `.env` / test profile | **R6** |
+| Coverage evidence (TESTING) | Aggregate 66 % vs gated ≥80 %; ambiguous | **R5** |
+| WCAG 2.1 AA (PRD §7) | Unverified | **R8** |
+| README / run docs (submission) | Absent at repo root | **R7** |
 
 ---
 
-*End of report. All `file:line` references are relative to `invoice-system/`. Regenerate coverage with `./mvnw test jacoco:report` against a reachable PostgreSQL.*
+*End of report. All citations refer to files under `invoice-system/` at commit `74a92c2`.*

@@ -1800,3 +1800,11 @@ origin/main blocked → route via origin/backup/phase11-2026-06-13. ASK the user
 **Branch:** chore/sanitize-docs-migrations
 **Last commit:** (pending R8 commit)
 **Notes:** Audit axe-core 4.10.2 via Playwright sur app reelle (front :3000 + back :8080 dev). 7 pages auditees → 0 violation apres fix (login/MFA/dashboard/factures/rapports/paiements/profil). Corrige : labels date manquants (aria-label/htmlFor) + contrastes (gray-400→500, slate-500→400, red-500→600). PROB-071. Resultats : docs/audit/wcag-a11y-audit.md. Vitest 69/69, tsc 0. IMPORTANT ENV : pour demarrer le backend en local il a fallu (a) DB_HOST=localhost (pas host.docker.internal → pg_hba 192.168.x refuse), (b) `mvnw flyway:repair` sur oct_invoice (checksums post-consolidation V1-V34 vs DB en v63). Auth front en MEMOIRE (pas localStorage) → tout hard-reload deconnecte : naviguer par clics SPA. Ecrans validateur non audites (MFA TOTP).
+
+## Session Checkpoint
+**Date:** 2026-06-26
+**Last completed work:** R9 — historique matching ECARTE (choix de perimetre), documente dans FUTURE_IDEAS → LOT R2-R9 TERMINE
+**Next work:** decision push/PR du lot (sur demande user) ; eventuelle passe a11y des ecrans validateur ; remonter le gate JaCoCo (PROB-070, dette)
+**Branch:** chore/sanitize-docs-migrations
+**Last commit:** (pending R9 doc commit)
+**Notes:** R9 = optionnel/defendable par design. Decision : ne PAS implementer pour le PFE (ThreeWayMatchingResult append-only → donnees deja conservees, traçabilite via audit_logs/invoice_status_history ; page /matching couvre le besoin). Documente dans docs/FUTURE_IDEAS.md § R9 (+ entree M5 mise a jour : #1/#4 desormais FAITS), TASKS.md M5 #9, PROJECT_REPORT.md table R9. LOT FINALISATION R2-R9 : R2✅ R6✅ R4✅ R3✅ R5✅ R7✅ R8✅ R9(doc)✅. Aucun push effectue (choix user : push/PR en fin de lot). Backend + frontend dev tournent encore en arriere-plan.

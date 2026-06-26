@@ -130,6 +130,33 @@ côté service de validation.
 
 ---
 
+## R9 — Historique de rapprochement par facture (viewer) — choix de périmètre
+
+**Contexte :** R9 (PROJECT_REPORT §12, **P2 optionnel**) propose un viewer d'**historique de
+matching** : `GET /matching/{invoiceId}/history` listant **toutes** les lignes
+`ThreeWayMatchingResult` d'une facture (et non le seul dernier résultat), plus un viewer front.
+Depuis la rédaction de l'entrée M5 ci-dessus, **#1 (page dédiée `/matching`) et #4 (comparaison
+ligne-à-ligne)** ont été livrés (M5 #1+#4, 2026-06-21) ; l'historique complet (#9) reste le
+dernier reliquat de ce polish.
+
+**Décision (2026-06-26) : écarté pour le PFE, documenté comme choix de périmètre.** Le
+PROJECT_REPORT autorise explicitement cette option (« Sinon, documente que c'est un choix de
+périmètre »).
+
+**Pourquoi c'est défendable sans perte :**
+- `ThreeWayMatchingResult` est **append-only** → toutes les tentatives passées sont **déjà
+  conservées en base** ; il ne manque qu'un écran de consultation, aucune donnée n'est perdue.
+- L'évolution dans le temps est déjà traçable via `audit_logs` et `invoice_status_history`.
+- La page `/matching` (état courant + comparaison ligne-à-ligne) couvre le besoin opérationnel.
+- → R9 est un **confort de consultation**, pas une capacité métier manquante (YAGNI).
+
+**Ce que cela impliquerait (si repris) :** endpoint `GET /matching/{invoiceId}/history` (rôles
+DAF / ASSISTANT_COMPTABLE, ADMIN/SUPPLIER exclus pour SoD) renvoyant la liste ordonnée des
+`ThreeWayMatchingResult` ; viewer front (timeline des tentatives) ; tests + i18n FR/EN.
+**Pas de migration** (données existantes). Voir l'item **#9** de la section M5 ci-dessus.
+
+---
+
 ## M11 #7 — Tendances temporelles volume/valeur : extensions écartées
 
 **Contexte :** M11 #7 / feature #6 (2026-06-21) implémente une tendance temporelle

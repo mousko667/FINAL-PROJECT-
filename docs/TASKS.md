@@ -231,7 +231,7 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 | 6 | Discrepancy identification & flagging | ✅ | Statut MISMATCH bloque la progression au-delà de SOUMIS. |
 | 7 | Tolerance threshold configuration | ✅ | `/admin/matching-config` : tolérance % + montant + requireGRN (vérifié). |
 | 8 | Manual override with justification | ✅ | Détail facture : formulaire override (motif obligatoire), réservé DAF/ADMIN/AA ; statut → OVERRIDDEN. |
-| 9 | Matching history viewer | 🟠 | `ThreeWayMatchingResult` append-only ; **dernier** résultat affiché. Pas de viewer listant l'historique des tentatives. |
+| 9 | Matching history viewer | 🟠 (hors-scope assumé) | `ThreeWayMatchingResult` append-only ; **dernier** résultat affiché. **R9 (optionnel)** = viewer `GET /matching/{invoiceId}/history` : **écarté pour le PFE, documenté comme choix de périmètre** (données append-only déjà conservées + traçabilité via `audit_logs`/`invoice_status_history`). Voir `docs/FUTURE_IDEAS.md` § R9. |
 | 10 | Unmatched items resolution workflow | 🟠 | Résolution via **override** (déblocage MISMATCH). Pas de workflow de résolution ligne-par-ligne dédié. |
 | 11 | Export matching reports | ✅ | `GET /invoices/{id}/matching/export?format=csv\|excel\|pdf` (via `TabularExportService`) + bouton `ExportMenu` sur le panneau matching de `InvoiceDetailPage`. **Fait (B2, 2026-06-18)** : CSV/Excel vérifiés (`testExportMatchingReport`). |
 | 12 | Integration with procurement & inventory | 🟠 | PO + GRN internes ✅ ; connecteurs procurement/inventory externes = M12 (type connecteur, pas de sync réelle). |
