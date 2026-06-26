@@ -1766,5 +1766,13 @@ origin/main blocked → route via origin/backup/phase11-2026-06-13. ASK the user
 **Last completed work:** R4 — SHA-256 integrity re-verified on document download
 **Next work:** R3 (bucketed aging analysis)
 **Branch:** chore/sanitize-docs-migrations
-**Last commit:** (pending R4 commit)
-**Notes:** `verifyStoredChecksum()` blocks presign + access-log on mismatch. PROB-042 closed.
+**Last commit:** (pending R3 commit)
+**Notes:** `bucketedAging()` with supplier rollup; dashboard widget on AA/DAF view.
+
+## Session Checkpoint
+**Date:** 2026-06-26
+**Last completed work:** R3 — bucketed aging + supplier rollup + dashboard widget
+**Next work:** R5 (JaCoCo gated coverage figure)
+**Branch:** chore/sanitize-docs-migrations
+**Last commit:** (pending R3 commit)
+**Notes:** Endpoint `GET /reports/aging/buckets`; frontend `AgingBucketsWidget` with vitest spec. Reprise de session : R3 etait code mais NON commite et le build cassait — 4 fichiers neufs en UTF-16 LE + method-reference invalide (PROB-069). Corriges. Gate vert : backend cible 52/52, vitest 69/69, tsc 0.

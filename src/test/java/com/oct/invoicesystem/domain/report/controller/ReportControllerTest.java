@@ -1,6 +1,7 @@
 package com.oct.invoicesystem.domain.report.controller;
 
 import com.oct.invoicesystem.domain.report.dto.BottleneckDTO;
+import com.oct.invoicesystem.domain.report.dto.BucketedAgingReportDTO;
 import com.oct.invoicesystem.domain.report.dto.DashboardKpiDTO;
 import com.oct.invoicesystem.domain.report.dto.ReportPreviewDTO;
 import com.oct.invoicesystem.domain.report.dto.SupplierPerformanceDTO;
@@ -111,6 +112,30 @@ class ReportControllerTest {
                 .andExpect(jsonPath("$.data.averageN2ApprovalDays").value(2.0))
                 .andExpect(jsonPath("$.data.averageDafApprovalDays").value(0.8))
                 .andExpect(jsonPath("$.data.webhookDeliverySuccessRate").value(0.95));
+    }
+
+    @Test
+    @WithMockUser(roles = "DAF")
+    void getBucketedAging_WithDaf_ReturnsSuccess() throws Exception {
+        BucketedAgingReportDTO report = BucketedAgingReportDTO.builder()
+                .buckets(Collections.emptyMap())
+                .totalOverdueAmount(java.math.BigDecimal.ZERO)
+                .totalOverdueInvoiceCount(0L)
+                .supplierRollup(Collections.emptyList())
+                .build();
+        when(reportService.bucketedAging()).thenReturn(report);
+
+        mockMvc.perform(get("/api/v1/reports/aging/buckets"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.totalOverdueInvoiceCount").value(0));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void getBucketedAging_WithAdmin_ReturnsForbidden() throws Exception {
+        mockMvc.perform(get("/api/v1/reports/aging/buckets"))
+                .andExpect(status().isForbidden());
     }
 
     // ─── Exports ───────────────────────────────────────────────────────────

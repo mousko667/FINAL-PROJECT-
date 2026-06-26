@@ -7,12 +7,14 @@ import com.oct.invoicesystem.domain.payment.model.Payment;
 import com.oct.invoicesystem.domain.payment.model.PaymentMethod;
 import com.oct.invoicesystem.domain.payment.repository.PaymentRepository;
 import com.oct.invoicesystem.domain.report.dto.AgingReportDTO;
+import com.oct.invoicesystem.domain.report.dto.BucketedAgingReportDTO;
 import com.oct.invoicesystem.domain.report.dto.CashFlowProjectionDTO;
 import com.oct.invoicesystem.domain.report.dto.DashboardKpiDTO;
 import com.oct.invoicesystem.domain.report.dto.BottleneckDTO;
 import com.oct.invoicesystem.domain.report.dto.SupplierPerformanceDTO;
 import com.oct.invoicesystem.domain.report.dto.VolumeTrendDTO;
 import java.time.YearMonth;
+import com.oct.invoicesystem.domain.supplier.model.Supplier;
 import com.oct.invoicesystem.domain.workflow.repository.ApprovalStepRepository;
 import com.oct.invoicesystem.domain.webhook.repository.WebhookDeliveryRepository;import com.oct.invoicesystem.domain.workflow.model.ApprovalStep;
 import com.oct.invoicesystem.domain.workflow.model.ApprovalStepStatus;
@@ -160,6 +162,7 @@ class ReportServiceTest {
 
     @Test
     void getAgingAnalysis_CorrectlyBucketsOverdueInvoices() {
+        when(messageSource.getMessage(anyString(), any(), any())).thenAnswer(inv -> inv.getArgument(0));
         // Arrange
         LocalDate today = LocalDate.now();
         List<Invoice> invoices = new ArrayList<>();
@@ -237,6 +240,7 @@ class ReportServiceTest {
 
     @Test
     void getAgingAnalysis_ExcludesNonOverdueInvoices() {
+        when(messageSource.getMessage(anyString(), any(), any())).thenAnswer(inv -> inv.getArgument(0));
         // Arrange
         LocalDate today = LocalDate.now();
         List<Invoice> invoices = new ArrayList<>();
@@ -259,6 +263,71 @@ class ReportServiceTest {
         // Assert
         assertEquals(0L, result.getTotalOverdueInvoiceCount());
         assertEquals(BigDecimal.ZERO, result.getTotalOverdueAmount());
+    }
+
+    @Test
+    void bucketedAging_groupsOverdueInvoicesBySupplier() {
+        when(messageSource.getMessage(anyString(), any(), any())).thenAnswer(inv -> inv.getArgument(0));
+        LocalDate today = LocalDate.now();
+        UUID supplierAId = UUID.randomUUID();
+        UUID supplierBId = UUID.randomUUID();
+        Supplier supplierA = Supplier.builder().id(supplierAId).companyName("Alpha SA").build();
+        Supplier supplierB = Supplier.builder().id(supplierBId).companyName("Beta SARL").build();
+
+        List<Invoice> invoices = List.of(
+                Invoice.builder()
+                        .id(UUID.randomUUID())
+                        .status(InvoiceStatus.BON_A_PAYER)
+                        .dueDate(today.minusDays(10))
+                        .amount(BigDecimal.valueOf(100))
+                        .supplier(supplierA)
+                        .supplierName("Alpha SA")
+                        .build(),
+                Invoice.builder()
+                        .id(UUID.randomUUID())
+                        .status(InvoiceStatus.VALIDE)
+                        .dueDate(today.minusDays(50))
+                        .amount(BigDecimal.valueOf(200))
+                        .supplier(supplierA)
+                        .supplierName("Alpha SA")
+                        .build(),
+                Invoice.builder()
+                        .id(UUID.randomUUID())
+                        .status(InvoiceStatus.SOUMIS)
+                        .dueDate(today.minusDays(95))
+                        .amount(BigDecimal.valueOf(300))
+                        .supplier(supplierB)
+                        .supplierName("Beta SARL")
+                        .build()
+        );
+
+        when(invoiceRepository.findAllWithFilters(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(new PageImpl<>(invoices));
+
+        BucketedAgingReportDTO result = reportService.bucketedAging();
+
+        assertEquals(3L, result.getTotalOverdueInvoiceCount());
+        assertEquals(2, result.getSupplierRollup().size());
+        assertEquals("Alpha SA", result.getSupplierRollup().get(0).getSupplierName());
+        assertEquals(2L, result.getSupplierRollup().get(0).getInvoiceCount());
+        assertEquals(BigDecimal.valueOf(300), result.getSupplierRollup().get(0).getTotalOverdueAmount());
+        assertEquals(BigDecimal.valueOf(100), result.getSupplierRollup().get(0).getAmountByBucket().get("0_30"));
+        assertEquals(BigDecimal.valueOf(200), result.getSupplierRollup().get(0).getAmountByBucket().get("31_60"));
+        assertEquals("Beta SARL", result.getSupplierRollup().get(1).getSupplierName());
+        assertEquals(BigDecimal.valueOf(300), result.getSupplierRollup().get(1).getAmountByBucket().get("90_plus"));
+    }
+
+    @Test
+    void bucketedAging_emptyWhenNoOverdueInvoices() {
+        when(messageSource.getMessage(anyString(), any(), any())).thenAnswer(inv -> inv.getArgument(0));
+        when(invoiceRepository.findAllWithFilters(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        BucketedAgingReportDTO result = reportService.bucketedAging();
+
+        assertEquals(0L, result.getTotalOverdueInvoiceCount());
+        assertTrue(result.getSupplierRollup().isEmpty());
+        assertEquals(0L, result.getBuckets().get("0_30").getInvoiceCount());
     }
 
     @Test

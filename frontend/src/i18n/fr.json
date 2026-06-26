@@ -214,6 +214,22 @@
     "budgetAlerts": {
       "title": "Alertes budgétaires",
       "overBudget": "dépassé"
+    },
+    "agingBuckets": {
+      "title": "Ancienneté des factures en retard",
+      "desc": "Montants en retard par tranche (0-30, 31-60, 61-90, 90+ jours) et synthèse par fournisseur.",
+      "empty": "Aucune facture en retard.",
+      "totalOverdue": "Factures en retard",
+      "totalAmount": "Montant total",
+      "amount": "Montant",
+      "invoices": "Factures",
+      "supplierRollup": "Par fournisseur",
+      "bucket": {
+        "0_30": "0-30 jours",
+        "31_60": "31-60 jours",
+        "61_90": "61-90 jours",
+        "90_plus": "90+ jours"
+      }
     }
   },
   "po": {

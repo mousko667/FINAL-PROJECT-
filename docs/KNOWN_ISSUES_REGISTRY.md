@@ -843,6 +843,18 @@
 
 ---
 
+### [PROB-069] (R3) Fichiers source neufs ecrits en UTF-16 LE + method-reference invalide sur champ — build casse
+- **Categorie :** Outillage / Encodage + Java
+- **Severite :** 🔴 Majeur (compilation impossible — `./mvnw test` echoue avant tout test)
+- **Decouvert :** 2026-06-26 — reprise de R3 (aging par tranches) apres interruption de l'agent Cursor. `./mvnw test` echoue avec des centaines de `illegal character: ' '` sur `BucketedAgingReportDTO.java`, puis (apres correction encodage) `invalid method reference: cannot find symbol method totalAmount()` sur `ReportServiceImpl.java:471`.
+- **Symptome :** (1) `javac` rejette les 4 fichiers neufs (2 DTO Java + widget tsx + test tsx) crees par l'agent : un octet NUL apres chaque caractere ASCII. (2) `Comparator.comparing(SupplierRollupAccumulator::totalAmount)` ne compile pas car `totalAmount` est un champ prive, pas une methode.
+- **Cause racine :** (1) l'outil d'ecriture de l'agent a serialise les fichiers NOUVELLEMENT crees en UTF-16 LE alors que `javac`/Vite attendent UTF-8 ; les fichiers MODIFIES (Edit sur fichiers existants) sont restes en UTF-8, d'ou un sous-ensemble seulement corrompu. (2) une method-reference `Type::membre` ne resout que des methodes (ou accesseurs), jamais un champ ; sur une classe interne avec champ public-package il faut une lambda explicite.
+- **Solution appliquee :** (1) `iconv -f UTF-16LE -t UTF-8` sur les 4 fichiers (`BucketedAgingReportDTO.java`, `SupplierAgingRollupDTO.java`, `AgingBucketsWidget.tsx`, `AgingBucketsWidget.test.tsx`). (2) remplacer la method-reference par une lambda : `Comparator.comparing((SupplierRollupAccumulator acc) -> acc.totalAmount).reversed()`. Resultat : backend 52/52 cible vert, vitest 69/69, `tsc --noEmit` exit 0.
+- **Regle preventive :** apres qu'un agent (Cursor/Claude) cree de NOUVEAUX fichiers source, verifier l'encodage (`file <f>` doit dire "ASCII"/"UTF-8", pas "data") AVANT de lancer le build — les NUL bytes sont invisibles dans un editeur. Et : ne jamais utiliser une method-reference sur un CHAMP ; reserver `Type::x` aux methodes/accesseurs, sinon lambda.
+- **Fichiers modifies :** `BucketedAgingReportDTO.java`, `SupplierAgingRollupDTO.java`, `AgingBucketsWidget.tsx`, `AgingBucketsWidget.test.tsx` (re-encodes UTF-8) ; `ReportServiceImpl.java` (lambda de tri).
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :

@@ -5,6 +5,7 @@ import { reportService } from '@/services/reportService'
 import apiClient from '@/services/apiClient'
 import { useAppSelector } from '@/store/hooks'
 import { DashboardAnnouncements, BudgetAlerts, PrivacyPolicyBanner } from '@/components/dashboard/DashboardPanels'
+import AgingBucketsWidget from '@/components/dashboard/AgingBucketsWidget'
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -341,6 +342,8 @@ export default function DashboardPage() {
       <PrivacyPolicyBanner />
       <DashboardAnnouncements />
       {(isDaf || isAA) && <BudgetAlerts />}
+
+      {(isDaf || isAA) && <AgingBucketsWidget />}
 
       {/* KPI Cards */}
       {canViewKpis && (

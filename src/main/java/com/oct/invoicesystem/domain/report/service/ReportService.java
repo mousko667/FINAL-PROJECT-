@@ -1,6 +1,7 @@
 package com.oct.invoicesystem.domain.report.service;
 
 import com.oct.invoicesystem.domain.report.dto.AgingReportDTO;
+import com.oct.invoicesystem.domain.report.dto.BucketedAgingReportDTO;
 import com.oct.invoicesystem.domain.report.dto.BottleneckDTO;
 import com.oct.invoicesystem.domain.report.dto.BudgetVsActualDTO;
 import com.oct.invoicesystem.domain.report.dto.CashFlowProjectionDTO;
@@ -40,6 +41,15 @@ public interface ReportService {
      * @return AgingReportDTO with buckets and totals
      */
     AgingReportDTO getAgingAnalysis();
+
+    /**
+     * Bucketed aging analysis with per-supplier rollup for finance dashboards.
+     * Buckets overdue invoices into 0-30 / 31-60 / 61-90 / 90+ day ranges and
+     * aggregates amounts by supplier.
+     *
+     * @return bucket totals plus supplier rollup lines
+     */
+    BucketedAgingReportDTO bucketedAging();
 
     /**
      * Get cash flow projection for invoices due within N days.

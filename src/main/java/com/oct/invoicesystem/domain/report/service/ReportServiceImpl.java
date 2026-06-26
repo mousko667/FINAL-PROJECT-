@@ -16,7 +16,10 @@ import com.oct.invoicesystem.domain.report.dto.BudgetVsActualDTO;
 import com.oct.invoicesystem.domain.payment.model.Payment;
 import com.oct.invoicesystem.domain.payment.repository.PaymentRepository;
 import com.oct.invoicesystem.domain.report.dto.AgingReportDTO;
+import com.oct.invoicesystem.domain.report.dto.BucketedAgingReportDTO;
 import com.oct.invoicesystem.domain.report.dto.BottleneckDTO;
+import com.oct.invoicesystem.domain.report.dto.SupplierAgingRollupDTO;
+import com.oct.invoicesystem.domain.supplier.model.Supplier;
 import com.oct.invoicesystem.domain.report.dto.CashFlowProjectionDTO;
 import com.oct.invoicesystem.domain.report.dto.VolumeTrendDTO;
 import com.oct.invoicesystem.shared.exception.ValidationException;
@@ -414,90 +417,145 @@ public class ReportServiceImpl implements ReportService {
     @Override
     @Transactional(readOnly = true)
     public AgingReportDTO getAgingAnalysis() {
-        log.info("Calculating aging analysis");
+        BucketedAgingReportDTO bucketed = bucketedAging();
+        return AgingReportDTO.builder()
+                .buckets(bucketed.getBuckets())
+                .totalOverdueAmount(bucketed.getTotalOverdueAmount())
+                .totalOverdueInvoiceCount(bucketed.getTotalOverdueInvoiceCount())
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BucketedAgingReportDTO bucketedAging() {
+        log.info("Calculating bucketed aging analysis with supplier rollup");
 
         LocalDate today = LocalDate.now();
         List<Invoice> invoices = invoiceRepository.findAllWithFilters(
                 null, null, null, null, null, null, Pageable.unpaged()).getContent();
 
-        // Filter: exclude PAYE, ARCHIVE, REJETE
-        List<Invoice> filteredInvoices = invoices.stream()
-                .filter(inv -> inv.getStatus() != InvoiceStatus.PAYE 
-                        && inv.getStatus() != InvoiceStatus.ARCHIVE 
+        List<Invoice> overdueInvoices = invoices.stream()
+                .filter(inv -> inv.getStatus() != InvoiceStatus.PAYE
+                        && inv.getStatus() != InvoiceStatus.ARCHIVE
                         && inv.getStatus() != InvoiceStatus.REJETE)
+                .filter(inv -> inv.getDueDate() != null && inv.getDueDate().isBefore(today))
                 .toList();
 
-        // Bucket invoices by days overdue
-        long count0to30 = 0;
-        long count31to60 = 0;
-        long count61to90 = 0;
-        long count90plus = 0;
+        Map<String, Long> bucketCounts = initBucketCounts();
+        Map<String, BigDecimal> bucketAmounts = initBucketAmounts();
+        Map<String, SupplierRollupAccumulator> supplierAccumulators = new LinkedHashMap<>();
 
-        BigDecimal amount0to30 = BigDecimal.ZERO;
-        BigDecimal amount31to60 = BigDecimal.ZERO;
-        BigDecimal amount61to90 = BigDecimal.ZERO;
-        BigDecimal amount90plus = BigDecimal.ZERO;
-
-        for (Invoice inv : filteredInvoices) {
-            if (inv.getDueDate() == null || !inv.getDueDate().isBefore(today)) {
-                continue; // Not overdue
-            }
-
+        for (Invoice inv : overdueInvoices) {
             long daysOverdue = Duration.between(
                     inv.getDueDate().atStartOfDay(),
                     today.atStartOfDay()
             ).toDays();
+            String bucketKey = resolveAgingBucketKey(daysOverdue);
 
-            if (daysOverdue <= 30) {
-                count0to30++;
-                amount0to30 = amount0to30.add(inv.getAmount());
-            } else if (daysOverdue <= 60) {
-                count31to60++;
-                amount31to60 = amount31to60.add(inv.getAmount());
-            } else if (daysOverdue <= 90) {
-                count61to90++;
-                amount61to90 = amount61to90.add(inv.getAmount());
-            } else {
-                count90plus++;
-                amount90plus = amount90plus.add(inv.getAmount());
-            }
+            bucketCounts.merge(bucketKey, 1L, Long::sum);
+            bucketAmounts.merge(bucketKey, inv.getAmount(), BigDecimal::add);
+
+            String supplierKey = resolveSupplierKey(inv);
+            SupplierRollupAccumulator rollup = supplierAccumulators.computeIfAbsent(
+                    supplierKey, k -> new SupplierRollupAccumulator(inv));
+            rollup.invoiceCount++;
+            rollup.totalAmount = rollup.totalAmount.add(inv.getAmount());
+            rollup.amountByBucket.merge(bucketKey, inv.getAmount(), BigDecimal::add);
         }
 
-        // Create buckets map
-        Map<String, AgingReportDTO.AgingBucketDTO> buckets = new LinkedHashMap<>();
-        buckets.put("0_30", AgingReportDTO.AgingBucketDTO.builder()
-                .bucketKey("0_30")
-                .displayName("0-30 days")
-                .invoiceCount(count0to30)
-                .totalAmount(amount0to30)
-                .build());
-        buckets.put("31_60", AgingReportDTO.AgingBucketDTO.builder()
-                .bucketKey("31_60")
-                .displayName("31-60 days")
-                .invoiceCount(count31to60)
-                .totalAmount(amount31to60)
-                .build());
-        buckets.put("61_90", AgingReportDTO.AgingBucketDTO.builder()
-                .bucketKey("61_90")
-                .displayName("61-90 days")
-                .invoiceCount(count61to90)
-                .totalAmount(amount61to90)
-                .build());
-        buckets.put("90_plus", AgingReportDTO.AgingBucketDTO.builder()
-                .bucketKey("90_plus")
-                .displayName("90+ days")
-                .invoiceCount(count90plus)
-                .totalAmount(amount90plus)
-                .build());
+        Map<String, AgingReportDTO.AgingBucketDTO> buckets = buildAgingBuckets(bucketCounts, bucketAmounts);
+        BigDecimal totalAmount = bucketAmounts.values().stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+        long totalCount = bucketCounts.values().stream().mapToLong(Long::longValue).sum();
 
-        BigDecimal totalAmount = amount0to30.add(amount31to60).add(amount61to90).add(amount90plus);
-        long totalCount = count0to30 + count31to60 + count61to90 + count90plus;
+        List<SupplierAgingRollupDTO> supplierRollup = supplierAccumulators.values().stream()
+                .sorted(Comparator.comparing((SupplierRollupAccumulator acc) -> acc.totalAmount).reversed())
+                .map(SupplierRollupAccumulator::toDto)
+                .toList();
 
-        return AgingReportDTO.builder()
+        return BucketedAgingReportDTO.builder()
                 .buckets(buckets)
                 .totalOverdueAmount(totalAmount)
                 .totalOverdueInvoiceCount(totalCount)
+                .supplierRollup(supplierRollup)
                 .build();
+    }
+
+    private static Map<String, Long> initBucketCounts() {
+        Map<String, Long> counts = new LinkedHashMap<>();
+        counts.put("0_30", 0L);
+        counts.put("31_60", 0L);
+        counts.put("61_90", 0L);
+        counts.put("90_plus", 0L);
+        return counts;
+    }
+
+    private static Map<String, BigDecimal> initBucketAmounts() {
+        Map<String, BigDecimal> amounts = new LinkedHashMap<>();
+        amounts.put("0_30", BigDecimal.ZERO);
+        amounts.put("31_60", BigDecimal.ZERO);
+        amounts.put("61_90", BigDecimal.ZERO);
+        amounts.put("90_plus", BigDecimal.ZERO);
+        return amounts;
+    }
+
+    private String resolveAgingBucketKey(long daysOverdue) {
+        if (daysOverdue <= 30) {
+            return "0_30";
+        }
+        if (daysOverdue <= 60) {
+            return "31_60";
+        }
+        if (daysOverdue <= 90) {
+            return "61_90";
+        }
+        return "90_plus";
+    }
+
+    private Map<String, AgingReportDTO.AgingBucketDTO> buildAgingBuckets(
+            Map<String, Long> bucketCounts, Map<String, BigDecimal> bucketAmounts) {
+        Map<String, AgingReportDTO.AgingBucketDTO> buckets = new LinkedHashMap<>();
+        for (String key : List.of("0_30", "31_60", "61_90", "90_plus")) {
+            buckets.put(key, AgingReportDTO.AgingBucketDTO.builder()
+                    .bucketKey(key)
+                    .displayName(messageSource.getMessage(
+                            "report.aging.bucket." + key, null, LocaleContextHolder.getLocale()))
+                    .invoiceCount(bucketCounts.get(key))
+                    .totalAmount(bucketAmounts.get(key))
+                    .build());
+        }
+        return buckets;
+    }
+
+    private static String resolveSupplierKey(Invoice inv) {
+        Supplier supplier = inv.getSupplier();
+        if (supplier != null && supplier.getId() != null) {
+            return supplier.getId().toString();
+        }
+        return "name:" + inv.getSupplierName();
+    }
+
+    private static final class SupplierRollupAccumulator {
+        private final UUID supplierId;
+        private final String supplierName;
+        private long invoiceCount;
+        private BigDecimal totalAmount = BigDecimal.ZERO;
+        private final Map<String, BigDecimal> amountByBucket = initBucketAmounts();
+
+        private SupplierRollupAccumulator(Invoice inv) {
+            Supplier supplier = inv.getSupplier();
+            this.supplierId = supplier != null ? supplier.getId() : null;
+            this.supplierName = inv.getSupplierName();
+        }
+
+        private SupplierAgingRollupDTO toDto() {
+            return SupplierAgingRollupDTO.builder()
+                    .supplierId(supplierId)
+                    .supplierName(supplierName)
+                    .invoiceCount(invoiceCount)
+                    .totalOverdueAmount(totalAmount)
+                    .amountByBucket(Map.copyOf(amountByBucket))
+                    .build();
+        }
     }
 
     @Override

@@ -2,6 +2,7 @@ package com.oct.invoicesystem.domain.report.controller;
 
 import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
 import com.oct.invoicesystem.domain.report.dto.AgingReportDTO;
+import com.oct.invoicesystem.domain.report.dto.BucketedAgingReportDTO;
 import com.oct.invoicesystem.domain.report.dto.BottleneckDTO;
 import com.oct.invoicesystem.domain.report.dto.BudgetVsActualDTO;
 import com.oct.invoicesystem.domain.report.dto.CashFlowProjectionDTO;
@@ -114,6 +115,14 @@ public class ReportController {
     @Operation(summary = "Get Aging Analysis Report", description = "Analyzes overdue invoices grouped by days overdue")
     public ApiResponse<AgingReportDTO> getAgingAnalysis() {
         return ApiResponse.success(reportService.getAgingAnalysis());
+    }
+
+    @GetMapping("/aging/buckets")
+    @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
+    @Operation(summary = "Get bucketed aging with supplier rollup",
+            description = "Overdue invoices in 0-30/31-60/61-90/90+ buckets with per-supplier breakdown for finance dashboards")
+    public ApiResponse<BucketedAgingReportDTO> getBucketedAging() {
+        return ApiResponse.success(reportService.bucketedAging());
     }
 
     @GetMapping("/cash-flow")
