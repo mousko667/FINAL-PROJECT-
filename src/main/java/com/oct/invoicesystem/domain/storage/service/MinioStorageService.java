@@ -1,6 +1,7 @@
 package com.oct.invoicesystem.domain.storage.service;
 
 import io.minio.BucketExistsArgs;
+import io.minio.GetObjectArgs;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
@@ -13,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.time.Duration;
 
 @Service
@@ -60,6 +62,20 @@ public class MinioStorageService {
                         .build()
         );
         return objectKey;
+    }
+
+    /**
+     * Downloads the full object bytes from MinIO (used for integrity verification before presigning).
+     *
+     * @param objectKey stored object key
+     * @return object content
+     * @throws Exception if the object cannot be read
+     */
+    public byte[] download(String objectKey) throws Exception {
+        try (InputStream stream = minioClient.getObject(
+                GetObjectArgs.builder().bucket(bucket).object(objectKey).build())) {
+            return stream.readAllBytes();
+        }
     }
 
     public String generateDownloadUrl(String objectKey) throws Exception {

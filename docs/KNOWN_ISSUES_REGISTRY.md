@@ -239,9 +239,11 @@
 ### [PROB-042] Ré-vérification SHA-256 au téléchargement — non implémentée (P11-49, REQ-14)
 - **Catégorie :** Backend / Sécurité
 - **Sévérité :** 🟡 Mineur
-- **Statut :** ❌ Non implémenté (scope partiel P11-49 assumé)
-- **Description :** Le SHA-256 d'un document est calculé et persisté au téléversement (`InvoiceDocumentService.computeSha256`), mais il n'est jamais recalculé/comparé au moment du téléchargement. Le texte de `ArchivePage` affirmait à tort « SHA-256 vérifié à chaque téléchargement » — corrigé en P11-49 pour ne décrire que le comportement réel (empreinte calculée + stockée au téléversement).
-- **Solution recommandée :** Dans `InvoiceDocumentService.generateDownloadUrl()` (ou un proxy de téléchargement côté backend), re-télécharger l'objet depuis MinIO, recalculer le SHA-256 et le comparer à `checksumSha256` stocké ; logguer/bloquer en cas de divergence (corruption ou altération).
+- **Statut :** ✅ Corrigé (R4, 2026-06-26)
+- **Description :** Le SHA-256 d'un document est calculé et persisté au téléversement (`InvoiceDocumentService.computeSha256`), mais il n'était pas recalculé/comparé au moment du téléchargement.
+- **Cause racine :** Le chemin download ne faisait qu'émettre une URL pré-signée sans relire l'objet MinIO.
+- **Solution appliquée :** `MinioStorageService.download()` + `InvoiceDocumentService.verifyStoredChecksum()` appelé dans `generateDownloadUrl` et `generateDownloadUrlAndLog` avant presign/access-log ; mismatch → `log.error` + `ValidationException("error.document.integrity_mismatch")`. Clés i18n FR/EN ajoutées. Tests unitaires `download_verifiesChecksum` et `download_checksumMismatch_throwsValidation`.
+- **Règle préventive :** Tout endpoint de download de document financier doit re-vérifier l'intégrité SHA-256 stockée avant de délivrer l'accès.
 
 ---
 

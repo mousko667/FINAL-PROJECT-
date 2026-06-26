@@ -76,7 +76,7 @@ public class InvoiceDocumentController {
     @GetMapping("/{docId}/download")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get download URL",
-            description = "Generates a pre-signed URL for document download and records an access-log entry")
+            description = "Re-verifies SHA-256 integrity, records an access-log entry, then returns a pre-signed URL")
     public ResponseEntity<ApiResponse<Map<String, String>>> download(
             @PathVariable UUID invoiceId,
             @PathVariable UUID docId,

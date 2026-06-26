@@ -201,11 +201,60 @@ class InvoiceDocumentServiceTest {
     }
 
     @Test
+    void download_verifiesChecksum() throws Exception {
+        UUID docId = UUID.randomUUID();
+        byte[] content = "%PDF-1.4\nintegrity".getBytes(StandardCharsets.UTF_8);
+        String checksum = java.util.HexFormat.of().formatHex(
+                MessageDigest.getInstance("SHA-256").digest(content));
+        InvoiceDocument doc = InvoiceDocument.builder()
+                .id(docId)
+                .invoice(invoice)
+                .minioObjectKey("invoices/k")
+                .checksumSha256(checksum)
+                .build();
+        when(invoiceDocumentRepository.findByIdAndInvoiceId(docId, invoiceId)).thenReturn(Optional.of(doc));
+        when(minioStorageService.download("invoices/k")).thenReturn(content);
+        when(minioStorageService.generateDownloadUrl("invoices/k")).thenReturn("https://signed-url");
+        when(userRepository.findByUsername("assistant")).thenReturn(Optional.of(user));
+
+        String url = service.generateDownloadUrlAndLog(invoiceId, docId, "assistant", "10.0.0.1", "JUnit");
+
+        assertEquals("https://signed-url", url);
+        verify(minioStorageService).download("invoices/k");
+    }
+
+    @Test
+    void download_checksumMismatch_throwsValidation() throws Exception {
+        UUID docId = UUID.randomUUID();
+        byte[] stored = "%PDF-1.4\noriginal".getBytes(StandardCharsets.UTF_8);
+        byte[] tampered = "%PDF-1.4\ntampered".getBytes(StandardCharsets.UTF_8);
+        String checksum = java.util.HexFormat.of().formatHex(
+                MessageDigest.getInstance("SHA-256").digest(stored));
+        InvoiceDocument doc = InvoiceDocument.builder()
+                .id(docId)
+                .invoice(invoice)
+                .minioObjectKey("invoices/k")
+                .checksumSha256(checksum)
+                .build();
+        when(invoiceDocumentRepository.findByIdAndInvoiceId(docId, invoiceId)).thenReturn(Optional.of(doc));
+        when(minioStorageService.download("invoices/k")).thenReturn(tampered);
+
+        ValidationException ex = assertThrows(ValidationException.class,
+                () -> service.generateDownloadUrl(invoiceId, docId));
+        assertEquals("error.document.integrity_mismatch", ex.getMessage());
+        verify(documentAccessLogRepository, org.mockito.Mockito.never()).save(any());
+    }
+
+    @Test
     void generateDownloadUrlAndLog_writesAccessLogEntry() throws Exception {
         UUID docId = UUID.randomUUID();
+        byte[] content = "%PDF-1.4\nlog".getBytes(StandardCharsets.UTF_8);
+        String checksum = java.util.HexFormat.of().formatHex(
+                MessageDigest.getInstance("SHA-256").digest(content));
         InvoiceDocument doc = InvoiceDocument.builder()
-                .id(docId).invoice(invoice).minioObjectKey("invoices/k").build();
+                .id(docId).invoice(invoice).minioObjectKey("invoices/k").checksumSha256(checksum).build();
         when(invoiceDocumentRepository.findByIdAndInvoiceId(docId, invoiceId)).thenReturn(Optional.of(doc));
+        when(minioStorageService.download("invoices/k")).thenReturn(content);
         when(minioStorageService.generateDownloadUrl("invoices/k")).thenReturn("https://signed-url");
         when(userRepository.findByUsername("assistant")).thenReturn(Optional.of(user));
 

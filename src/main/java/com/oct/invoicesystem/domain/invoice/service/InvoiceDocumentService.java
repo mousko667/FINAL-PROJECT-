@@ -200,7 +200,7 @@ public class InvoiceDocumentService {
     }
 
     /**
-     * Generates a pre-signed download URL for an invoice document.
+     * Generates a pre-signed download URL for an invoice document after re-verifying SHA-256 integrity.
      *
      * @param invoiceId invoice id
      * @param documentId document id
@@ -211,13 +211,15 @@ public class InvoiceDocumentService {
     public String generateDownloadUrl(UUID invoiceId, UUID documentId) throws Exception {
         InvoiceDocument document = invoiceDocumentRepository.findByIdAndInvoiceId(documentId, invoiceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Document not found with id: " + documentId));
+        verifyStoredChecksum(document);
         return minioStorageService.generateDownloadUrl(document.getMinioObjectKey());
     }
 
     /**
      * Generates a pre-signed download URL AND records an append-only access-log entry
      * (P11-50 / REQ-16). The access log captures who downloaded which document, when, and from
-     * where — a tamper-evident trail distinct from the generic HTTP audit log.
+     * where — a tamper-evident trail distinct from the generic HTTP audit log. Integrity is
+     * re-checked against MinIO before the URL is issued or the access log is written.
      *
      * @param invoiceId invoice id
      * @param documentId document id
@@ -232,6 +234,8 @@ public class InvoiceDocumentService {
                                             String ipAddress, String userAgent) throws Exception {
         InvoiceDocument document = invoiceDocumentRepository.findByIdAndInvoiceId(documentId, invoiceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Document not found with id: " + documentId));
+
+        verifyStoredChecksum(document);
 
         User accessor = username == null ? null : userRepository.findByUsername(username).orElse(null);
 
@@ -285,6 +289,24 @@ public class InvoiceDocumentService {
             return HexFormat.of().formatHex(hash);
         } catch (Exception exception) {
             throw new ValidationException("Unable to compute document checksum");
+        }
+    }
+
+    /**
+     * Re-fetches the object from MinIO and compares its SHA-256 to the checksum stored at upload time.
+     *
+     * @param document invoice document metadata including expected checksum
+     * @throws Exception if MinIO read fails
+     * @throws ValidationException if the recomputed checksum does not match (corruption or tampering)
+     */
+    private void verifyStoredChecksum(InvoiceDocument document) throws Exception {
+        byte[] content = minioStorageService.download(document.getMinioObjectKey());
+        String actual = computeSha256(content);
+        String expected = document.getChecksumSha256();
+        if (expected == null || !actual.equalsIgnoreCase(expected)) {
+            log.error("Document integrity mismatch for id={} objectKey={} expected={} actual={}",
+                    document.getId(), document.getMinioObjectKey(), expected, actual);
+            throw new ValidationException("error.document.integrity_mismatch");
         }
     }
 

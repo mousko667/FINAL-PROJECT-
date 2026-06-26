@@ -1759,5 +1759,12 @@ origin/main blocked → route via origin/backup/phase11-2026-06-13. ASK the user
 **Last completed work:** R6 — secret hygiene (test keys in application-test.yml, placeholders in committed config, README secret strategy)
 **Next work:** R4 (SHA-256 verify on download)
 **Branch:** chore/sanitize-docs-migrations
-**Last commit:** (pending R6 commit)
-**Notes:** Rotated local `.env` JWT + MinIO secret (gitignored). `ENCRYPTION_KEY` left unchanged in local `.env` to preserve encrypted bank data. Recreate MinIO container if `MINIO_SECRET_KEY` changed.
+**Last commit:** 3545d36 (R6)
+
+## Session Checkpoint
+**Date:** 2026-06-26
+**Last completed work:** R4 — SHA-256 integrity re-verified on document download
+**Next work:** R3 (bucketed aging analysis)
+**Branch:** chore/sanitize-docs-migrations
+**Last commit:** (pending R4 commit)
+**Notes:** `verifyStoredChecksum()` blocks presign + access-log on mismatch. PROB-042 closed.
