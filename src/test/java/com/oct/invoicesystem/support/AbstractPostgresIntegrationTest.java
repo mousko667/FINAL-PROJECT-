@@ -34,7 +34,7 @@ public abstract class AbstractPostgresIntegrationTest {
     private static final int PORT = 5433;
     private static final String DB = "oct_invoice";
     private static final String USER = "postgres";
-    private static final String PASSWORD = "dany";
+    private static final String PASSWORD = System.getenv().getOrDefault("DB_PASSWORD", "postgres");
 
     @DynamicPropertySource
     static void datasource(DynamicPropertyRegistry registry) {

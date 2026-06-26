@@ -102,7 +102,7 @@ ocr:
 minio:
   endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
   access-key: ${MINIO_ACCESS_KEY:MinIO}
-  secret-key: ${MINIO_SECRET_KEY:dany1234}
+  secret-key: ${MINIO_SECRET_KEY:dev-minio-secret-change-me}
   bucket: ${MINIO_BUCKET:oct-invoices}
   presigned-url-expiry-minutes: 15
 
@@ -174,7 +174,7 @@ spring:
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:oct_invoice_dev}
     username: ${DB_USER:postgres}
-    password: ${DB_PASSWORD:dany}
+    password: ${DB_PASSWORD:postgres}
     hikari:
       pool-name: OCT-HikariPool-Dev
       maximum-pool-size: 10
@@ -234,7 +234,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/oct_invoice_dev
     username: postgres
-    password: dany
+    password: ${DB_PASSWORD:${TEST_DB_PASSWORD:postgres}}
 
   flyway:
     enabled: true
@@ -253,23 +253,8 @@ spring:
           starttls:
             enable: false
 
-# Test RSA-2048 key pair — FOR TESTING ONLY, never use in production.
-# Generated with: openssl genrsa 2048 | openssl pkcs8 -topk8 -nocrypt -outform DER | base64 -w0
-jwt:
-  private-key: MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDEXgAcmpZOyYkzmbyWVa4U6tWmiqw2sYyVwgQVIyTBxx8SWoFZL9slFeIyjTBmpugmsye/tdAshRtmglDvZUXFD3RucpSryYMRVe+bRiAoBl7X0W+VCtI6NQpgfmlQHHOuZFMavYIFGrpyjTKcqypU0QnyNyPfIYnP52uIbDsvZVySbjTDv9f5tO51Ag8i6e3cMnUkqYSpqP252GY+a1aZhywxWkLITCgGWX6f5gbhaCAMzvUARgHuQpQ+yYJIyUglS1QFpTN0YrH0z0LEnT8H9IaSK7Ll2tIWzldHkUKSk86UspsvcBSPf9lWPShkQ85+2z+alTXr6uBrItRrAASZAgMBAAECggEASFET+nTF6SMYh6vVA4pvT13CrBBC5uuRSi/HAB/OsByMaV5yZ22T57787EAJ9KwAMAxnlZc4IMUud5yDgP6LaMzNxMUm0nMmdVJwKP905TifYhzL2pg/HtecyDeVwj6QLcfdwSnMgeO7iWdNndv9fXn0j0LWT5zS24GvHPE7BLNKsQqzenKmeZt4NY1QN3hTwJd+o5pXvfWywKb5czXAT8S0M6fCI5g07lyWVVtCyUDWI6d4A6S/GcSd82vUT6/1l4l8qblD9wmUuFlZBmZ9b6MrxRaaJKKquQclLTlJlIu0gqCNIlfbMdKD5+gcP2HVSMtKoxIUTejREDnplsZ/hwKBgQDtTcqSkp/jXtVaQb5JRnUoAeQzgmMYzQKxPujXA4OI8o4LGdKdAIiLYt39RDNOnnjICfIGvO8TsM1cZ6NJfZbz0iW9Rsh3lJLFIQn1WwWVaiwG2fSq8PO8Z8M9Vu7q3YmaU8IhsbTfUncsoLnrI9dZHyW5ngfSn/D0j/PbvfuHXwKBgQDT1o1zAueHOaArD29OOsQRGnq6aYt+jZvGSkOfWbdPE3QwgUu7Z2BpYsqehasMr520W/bR8RYlqQz/tXxXVfZW+1ktmSlD3wg5IhcpXNklMHaYJO435u+AsC9bwwJrwXqEzE0ch3PW/sknTDlou/ceg3lub4WwTVk6laamUUdPBwKBgBO/m5IjHadAZyUBv6I9eNaBgco/mZugxA6YG6x5IGMvPF70ITDrsHFZIvxGxrZOPeL34OpqosLSveRow5AEIaHc5UMhNuGsvaImI7wFfSt4EH3peZEYSFBvmjHqoCtvkFoFimxfa5wCMuTF43MMIonKK8uMuT3wDY9sw3CQGPSlAoGBANATXasLvkmoA7hoF8d6l53JKaWzCE7NX6Y8ygFayWCF1knSpoW0fBHn9OgSmboDQd+nuV/r8/oX++mr5S+QA0Da8HSGje7ZwyUDZEa/qZcK7GJzW/5S+wung00Z1mXrjKGmX1PXhKQ4bXMJPxauEoTJVVxxdJqAz1VpK2EQUv+/AoGAdVofgG/ML0gaGSFylEt4U0kWG/c4cVmPmadgJ6LZAG02/RvErRIxA1SL1dgYICxr43WRvhl3cilOshSe9XEu5Qj7Nsod2Fj5ptHjAXCOo/Bv48EN0sU7ptb5jrPipUjhhJfeeeGFkT5DHIPdzAJzwAdwufXMT1KBHSIo1MzYofE=
-  public-key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxF4AHJqWTsmJM5m8llWuFOrVpoqsNrGMlcIEFSMkwccfElqBWS/bJRXiMo0wZqboJrMnv7XQLIUbZoJQ72VFxQ90bnKUq8mDEVXvm0YgKAZe19FvlQrSOjUKYH5pUBxzrmRTGr2CBRq6co0ynKsqVNEJ8jcj3yGJz+driGw7L2Vckm40w7/X+bTudQIPIunt3DJ1JKmEqaj9udhmPmtWmYcsMVpCyEwoBll+n+YG4WggDM71AEYB7kKUPsmCSMlIJUtUBaUzdGKx9M9CxJ0/B/SGkiuy5drSFs5XR5FCkpPOlLKbL3AUj3/ZVj0oZEPOfts/mpU16+rgayLUawAEmQIDAQAB
-  expiration-ms: 86400000
-  refresh-expiration-ms: 604800000
-  pre-auth-expiration-ms: 300000
-
-encryption:
-  key: TestEncryptionKey1234567890ABCDEF
-
-minio:
-  endpoint: http://localhost:9000
-  access-key: MinIO
-  secret-key: dany1234
-  bucket: oct-invoices
+# JWT, encryption, and MinIO credentials for the test profile live in
+# src/test/resources/application-test.yml (TEST-ONLY keys, never for production).
 
 logging:
   level:

@@ -1,6 +1,9 @@
 # ============================================================
 #  OCT Invoice System — Test Configuration
 #  File: src/test/resources/application-test.yml
+#
+#  TEST-ONLY credentials below. Never use in production.
+#  CI and local ./mvnw test load this file when spring.profiles.active=test.
 # ============================================================
 
 spring:
@@ -19,7 +22,6 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
-        # Exclude audit package from entity scanning to avoid JSONB issues
         hbm2ddl:
           default_schema: public
 
@@ -40,26 +42,30 @@ spring:
           starttls:
             enable: false
 
-# JWT configuration for tests
+# TEST-ONLY RSA-2048 key pair (dedicated to automated tests; not a production secret)
+jwt:
+  private-key: MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDhXV/ePfTindsgxCORv7npwaNcSRXo5ui4yULpshkqkd/TNt0MI9KZZnz6tvaAlXOihICZ+BAIE3B+AK1kp3Wq0yzmuuOnzCp99Kad89toArIT80bZ8+RL19qbWgM7KXLmITRqU14hSwtBvfumqq0dajUXSDIhOyfFD6gepvZcdHk5xtTGEUjr41RUQvABPufeMcCvuzgPrKK/7ZCjPBJZ+Z4jpxgwSOzDOzNPumcVs7FprqPpz5j46JCTWJYT5HYUM9MF/2D7YaZniCK7PUGyXCGRjDDvpTg6t/nTPejzueK2yGVbfIDcoDbKfD56zMTW+hWbOIgqhzyh8/npqf6rAgMBAAECggEAAKaBey64TshEtH032sawBYeLQJTuj0GEfdrkjx3RnMZpSdENAR/3Dn21zXyT+rC8344O6hmzdrcTE3e7483n6+Nu/lAM6UsQaObv2wX9JdTXlrqUcTJN24NSQQ0Y4dyLDFlELyyotONR/GzfXsV75v3UnxwCO1CbP6JZE5Rtfio9XFcY3JdgObejZaxiqiJikdqQgRSZTkt0n0djWKGXHB10vXB+1bq7z4DwzYEzu8aeP+KjNTCdKzRqzat64fwS0deRXv1KjptwVwY07266SIgpyWzqhesH9rObo3W4G1PRENZ6e13OnIKtXBwJ/FBxma5/T+RFZ1aKWhwvfZKS4QKBgQD0gcGkpsbW+bquDSn5m0oI5PyBDS47pJoaRAN1jpcrSfdqglkQF0RrU11dy1gcahIlm6k9GVewrU7oeJpBru0ygaKP8CMUZFjhd1nc4imeZi1AqR64/owVleNCofgeKWAvxPC8Dbvv4nbrRT+pNpdtgk75wE0VifNooRGrLckk3wKBgQDr9UYTJ3oQkB6iLqR+M8+RTxGS3u5Mzc/wSaDyEEhxhAc7T/iVtv3H4ham5XDbhaT9+a2vv7HQkJuUQ7zO7n/Xy6mHjTrh/xBhs4BPOvuo8LPcb/vYpksuOFv9SbsqDPe3eQiIpMHBqMFySVZdGj/l2xw6puRH2FbC4ZtOrLWztQKBgFLQI/sVdaFYQe8zjDT7cK7kh9VZ1n/i90LQKG/HlNHXopIThgDaMJU9ThE3jydIkc7lEwQbskSn3mMEfhKjIbmKiLnBts/wUN5Eo04Z18jLiKYu4bX8mQuykZ9+5l+o2eg0BulaqX3NMUPsV2yDjfRMP1190V3rNGMKssZMoqT3AoGADpTfubtMzc06N2eOfsYQ47fxLBRewZxOZ1kFezAKaglwsPemMwpV8I5GPBYdvVMq+Q7+7sd3452sH6N3/Ym7mMhbN6dApkqu5nrDSSIp/yyw0MSS2badGsQc2zA9QsH+ZPYz0s3rs14MZlWl4qcGn9vEiNNbdB0ob26lvFzr9akCgYEAoF8uTfDs4W9nr+ThSzWHGwX6FLQqhQxRhiwBvKMI4G8uRly06hWfKdbjLsqZNaFkj9bRgJhIUk47U3S9fKeaL2D7o90E2jCXfRkTiXxL6hPGFdsa9NgMKEXdC7ygQPQZK7Q/eUewYmEkoG+2GNOdj6bFk6fLXmGLCsenlF4grHI=
+  public-key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4V1f3j304p3bIMQjkb+56cGjXEkV6ObouMlC6bIZKpHf0zbdDCPSmWZ8+rb2gJVzooSAmfgQCBNwfgCtZKd1qtMs5rrjp8wqffSmnfPbaAKyE/NG2fPkS9fam1oDOyly5iE0alNeIUsLQb37pqqtHWo1F0gyITsnxQ+oHqb2XHR5OcbUxhFI6+NUVELwAT7n3jHAr7s4D6yiv+2QozwSWfmeI6cYMEjswzszT7pnFbOxaa6j6c+Y+OiQk1iWE+R2FDPTBf9g+2GmZ4giuz1BslwhkYww76U4Orf50z3o87nitshlW3yA3KA2ynw+eszE1voVmziIKoc8ofP56an+qwIDAQAB
+  expiration-ms: 86400000
+  refresh-expiration-ms: 604800000
+  pre-auth-expiration-ms: 300000
+
+# TEST-ONLY AES-256 key (32 chars)
+encryption:
+  key: TestEncryptionKey1234567890ABCDEF
+
 app:
-  jwt:
-    secret: test-jwt-secret-key-for-unit-tests-only-not-for-production-use
-    expiration: 86400000  # 24 hours in milliseconds
-  # Tests mark privileged users mfaVerified=true without a real TOTP secret. Disable the
-  # secret check (as the dev profile does) so the MfaSetupEnforcementFilter trusts mfaVerified
-  # as-is. MfaIntegrationTest still verifies blocking, because its users have mfaVerified=false.
   security:
     mfa:
       enforce-secret-check: false
 
-# MinIO configuration for tests
+# TEST-ONLY MinIO credentials for mocked/unit tests
 minio:
   endpoint: http://localhost:9000
-  access-key: test-access-key
-  secret-key: test-secret-key
+  access-key: test-minio-access-key
+  secret-key: test-minio-secret-key
   bucket: test-bucket
 
-# Webhook configuration for tests
 webhook:
   max-retries: 3
   retry-delay-ms: 1000

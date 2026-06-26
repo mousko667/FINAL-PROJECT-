@@ -372,9 +372,9 @@
                 <groupId>org.flywaydb</groupId>
                 <artifactId>flyway-maven-plugin</artifactId>
                 <configuration>
-                    <url>jdbc:postgresql://localhost:5432/oct_invoice_dev</url>
-                    <user>postgres</user>
-                    <password>dany</password>
+                    <url>jdbc:postgresql://localhost:5433/${env.DB_NAME}</url>
+                    <user>${env.DB_USER}</user>
+                    <password>${env.DB_PASSWORD}</password>
                 </configuration>
             </plugin>
 

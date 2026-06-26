@@ -74,6 +74,20 @@ openssl pkcs8 -topk8 -inform PEM -outform DER -in private.pem -nocrypt | base64 
 openssl rsa -in private.pem -pubout -outform DER | base64 -w0
 ```
 
+## Secret Management
+
+| Environment | Where secrets live | Committed files |
+| --- | --- | --- |
+| **Production** | Environment variables / secrets manager only | Placeholders in `.env.example` and `application.yaml` (`prod` profile) |
+| **Local dev** | Gitignored `.env` (copy from `.env.example`) | Never commit `.env`, `*.p12`, or `certs/` |
+| **Automated tests** | `src/test/resources/application-test.yml` | TEST-ONLY RSA/AES/MinIO keys clearly marked — not production secrets |
+
+Rules:
+
+- `ProdSecretConfigValidator` fails fast if any prod secret is missing.
+- Rotating `ENCRYPTION_KEY` invalidates existing encrypted bank details — only rotate on a fresh database.
+- CI loads test credentials from `application-test.yml`; GitHub Actions no longer needs committed JWT material.
+
 ## Run With Docker Compose
 
 Start PostgreSQL 18 first, then run:

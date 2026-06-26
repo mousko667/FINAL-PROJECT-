@@ -34,7 +34,7 @@ jobs:
         image: minio/minio:latest
         env:
           MINIO_ROOT_USER: MinIO
-          MINIO_ROOT_PASSWORD: dany1234
+          MINIO_ROOT_PASSWORD: dev-minio-secret-change-me
         ports:
           - 9000:9000
         options: >-
@@ -58,7 +58,7 @@ jobs:
         run: |
           curl -O https://dl.min.io/client/mc/release/linux-amd64/mc
           chmod +x mc
-          ./mc alias set local http://localhost:9000 MinIO dany1234
+          ./mc alias set local http://localhost:9000 MinIO dev-minio-secret-change-me
           ./mc mb --ignore-existing local/oct-invoices
 
       - name: Run backend tests
@@ -68,13 +68,11 @@ jobs:
           DB_PORT: 5432
           DB_NAME: oct_invoice_dev
           DB_USER: postgres
-          DB_PASSWORD: dany
+          DB_PASSWORD: postgres
           MINIO_ENDPOINT: http://localhost:9000
           MINIO_ACCESS_KEY: MinIO
-          MINIO_SECRET_KEY: dany1234
+          MINIO_SECRET_KEY: dev-minio-secret-change-me
           MINIO_BUCKET: oct-invoices
-          JWT_PRIVATE_KEY: ${{ secrets.JWT_PRIVATE_KEY_TEST }}
-          JWT_PUBLIC_KEY: ${{ secrets.JWT_PUBLIC_KEY_TEST }}
           ENCRYPTION_KEY: TestEncryptionKey1234567890ABCDEF
         run: ./mvnw test --batch-mode
 

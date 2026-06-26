@@ -48,12 +48,10 @@ jobs:
         env:
           SPRING_PROFILES_ACTIVE: test
           DB_HOST: localhost
-          JWT_PRIVATE_KEY: ${{ secrets.JWT_PRIVATE_KEY_TEST }}
-          JWT_PUBLIC_KEY: ${{ secrets.JWT_PUBLIC_KEY_TEST }}
           ENCRYPTION_KEY: TestEncryptionKey1234567890ABCDEF
           MINIO_ENDPOINT: http://localhost:9000
           MINIO_ACCESS_KEY: MinIO
-          MINIO_SECRET_KEY: dany1234
+          MINIO_SECRET_KEY: dev-minio-secret-change-me
         run: |
           java -jar target/*.jar &
           sleep 30
