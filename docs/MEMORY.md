@@ -1739,3 +1739,11 @@ Dev-DB test data left: 5,000,000 budget on dept COM (update endpoint is non-null
 **NOT committed (not my call):** CLAUDE.md, docs/REQUIREMENTS-MATRIX.md (updated but untracked),
 docs/SCOPE.md, docs/audit/. **Push decision pending** — push only at phase completion; direct
 origin/main blocked → route via origin/backup/phase11-2026-06-13. ASK the user before pushing.
+
+## Session Checkpoint
+**Date:** 2026-06-26
+**Last completed work:** R2 (G2) — TLS 1.3 keystore documentation + handshake proof captured
+**Next work:** R6 (secret hygiene — rotate dev/test secrets, placeholders only in committed files)
+**Branch:** chore/sanitize-docs-migrations (main checkout blocked by unstaged WIP)
+**Last commit:** (pending R2 commit)
+**Notes:** Keystore generated locally at `certs/keystore.p12` (gitignored). Proof files: `docs/audit/tls-handshake-proof.txt`, `docs/audit/tls-keystore-info.txt`. Spring Boot prod startup blocked on this machine by Flyway checksum mismatch after migration consolidation — TLS proof used same PKCS12 via OpenSSL s_server + curl TLSv1.3.

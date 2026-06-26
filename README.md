@@ -1,251 +1,194 @@
-# OCT Invoice System — Système de Gestion des Factures Fournisseurs
+# OCT Invoice System
 
-**Client:** Owendo Container Terminal (OCT)  
-**Type:** Enterprise-grade Invoice Management System  
-**Status:** Production-ready (Phase 8 complete)
+Digital and secure supplier invoice validation management system for Owendo Container Terminal (OCT).
 
----
+## Stack
 
-## 📋 Table of Contents
+| Layer | Technology |
+| --- | --- |
+| Backend | Spring Boot 3.4.1, Java 21, Maven |
+| Database | PostgreSQL 18, Flyway baseline V1-V34 |
+| Frontend | React 19, TypeScript, Vite |
+| Storage | MinIO S3-compatible object storage |
+| Security | RS256 JWT, BCrypt, MFA/TOTP, AES-256-GCM for sensitive fields, TLS 1.3 in prod |
+| Tooling | Docker Compose, JUnit 5, Testcontainers, Vitest, Playwright |
 
-- [Overview](#overview)
-- [Prerequisites](#prerequisites)
-- [Quick Start](#quick-start)
-- [Architecture](#architecture)
-- [Project Structure](#project-structure)
-- [Configuration](#configuration)
-- [Running Tests](#running-tests)
-- [Documentation](#documentation)
-- [Default Credentials](#default-credentials)
-- [API Documentation](#api-documentation)
-- [Troubleshooting](#troubleshooting)
+## Prerequisites
 
----
+- Java 21 JDK
+- Node.js 20+
+- Docker Desktop
+- PostgreSQL 18 running outside Docker on host port `5433`
+- Database `oct_invoice` owned by/user `postgres`
 
-## 🎯 Overview
+`docker-compose.yml` does not start PostgreSQL. The backend container reaches the host database through `host.docker.internal:5433`.
 
-The **OCT Invoice System** is a modern, full-stack invoice management platform designed for Owendo Container Terminal. It streamlines the entire invoice processing workflow from supplier submission through payment and archival.
+## Environment
 
-### Key Features
-
-- **State Machine Workflow (BAP)**: Full invoice lifecycle with approval stages
-- **Department-driven Approvals**: Configurable 1-level or 2-level approval chains
-- **Document Management**: Secure file storage with MinIO and SHA-256 integrity verification
-- **Real-time Notifications**: Email + WebSocket alerts on workflow events
-- **Comprehensive Audit Trails**: Tamper-evident logging of all actions
-- **Role-based Access Control**: 6 distinct roles with fine-grained permissions
-- **Bilingual UI**: French (primary) + English (secondary)
-- **Advanced Reporting**: KPI dashboard, Excel/PDF exports, compliance reports
-
-### Tech Stack
-
-| Component | Technology |
-|-----------|-----------|
-| **Backend** | Spring Boot 3.4.1 (Java 21) |
-| **Database** | PostgreSQL 15+ |
-| **Frontend** | React 19 + TypeScript + Vite |
-| **File Storage** | MinIO (S3-compatible) |
-| **Authentication** | JWT + BCrypt |
-| **Orchestration** | Docker Compose |
-
----
-
-## 📦 Prerequisites
-
-### System Requirements
-
-- **Docker Desktop** 20.10+ (includes Docker Engine & Compose)
-- **Java 21 JDK** (for local backend development)
-- **Node.js 18+** (for frontend development)
-- **Maven 3.8+** (for backend builds)
-- **PostgreSQL 15+** (if running outside Docker)
-- **Git** (for version control)
-
-### Port Requirements
-
-- **Backend**: `8080` (Spring Boot API)
-- **Frontend**: `3000` (Vite dev server)
-- **Database**: `5432` (PostgreSQL)
-- **MinIO**: `9090` (S3-compatible object storage)
-- **MailHog**: `1025/8025` (Email testing)
-
----
-
-## 🚀 Quick Start
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/mousko667/FINAL-PROJECT-.git
-cd invoice-system
-```
-
-### 2. Configure Environment
-
-Edit or create `.env` file in the project root:
+Create a local `.env` file in the project root. This file is ignored by Git.
 
 ```env
-# Database
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=dany
-POSTGRES_DB=oct_invoice_dev
-DATABASE_URL=jdbc:postgresql://localhost:5432/oct_invoice_dev
+APP_PORT=8080
+FRONTEND_PORT=3000
+SPRING_PROFILES_ACTIVE=dev
 
-# MinIO
-MINIO_ROOT_USER=minioadmin
-MINIO_ROOT_PASSWORD=minioadmin
-MINIO_REGION=us-east-1
+DB_HOST=host.docker.internal
+DB_PORT=5433
+DB_NAME=oct_invoice
+DB_USER=postgres
+DB_PASSWORD=<local-db-password>
 
-# JWT Security
-JWT_SECRET=your-very-long-secure-secret-key-minimum-32-characters
-JWT_EXPIRATION=900000
+MINIO_ENDPOINT=http://localhost:9000
+MINIO_ACCESS_KEY=<local-minio-access-key>
+MINIO_SECRET_KEY=<local-minio-secret-key>
+MINIO_BUCKET=oct-invoices
+MINIO_CONSOLE_PORT=9001
 
-# Email (MailHog)
+JWT_PRIVATE_KEY=<base64-pkcs8-rsa-private-key>
+JWT_PUBLIC_KEY=<base64-x509-rsa-public-key>
+JWT_EXPIRATION_MS=86400000
+JWT_REFRESH_EXPIRATION_MS=604800000
+
+ENCRYPTION_KEY=<32-character-local-dev-key>
+
+# TLS 1.3 (prod profile only — generate keystore locally, see below)
+SSL_KEYSTORE_PATH=certs/keystore.p12
+SSL_KEYSTORE_PASSWORD=<local-keystore-password>
+
 MAIL_HOST=mailhog
 MAIL_PORT=1025
-MAIL_FROM=noreply@oct.test
+MAIL_USERNAME=
+MAIL_PASSWORD=
+MAIL_FROM=noreply@oct.local
+MAIL_FROM_NAME=OCT Invoice System
 
-# Application
-SPRING_PROFILES_ACTIVE=dev
+VITE_API_BASE_URL=http://localhost:8080/api/v1
+VITE_WS_URL=http://localhost:8080/ws
 ```
 
-### 3. Start All Services
+Generate RS256 keys for development with:
 
 ```bash
-# Fresh deployment (clean volumes)
-docker-compose down -v
-docker-compose up --build
-
-# Subsequent runs
-docker-compose up
+openssl genrsa -out private.pem 2048
+openssl pkcs8 -topk8 -inform PEM -outform DER -in private.pem -nocrypt | base64 -w0
+openssl rsa -in private.pem -pubout -outform DER | base64 -w0
 ```
 
-The system is healthy when:
-- ✅ PostgreSQL migrations complete (`Flyway` logs show `Successfully applied 12 migrations`)
-- ✅ Backend starts: `http://localhost:8080/actuator/health` returns `{"status":"UP"}`
-- ✅ Frontend accessible: `http://localhost:3000/login`
-- ✅ MinIO console: `http://localhost:9090` (default: minioadmin/minioadmin)
-- ✅ MailHog: `http://localhost:8025` (email viewer)
+## Run With Docker Compose
 
-### 4. Login
-
-Navigate to **`http://localhost:3000`** and log in with test credentials.
-
----
-
-## 🏗️ Architecture
-
-### System Overview
-
-Backend (Spring Boot 3.4.1) → PostgreSQL 15 (12 migrations)  
-Frontend (React 19 + TypeScript) → Vite dev server  
-File Storage (MinIO) + Email (MailHog) + WebSocket (STOMP)
-
----
-
-## 📁 Project Structure
-
-```
-invoice-system/
-├── docs/                          # Project documentation
-├── src/main/java/com/oct/invoicesystem/
-│   ├── config/                    # Spring configuration
-│   ├── domain/                    # Business domains
-│   │   ├── auth/
-│   │   ├── invoice/
-│   │   ├── workflow/
-│   │   ├── notification/
-│   │   └── report/
-│   └── shared/
-├── src/test/java/                 # Tests
-├── src/resources/
-│   ├── db/migration/              # Flyway (V1-V12)
-│   └── templates/
-├── frontend/                      # React frontend
-│   ├── src/
-│   ├── e2e/                       # Playwright tests
-│   └── package.json
-├── docker-compose.yml
-├── pom.xml
-└── README.md
-```
-
----
-
-## 🧪 Running Tests
-
-### Backend
+Start PostgreSQL 18 first, then run:
 
 ```bash
-cd invoice-system
-mvn clean test
+docker compose up --build
 ```
 
-### Frontend
+Services:
 
-```bash
-cd invoice-system/frontend
-npm test
+- Frontend: `http://localhost:3000`
+- Backend API: `http://localhost:8080/api/v1`
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- MinIO API: `http://localhost:9000`
+- MinIO console: `http://localhost:9001`
+- MailHog: `http://localhost:8025`
+
+Flyway applies the consolidated baseline migrations `V1` through `V34` on a fresh database.
+
+## TLS 1.3 Proof
+
+Production TLS is configured in `src/main/resources/application.yaml` under the `prod` profile:
+
+- `server.ssl.enabled=true`
+- `server.ssl.protocol=TLSv1.3`
+- `server.ssl.enabled-protocols=TLSv1.3`
+- `server.ssl.key-store=${SSL_KEYSTORE_PATH}`
+- `server.ssl.key-store-password=${SSL_KEYSTORE_PASSWORD}`
+- `server.ssl.key-store-type=PKCS12`
+
+For local thesis evidence, generate a self-signed PKCS12 keystore. The generated file and password are local proof material only and must not be committed.
+
+```powershell
+New-Item -ItemType Directory -Force certs
+keytool -genkeypair -alias oct -keyalg RSA -keysize 2048 -validity 365 -storetype PKCS12 -keystore certs\keystore.p12 -storepass change-me-local-only -keypass change-me-local-only -dname "CN=localhost, OU=OCT, O=Owendo Container Terminal, L=Libreville, C=GA"
 ```
 
-### E2E Tests
+Add these local-only values to `.env` when running the prod profile:
 
-```bash
-docker-compose up -d
-cd invoice-system/frontend
-npm run test:e2e
+```env
+SSL_KEYSTORE_PATH=certs/keystore.p12
+SSL_KEYSTORE_PASSWORD=change-me-local-only
 ```
 
----
+Run the backend with TLS:
 
-## 📚 Documentation
-
-- [`docs/PRD.md`](docs/PRD.md) - Product requirements
-- [`docs/WORKFLOW.md`](docs/WORKFLOW.md) - BAP invoice workflow
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) - Technical architecture
-- [`docs/DATABASE.md`](docs/DATABASE.md) - Schema & migrations
-- [`docs/API.md`](docs/API.md) - API specifications
-- [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md) - Code style
-- [`docs/TESTING.md`](docs/TESTING.md) - Testing strategy
-
----
-
-## 🔐 Default Credentials
-
-**Admin:**
-```
-Username: admin
-Password: [see docs/MEMORY.md]
+```powershell
+$env:SPRING_PROFILES_ACTIVE='prod'
+$env:SSL_KEYSTORE_PATH='certs\keystore.p12'
+$env:SSL_KEYSTORE_PASSWORD='change-me-local-only'
+.\mvnw.cmd spring-boot:run
 ```
 
-**Test Users (password: `password123`):**
-- `asst_test` → ROLE_ASSISTANT_COMPTABLE
-- `n1_drh_test` → ROLE_VALIDATEUR_N1_DRH
-- `daf_test` → ROLE_DAF
-- `auditor_test` → ROLE_AUDITEUR
+Capture the handshake proof:
 
----
+```powershell
+curl.exe -vk --tlsv1.3 https://localhost:8080/actuator/health
+```
 
-## 📖 API Documentation
+Expected proof markers include a TLSv1.3 connection and a self-signed certificate for `CN=localhost`.
 
-Access Swagger UI at: **`http://localhost:8080/swagger-ui.html`**
+Captured thesis evidence: `docs/audit/tls-handshake-proof.txt` and `docs/audit/tls-keystore-info.txt`.
 
-### Key Endpoints
+## Tests
 
-- `POST /api/v1/auth/login` - Authenticate
-- `GET /api/v1/invoices` - List invoices
-- `POST /api/v1/invoices` - Create invoice
-- `POST /api/v1/invoices/{id}/submit` - Submit workflow
-- `POST /api/v1/invoices/{id}/workflow/validate-n1` - N1 approval
-- `GET /api/v1/reports/kpi` - KPI dashboard
+Backend:
 
----
+```powershell
+.\mvnw.cmd test
+```
 
-## 📄 License
+Frontend:
 
-Property of Owendo Container Terminal (OCT).
+```powershell
+cd frontend
+npm test -- --run
+```
 
----
+Frontend build:
 
-**Version:** 1.0.0 (Production)  
-**Last Updated:** 2026-04-11
+```powershell
+cd frontend
+npm run build
+```
+
+## Default Demonstration Accounts
+
+All seeded demonstration users below use password `Test1234!` and are for dev/test only.
+
+| Username | Role |
+| --- | --- |
+| `aa` | `ROLE_ASSISTANT_COMPTABLE` |
+| `daf` | `ROLE_DAF` |
+| `drh` | `ROLE_VALIDATEUR_N1_DRH` |
+| `dg` | `ROLE_VALIDATEUR_N1_DG` |
+| `rsi` | `ROLE_VALIDATEUR_N1_INFO` |
+| `dsi` | `ROLE_VALIDATEUR_N2_INFO` |
+| `dex` | `ROLE_VALIDATEUR_N1_TERM` |
+| `com` | `ROLE_VALIDATEUR_N1_COM` |
+| `qhsse` | `ROLE_VALIDATEUR_N1_QHSSE` |
+| `infra` | `ROLE_VALIDATEUR_N1_INFRA` |
+| `dir_infra` | `ROLE_VALIDATEUR_N2_INFRA` |
+| `atelier` | `ROLE_VALIDATEUR_N1_TECH` |
+| `dir_tech` | `ROLE_VALIDATEUR_N2_TECH` |
+| `supplier` | `ROLE_SUPPLIER` |
+
+There is no `ROLE_AUDITEUR`; audit access is split by separation of duties between `ROLE_ADMIN` for system/security audit and `ROLE_DAF` for financial audit.
+
+## Documentation
+
+- `docs/PRD.md`
+- `docs/WORKFLOW.md`
+- `docs/ARCHITECTURE.md`
+- `docs/DATABASE.md`
+- `docs/API.md`
+- `docs/CONVENTIONS.md`
+- `docs/TESTING.md`
+- `docs/TASKS.md`

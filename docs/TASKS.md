@@ -25,11 +25,17 @@ These are the only items not yet satisfied against the locked Chapters 1+2 / Pro
 Requirements. They supersede the old "Known Gaps — Must Be Fixed" section formerly in
 `OCT_System_Briefing.md §4.3` (OCR and JWT RS256 listed there are now **done**).
 
+> **Correction (2026-06-26, audit pass).** G1 and G3 were stale: this file marked the CI
+> pipeline and the OWASP ZAP scan as ❌ absent, but `.github/workflows/ci.yml` and
+> `.github/workflows/security-scan.yml` (+ `.github/zap-rules.tsv`) are committed. Statuses
+> updated below: G1 → ✅ (pipeline present), G3 → 🟠 (workflow present, a scan run still to be
+> captured for the thesis).
+
 | ID | Gap | Module / Source | Status | What to do |
 |----|-----|-----------------|--------|------------|
-| G1 | **CI pipeline (GitHub Actions)** absent | Briefing §4.1 / Tooling | ❌ | Add `.github/workflows/ci.yml`: backend `./mvnw -B verify` (Testcontainers PG), frontend `npm ci && lint && test && build`; upload JaCoCo + Playwright artifacts. |
-| G2 | **TLS keystore** not shipped (prod SSL block exists, no PKCS12) | Briefing §4.1 / Sécurité | 🟠 | Generate `keystore.p12`, document `SSL_KEYSTORE_PATH`/`_PASSWORD`, or terminate TLS at nginx; capture proof for the thesis. |
-| G3 | **OWASP ZAP baseline scan** not run | Briefing §4.2 / Sécurité | ❌ | Run ZAP baseline against the running app, commit `docs/audit/zap-report.html`, summarize findings. |
+| G1 | ~~**CI pipeline (GitHub Actions)** absent~~ → **présent** | Briefing §4.1 / Tooling | ✅ | **Fait** : `.github/workflows/ci.yml` existe — job backend (`actions/setup-java@v4` Java 21 + `postgres:18-alpine` + MinIO, `./mvnw test --batch-mode`, upload artefact `jacoco-report`), job frontend (`npm ci` + `npm test -- --run` + `npm run build`), job docker (`docker compose build`). Reste à capturer une exécution verte pour le mémoire. |
+| G2 | ~~**TLS keystore** not shipped~~ → **documenté + preuve capturée** | Briefing §4.1 / Sécurité | ✅ | **Fait (R2, 2026-06-26)** : génération locale `certs/keystore.p12` (gitignored), placeholders `SSL_KEYSTORE_PATH`/`SSL_KEYSTORE_PASSWORD` dans `.env.example` + `README.md` § TLS 1.3 ; preuve handshake TLSv1.3 dans `docs/audit/tls-handshake-proof.txt` + `docs/audit/tls-keystore-info.txt`. Config prod : `application.yaml` `server.ssl` TLSv1.3. |
+| G3 | **OWASP ZAP baseline scan** — workflow présent, exécution non capturée | Briefing §4.2 / Sécurité | 🟠 | **Workflow committé** : `.github/workflows/security-scan.yml` (`zaproxy/action-baseline@v0.12.0`, `rules_file_name: .github/zap-rules.tsv`, déclenché après CI sur main ou `workflow_dispatch`, upload `zap-report`). Reste à lancer le scan une fois, committer `docs/audit/zap-report.html` et résumer les findings pour le mémoire. |
 | G4 | **SHA-256 document integrity** check (claimed in PRD Module 4) — verify/confirm in code | PRD §Module 4 | 🟠 | Confirm checksum is computed on upload + verified on download in `InvoiceDocumentService`; add column/test if missing. |
 | G5 | **Aging analysis** is basic (`/reports/aging`) | M2 #3 / M7 / M11 | 🟠 | Add bucketed aging (0-30/31-60/61-90/90+) as a dashboard widget + per-supplier rollup. |
 | G6 | **README** at repo root | Submission polish | ❌ | Write `README.md`: stack, `docker-compose up` + host-PG note, profiles, test commands, default credentials. |

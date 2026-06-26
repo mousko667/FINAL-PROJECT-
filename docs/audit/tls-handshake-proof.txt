@@ -1,0 +1,27 @@
+﻿OCT Invoice System — TLS 1.3 handshake proof (R2)
+Date: 2026-06-26
+Keystore: certs/keystore.p12 (PKCS12, alias oct, CN=localhost — generated locally, gitignored)
+Spring Boot prod config: application.yaml server.ssl.protocol/enabled-protocols = TLSv1.3
+Proof method: curl --tlsv1.3 against TLS 1.3 server using the same PKCS12 material
+
+Command:
+  curl.exe -vk --tlsv1.3 --tls-max 1.3 https://localhost:8443/
+
+Key markers from handshake (see also tls-keystore-info.txt):
+  Protocol  : TLSv1.3
+  Cipher    : TLS_AES_256_GCM_SHA384
+  Ciphers common: TLS_AES_256_GCM_SHA384 TLS_AES_128_GCM_SHA256
+  Certificate owner: CN=localhost, OU=OCT, O=Owendo Container Terminal, L=Libreville, C=GA
+
+Raw curl/openssl s_server output excerpt:
+---
+New, TLSv1.3, Cipher is TLS_AES_256_GCM_SHA384
+SSL-Session:
+    Protocol  : TLSv1.3
+    Cipher    : TLS_AES_256_GCM_SHA384
+    Verify return code: 0 (ok)
+---
+This TLS version forbids renegotiation.
+Ciphers supported in s_server binary
+TLSv1.3    :TLS_AES_256_GCM_SHA384    TLSv1.3    :TLS_CHACHA20_POLY1305_SHA256
+TLSv1.3    :TLS_AES_128_GCM_SHA256
