@@ -430,12 +430,24 @@ export default function PaymentsPage() {
                       </td>
                       <td className="px-4 py-3">
                         {p.status === 'SCHEDULED' ? (
-                          <button onClick={() => processMutation.mutate(p.id)}
-                            disabled={processMutation.isPending}
-                            className="flex items-center gap-1 text-xs bg-amber-100 text-amber-800 border border-amber-200 px-2 py-1 rounded hover:bg-amber-200 disabled:opacity-50">
-                            <CheckCircle className="w-3.5 h-3.5" />
-                            {t('payments.markProcessed', 'Marquer exécuté')}
-                          </button>
+                          <div className="flex flex-col items-start gap-1">
+                            <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded border border-amber-100">
+                              {t('payments.status.scheduled', 'Planifié')}
+                            </span>
+                            <button onClick={() => processMutation.mutate(p.id)}
+                              disabled={processMutation.isPending}
+                              className="flex items-center gap-1 text-xs bg-amber-100 text-amber-800 border border-amber-200 px-2 py-1 rounded hover:bg-amber-200 disabled:opacity-50">
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              {t('payments.markProcessed', 'Marquer exécuté')}
+                            </button>
+                            {processMutation.isError && processMutation.variables === p.id && (
+                              <span className="text-xs text-red-600">
+                                {(processMutation.error as any)?.response?.data?.message
+                                  ? t((processMutation.error as any).response.data.message)
+                                  : t('app.error', 'Une erreur est survenue')}
+                              </span>
+                            )}
+                          </div>
                         ) : (
                           <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded border border-green-100">
                             {t('payments.status.processed', 'Exécuté')}
