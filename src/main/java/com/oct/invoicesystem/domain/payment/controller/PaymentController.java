@@ -58,6 +58,16 @@ public class PaymentController {
         return ResponseEntity.ok(ApiResponse.success(result, "payment.batch.processed"));
     }
 
+    @PostMapping("/{paymentId}/process")
+    @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
+    @Operation(summary = "Mark a scheduled payment as processed (triggers remittance + archive)")
+    public ResponseEntity<ApiResponse<PaymentDTO>> processPayment(
+            @PathVariable UUID paymentId,
+            @AuthenticationPrincipal User currentUser) {
+        PaymentDTO dto = paymentService.processPayment(paymentId, currentUser.getId());
+        return ResponseEntity.ok(ApiResponse.success(dto, "payment.processed.success"));
+    }
+
     @GetMapping("/invoice/{invoiceId}")
     @PreAuthorize("hasAnyRole('ASSISTANT_COMPTABLE', 'DAF', 'ADMIN')")
     @Operation(summary = "Get payment details for an invoice")

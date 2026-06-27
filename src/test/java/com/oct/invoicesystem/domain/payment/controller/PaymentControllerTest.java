@@ -298,6 +298,41 @@ class PaymentControllerTest {
                 .andExpect(status().isForbidden());
     }
 
+    private void recordOneScheduledPayment() throws Exception {
+        String body = """
+                {"amountPaid":1500.00,"paymentMethod":"VIREMENT","paymentDate":"%s","reference":"REF-SCHED","scheduled":true}
+                """.formatted(Instant.now().toString());
+        mockMvc.perform(post("/api/v1/payments/invoice/" + invoice.getId())
+                        .with(SecurityMockMvcRequestPostProcessors.authentication(
+                                new UsernamePasswordAuthenticationToken(assistant, null, java.util.List.of(
+                                        new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ASSISTANT_COMPTABLE")))))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void processPayment_asAssistant_returns200() throws Exception {
+        recordOneScheduledPayment();
+        var payment = paymentRepository.findByInvoiceId(invoice.getId()).orElseThrow();
+
+        mockMvc.perform(post("/api/v1/payments/" + payment.getId() + "/process")
+                        .with(SecurityMockMvcRequestPostProcessors.authentication(
+                                new UsernamePasswordAuthenticationToken(assistant, null, java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ASSISTANT_COMPTABLE"))))))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void processPayment_asAuditeur_returns403() throws Exception {
+        recordOneScheduledPayment();
+        var payment = paymentRepository.findByInvoiceId(invoice.getId()).orElseThrow();
+
+        mockMvc.perform(post("/api/v1/payments/" + payment.getId() + "/process")
+                        .with(SecurityMockMvcRequestPostProcessors.authentication(
+                                new UsernamePasswordAuthenticationToken(auditeur, null, java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_AUDITEUR"))))))
+                .andExpect(status().isForbidden());
+    }
+
     @Test
     void recordPayment_FailsIfDuplicate() throws Exception {
         PaymentRequest req = new PaymentRequest(
