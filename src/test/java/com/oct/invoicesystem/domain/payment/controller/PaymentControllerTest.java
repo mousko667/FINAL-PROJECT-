@@ -171,7 +171,8 @@ class PaymentControllerTest {
                 new BigDecimal("1500.00"),
                 PaymentMethod.VIREMENT,
                 Instant.now(),
-                "REFXYZ"
+                "REFXYZ",
+                null
         );
 
         mockMvc.perform(post("/api/v1/payments/invoice/" + invoice.getId())
@@ -215,7 +216,8 @@ class PaymentControllerTest {
                 new BigDecimal("1500.00"),
                 PaymentMethod.VIREMENT,
                 Instant.now(),
-                "REFXYZ"
+                "REFXYZ",
+                null
         );
 
         mockMvc.perform(post("/api/v1/payments/invoice/" + invoice.getId())
@@ -233,7 +235,8 @@ class PaymentControllerTest {
                 new BigDecimal("1500.00"),
                 PaymentMethod.VIREMENT,
                 Instant.now(),
-                "REFXYZ"
+                "REFXYZ",
+                null
         );
 
         mockMvc.perform(post("/api/v1/payments/invoice/" + invoice.getId())
@@ -246,7 +249,7 @@ class PaymentControllerTest {
 
     private void recordOnePayment() throws Exception {
         PaymentRequest req = new PaymentRequest(
-                new BigDecimal("1500.00"), PaymentMethod.VIREMENT, Instant.now(), "REF-EXP");
+                new BigDecimal("1500.00"), PaymentMethod.VIREMENT, Instant.now(), "REF-EXP", null);
         mockMvc.perform(post("/api/v1/payments/invoice/" + invoice.getId())
                         .with(SecurityMockMvcRequestPostProcessors.authentication(
                                 new UsernamePasswordAuthenticationToken(assistant, null, java.util.List.of(
@@ -301,7 +304,8 @@ class PaymentControllerTest {
                 new BigDecimal("1500.00"),
                 PaymentMethod.VIREMENT,
                 Instant.now(),
-                "REFXYZ"
+                "REFXYZ",
+                null
         );
 
         mockMvc.perform(post("/api/v1/payments/invoice/" + invoice.getId())

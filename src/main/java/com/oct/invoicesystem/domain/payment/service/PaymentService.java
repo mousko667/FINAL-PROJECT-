@@ -16,4 +16,13 @@ public interface PaymentService {
     PaymentDTO getPaymentByInvoiceId(UUID invoiceId);
     Page<PaymentDTO> listPayments(String departmentCode, Pageable pageable);
     byte[] exportPayments(String departmentCode, TabularExportService.Format format);
+
+    /**
+     * Marque un paiement planifie (SCHEDULED) comme execute (PROCESSED) et finalise :
+     * generation de l'avis de paiement, publication de l'evenement, transitions PAYE puis ARCHIVE.
+     *
+     * @throws com.oct.invoicesystem.shared.exception.ResourceNotFoundException si le paiement est introuvable
+     * @throws com.oct.invoicesystem.shared.exception.WorkflowException si le paiement n'est pas SCHEDULED
+     */
+    PaymentDTO processPayment(UUID paymentId, UUID userId);
 }

@@ -137,7 +137,8 @@ class PaymentIntegrationTest {
                 BigDecimal.valueOf(5000),
                 PaymentMethod.VIREMENT,
                 Instant.now(),
-                "VIR-2024-001"
+                "VIR-2024-001",
+                null
         );
 
         // Act
@@ -169,7 +170,8 @@ class PaymentIntegrationTest {
                 BigDecimal.valueOf(5000),
                 PaymentMethod.VIREMENT,
                 Instant.now(),
-                "VIR-2024-001"
+                "VIR-2024-001",
+                null
         );
 
         // Act
@@ -240,7 +242,8 @@ class PaymentIntegrationTest {
                 BigDecimal.valueOf(5000),
                 PaymentMethod.VIREMENT,
                 Instant.now(),
-                "VIR-2024-WORKFLOW"
+                "VIR-2024-WORKFLOW",
+                null
         );
 
         // Act 1: Record payment
@@ -291,14 +294,16 @@ class PaymentIntegrationTest {
                 BigDecimal.valueOf(5000),
                 PaymentMethod.VIREMENT,
                 Instant.now(),
-                "VIR-001"
+                "VIR-001",
+                null
         );
 
         PaymentRequest request2 = new PaymentRequest(
                 BigDecimal.valueOf(3000),
                 PaymentMethod.CHEQUE,
                 Instant.now(),
-                "CHQ-001"
+                "CHQ-001",
+                null
         );
 
         // Act

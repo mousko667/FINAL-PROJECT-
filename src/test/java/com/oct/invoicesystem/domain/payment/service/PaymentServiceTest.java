@@ -9,6 +9,7 @@ import com.oct.invoicesystem.domain.payment.dto.PaymentDTO;
 import com.oct.invoicesystem.domain.payment.dto.PaymentRequest;
 import com.oct.invoicesystem.domain.payment.model.Payment;
 import com.oct.invoicesystem.domain.payment.model.PaymentMethod;
+import com.oct.invoicesystem.domain.payment.model.PaymentStatus;
 import com.oct.invoicesystem.domain.payment.repository.PaymentRepository;
 import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.domain.user.repository.UserRepository;
@@ -75,7 +76,8 @@ class PaymentServiceTest {
                 new BigDecimal("1000.00"),
                 PaymentMethod.VIREMENT,
                 Instant.now(),
-                "REF-123"
+                "REF-123",
+                null
         );
     }
 
@@ -171,5 +173,93 @@ class PaymentServiceTest {
         assertEquals("XAF", row.get(5));
         assertEquals("2026-06-01T00:00:00Z", row.get(6));
         assertEquals("assistant", row.get(7));
+    }
+
+    @Test
+    void recordPayment_processedByDefault_finalizes() {
+        when(invoiceRepository.findByIdAndDeletedAtIsNull(invoice.getId())).thenReturn(Optional.of(invoice));
+        when(paymentRepository.existsByInvoiceId(invoice.getId())).thenReturn(false);
+        when(userRepository.findById(assistantAdmin.getId())).thenReturn(Optional.of(assistantAdmin));
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(a -> {
+            Payment p = a.getArgument(0);
+            p.setId(UUID.randomUUID());
+            return p;
+        });
+
+        PaymentRequest req = new PaymentRequest(
+                new BigDecimal("1000.00"), PaymentMethod.VIREMENT, Instant.now(), "PAY-1", null);
+
+        PaymentDTO dto = paymentService.recordPayment(invoice.getId(), req, assistantAdmin.getId());
+
+        assertEquals(PaymentStatus.PROCESSED, dto.status());
+        assertNotNull(dto.processedDate());
+        verify(remittanceAdviceService).generateRemittanceAdvice(any(), eq(assistantAdmin.getId()));
+        verify(invoiceStateMachineService).sendEvent(eq(invoice.getId()), eq(InvoiceEvent.RECORD_PAYMENT), anyMap());
+        verify(invoiceStateMachineService).sendEvent(eq(invoice.getId()), eq(InvoiceEvent.ARCHIVE), anyMap());
+    }
+
+    @Test
+    void recordPayment_scheduled_doesNotFinalize() {
+        when(invoiceRepository.findByIdAndDeletedAtIsNull(invoice.getId())).thenReturn(Optional.of(invoice));
+        when(paymentRepository.existsByInvoiceId(invoice.getId())).thenReturn(false);
+        when(userRepository.findById(assistantAdmin.getId())).thenReturn(Optional.of(assistantAdmin));
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(a -> {
+            Payment p = a.getArgument(0);
+            p.setId(UUID.randomUUID());
+            return p;
+        });
+
+        PaymentRequest req = new PaymentRequest(
+                new BigDecimal("1000.00"), PaymentMethod.VIREMENT, Instant.now(), "PAY-1", true);
+
+        PaymentDTO dto = paymentService.recordPayment(invoice.getId(), req, assistantAdmin.getId());
+
+        assertEquals(PaymentStatus.SCHEDULED, dto.status());
+        assertNull(dto.processedDate());
+        verifyNoInteractions(remittanceAdviceService);
+        verify(invoiceStateMachineService, never()).sendEvent(any(), any(), anyMap());
+    }
+
+    @Test
+    void processPayment_happy_finalizes() {
+        UUID paymentId = UUID.randomUUID();
+        Payment scheduled = Payment.builder()
+                .id(paymentId)
+                .invoice(invoice)
+                .status(PaymentStatus.SCHEDULED)
+                .recordedBy(assistantAdmin)
+                .build();
+        when(paymentRepository.findById(paymentId)).thenReturn(Optional.of(scheduled));
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(a -> a.getArgument(0));
+
+        PaymentDTO dto = paymentService.processPayment(paymentId, assistantAdmin.getId());
+
+        assertEquals(PaymentStatus.PROCESSED, dto.status());
+        assertNotNull(dto.processedDate());
+        verify(remittanceAdviceService).generateRemittanceAdvice(eq(paymentId), eq(assistantAdmin.getId()));
+        verify(invoiceStateMachineService).sendEvent(eq(invoice.getId()), eq(InvoiceEvent.ARCHIVE), anyMap());
+    }
+
+    @Test
+    void processPayment_alreadyProcessed_throws() {
+        UUID paymentId = UUID.randomUUID();
+        Payment processed = Payment.builder()
+                .id(paymentId)
+                .invoice(invoice)
+                .status(PaymentStatus.PROCESSED)
+                .build();
+        when(paymentRepository.findById(paymentId)).thenReturn(Optional.of(processed));
+
+        assertThrows(WorkflowException.class,
+                () -> paymentService.processPayment(paymentId, assistantAdmin.getId()));
+    }
+
+    @Test
+    void processPayment_notFound_throws() {
+        UUID paymentId = UUID.randomUUID();
+        when(paymentRepository.findById(paymentId)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> paymentService.processPayment(paymentId, assistantAdmin.getId()));
     }
 }

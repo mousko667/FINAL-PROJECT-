@@ -18,5 +18,8 @@ public record PaymentRequest(
         @NotNull(message = "Payment date is required")
         Instant paymentDate,
 
-        String reference
+        String reference,
+
+        /** true = paiement planifie (SCHEDULED) ; absent/false = execute immediatement (PROCESSED). */
+        Boolean scheduled
 ) {}

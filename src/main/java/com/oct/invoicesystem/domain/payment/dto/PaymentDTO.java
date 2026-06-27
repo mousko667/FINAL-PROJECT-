@@ -1,6 +1,7 @@
 package com.oct.invoicesystem.domain.payment.dto;
 
 import com.oct.invoicesystem.domain.payment.model.PaymentMethod;
+import com.oct.invoicesystem.domain.payment.model.PaymentStatus;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -14,5 +15,7 @@ public record PaymentDTO(
         Instant paymentDate,
         String reference,
         UUID recordedBy,
-        Instant createdAt
+        Instant createdAt,
+        PaymentStatus status,
+        Instant processedDate
 ) {}

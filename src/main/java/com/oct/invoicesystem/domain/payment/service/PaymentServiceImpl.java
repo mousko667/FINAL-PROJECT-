@@ -11,6 +11,7 @@ import com.oct.invoicesystem.domain.payment.dto.BatchPaymentResultDTO;
 import com.oct.invoicesystem.domain.payment.dto.PaymentDTO;
 import com.oct.invoicesystem.domain.payment.dto.PaymentRequest;
 import com.oct.invoicesystem.domain.payment.model.Payment;
+import com.oct.invoicesystem.domain.payment.model.PaymentStatus;
 import com.oct.invoicesystem.domain.payment.repository.PaymentRepository;
 import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.domain.notification.event.InvoicePayedEvent;
@@ -86,6 +87,8 @@ public class PaymentServiceImpl implements PaymentService {
         User recordedBy = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
+        boolean isScheduled = Boolean.TRUE.equals(request.scheduled());
+
         Payment payment = Payment.builder()
                 .invoice(invoice)
                 .amountPaid(request.amountPaid())
@@ -93,33 +96,62 @@ public class PaymentServiceImpl implements PaymentService {
                 .paymentMethod(request.paymentMethod())
                 .reference(request.reference())
                 .recordedBy(recordedBy)
+                .status(isScheduled ? PaymentStatus.SCHEDULED : PaymentStatus.PROCESSED)
+                .processedDate(isScheduled ? null : Instant.now())
                 .build();
 
         payment = paymentRepository.save(payment);
-        log.info("Recorded payment {} for invoice {}", payment.getId(), invoiceId);
+        log.info("Recorded payment {} for invoice {} (status={})", payment.getId(), invoiceId, payment.getStatus());
 
-        // Auto-generate remittance advice
+        if (!isScheduled) {
+            finalizePayment(payment, userId);
+        }
+
+        return toDTO(payment);
+    }
+
+    /**
+     * Effets de bord d'un paiement execute : avis de paiement, evenement metier, transitions
+     * BON_A_PAYER -> PAYE puis PAYE -> ARCHIVE. Partage par la creation directe et processPayment.
+     */
+    private void finalizePayment(Payment payment, UUID userId) {
+        UUID invoiceId = payment.getInvoice().getId();
+
         remittanceAdviceService.generateRemittanceAdvice(payment.getId(), userId);
         log.info("Auto-generated remittance advice for payment {}", payment.getId());
 
-        // Publish payment event — notifies supplier
         try {
             eventPublisher.publishEvent(new InvoicePayedEvent(this, invoiceId, payment.getId()));
         } catch (Exception e) {
             log.error("Failed to publish InvoicePayedEvent for invoice {}: {}", invoiceId, e.getMessage());
         }
 
-        // State Machine transition: BON_A_PAYER -> PAYE
         invoiceStateMachineService.sendEvent(invoiceId, InvoiceEvent.RECORD_PAYMENT,
                 Map.of(WorkflowExtendedStateKeys.USER_ID, userId));
 
-        // State Machine transition: PAYE -> ARCHIVE (Automatically as per rules)
         invoiceStateMachineService.sendEvent(invoiceId, InvoiceEvent.ARCHIVE,
                 Map.of(
                         WorkflowExtendedStateKeys.USER_ID, userId,
                         WorkflowExtendedStateKeys.AUTO_ARCHIVE, true
                 ));
+    }
 
+    @Override
+    @Transactional
+    public PaymentDTO processPayment(UUID paymentId, UUID userId) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found id: " + paymentId));
+
+        if (payment.getStatus() != PaymentStatus.SCHEDULED) {
+            throw new WorkflowException("payment.already.processed");
+        }
+
+        payment.setStatus(PaymentStatus.PROCESSED);
+        payment.setProcessedDate(Instant.now());
+        payment = paymentRepository.save(payment);
+        log.info("Processed scheduled payment {}", paymentId);
+
+        finalizePayment(payment, userId);
         return toDTO(payment);
     }
 
@@ -142,7 +174,7 @@ public class PaymentServiceImpl implements PaymentService {
                 String reference = "PAY-" + invoice.getReferenceNumber() + "-"
                         + Long.toString(Instant.now().toEpochMilli()).substring(7);
                 PaymentRequest perInvoice = new PaymentRequest(
-                        invoice.getAmount(), request.paymentMethod(), request.paymentDate(), reference);
+                        invoice.getAmount(), request.paymentMethod(), request.paymentDate(), reference, null);
 
                 PaymentDTO dto = self.recordPayment(invoiceId, perInvoice, userId);
                 results.add(BatchPaymentResultDTO.LineResult.ok(invoiceId, dto.id(), dto.reference()));
@@ -210,7 +242,9 @@ public class PaymentServiceImpl implements PaymentService {
                 payment.getPaymentDate(),
                 payment.getReference(),
                 payment.getRecordedBy() != null ? payment.getRecordedBy().getId() : null,
-                payment.getCreatedAt()
+                payment.getCreatedAt(),
+                payment.getStatus(),
+                payment.getProcessedDate()
         );
     }
 
