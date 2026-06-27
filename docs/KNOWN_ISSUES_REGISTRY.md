@@ -879,6 +879,18 @@
 
 ---
 
+### [PROB-068] (G3) Scan OWASP ZAP : `X-Powered-By` / `Server` émis vides → fuite d'information (rule 10037)
+- **Catégorie :** Sécurité / Durcissement HTTP
+- **Sévérité :** 🟠 Moyen (WARN ZAP rule 10037 « Server Leaks Information via X-Powered-By », non bloquant mais légitime).
+- **Découvert :** 2026-06-27 — G3 : baseline scan OWASP ZAP (`zaproxy/zap-stable`, `zap-baseline.py`) lancé en local contre le backend (`http://host.docker.internal:8080`) avec `.github/zap-rules.tsv`. Résultat : 0 FAIL, 2 WARN, 65 PASS.
+- **Symptôme :** ZAP signale `X-Powered-By` présent sur toutes les réponses. `curl -i` confirme que le header est bien renvoyé mais **avec une valeur vide** (`X-Powered-By:`).
+- **Cause racine :** `HttpSecurityHeadersFilter` appelait `response.setHeader("X-Powered-By", "")` et `setHeader("Server", "")` dans l'intention de masquer la techno. Or `setHeader(name, "")` **émet** le header avec une valeur vide au lieu de le supprimer — `HttpServletResponse` n'a pas de `removeHeader()`. ZAP détecte la simple présence du header (rule 10037), valeur vide ou non.
+- **Solution appliquée :** supprimer les deux appels `setHeader(..., "")`. Spring Boot / Tomcat n'émettent pas `X-Powered-By` par défaut, et le header `Server` est neutralisé au niveau du reverse-proxy (nginx) en production. En ne posant jamais ces headers, ils restent absents de la réponse. Test unitaire `HttpSecurityHeadersFilterTest` ajouté (happy path + 2 edge : headers de fingerprint absents, chaîne de filtres toujours poursuivie). Re-scan ZAP : rule 10037 disparue.
+- **Règle préventive :** pour masquer un header HTTP, ne JAMAIS utiliser `setHeader(name, "")` (émet un header vide, toujours flaggé). Soit ne pas le poser du tout, soit le retirer côté proxy. Un baseline ZAP doit cibler une URL qui répond (le backend renvoie 401 partout → spider limité, mais le passive scan des headers reste valide).
+- **Fichiers modifiés :** `HttpSecurityHeadersFilter.java`, `HttpSecurityHeadersFilterTest.java` (nouveau).
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :

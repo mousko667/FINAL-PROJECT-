@@ -4,3 +4,4 @@
 10035	IGNORE	Content Security Policy (CSP) Header Not Set	handled by HttpSecurityHeadersFilter
 10016	IGNORE	Web Browser XSS Protection Not Enabled	handled by X-Content-Type-Options header
 10038	IGNORE	Content Security Policy (CSP) Report-Only Header Found	dev-only
+10049	IGNORE	Non-Storable Content	expected: secured API returns non-cacheable 401 responses
