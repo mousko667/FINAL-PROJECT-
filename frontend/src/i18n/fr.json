@@ -289,6 +289,8 @@
     "purchaseOrder": "Bon de commande",
     "noPO": "— Sans bon de commande —",
     "poHint": "Lier un BC active le rapprochement automatique à trois voies à la soumission.",
+    "duplicateWarning_one": "Une facture similaire existe déjà pour ce fournisseur sur les 12 derniers mois. Veuillez vérifier avant de soumettre.",
+    "duplicateWarning_other": "{{count}} factures similaires existent déjà pour ce fournisseur sur les 12 derniers mois. Veuillez vérifier avant de soumettre.",
     "selectDept": "— Sélectionner un département —",
     "amount": "Montant",
     "currency": "Devise",

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { invoiceService } from '@/services/invoiceService'
 import apiClient from '@/services/apiClient'
-import { ChevronRight, ChevronLeft, Loader2, Plus, Trash2 } from 'lucide-react'
+import { ChevronRight, ChevronLeft, Loader2, Plus, Trash2, AlertTriangle } from 'lucide-react'
 import type { ApiResponse, PagedResponse } from '@/types/invoice'
 
 interface Supplier { id: string; companyName: string; taxId: string; status: string }
@@ -87,6 +87,27 @@ export default function InvoiceCreatePage() {
   } = useForm<DetailsFormData>({ resolver: zodResolver(detailsSchema) })
 
   const watchedSupplierId = watch('supplierId')
+  const watchedDescription = watch('description')
+
+  // Advisory duplicate pre-check: debounce supplier + description, then query the non-blocking endpoint.
+  const [dupCheckInput, setDupCheckInput] = useState<{ supplierId: string; description: string } | null>(null)
+  useEffect(() => {
+    const supplierId = watchedSupplierId
+    const description = (watchedDescription ?? '').trim()
+    if (!supplierId || !description) {
+      setDupCheckInput(null)
+      return
+    }
+    const handle = setTimeout(() => setDupCheckInput({ supplierId, description }), 500)
+    return () => clearTimeout(handle)
+  }, [watchedSupplierId, watchedDescription])
+
+  const { data: duplicateCheck } = useQuery({
+    queryKey: ['invoice-duplicate-check', dupCheckInput],
+    queryFn: () => invoiceService.checkDuplicate(dupCheckInput!.supplierId, dupCheckInput!.description),
+    enabled: !!dupCheckInput,
+    staleTime: 30_000,
+  })
 
   const { data: supplierPOs } = useQuery({
     queryKey: ['supplier-pos', watchedSupplierId],
@@ -270,6 +291,13 @@ export default function InvoiceCreatePage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoice.description', 'Description')}</label>
             <textarea {...register('description')} rows={3} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
           </div>
+
+          {duplicateCheck?.duplicate && (
+            <div role="status" className="flex items-start gap-2 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-amber-500" />
+              <span>{t('invoice.duplicateWarning', { count: duplicateCheck.count })}</span>
+            </div>
+          )}
 
           <div className="flex justify-end">
             <button type="submit" className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90">

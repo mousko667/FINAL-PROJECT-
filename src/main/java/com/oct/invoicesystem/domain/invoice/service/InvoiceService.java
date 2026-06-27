@@ -357,4 +357,28 @@ public class InvoiceService {
     public java.time.LocalDate getSupplierNextExpectedPaymentDate(UUID supplierId) {
         return invoiceRepository.findNextExpectedPaymentDateForSupplier(supplierId);
     }
+
+    /**
+     * Non-blocking, advisory duplicate pre-check used while an invoice is being entered.
+     *
+     * <p>Mirrors the look-back window of the blocking submission-time check (same supplier and
+     * description over the last 365 days, excluding rejected/archived invoices) but never throws:
+     * the UI calls it to surface a warning before the user submits. Returns "not duplicate" when
+     * the input is incomplete (no supplier or blank description) so that partially-filled forms do
+     * not trigger spurious warnings.</p>
+     *
+     * @param supplierId  the supplier being invoiced (may be {@code null} during entry)
+     * @param description the invoice description / number being entered (may be blank during entry)
+     * @return a {@link com.oct.invoicesystem.domain.invoice.dto.DuplicateCheckDTO} with the match count
+     */
+    @Transactional(readOnly = true)
+    public com.oct.invoicesystem.domain.invoice.dto.DuplicateCheckDTO checkDuplicate(
+            UUID supplierId, String description) {
+        if (supplierId == null || description == null || description.isBlank()) {
+            return new com.oct.invoicesystem.domain.invoice.dto.DuplicateCheckDTO(false, 0L);
+        }
+        java.time.Instant since = java.time.Instant.now().minus(365, java.time.temporal.ChronoUnit.DAYS);
+        long count = invoiceRepository.countDuplicatesBySupplierAndDescription(supplierId, description, since);
+        return new com.oct.invoicesystem.domain.invoice.dto.DuplicateCheckDTO(count > 0, count);
+    }
 }

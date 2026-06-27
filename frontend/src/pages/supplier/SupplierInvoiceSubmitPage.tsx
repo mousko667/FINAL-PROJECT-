@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -6,7 +6,8 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import apiClient from '@/services/apiClient'
-import { Loader2, ArrowLeft, Upload, CheckCircle, AlertCircle, FileText } from 'lucide-react'
+import { invoiceService } from '@/services/invoiceService'
+import { Loader2, ArrowLeft, Upload, CheckCircle, AlertCircle, AlertTriangle, FileText } from 'lucide-react'
 
 interface Department { id: string; code: string; nameEn: string; nameFr: string }
 
@@ -80,10 +81,42 @@ export default function SupplierInvoiceSubmitPage() {
     handleSubmit,
     control,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<ConfirmData>({
     resolver: zodResolver(confirmSchema),
     defaultValues: { currency: 'XOF' },
+  })
+
+  // The duplicate pre-check is keyed by the supplier's own id (resolved from their profile).
+  const { data: supplierProfile } = useQuery({
+    queryKey: ['supplier-profile-id'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<{ data: { id: string } }>('/supplier/profile')
+      return data.data
+    },
+  })
+
+  const watchedDescription = watch('description')
+  const watchedInvoiceNumber = watch('invoiceNumber')
+
+  // Advisory duplicate pre-check: debounce description (falls back to the invoice number) then query.
+  const [dupDescription, setDupDescription] = useState<string | null>(null)
+  useEffect(() => {
+    const description = ((watchedDescription || watchedInvoiceNumber) ?? '').trim()
+    if (!description) {
+      setDupDescription(null)
+      return
+    }
+    const handle = setTimeout(() => setDupDescription(description), 500)
+    return () => clearTimeout(handle)
+  }, [watchedDescription, watchedInvoiceNumber])
+
+  const { data: duplicateCheck } = useQuery({
+    queryKey: ['supplier-duplicate-check', supplierProfile?.id, dupDescription],
+    queryFn: () => invoiceService.checkDuplicate(supplierProfile!.id, dupDescription!),
+    enabled: !!supplierProfile?.id && !!dupDescription,
+    staleTime: 30_000,
   })
 
   const submitMutation = useMutation({
@@ -146,6 +179,13 @@ export default function SupplierInvoiceSubmitPage() {
         <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4">
           <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-sm text-amber-800">{ocrError}</p>
+        </div>
+      )}
+
+      {duplicateCheck?.duplicate && (
+        <div role="status" className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+          <p className="text-sm text-amber-800">{t('invoice.duplicateWarning', { count: duplicateCheck.count })}</p>
         </div>
       )}
 

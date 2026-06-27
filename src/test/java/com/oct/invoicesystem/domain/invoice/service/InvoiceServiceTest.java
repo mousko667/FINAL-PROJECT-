@@ -162,4 +162,49 @@ class InvoiceServiceTest {
         assertThat(convertAnnotation.converter())
                 .isEqualTo(com.oct.invoicesystem.shared.util.EncryptionAttributeConverter.class);
     }
+
+    @Test
+    @DisplayName("checkDuplicate: signale un doublon quand un même fournisseur+description existe déjà")
+    void checkDuplicate_flagsDuplicate() {
+        UUID supplierId = UUID.randomUUID();
+        when(invoiceRepository.countDuplicatesBySupplierAndDescription(
+                org.mockito.ArgumentMatchers.eq(supplierId),
+                org.mockito.ArgumentMatchers.eq("Facture mars"),
+                any())).thenReturn(2L);
+
+        com.oct.invoicesystem.domain.invoice.dto.DuplicateCheckDTO result =
+                invoiceService.checkDuplicate(supplierId, "Facture mars");
+
+        assertThat(result.duplicate()).isTrue();
+        assertThat(result.count()).isEqualTo(2L);
+    }
+
+    @Test
+    @DisplayName("checkDuplicate: pas de doublon quand le compte est zéro")
+    void checkDuplicate_noDuplicate() {
+        UUID supplierId = UUID.randomUUID();
+        when(invoiceRepository.countDuplicatesBySupplierAndDescription(
+                org.mockito.ArgumentMatchers.eq(supplierId),
+                org.mockito.ArgumentMatchers.eq("Nouvelle facture"),
+                any())).thenReturn(0L);
+
+        com.oct.invoicesystem.domain.invoice.dto.DuplicateCheckDTO result =
+                invoiceService.checkDuplicate(supplierId, "Nouvelle facture");
+
+        assertThat(result.duplicate()).isFalse();
+        assertThat(result.count()).isZero();
+    }
+
+    @Test
+    @DisplayName("checkDuplicate: entrée incomplète (supplier null ou description vide) → pas de requête, pas de doublon")
+    void checkDuplicate_incompleteInput_returnsNotDuplicate() {
+        com.oct.invoicesystem.domain.invoice.dto.DuplicateCheckDTO r1 =
+                invoiceService.checkDuplicate(null, "x");
+        com.oct.invoicesystem.domain.invoice.dto.DuplicateCheckDTO r2 =
+                invoiceService.checkDuplicate(UUID.randomUUID(), "   ");
+
+        assertThat(r1.duplicate()).isFalse();
+        assertThat(r2.duplicate()).isFalse();
+        verify(invoiceRepository, never()).countDuplicatesBySupplierAndDescription(any(), any(), any());
+    }
 }

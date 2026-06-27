@@ -119,6 +119,17 @@ public class InvoiceController {
         return ResponseEntity.ok(ApiResponse.success(invoiceMapper.toDto(invoiceService.getById(id))));
     }
 
+    @GetMapping("/duplicate-check")
+    @PreAuthorize("hasAnyRole('ASSISTANT_COMPTABLE', 'SUPPLIER')")
+    @Operation(summary = "Advisory duplicate pre-check",
+            description = "Non-blocking check used while entering an invoice: returns whether a similar "
+                    + "invoice (same supplier + description, last 365 days) already exists, so the UI can warn the user")
+    public ResponseEntity<ApiResponse<com.oct.invoicesystem.domain.invoice.dto.DuplicateCheckDTO>> checkDuplicate(
+            @RequestParam UUID supplierId,
+            @RequestParam String description) {
+        return ResponseEntity.ok(ApiResponse.success(invoiceService.checkDuplicate(supplierId, description)));
+    }
+
     @GetMapping("/pending-validation")
     @PreAuthorize("hasAnyRole('ADMIN', 'DAF', 'ASSISTANT_COMPTABLE') " +
                   "or hasAuthority('ROLE_VALIDATEUR_N1_DRH') or hasAuthority('ROLE_VALIDATEUR_N1_DG') " +

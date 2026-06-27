@@ -16,6 +16,11 @@ export interface ImportResult {
   results: ImportLineResult[]
 }
 
+export interface DuplicateCheckResult {
+  duplicate: boolean
+  count: number
+}
+
 export interface InvoiceFilters {
   status?: InvoiceStatus
   departmentId?: string
@@ -40,6 +45,17 @@ export const invoiceService = {
 
   getById: async (id: string): Promise<Invoice> => {
     const { data } = await apiClient.get<ApiResponse<Invoice>>(`/invoices/${id}`)
+    return data.data
+  },
+
+  checkDuplicate: async (
+    supplierId: string,
+    description: string
+  ): Promise<DuplicateCheckResult> => {
+    const { data } = await apiClient.get<ApiResponse<DuplicateCheckResult>>(
+      '/invoices/duplicate-check',
+      { params: { supplierId, description } }
+    )
     return data.data
   },
 

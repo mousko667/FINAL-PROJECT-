@@ -158,7 +158,7 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 | 4 | Invoice fields (number, date, amount, supplier, description) | ✅ | Formulaire manuel (`/invoices/new`) + saisie supplier : tous les champs. |
 | 5 | PO / reference number linking | ✅ | `/invoices/new` : dropdown « Purchase Order » → active le rapprochement 3-voies. |
 | 6 | Supporting document attachment | ✅ | Étape « Documents » du wizard + upload sur détail facture. |
-| 7 | Duplicate invoice detection alert | ✅ | Détection prouvée : 2 factures identiques bloquées à la soumission (M3). |
+| 7 | Duplicate invoice detection alert | ✅ | Détection bloquante à la soumission (M3) **+ alerte advisory non bloquante à la saisie** (T1, 2026-06-27) : `GET /invoices/duplicate-check` (ASSISTANT_COMPTABLE + SUPPLIER, fenêtre 365 j) → bandeau ambre debouncé sur `/invoices/new` et le portail fournisseur. |
 | 8 | Submission confirmation with reference number | ✅ | « Facture soumise avec succès » + référence `FAC-YYYY-NNNNN` générée. |
 | 9 | Invoice status tracking (suppliers) | ✅ | `/supplier/invoices` : colonne « Progression de la validation » + 9 statuts. |
 | 10 | Submission history viewer | ✅ | `/supplier/invoices` liste l'historique des soumissions du fournisseur. |
