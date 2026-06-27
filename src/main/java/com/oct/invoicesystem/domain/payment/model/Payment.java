@@ -46,6 +46,13 @@ public class Payment {
     @Column(length = 100)
     private String reference;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private PaymentStatus status;
+
+    @Column(name = "processed_date")
+    private Instant processedDate;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recorded_by")
     private User recordedBy;
