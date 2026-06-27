@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
-import { ShieldAlert, Database, ListChecks, CalendarClock, Plus, Trash2, Loader2 } from 'lucide-react'
+import { ShieldAlert, Database, ListChecks, CalendarClock, Plus, Trash2, Loader2, ClipboardCheck } from 'lucide-react'
 
 interface Incident { id: string; title: string; severity: string; status: string; reportedAt: string }
 interface ChecklistItem { id: string; framework: string; label: string; completed: boolean }
@@ -38,6 +38,20 @@ export default function AdminCompliancePage() {
 
   const badge = (ok: boolean) => ok ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'
 
+  // ── Audit-prep synthesis: read-only roll-up of the data already loaded above ──
+  const openIncidentCount = (incidents.data ?? []).filter(i => i.status === 'OPEN' || i.status === 'INVESTIGATING').length
+  const checklistTotal = (checklist.data ?? []).length
+  const checklistDone = (checklist.data ?? []).filter(c => c.completed).length
+  const upcomingDeadlines = (calendar.data ?? [])
+    .filter(e => !e.completed)
+    .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
+  const stat = (label: string, value: string, danger = false) => (
+    <div className="bg-white rounded-xl border p-4">
+      <p className="text-xs text-muted-foreground uppercase tracking-wide">{label}</p>
+      <p className={`text-2xl font-bold mt-0.5 ${danger ? 'text-red-600' : 'text-gray-900'}`}>{value}</p>
+    </div>
+  )
+
   return (
     <div className="space-y-6 max-w-4xl">
       <div className="flex items-center gap-3">
@@ -45,6 +59,33 @@ export default function AdminCompliancePage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{t('admin.compliance.title', 'Sécurité & Conformité')}</h1>
           <p className="text-sm text-gray-500 mt-1">{t('admin.compliance.subtitle', 'Sauvegardes, incidents, checklist SOX/IFRS, calendrier de conformité.')}</p>
+        </div>
+      </div>
+
+      {/* Audit preparation — read-only synthesis of the existing compliance data */}
+      <div className="bg-white rounded-xl border p-5">
+        <div className="flex items-center gap-2 mb-1"><ClipboardCheck className="w-5 h-5 text-primary" /><h2 className="font-semibold text-gray-800">{t('admin.compliance.auditPrep.title', 'Préparation d\'audit')}</h2></div>
+        <p className="text-sm text-gray-500 mb-4">{t('admin.compliance.auditPrep.subtitle')}</p>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {stat(t('admin.compliance.auditPrep.openIncidents'), String(openIncidentCount), openIncidentCount > 0)}
+          {stat(t('admin.compliance.auditPrep.checklistProgress'), checklistTotal ? `${checklistDone}/${checklistTotal}` : '—')}
+          {stat(t('admin.compliance.auditPrep.upcomingDeadlines'), String(upcomingDeadlines.length))}
+          {stat(t('admin.compliance.auditPrep.backupStatus'), backup.data?.lastBackupAt ? new Date(backup.data.lastBackupAt).toLocaleDateString() : '—', backup.data?.status === 'FAILED')}
+        </div>
+        <div className="mt-4">
+          <h3 className="text-sm font-medium text-gray-700 mb-2">{t('admin.compliance.auditPrep.nextDeadlinesTitle')}</h3>
+          {upcomingDeadlines.length === 0 ? (
+            <p className="text-sm text-gray-400">{t('admin.compliance.auditPrep.noUpcoming')}</p>
+          ) : (
+            <ul className="divide-y">
+              {upcomingDeadlines.slice(0, 5).map(e => (
+                <li key={e.id} className="flex items-center justify-between py-2 text-sm">
+                  <span className="text-gray-700">{e.title}</span>
+                  <span className="text-xs text-gray-400">{e.dueDate}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
 

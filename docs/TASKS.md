@@ -554,7 +554,7 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 | 7 | Privacy policy acceptance tracking | ✅ | `/compliance/privacy-acceptance` + bannière dashboard (vérifié 200). |
 | 8 | Security incident reporting | ✅ | Incidents (titre + sévérité LOW→CRITICAL + statut OPEN→CLOSED) — vérifié. |
 | 9 | Compliance checklist (SOX, IFRS, local) | ✅ | Checklist SOX/IFRS/LOCAL avec cases — vérifié. |
-| 10 | Audit preparation tools | 🟠 | Export PDF rapport conformité (`/reports/export/pdf/compliance`) + checklist ; pas de « boîte à outils » audit dédiée. |
+| 10 | Audit preparation tools | ✅ | **Section « Préparation d'audit » sur `/admin/compliance`** (T3, 2026-06-27) : synthèse lecture seule (ADMIN, sans donnée financière) regroupant incidents ouverts, avancement checklist SOX/IFRS, prochaines échéances calendrier (triées) et statut de sauvegarde. Complète l'export PDF conformité (`/reports/export/pdf/compliance`, DAF/ASSISTANT_COMPTABLE) côté finance. `AdminComplianceAuditPrep.test.tsx`. |
 | 11 | Compliance calendar and deadlines | ✅ | Calendrier de conformité (échéances) — vérifié (« Verif deadline 2026-12-31 »). |
 | 12 | Security health dashboard | ✅ | `/admin/security` : Santé de la sécurité (chiffrement, MFA, comptes verrouillés, webhooks). |
 
@@ -572,7 +572,7 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 | 9 | Compliance deadline management | ✅ | Calendrier. |
 | 10 | Comprehensive security monitoring | ✅ | Security health dashboard. |
 
-**Gaps M14 :** #10 pas de boîte à outils d'audit dédiée (couvert indirectement) ; feat#4 statut de sauvegarde suivi mais pas de moteur backup/restore automatisé. (#6 résolu en B2.)
+**Gaps M14 :** ~~#10 pas de boîte à outils d'audit dédiée~~ **fait (T3, 2026-06-27)** : section « Préparation d'audit » sur `/admin/compliance` ; feat#4 statut de sauvegarde suivi mais pas de moteur backup/restore automatisé. (#6 résolu en B2.)
 
 ---
 

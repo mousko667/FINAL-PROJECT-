@@ -659,7 +659,18 @@
       "noChecklist": "No items.",
       "calendar": "Compliance calendar",
       "calendarTitle": "Deadline",
-      "noCalendar": "No deadlines."
+      "noCalendar": "No deadlines.",
+      "auditPrep": {
+        "title": "Audit preparation",
+        "subtitle": "At-a-glance readiness: open incidents, checklist progress and upcoming deadlines.",
+        "openIncidents": "Open incidents",
+        "checklistProgress": "Checklist completed",
+        "upcomingDeadlines": "Upcoming deadlines",
+        "backupStatus": "Last backup",
+        "nextDeadlinesTitle": "Next compliance deadlines",
+        "noUpcoming": "No upcoming deadlines.",
+        "allClear": "No open incidents — all clear."
+      }
     },
     "connectors": {
       "title": "Integration connectors",

@@ -659,7 +659,18 @@
       "noChecklist": "Aucun élément.",
       "calendar": "Calendrier de conformité",
       "calendarTitle": "Échéance",
-      "noCalendar": "Aucune échéance."
+      "noCalendar": "Aucune échéance.",
+      "auditPrep": {
+        "title": "Préparation d'audit",
+        "subtitle": "Synthèse de préparation : incidents ouverts, avancement de la checklist et prochaines échéances.",
+        "openIncidents": "Incidents ouverts",
+        "checklistProgress": "Checklist complétée",
+        "upcomingDeadlines": "Échéances à venir",
+        "backupStatus": "Dernière sauvegarde",
+        "nextDeadlinesTitle": "Prochaines échéances de conformité",
+        "noUpcoming": "Aucune échéance à venir.",
+        "allClear": "Aucun incident ouvert — tout est en ordre."
+      }
     },
     "connectors": {
       "title": "Connecteurs d'intégration",
