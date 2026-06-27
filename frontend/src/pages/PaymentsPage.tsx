@@ -21,6 +21,8 @@ interface Payment {
   reference: string
   notes?: string
   createdAt: string
+  status: 'SCHEDULED' | 'PROCESSED'
+  processedDate?: string
 }
 
 interface Invoice {
@@ -48,6 +50,7 @@ function RecordPaymentModal({ invoice, onClose, onSuccess }: {
     paymentMethod: 'VIREMENT',
     reference: `PAY-${invoice.referenceNumber}-${Date.now().toString().slice(-6)}`,
     notes: '',
+    scheduled: false,
   })
 
   const mutation = useMutation({
@@ -57,6 +60,7 @@ function RecordPaymentModal({ invoice, onClose, onSuccess }: {
       paymentMethod: form.paymentMethod,
       reference: form.reference,
       notes: form.notes || undefined,
+      scheduled: form.scheduled || undefined,
     }),
     onSuccess: () => { onSuccess(); onClose() },
   })
@@ -118,6 +122,12 @@ function RecordPaymentModal({ invoice, onClose, onSuccess }: {
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
               placeholder="Informations complémentaires sur le paiement..." />
           </div>
+
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input type="checkbox" checked={form.scheduled}
+              onChange={e => setForm(p => ({ ...p, scheduled: e.target.checked }))} />
+            {t('payments.scheduleThis', 'Planifier ce paiement (à exécuter plus tard)')}
+          </label>
         </div>
 
         {mutation.isError && (
@@ -134,7 +144,7 @@ function RecordPaymentModal({ invoice, onClose, onSuccess }: {
             className="flex items-center gap-2 px-5 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-60"
           >
             {mutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-            {t('invoice.markPaid', 'Enregistrer le paiement')}
+            {form.scheduled ? t('payments.scheduleBtn', 'Planifier le paiement') : t('invoice.markPaid', 'Enregistrer le paiement')}
           </button>
         </div>
       </div>
@@ -233,6 +243,14 @@ export default function PaymentsPage() {
   })
 
   const refByInvoice = (invoiceId: string) => pendingInvoices.find(i => i.id === invoiceId)?.referenceNumber ?? invoiceId
+
+  const processMutation = useMutation({
+    mutationFn: (paymentId: string) => apiClient.post(`/payments/${paymentId}/process`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payments'] })
+      queryClient.invalidateQueries({ queryKey: ['invoices-bon-a-payer'] })
+    },
+  })
 
   return (
     <PageRoleGuard allowedRoles={['ROLE_ASSISTANT_COMPTABLE', 'ROLE_DAF']}>
@@ -386,6 +404,7 @@ export default function PaymentsPage() {
                     <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.paymentReference')}</th>
                     <th className="text-right px-4 py-3 font-medium text-gray-600">{t('invoice.amount')}</th>
                     <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.paymentDate')}</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t('payments.colStatus', 'Statut')}</th>
                     <th className="px-4 py-3" />
                   </tr>
                 </thead>
@@ -409,16 +428,32 @@ export default function PaymentsPage() {
                       <td className="px-4 py-3 text-gray-500 text-xs">
                         {new Date(p.paymentDate).toLocaleDateString()}
                       </td>
+                      <td className="px-4 py-3">
+                        {p.status === 'SCHEDULED' ? (
+                          <button onClick={() => processMutation.mutate(p.id)}
+                            disabled={processMutation.isPending}
+                            className="flex items-center gap-1 text-xs bg-amber-100 text-amber-800 border border-amber-200 px-2 py-1 rounded hover:bg-amber-200 disabled:opacity-50">
+                            <CheckCircle className="w-3.5 h-3.5" />
+                            {t('payments.markProcessed', 'Marquer exécuté')}
+                          </button>
+                        ) : (
+                          <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded border border-green-100">
+                            {t('payments.status.processed', 'Exécuté')}
+                          </span>
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-right">
-                        <button
-                          onClick={() => downloadRemittance(p.id)}
-                          disabled={remittanceId === p.id}
-                          className="flex items-center gap-1 text-xs text-gray-500 hover:text-primary transition-colors ml-auto disabled:opacity-50">
-                          {remittanceId === p.id
-                            ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            : <Download className="w-3.5 h-3.5" />}
-                          {t('payments.remittance', 'Avis')}
-                        </button>
+                        {p.status === 'PROCESSED' && (
+                          <button
+                            onClick={() => downloadRemittance(p.id)}
+                            disabled={remittanceId === p.id}
+                            className="flex items-center gap-1 text-xs text-gray-500 hover:text-primary transition-colors ml-auto disabled:opacity-50">
+                            {remittanceId === p.id
+                              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              : <Download className="w-3.5 h-3.5" />}
+                            {t('payments.remittance', 'Avis')}
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}

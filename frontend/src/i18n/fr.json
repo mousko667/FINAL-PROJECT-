@@ -1112,7 +1112,15 @@
     "batchSelected": "{{count}} sélectionnée(s)",
     "paySelected": "Payer la sélection",
     "batchResultTitle": "Résultat du paiement par lot",
-    "batchSummary": "{{ok}} réussi(s), {{ko}} échoué(s) sur {{total}}"
+    "batchSummary": "{{ok}} réussi(s), {{ko}} échoué(s) sur {{total}}",
+    "scheduleThis": "Planifier ce paiement (à exécuter plus tard)",
+    "scheduleBtn": "Planifier le paiement",
+    "colStatus": "Statut",
+    "markProcessed": "Marquer exécuté",
+    "status": {
+      "scheduled": "Planifié",
+      "processed": "Exécuté"
+    }
   },
   "paymentAlerts": {
     "title": "Règles d'alerte de paiement",

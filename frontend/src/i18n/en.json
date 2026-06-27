@@ -1112,7 +1112,15 @@
     "batchSelected": "{{count}} selected",
     "paySelected": "Pay selected",
     "batchResultTitle": "Batch payment result",
-    "batchSummary": "{{ok}} succeeded, {{ko}} failed out of {{total}}"
+    "batchSummary": "{{ok}} succeeded, {{ko}} failed out of {{total}}",
+    "scheduleThis": "Schedule this payment (process later)",
+    "scheduleBtn": "Schedule payment",
+    "colStatus": "Status",
+    "markProcessed": "Mark processed",
+    "status": {
+      "scheduled": "Scheduled",
+      "processed": "Processed"
+    }
   },
   "paymentAlerts": {
     "title": "Payment Alert Rules",
