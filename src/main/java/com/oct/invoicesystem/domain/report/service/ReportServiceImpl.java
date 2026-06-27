@@ -25,6 +25,7 @@ import com.oct.invoicesystem.domain.report.dto.VolumeTrendDTO;
 import com.oct.invoicesystem.shared.exception.ValidationException;
 import com.oct.invoicesystem.domain.report.dto.CashFlowWeekDTO;
 import com.oct.invoicesystem.domain.report.dto.DashboardKpiDTO;
+import com.oct.invoicesystem.domain.report.dto.PaymentCycleReportDTO;
 import com.oct.invoicesystem.domain.report.dto.SupplierPaymentHistoryDTO;
 import com.oct.invoicesystem.domain.report.dto.SupplierPerformanceDTO;
 import com.oct.invoicesystem.domain.workflow.dto.InvoiceHistoryDTO;
@@ -898,5 +899,59 @@ public class ReportServiceImpl implements ReportService {
         }
 
         return new VolumeTrendDTO(fromDate, toDate, points);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PaymentCycleReportDTO getPaymentCycleReport(Instant from, Instant to) {
+        List<Payment> paid = paymentRepository.findProcessedBetween(from, to);
+        if (paid.isEmpty()) {
+            return new PaymentCycleReportDTO(0, null, null, null, null);
+        }
+
+        // Historique soumission/BAP indexe par facture (meme source que processing-time).
+        Map<UUID, List<InvoiceStatusHistory>> historyByInvoice =
+                historyRepository.findRelevantHistoryForProcessingTime().stream()
+                        .collect(Collectors.groupingBy(h -> h.getInvoice().getId()));
+
+        List<Double> subToBap = new ArrayList<>();
+        List<Double> bapToPay = new ArrayList<>();
+        List<Double> schedToProc = new ArrayList<>();
+        List<Double> total = new ArrayList<>();
+
+        for (Payment p : paid) {
+            UUID invId = p.getInvoice().getId();
+            List<InvoiceStatusHistory> hist = historyByInvoice.getOrDefault(invId, List.of());
+            Instant submitted = firstAt(hist, "SOUMIS");
+            Instant bap = firstAt(hist, "BON_A_PAYER");
+            Instant processed = p.getProcessedDate();
+
+            if (submitted != null && bap != null) subToBap.add(days(submitted, bap));
+            if (bap != null && processed != null) bapToPay.add(days(bap, processed));
+            if (submitted != null && processed != null) total.add(days(submitted, processed));
+            if (p.getPaymentDate() != null && processed != null) schedToProc.add(days(p.getPaymentDate(), processed));
+        }
+
+        return new PaymentCycleReportDTO(
+                paid.size(),
+                average(subToBap),
+                average(bapToPay),
+                average(schedToProc),
+                average(total));
+    }
+
+    private static Instant firstAt(List<InvoiceStatusHistory> hist, String toStatus) {
+        return hist.stream().filter(h -> toStatus.equals(h.getToStatus()))
+                .map(InvoiceStatusHistory::getChangedAt)
+                .min(Comparator.naturalOrder()).orElse(null);
+    }
+
+    private static double days(Instant a, Instant b) {
+        return Duration.between(a, b).toHours() / 24.0;
+    }
+
+    private static Double average(List<Double> values) {
+        return values.isEmpty() ? null
+                : values.stream().mapToDouble(Double::doubleValue).average().orElse(0);
     }
 }

@@ -3,6 +3,7 @@ package com.oct.invoicesystem.domain.report.controller;
 import com.oct.invoicesystem.domain.report.dto.BottleneckDTO;
 import com.oct.invoicesystem.domain.report.dto.BucketedAgingReportDTO;
 import com.oct.invoicesystem.domain.report.dto.DashboardKpiDTO;
+import com.oct.invoicesystem.domain.report.dto.PaymentCycleReportDTO;
 import com.oct.invoicesystem.domain.report.dto.ReportPreviewDTO;
 import com.oct.invoicesystem.domain.report.dto.SupplierPerformanceDTO;
 import com.oct.invoicesystem.domain.report.dto.VolumeTrendDTO;
@@ -328,6 +329,36 @@ class ReportControllerTest {
     @WithMockUser(roles = "ADMIN")
     void getVolumeTrend_WithAdmin_ReturnsForbidden() throws Exception {
         mockMvc.perform(get("/api/v1/reports/volume-trend"))
+                .andExpect(status().isForbidden());
+    }
+
+    // ─── Payment cycle report (M11 #5) ─────────────────────────────────────
+
+    @Test
+    @WithMockUser(roles = "DAF")
+    void paymentCycle_asDaf_returns200() throws Exception {
+        when(reportService.getPaymentCycleReport(any(), any()))
+                .thenReturn(new PaymentCycleReportDTO(0, null, null, null, null));
+        mockMvc.perform(get("/api/v1/reports/payment-cycle")
+                        .param("from", "2026-01-01T00:00:00Z").param("to", "2026-12-31T00:00:00Z"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "ASSISTANT_COMPTABLE")
+    void paymentCycle_asAssistantComptable_returns200() throws Exception {
+        when(reportService.getPaymentCycleReport(any(), any()))
+                .thenReturn(new PaymentCycleReportDTO(0, null, null, null, null));
+        mockMvc.perform(get("/api/v1/reports/payment-cycle")
+                        .param("from", "2026-01-01T00:00:00Z").param("to", "2026-12-31T00:00:00Z"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void paymentCycle_asAdmin_returns403() throws Exception {
+        mockMvc.perform(get("/api/v1/reports/payment-cycle")
+                        .param("from", "2026-01-01T00:00:00Z").param("to", "2026-12-31T00:00:00Z"))
                 .andExpect(status().isForbidden());
     }
 }

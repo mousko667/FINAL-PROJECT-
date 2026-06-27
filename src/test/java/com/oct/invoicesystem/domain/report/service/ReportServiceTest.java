@@ -6,11 +6,13 @@ import com.oct.invoicesystem.domain.invoice.repository.InvoiceRepository;
 import com.oct.invoicesystem.domain.payment.model.Payment;
 import com.oct.invoicesystem.domain.payment.model.PaymentMethod;
 import com.oct.invoicesystem.domain.payment.repository.PaymentRepository;
+import com.oct.invoicesystem.domain.payment.model.PaymentStatus;
 import com.oct.invoicesystem.domain.report.dto.AgingReportDTO;
 import com.oct.invoicesystem.domain.report.dto.BucketedAgingReportDTO;
 import com.oct.invoicesystem.domain.report.dto.CashFlowProjectionDTO;
 import com.oct.invoicesystem.domain.report.dto.DashboardKpiDTO;
 import com.oct.invoicesystem.domain.report.dto.BottleneckDTO;
+import com.oct.invoicesystem.domain.report.dto.PaymentCycleReportDTO;
 import com.oct.invoicesystem.domain.report.dto.SupplierPerformanceDTO;
 import com.oct.invoicesystem.domain.report.dto.VolumeTrendDTO;
 import java.time.YearMonth;
@@ -673,5 +675,83 @@ class ReportServiceTest {
         assertThrows(
                 com.oct.invoicesystem.shared.exception.ValidationException.class,
                 () -> reportService.getVolumeTrend(61));
+    }
+
+    // ─── Payment cycle report (M11 #5) ─────────────────────────────────────
+
+    private InvoiceStatusHistory history(UUID invoiceId, String toStatus, String changedAtIso) {
+        Invoice inv = new Invoice();
+        inv.setId(invoiceId);
+        return InvoiceStatusHistory.builder()
+                .invoice(inv)
+                .toStatus(toStatus)
+                .changedAt(Instant.parse(changedAtIso))
+                .build();
+    }
+
+    @Test
+    void paymentCycle_happy_computesAverages() {
+        Instant from = Instant.parse("2026-01-01T00:00:00Z");
+        Instant to = Instant.parse("2026-12-31T00:00:00Z");
+        UUID invId = UUID.randomUUID();
+
+        Invoice invoice = new Invoice();
+        invoice.setId(invId);
+
+        Payment p = Payment.builder()
+                .invoice(invoice)
+                .status(PaymentStatus.PROCESSED)
+                .paymentDate(Instant.parse("2026-06-10T00:00:00Z"))
+                .processedDate(Instant.parse("2026-06-12T00:00:00Z"))
+                .build();
+
+        when(paymentRepository.findProcessedBetween(from, to)).thenReturn(List.of(p));
+        when(historyRepository.findRelevantHistoryForProcessingTime()).thenReturn(List.of(
+                history(invId, "SOUMIS", "2026-06-01T00:00:00Z"),
+                history(invId, "BON_A_PAYER", "2026-06-08T00:00:00Z")));
+
+        PaymentCycleReportDTO dto = reportService.getPaymentCycleReport(from, to);
+
+        assertEquals(1L, dto.invoicesPaidCount());
+        assertEquals(7.0, dto.avgSubmissionToBapDays());   // 01 -> 08
+        assertEquals(4.0, dto.avgBapToPaymentDays());      // 08 -> 12 (processedDate)
+        assertEquals(2.0, dto.avgScheduledToProcessedDays()); // 10 -> 12
+        assertEquals(11.0, dto.avgTotalCycleDays());       // 01 -> 12
+    }
+
+    @Test
+    void paymentCycle_emptyPeriod_returnsZeroAndNulls() {
+        when(paymentRepository.findProcessedBetween(any(), any())).thenReturn(List.of());
+
+        PaymentCycleReportDTO dto = reportService.getPaymentCycleReport(Instant.now(), Instant.now());
+
+        assertEquals(0L, dto.invoicesPaidCount());
+        assertNull(dto.avgSubmissionToBapDays());
+        assertNull(dto.avgBapToPaymentDays());
+        assertNull(dto.avgScheduledToProcessedDays());
+        assertNull(dto.avgTotalCycleDays());
+    }
+
+    @Test
+    void paymentCycle_scheduledPayment_feedsScheduledToProcessed() {
+        Instant from = Instant.parse("2026-01-01T00:00:00Z");
+        Instant to = Instant.parse("2026-12-31T00:00:00Z");
+
+        Invoice invoice = new Invoice();
+        invoice.setId(UUID.randomUUID());
+
+        Payment p = Payment.builder()
+                .invoice(invoice)
+                .status(PaymentStatus.PROCESSED)
+                .paymentDate(Instant.parse("2026-06-10T00:00:00Z"))   // prevu
+                .processedDate(Instant.parse("2026-06-13T00:00:00Z")) // reel (+3j)
+                .build();
+
+        when(paymentRepository.findProcessedBetween(from, to)).thenReturn(List.of(p));
+        when(historyRepository.findRelevantHistoryForProcessingTime()).thenReturn(List.of());
+
+        PaymentCycleReportDTO dto = reportService.getPaymentCycleReport(from, to);
+
+        assertEquals(3.0, dto.avgScheduledToProcessedDays());
     }
 }

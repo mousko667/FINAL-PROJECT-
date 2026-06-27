@@ -7,6 +7,7 @@ import com.oct.invoicesystem.domain.report.dto.BottleneckDTO;
 import com.oct.invoicesystem.domain.report.dto.BudgetVsActualDTO;
 import com.oct.invoicesystem.domain.report.dto.CashFlowProjectionDTO;
 import com.oct.invoicesystem.domain.report.dto.DashboardKpiDTO;
+import com.oct.invoicesystem.domain.report.dto.PaymentCycleReportDTO;
 import com.oct.invoicesystem.domain.report.dto.SupplierPaymentHistoryDTO;
 import com.oct.invoicesystem.domain.report.dto.SupplierPerformanceDTO;
 import com.oct.invoicesystem.domain.report.service.ReportService;
@@ -26,6 +27,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.ByteArrayInputStream;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -131,6 +133,16 @@ public class ReportController {
     public ApiResponse<CashFlowProjectionDTO> getCashFlowProjection(
             @RequestParam(defaultValue = "30") int days) {
         return ApiResponse.success(reportService.getCashFlowProjection(days));
+    }
+
+    @GetMapping("/payment-cycle")
+    @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
+    @Operation(summary = "Get Payment Cycle Analysis",
+            description = "Average step delays (submission -> validation -> BAP -> payment) for paid invoices in a period")
+    public ApiResponse<PaymentCycleReportDTO> getPaymentCycle(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to) {
+        return ApiResponse.success(reportService.getPaymentCycleReport(from, to));
     }
 
     @GetMapping("/supplier/{supplierId}/payments")

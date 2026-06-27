@@ -4,8 +4,11 @@ import com.oct.invoicesystem.domain.payment.model.Payment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -16,4 +19,8 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
     boolean existsByInvoiceId(UUID invoiceId);
     Page<Payment> findByInvoiceDepartmentCode(String departmentCode, Pageable pageable);
     List<Payment> findByInvoiceDepartmentCode(String departmentCode);
+
+    @Query("SELECT p FROM Payment p WHERE p.status = com.oct.invoicesystem.domain.payment.model.PaymentStatus.PROCESSED " +
+           "AND p.processedDate >= :from AND p.processedDate <= :to")
+    List<Payment> findProcessedBetween(@Param("from") Instant from, @Param("to") Instant to);
 }

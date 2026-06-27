@@ -6,6 +6,7 @@ import com.oct.invoicesystem.domain.report.dto.BottleneckDTO;
 import com.oct.invoicesystem.domain.report.dto.BudgetVsActualDTO;
 import com.oct.invoicesystem.domain.report.dto.CashFlowProjectionDTO;
 import com.oct.invoicesystem.domain.report.dto.DashboardKpiDTO;
+import com.oct.invoicesystem.domain.report.dto.PaymentCycleReportDTO;
 import com.oct.invoicesystem.domain.report.dto.SupplierPaymentHistoryDTO;
 import com.oct.invoicesystem.domain.report.dto.SupplierPerformanceDTO;
 import com.oct.invoicesystem.domain.report.dto.VolumeTrendDTO;
@@ -106,4 +107,10 @@ public interface ReportService {
     java.util.List<BudgetVsActualDTO.DepartmentBudgetLine> getBudgetAlerts(double thresholdPercent);
 
     VolumeTrendDTO getVolumeTrend(int months);
+
+    /**
+     * Analyse le cycle de paiement (delais soumission -> validation -> BAP -> paiement) pour les
+     * factures dont le paiement a ete execute (PROCESSED) entre {@code from} et {@code to}.
+     */
+    PaymentCycleReportDTO getPaymentCycleReport(java.time.Instant from, java.time.Instant to);
 }
