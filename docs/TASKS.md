@@ -295,7 +295,7 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 | 1 | Payment tracking dashboard | ✅ | `/payments` : factures à payer + historique. |
 | 2 | Invoice aging analysis | ✅ | `/reports/aging` (AgingReportDTO, tranches par jours de retard) ; affiché dans Rapports. |
 | 3 | Payment due date monitoring | ✅ | KPI « Factures en retard » + dates d'échéance + job de rappel (DeadlineReminderJob). |
-| 4 | Payment status (scheduled, processed, paid, overdue) | 🟠 | Statuts facture (BON_A_PAYER/PAYE) + overdue suivis. Pas de statut intermédiaire « scheduled/processed » distinct côté paiement. |
+| 4 | Payment status (scheduled, processed, paid, overdue) | ✅ | Enum `PaymentStatus` (SCHEDULED/PROCESSED) + `processedDate` (migration V35). Création opt-in `scheduled=true` → paiement planifié ; `POST /payments/{id}/process` finalise (remittance + PAYE + ARCHIVE). Front : case « planifier » + colonne statut + bouton « Marquer exécuté ». **Fait (2026-06-27)**. |
 | 5 | Payment batch processing interface | ✅ | `POST /payments/batch` (best-effort, résultat par ligne) + UI `PaymentsPage` : sélection multi-factures BON_A_PAYER, méthode/date communes, modale de résultat par ligne. **Fait (B3, 2026-06-18)** : `BatchPaymentIntegrationTest`. |
 | 6 | Payment confirmation recording | ✅ | Enregistrement paiement vérifié (VIREMENT, réf, montant → PAYE→ARCHIVE). |
 | 7 | Remittance advice generation | ✅ | Bouton « Avis » → PDF pré-signé MinIO (vérifié runtime). |
@@ -319,7 +319,7 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 | 9 | Cash flow visibility | ✅ | Endpoint cash-flow opérationnel (200) — voir UI #10 (PROB-054 corrigé). |
 | 10 | Reduced payment delays | ✅ | Rappels + SLA. |
 
-**Gaps M7 :** ~~#5 batch payments absent~~ **fait (B3)** ; ~~#8 MOBILE_MONEY bug front/back~~ **corrigé (PROB-055)** ; ~~#10 cash-flow CASSÉ (500)~~ **corrigé (PROB-054)** ; ~~#12 alertes paiement configurables absentes~~ **fait (B4)** ; ~~#11 export paiement dédié manquant~~ **fait (C2, 2026-06-19)**. Plus aucun gap M7 ouvert.
+**Gaps M7 :** ~~#5 batch payments absent~~ **fait (B3)** ; ~~#8 MOBILE_MONEY bug front/back~~ **corrigé (PROB-055)** ; ~~#10 cash-flow CASSÉ (500)~~ **corrigé (PROB-054)** ; ~~#12 alertes paiement configurables absentes~~ **fait (B4)** ; ~~#11 export paiement dédié manquant~~ **fait (C2, 2026-06-19)** ; ~~#4 statut scheduled/processed absent~~ **fait (2026-06-27)**. Plus aucun gap M7 ouvert.
 
 ---
 
@@ -438,7 +438,7 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 | 2 | Invoice processing time reports | ✅ | `averageProcessingTimeDays` (SOUMIS→BON_A_PAYER). |
 | 3 | Supplier performance analytics | ✅ | `/reports/supplier/{id}/performance` **+ section « Performance fournisseur » dans `/reports`** (T2, 2026-06-27) : sélecteur fournisseur → cartes accuracy / taux rejet / délai paiement moyen / factures soumises (rapprochées vs écart). `ReportsSupplierPerformance.test.tsx`. |
 | 4 | Aging analysis reports | ✅ | `/reports/aging`. |
-| 5 | Payment cycle analysis | 🟠 | Cash-flow (corrigé, PROB-054) + processing-time existent ; pas de rapport « cycle de paiement » explicite. |
+| 5 | Payment cycle analysis | ✅ | `GET /reports/payment-cycle?from&to` (DAF + ASSISTANT_COMPTABLE, ADMIN exclu — SoD) : délais moyens par étape (soumission→BAP, BAP→paiement réel, planifié→exécuté, cycle total). **Fait (2026-06-27)**. |
 | 6 | Approval bottleneck identification | ✅ | `/reports/bottlenecks` (200, par approbateur/avgDays). |
 | 7 | Volume and value trends | ✅ | Tendance temporelle volume/valeur par mois (12 mois glissants, `?months`) via `GET /api/v1/reports/volume-trend` (DAF + ASSISTANT_COMPTABLE) ; section ComposedChart (barres montant + ligne nb factures) dans `/reports`. Agrégée sur la date de facture. |
 | 8 | Budget vs actual comparison | ✅ | `/reports/budget-vs-actual` (200) + table budget/réalisé/variance/util. |
@@ -462,7 +462,7 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 | 9 | Scheduled automated reporting | ✅ | ScheduledReportJob. |
 | 10 | Data-driven process optimization | ✅ | Bottlenecks + KPIs. |
 
-**Gaps M11 :** ~~#4/feat#4 cash-flow cassé (500)~~ **corrigé (PROB-054)** ; #5 cycle de paiement non explicite ; #7 pas de tendances temporelles ; ~~#10 pas d'aperçu avant export~~ **corrigé (C4)**.
+**Gaps M11 :** ~~#4/feat#4 cash-flow cassé (500)~~ **corrigé (PROB-054)** ; ~~#5 cycle de paiement non explicite~~ **fait (2026-06-27)** ; #7 pas de tendances temporelles ; ~~#10 pas d'aperçu avant export~~ **corrigé (C4)**.
 
 ---
 
