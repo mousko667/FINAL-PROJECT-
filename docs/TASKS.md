@@ -232,7 +232,7 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 | 7 | Tolerance threshold configuration | ✅ | `/admin/matching-config` : tolérance % + montant + requireGRN (vérifié). |
 | 8 | Manual override with justification | ✅ | Détail facture : formulaire override (motif obligatoire), réservé DAF/ADMIN/AA ; statut → OVERRIDDEN. |
 | 9 | Matching history viewer | 🟠 (hors-scope assumé) | `ThreeWayMatchingResult` append-only ; **dernier** résultat affiché. **R9 (optionnel)** = viewer `GET /matching/{invoiceId}/history` : **écarté pour le PFE, documenté comme choix de périmètre** (données append-only déjà conservées + traçabilité via `audit_logs`/`invoice_status_history`). Voir `docs/FUTURE_IDEAS.md` § R9. |
-| 10 | Unmatched items resolution workflow | 🟠 | Résolution via **override** (déblocage MISMATCH). Pas de workflow de résolution ligne-par-ligne dédié. |
+| 10 | Unmatched items resolution workflow | 🟠 | Résolution via **override** (déblocage MISMATCH). Workflow de résolution **ligne-par-ligne** = **choix de périmètre documenté** (T5, 2026-06-27, `docs/FUTURE_IDEAS.md` § T5/M5 #10) : l'override avec justification fournit déjà un chemin de résolution audité. |
 | 11 | Export matching reports | ✅ | `GET /invoices/{id}/matching/export?format=csv\|excel\|pdf` (via `TabularExportService`) + bouton `ExportMenu` sur le panneau matching de `InvoiceDetailPage`. **Fait (B2, 2026-06-18)** : CSV/Excel vérifiés (`testExportMatchingReport`). |
 | 12 | Integration with procurement & inventory | 🟠 | PO + GRN internes ✅ ; connecteurs procurement/inventory externes = M12 (type connecteur, pas de sync réelle). |
 
@@ -244,12 +244,12 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 | 3 | Discrepancy identification & flagging | ✅ | MISMATCH. |
 | 4 | Configurable tolerance thresholds | ✅ | matching-config. |
 | 5 | Manual override with audit trail | ✅ | Override + audit. |
-| 6 | Unmatched item resolution workflow | 🟠 | Via override. |
+| 6 | Unmatched item resolution workflow | 🟠 | Via override ; résolution ligne-par-ligne = choix de périmètre documenté (T5, `docs/FUTURE_IDEAS.md`). |
 | 7 | Complete matching history | 🟠 | Append-only en base ; pas de viewer complet. |
 | 8 | Reduced overpayment & fraud risk | ✅ | Blocage MISMATCH + override tracé. |
 | 9 | Streamlined validation accuracy | ✅ | Matching auto + seuils. |
 
-**Gaps M5 :** ~~#11 export rapport matching absent~~ **fait (B2)** ; #1/#4 pas de **page dédiée** ni comparaison **ligne-à-ligne** stricte (rapprochement au niveau montant) ; #9/#10 history & résolution = via override, pas de viewer/workflow dédiés.
+**Gaps M5 :** ~~#11 export rapport matching absent~~ **fait (B2)** ; ~~#1/#4 page dédiée + comparaison ligne-à-ligne~~ **faits (M5 #1+#4, 2026-06-21)** ; #9 history viewer = **choix de périmètre documenté (R9)** ; #10 résolution ligne-par-ligne = **choix de périmètre documenté (T5, 2026-06-27)** — override avec justification suffit. Voir `docs/FUTURE_IDEAS.md`.
 
 ---
 

@@ -157,6 +157,42 @@ DAF / ASSISTANT_COMPTABLE, ADMIN/SUPPLIER exclus pour SoD) renvoyant la liste or
 
 ---
 
+## T5 / M5 #10 — Résolution ligne-par-ligne des écarts de rapprochement
+
+**Contexte (vérifié dans le code 2026-06-27) :** le rapprochement 3-voies, sa **page dédiée
+`/matching`** et la **comparaison ligne-à-ligne** (M5 #1+#4, 2026-06-21) sont livrés ;
+l'historique des tentatives (#9) a été écarté comme choix de périmètre (voir entrée **R9**
+ci-dessus). Le **dernier reliquat** est la **résolution** : aujourd'hui le seul chemin de
+déblocage d'un statut `MISMATCH` est l'**override global** —
+`ThreeWayMatchingService.recordOverride(invoiceId, user, reason)` (DAF/ADMIN, raison ≥ 10
+caractères, `ThreeWayMatchingResult` append-only) qui débloque **toute** la facture d'un coup.
+Il n'existe **aucune** résolution au niveau d'une **ligne** d'écart individuelle.
+
+**Évolution écartée pour l'instant (décision 2026-06-27, T5) :** un **workflow de résolution
+ligne-par-ligne** — marquer/justifier chaque ligne en écart indépendamment (accepter/refuser
+une ligne précise avec motif), au lieu du seul override global tout-ou-rien.
+
+**Ce que cela impliquerait :**
+- Back : un modèle de résolution **par ligne** (statut + justification + auteur par ligne en
+  écart), distinct de l'override global ; endpoint de résolution ciblant une ligne ; règle de
+  recalcul du statut facture (MISMATCH → débloqué seulement quand **toutes** les lignes en
+  écart sont résolues). `ThreeWayMatchingResult` restant append-only.
+- Front : sur la page `/matching`, action de résolution **par ligne** dans le tableau de
+  comparaison (réutiliser `MatchingBadge`), avec saisie de motif et trace de l'auteur.
+- Rôles : DAF / ADMIN (mêmes droits que l'override actuel) ; SoD inchangé.
+
+**Pourquoi écarté pour l'instant :** l'override global **avec justification** fournit déjà un
+chemin de résolution **audité** et suffisant pour le périmètre PFE ; la comparaison
+ligne-à-ligne (déjà livrée) rend l'écart **visible** ligne par ligne, ce qui couvre le besoin
+d'analyse. Une résolution **transactionnelle par ligne** ajoute un sous-workflow (statuts
+partiels, recalcul, cas limites) pour un gain marginal → YAGNI.
+
+**Chemin de migration :** l'override global actuel reste valable et devient le cas « résoudre
+toutes les lignes d'un coup » ; un futur modèle par ligne s'ajoute sans rompre l'append-only de
+`ThreeWayMatchingResult` ni l'API d'override existante.
+
+---
+
 ## M11 #7 — Tendances temporelles volume/valeur : extensions écartées
 
 **Contexte :** M11 #7 / feature #6 (2026-06-21) implémente une tendance temporelle
