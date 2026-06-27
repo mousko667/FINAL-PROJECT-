@@ -46,6 +46,13 @@ Requirements. They supersede the old "Known Gaps — Must Be Fixed" section form
 > instead of UI, responsive-web instead of native mobile, framework instead of live external sync).
 > Those are intentional scope decisions or low-urgency polish, not blocking gaps.
 
+> **Suivi non bloquant (2026-06-27, issus de la revue finale M7 #4 / M11 #5) :**
+> (a) Une facture avec un paiement **SCHEDULED** reste listée en `BON_A_PAYER` ; elle peut donc
+> être re-sélectionnée dans un lot batch où sa ligne échouera proprement (best-effort,
+> "Payment already recorded") — pas de corruption, mais échec silencieux peu intuitif :
+> filtrer/marquer ces factures côté liste serait un plus UX. (b) Ajouter un `@DataJpaTest`
+> dédié à `PaymentRepository.findProcessedBetween` (actuellement couvert uniquement par mocks).
+
 ---
 
 ## B. OUT OF SCOPE (assumed) — Module 12 Integration
