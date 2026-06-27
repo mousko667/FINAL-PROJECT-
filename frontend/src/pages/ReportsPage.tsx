@@ -8,6 +8,7 @@ import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import {
   FileSpreadsheet, FileCheck, TrendingUp, AlertTriangle, Clock,
   XCircle, Loader2, Download, BarChart3, ChevronDown, ChevronUp,
+  Target, ThumbsDown, CalendarClock, FileStack,
 } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -46,6 +47,7 @@ export default function ReportsPage() {
   const { t } = useTranslation()
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
+  const [perfSupplierId, setPerfSupplierId] = useState('')
 
   const { data: kpi, isLoading: kpiLoading } = useQuery({
     queryKey: ['kpis'],
@@ -89,6 +91,24 @@ export default function ReportsPage() {
       } }>('/reports/budget-vs-actual')
       return data.data
     },
+    retry: false,
+  })
+
+  const { data: perfSuppliers } = useQuery({
+    queryKey: ['report-active-suppliers'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<{ data: { content: Array<{ id: string; companyName: string }> } }>(
+        '/suppliers', { params: { status: 'ACTIVE', size: 200 } }
+      )
+      return data.data?.content ?? []
+    },
+    retry: false,
+  })
+
+  const { data: supplierPerf, isLoading: perfLoading } = useQuery({
+    queryKey: ['supplier-performance', perfSupplierId],
+    queryFn: () => reportService.getSupplierPerformance(perfSupplierId),
+    enabled: !!perfSupplierId,
     retry: false,
   })
 
@@ -248,6 +268,59 @@ export default function ReportsPage() {
                 ))}
               </tbody>
             </table>
+          )}
+        </Section>
+
+        {/* Supplier performance */}
+        <Section title={t('reports.supplierPerformance.title')} defaultOpen={false}>
+          <p className="text-sm text-gray-500 mb-4">{t('reports.supplierPerformance.desc')}</p>
+          <div className="mb-4 max-w-md">
+            <label htmlFor="perf-supplier" className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+              {t('reports.supplierPerformance.selectLabel')}
+            </label>
+            <select
+              id="perf-supplier"
+              value={perfSupplierId}
+              onChange={e => setPerfSupplierId(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            >
+              <option value="">{t('reports.supplierPerformance.selectPlaceholder')}</option>
+              {(perfSuppliers ?? []).map(s => (
+                <option key={s.id} value={s.id}>{s.companyName}</option>
+              ))}
+            </select>
+          </div>
+
+          {!perfSupplierId ? (
+            <p className="text-sm text-center text-gray-500 py-4">{t('reports.supplierPerformance.prompt')}</p>
+          ) : perfLoading ? (
+            <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+          ) : !supplierPerf ? (
+            <p className="text-sm text-center text-gray-500 py-4">{t('reports.noData')}</p>
+          ) : (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <KpiCard
+                title={t('reports.supplierPerformance.accuracy')}
+                value={supplierPerf.invoiceAccuracyRate != null ? `${(supplierPerf.invoiceAccuracyRate * 100).toFixed(1)}%` : '—'}
+                icon={<Target className="w-5 h-5 text-green-600" />} color="bg-green-50"
+              />
+              <KpiCard
+                title={t('reports.supplierPerformance.rejection')}
+                value={supplierPerf.rejectionRate != null ? `${(supplierPerf.rejectionRate * 100).toFixed(1)}%` : '—'}
+                icon={<ThumbsDown className="w-5 h-5 text-orange-600" />} color="bg-orange-50"
+              />
+              <KpiCard
+                title={t('reports.supplierPerformance.paymentDays')}
+                value={supplierPerf.averagePaymentDays != null ? `${supplierPerf.averagePaymentDays.toFixed(1)} ${t('dashboard.days')}` : '—'}
+                icon={<CalendarClock className="w-5 h-5 text-blue-600" />} color="bg-blue-50"
+              />
+              <KpiCard
+                title={t('reports.supplierPerformance.submitted')}
+                value={supplierPerf.totalInvoicesSubmitted}
+                sub={t('reports.supplierPerformance.matchedSub', { matched: supplierPerf.matchedInvoices, mismatched: supplierPerf.mismatchedInvoices })}
+                icon={<FileStack className="w-5 h-5 text-indigo-600" />} color="bg-indigo-50"
+              />
+            </div>
           )}
         </Section>
 

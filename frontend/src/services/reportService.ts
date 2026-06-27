@@ -10,9 +10,27 @@ export interface DashboardKpi {
   volumeBySupplier: Record<string, number>
 }
 
+export interface SupplierPerformance {
+  supplierId: string
+  supplierName: string
+  invoiceAccuracyRate: number | null
+  rejectionRate: number | null
+  averagePaymentDays: number | null
+  totalInvoicesSubmitted: number
+  matchedInvoices: number
+  mismatchedInvoices: number
+}
+
 export const reportService = {
   getKpis: async (): Promise<DashboardKpi> => {
     const { data } = await apiClient.get<ApiResponse<DashboardKpi>>('/reports/kpis')
+    return data.data
+  },
+
+  getSupplierPerformance: async (supplierId: string): Promise<SupplierPerformance> => {
+    const { data } = await apiClient.get<ApiResponse<SupplierPerformance>>(
+      `/reports/supplier/${supplierId}/performance`
+    )
     return data.data
   },
 

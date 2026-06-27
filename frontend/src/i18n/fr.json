@@ -416,6 +416,18 @@
     "bottleneckDesc": "Étapes d'approbation dépassant le SLA de 3 jours.",
     "cashFlowTitle": "Projection de trésorerie",
     "cashFlowDesc": "Obligations de paiement prévues pour les 30 prochains jours.",
+    "supplierPerformance": {
+      "title": "Performance fournisseur",
+      "desc": "Précision, taux de rejet et délai de paiement moyen pour un fournisseur sélectionné.",
+      "selectLabel": "Fournisseur",
+      "selectPlaceholder": "— Sélectionner un fournisseur —",
+      "prompt": "Sélectionnez un fournisseur pour afficher ses indicateurs de performance.",
+      "accuracy": "Précision des factures",
+      "rejection": "Taux de rejet",
+      "paymentDays": "Délai de paiement moyen",
+      "submitted": "Factures soumises",
+      "matchedSub": "{{matched}} rapprochées · {{mismatched}} en écart"
+    },
     "trends": {
       "title": "Tendances volume / valeur",
       "desc": "Nombre de factures et montant total par mois sur les 12 derniers mois (par date de facture).",

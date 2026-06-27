@@ -416,6 +416,18 @@
     "bottleneckDesc": "Approval steps exceeding the 3-day SLA.",
     "cashFlowTitle": "Cash Flow Projection",
     "cashFlowDesc": "Projected payment obligations for the next 30 days.",
+    "supplierPerformance": {
+      "title": "Supplier Performance",
+      "desc": "Accuracy, rejection rate and average payment time for a selected supplier.",
+      "selectLabel": "Supplier",
+      "selectPlaceholder": "— Select a supplier —",
+      "prompt": "Select a supplier to view their performance metrics.",
+      "accuracy": "Invoice accuracy",
+      "rejection": "Rejection rate",
+      "paymentDays": "Avg. payment time",
+      "submitted": "Invoices submitted",
+      "matchedSub": "{{matched}} matched · {{mismatched}} mismatched"
+    },
     "trends": {
       "title": "Volume / value trends",
       "desc": "Invoice count and total amount per month over the last 12 months (by invoice date).",

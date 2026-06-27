@@ -436,7 +436,7 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 |---|----------------|---------|--------|
 | 1 | Analytics dashboard with KPI cards | ✅ | `/reports` : KPI cards (total, retard, temps moyen, taux rejet). |
 | 2 | Invoice processing time reports | ✅ | `averageProcessingTimeDays` (SOUMIS→BON_A_PAYER). |
-| 3 | Supplier performance analytics | ✅ | `/reports/supplier/{id}/performance`. |
+| 3 | Supplier performance analytics | ✅ | `/reports/supplier/{id}/performance` **+ section « Performance fournisseur » dans `/reports`** (T2, 2026-06-27) : sélecteur fournisseur → cartes accuracy / taux rejet / délai paiement moyen / factures soumises (rapprochées vs écart). `ReportsSupplierPerformance.test.tsx`. |
 | 4 | Aging analysis reports | ✅ | `/reports/aging`. |
 | 5 | Payment cycle analysis | 🟠 | Cash-flow (corrigé, PROB-054) + processing-time existent ; pas de rapport « cycle de paiement » explicite. |
 | 6 | Approval bottleneck identification | ✅ | `/reports/bottlenecks` (200, par approbateur/avgDays). |
