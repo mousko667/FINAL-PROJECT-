@@ -4,9 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oct.invoicesystem.domain.department.model.Department;
 import com.oct.invoicesystem.domain.invoice.dto.InvoiceCreateRequest;
 import com.oct.invoicesystem.domain.invoice.dto.InvoiceUpdateRequest;
+import com.oct.invoicesystem.domain.invoice.dto.DuplicateCheckDTO;
 import com.oct.invoicesystem.domain.invoice.model.Invoice;
 import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
 import com.oct.invoicesystem.domain.invoice.service.InvoiceService;
+import com.oct.invoicesystem.domain.supplier.model.Supplier;
 import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.domain.user.repository.UserRepository;
 import com.oct.invoicesystem.shared.response.PagedResponse;
@@ -26,10 +28,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.mockito.ArgumentCaptor;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -151,6 +158,65 @@ class InvoiceControllerTest {
         mockMvc.perform(delete("/api/v1/invoices/{id}", UUID.randomUUID()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @WithMockUser(roles = "ASSISTANT_COMPTABLE", username = "assistant")
+    void duplicateCheck_AsAssistant_UsesSuppliedId() throws Exception {
+        User user = new User();
+        user.setId(UUID.randomUUID());
+        user.setUsername("assistant");
+        user.setPassword("x");
+        user.setActive(true);
+        when(userRepository.findByUsername("assistant")).thenReturn(Optional.of(user));
+        UUID supplierId = UUID.randomUUID();
+        when(invoiceService.checkDuplicate(eq(supplierId), anyString()))
+                .thenReturn(new DuplicateCheckDTO(true, 2L));
+
+        mockMvc.perform(get("/api/v1/invoices/duplicate-check")
+                        .param("supplierId", supplierId.toString())
+                        .param("description", "Maintenance Q1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.duplicate").value(true))
+                .andExpect(jsonPath("$.data.count").value(2));
+    }
+
+    @Test
+    @WithMockUser(roles = "SUPPLIER", username = "supplier")
+    void duplicateCheck_AsSupplier_IgnoresSuppliedIdAndUsesOwn() throws Exception {
+        // IDOR guard: a supplier passing someone else's supplierId must be checked against
+        // their OWN supplier id, never the query parameter.
+        UUID ownSupplierId = UUID.randomUUID();
+        UUID otherSupplierId = UUID.randomUUID();
+        Supplier ownSupplier = Supplier.builder().id(ownSupplierId).build();
+        User user = new User();
+        user.setId(UUID.randomUUID());
+        user.setUsername("supplier");
+        user.setPassword("x");
+        user.setActive(true);
+        user.setSupplier(ownSupplier);
+        when(userRepository.findByUsername("supplier")).thenReturn(Optional.of(user));
+        when(invoiceService.checkDuplicate(any(), anyString()))
+                .thenReturn(new DuplicateCheckDTO(false, 0L));
+
+        mockMvc.perform(get("/api/v1/invoices/duplicate-check")
+                        .param("supplierId", otherSupplierId.toString())
+                        .param("description", "Probe"))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<UUID> idCaptor = ArgumentCaptor.forClass(UUID.class);
+        verify(invoiceService).checkDuplicate(idCaptor.capture(), anyString());
+        assertEquals(ownSupplierId, idCaptor.getValue());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void duplicateCheck_AsAdmin_Returns403() throws Exception {
+        // ADMIN is not an invoice-entry role and must not reach this endpoint.
+        mockMvc.perform(get("/api/v1/invoices/duplicate-check")
+                        .param("supplierId", UUID.randomUUID().toString())
+                        .param("description", "x"))
+                .andExpect(status().isForbidden());
     }
 
     private Invoice sampleInvoice() {

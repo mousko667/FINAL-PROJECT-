@@ -123,11 +123,19 @@ public class InvoiceController {
     @PreAuthorize("hasAnyRole('ASSISTANT_COMPTABLE', 'SUPPLIER')")
     @Operation(summary = "Advisory duplicate pre-check",
             description = "Non-blocking check used while entering an invoice: returns whether a similar "
-                    + "invoice (same supplier + description, last 365 days) already exists, so the UI can warn the user")
+                    + "invoice (same supplier + description, last 365 days) already exists, so the UI can warn the user. "
+                    + "Suppliers may only check their own supplier id; the query parameter is ignored for them.")
     public ResponseEntity<ApiResponse<com.oct.invoicesystem.domain.invoice.dto.DuplicateCheckDTO>> checkDuplicate(
             @RequestParam UUID supplierId,
-            @RequestParam String description) {
-        return ResponseEntity.ok(ApiResponse.success(invoiceService.checkDuplicate(supplierId, description)));
+            @RequestParam String description,
+            Authentication authentication) {
+        // Prevent a supplier from probing another supplier's invoices (IDOR): force their own id.
+        UUID effectiveSupplierId = supplierId;
+        User currentUser = securityHelper.currentUser(authentication);
+        if (currentUser.getSupplier() != null) {
+            effectiveSupplierId = currentUser.getSupplier().getId();
+        }
+        return ResponseEntity.ok(ApiResponse.success(invoiceService.checkDuplicate(effectiveSupplierId, description)));
     }
 
     @GetMapping("/pending-validation")
