@@ -73,28 +73,12 @@ d'historique se branche sans changement de modèle.
 
 ---
 
-## M2/M6 #3 — Widget « aging analysis » (balance âgée) sur le dashboard finance
+## M2/M6 #3 — Widget « aging analysis » sur le dashboard finance — ✅ LIVRÉ (caduc)
 
-**Contexte :** la balance âgée complète (table par tranches d'ancienneté) **existe déjà**
-côté back (`AgingReportDTO`) et est exposée dans Rapports/Paiements. Le dashboard de
-l'Assistant Comptable (finance) n'affiche aujourd'hui qu'un KPI « Factures en retard », pas
-la table d'aging par tranches. Item 🟠 dans `docs/TASKS.md §C` (M2/M6 UI #3) ; voir aussi gap **G5**.
-
-**Évolution écartée pour l'instant (à reconsidérer si le besoin se confirme) :** remonter un
-**widget aging** (table/graphe par tranches : 0-30 / 31-60 / 61-90 / 90+ jours) directement
-sur le dashboard finance, en plus de sa présence dans Rapports/Paiements.
-
-**Ce que cela impliquerait :**
-- Front uniquement (ou quasi) : la donnée `AgingReportDTO` existe déjà ; il s'agit de la
-  consommer dans un composant widget du dashboard AA (`DashboardPanels.tsx` / `DashboardPage.tsx`).
-- Pas de migration ni de nouveau endpoint si l'endpoint aging existant suffit.
-
-**Pourquoi écarté pour l'instant :** l'information d'aging est **déjà accessible** (Rapports +
-KPI « Factures en retard » sur le dashboard) ; en faire un widget supplémentaire est un gain
-surtout **cosmétique/ergonomique**, sans nouvelle capacité métier → faible priorité.
-
-**Chemin de migration :** réutiliser directement `AgingReportDTO` et son endpoint ; aucun
-changement de modèle requis.
+~~Initialement écarté comme cosmétique~~ → **finalement livré (R3, 2026-06-26)** : le widget
+`AgingBucketsWidget` (recharts, par tranches) est monté sur le dashboard finance pour DAF + AA
+(`DashboardPage.tsx`, test `AgingBucketsWidget.test.tsx`). Voir gap **G5** et M2 UI #3 dans
+`docs/TASKS.md`. Entrée conservée pour traçabilité ; plus rien à faire.
 
 ---
 

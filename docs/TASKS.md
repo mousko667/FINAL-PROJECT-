@@ -123,7 +123,7 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 |---|----------------|---------|--------|
 | 1 | Role-based dashboard views | ✅ | 4 vues distinctes vérifiées : supplier, AA (finance), validateur (manager), admin. |
 | 2 | Supplier dashboard (submitted, payment status, pending actions) | ✅ | `/supplier/dashboard` : KPIs Soumises/En attente/Validées/Payées/Rejetées + « Actions requises ». |
-| 3 | Finance staff dashboard (pending approvals, processing queue, aging) | 🟠 | AA : KPIs + « File de traitement » + KPI « Factures en retard ». **Aging complet** (table par tranches) vit dans Rapports/Paiements (M7/M11), pas en widget du dashboard. |
+| 3 | Finance staff dashboard (pending approvals, processing queue, aging) | ✅ | AA : KPIs + « File de traitement » + KPI « Factures en retard » + **widget aging par tranches** (`AgingBucketsWidget`, monté `DashboardPage.tsx` pour DAF + AA, test `AgingBucketsWidget.test.tsx`). |
 | 4 | Manager dashboard (approval requests, metrics, budget alerts) | ✅ | dg : « Factures en attente de votre décision » + file d'approbation + métriques ; **BudgetAlerts** (composant DAF/AA). |
 | 5 | Summary cards (received, pending, approved, paid) | ✅ | Cartes KPI présentes sur chaque dashboard. |
 | 6 | Recent invoice activity feed | ✅ | « File de traitement » / « Actions requises » + (M10) activité récente. |
@@ -143,7 +143,7 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 | 5 | Notification integration | ✅ | Centre de notifications + WS temps réel. |
 | 6 | Visual representation of metrics | ✅ | Graphiques « Factures par statut » + « Top fournisseurs ». |
 
-**Gap M2 :** UI #3 — l'aging analysis n'est pas un widget du dashboard finance (présent ailleurs : M7/M11).
+**Gaps M2 :** *(aucun)* — UI #3 résolu : widget aging par tranches (`AgingBucketsWidget`) livré sur le dashboard finance (R3, 2026-06-26 ; voir gap G5).
 
 ---
 
@@ -583,7 +583,7 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 | Module | ✅ Conforme | 🟠 Partiel | ❌ Absent | 🔴 Cassé | Note globale |
 |--------|:---------:|:---------:|:--------:|:-------:|--------------|
 | M1 Authentification | 19 | 0 | 0 | 0 | Complet (B7 : employee ID + approval limit éditables) |
-| M2 Dashboard | 16 | 1 | 0 | 0 | Quasi-complet |
+| M2 Dashboard | 17 | 0 | 0 | 0 | Complet (widget aging sur dashboard finance, R3) |
 | M3 Réception | 19 | 2 | 0 | 0 | Très bon (XML + bulk multi-factures faits B8) |
 | M4 Validation Workflow | 19 | 2 | 0 | 0 | Bon (checklist B1 + motifs de rejet prédéfinis C1) |
 | M5 Three-Way Matching | 16 | 5 | 0 | 0 | Très bon (page dédiée /matching + comparaison ligne-à-ligne M5 #1/#4, 2026-06-21 ; export fait B2) |
