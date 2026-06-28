@@ -1808,3 +1808,11 @@ origin/main blocked → route via origin/backup/phase11-2026-06-13. ASK the user
 **Branch:** chore/sanitize-docs-migrations
 **Last commit:** (pending R9 doc commit)
 **Notes:** R9 = optionnel/defendable par design. Decision : ne PAS implementer pour le PFE (ThreeWayMatchingResult append-only → donnees deja conservees, traçabilite via audit_logs/invoice_status_history ; page /matching couvre le besoin). Documente dans docs/FUTURE_IDEAS.md § R9 (+ entree M5 mise a jour : #1/#4 desormais FAITS), TASKS.md M5 #9, PROJECT_REPORT.md table R9. LOT FINALISATION R2-R9 : R2✅ R6✅ R4✅ R3✅ R5✅ R7✅ R8✅ R9(doc)✅. Aucun push effectue (choix user : push/PR en fin de lot). Backend + frontend dev tournent encore en arriere-plan.
+
+## Session Checkpoint
+**Date:** 2026-06-28
+**Last completed work:** M11 #7 — correction documentaire : tendances temporelles deja livrees, recap TASKS.md aligne
+**Next work:** M8 #10 — cadrage assistant d'onboarding fournisseur multi-etapes
+**Branch:** chore/sanitize-docs-migrations
+**Last commit:** cb27f7f
+**Notes:** Verification code reelle : `GET /api/v1/reports/volume-trend`, `VolumeTrendDTO`, `ReportServiceImpl.getVolumeTrend`, `VolumeTrendSection` et tests backend/front existent deja. Aucune implementation necessaire ; seul `docs/TASKS.md` etait stale sur la ligne `Gaps M11`. Worktree contenait deja des changements non lies (`.gitignore`, spec/plan M4, docs audit non suivies) ; ne pas les inclure dans le commit M11.

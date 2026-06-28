@@ -469,7 +469,7 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 | 9 | Scheduled automated reporting | ✅ | ScheduledReportJob. |
 | 10 | Data-driven process optimization | ✅ | Bottlenecks + KPIs. |
 
-**Gaps M11 :** ~~#4/feat#4 cash-flow cassé (500)~~ **corrigé (PROB-054)** ; ~~#5 cycle de paiement non explicite~~ **fait (2026-06-27)** ; #7 pas de tendances temporelles ; ~~#10 pas d'aperçu avant export~~ **corrigé (C4)**.
+**Gaps M11 :** ~~#4/feat#4 cash-flow cassé (500)~~ **corrigé (PROB-054)** ; ~~#5 cycle de paiement non explicite~~ **fait (2026-06-27)** ; ~~#7 pas de tendances temporelles~~ **déjà fait (vérifié 2026-06-28)** : `GET /api/v1/reports/volume-trend`, `VolumeTrendDTO`, `ReportServiceImpl.getVolumeTrend` et `VolumeTrendSection` sont présents ; ~~#10 pas d'aperçu avant export~~ **corrigé (C4)**. Aucun gap M11 restant.
 
 ---
 
@@ -599,18 +599,18 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 | M8 Supplier | 20 | 1 | 0 | 0 | Bon (catégorisation faite B5 ; onboarding sans assistant dédié) |
 | M9 Archiving | 15 | 2 | 0 | 0 | Bon (rapport conformité archives M14 #11 ; purge UI faite M9#8 ; arborescence dossiers partielle) |
 | M10 Audit | 21 | 1 | 0 | 0 | Très bon (rapport de synthèse agrégé M10 #12) |
-| M11 Reporting | 20 | 3 | 0 | 0 | Bon (cash-flow corrigé PROB-054 ; tendances temporelles M11 #7) |
+| M11 Reporting | 23 | 0 | 0 | 0 | Complet (cash-flow corrigé PROB-054 ; cycle de paiement et tendances temporelles livrés) |
 | M12 Integration | 7 | 9 | 0 | 0 | **Cadre + planif de synchro (B6)** ; pas de sync live externe |
 | M13 User/Access | 22 | 0 | 0 | 0 | Complet (M13 #3 UI dédiée dept access, 2026-06-21) |
 | M14 Security/Compliance | 18 | 3 | 0 | 0 | Très bon |
 
-> Les chiffres comptent chaque puce (UI element OU feature) du document de requirements. Total ≈ **262 items** : ~**236 ✅**, ~**40 🟠**, ~**8 ❌**, ~**0 🔴** (A1 cash-flow + A2 Mobile Money corrigés — PROB-054/055 ; motifs de rejet prédéfinis M4 #8 → C1 ; M13 #3 UI dept access → 2026-06-21 ; M5 #1 page dédiée + M5 #4 comparaison ligne-à-ligne → 2026-06-21).
+> Les chiffres comptent chaque puce (UI element OU feature) du document de requirements. Total ≈ **262 items** : ~**239 ✅**, ~**37 🟠**, ~**8 ❌**, ~**0 🔴** (A1 cash-flow + A2 Mobile Money corrigés — PROB-054/055 ; motifs de rejet prédéfinis M4 #8 → C1 ; M13 #3 UI dept access → 2026-06-21 ; M5 #1 page dédiée + M5 #4 comparaison ligne-à-ligne → 2026-06-21 ; M11 #7 tendances temporelles vérifié 2026-06-28).
 
 ## RÉPONSE À « est-ce 100 % implémenté ? »
 **Non.** Le système couvre **~85 % des items à 100 %**, mais il reste :
 - **0 bug runtime (🔴)** : les 2 bugs A1/A2 sont corrigés (cash-flow 500 → PROB-054 ; Mobile Money front/back → PROB-055, 2026-06-18).
 - **éléments absents (❌) restants** : *(aucun)*. *(Faits : checklist templates M4→B1, export rapport matching M5→B2, catégorisation fournisseur M8→B5, batch payments M7→B3, alertes paiement configurables M7→B4, sync schedule connecteurs M12→B6.)*
-- **~49 partiels (🟠)** : surtout des éléments présents mais incomplets (config par propriété au lieu d'UI, web responsive au lieu d'app mobile dédiée, framework au lieu de sync live, etc.).
+- **~37 partiels (🟠)** : surtout des éléments présents mais incomplets (config par propriété au lieu d'UI, web responsive au lieu d'app mobile dédiée, framework au lieu de sync live, etc.).
 
 ## Bugs réels découverts pendant cette campagne (à corriger)
 1. **✅ Cash-flow projection** (`/reports/cash-flow`) : ~~500 `SQLGrammarException`~~ **CORRIGÉ (PROB-054, 2026-06-18)** — `CAST` des paramètres date/status/dept nullables dans `findAllWithFilters` ; 200 vérifié sur vrai PostgreSQL (`CashFlowProjectionIntegrationTest`). Impactait M7 #10 et M11.
