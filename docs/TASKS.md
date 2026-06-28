@@ -344,7 +344,7 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 | 7 | Supplier communication log | ✅ | Journal de communication (NOTE/EMAIL/PHONE/MEETING) — vérifié. |
 | 8 | Supplier categorization & segmentation | ✅ | Enum `SupplierCategory` (GOODS/SERVICES/WORKS/CONSULTING) + colonne `category` (V57) sur `Supplier`. Saisie au formulaire (création + édition), filtre déroulant + colonne dans l'annuaire, colonne dans l'export. **Fait (B5, 2026-06-18)** : `shouldPersistAndFilterByCategory`. |
 | 9 | Document repository per supplier | ✅ | Onglet Documents + upload par type. |
-| 10 | Supplier onboarding workflow | 🟠 | Cycle de statut PENDING_VERIFICATION→ACTIVE→SUSPENDED + onboardedBy/At. Pas d'assistant d'onboarding multi-étapes dédié. |
+| 10 | Supplier onboarding workflow | ✅ | Cycle de statut PENDING_VERIFICATION→ACTIVE→SUSPENDED + onboardedBy/At. **Assistant d'onboarding multi-étapes livré (M8 #10, 2026-06-28)** : wizard admin 3 étapes (`/admin/suppliers/new` → `SupplierOnboardingPage`) + garde backend `ensureOnboardingComplete` (TAX_CERTIFICATE + CONTRACT requis avant activation) + i18n FR/EN + 3 tests service (happy, dossier incomplet, not found) + 3 tests intégration (activation 200, incomplète 400, 403 rôle interdit) + 2 tests front (navigation stepper, retour étape). |
 | 11 | Supplier self-service portal access | ✅ | Portail fournisseur complet (M3). |
 | 12 | Export supplier reports | ✅ | `/suppliers/export` CSV/Excel/PDF (vérifié bouton Exporter). |
 
@@ -357,11 +357,11 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 | 4 | Supplier performance monitoring | ✅ | Métriques performance. |
 | 5 | Communication logging | ✅ | Journal communications. |
 | 6 | Self-service portal | ✅ | Portail. |
-| 7 | Onboarding workflow | 🟠 | Statut-based (voir UI #10). |
+| 7 | Onboarding workflow | ✅ | Wizard multi-étapes (voir UI #10 — M8 #10, 2026-06-28). |
 | 8 | Centralized supplier database | ✅ | Annuaire. |
 | 9 | Enhanced supplier relationship mgmt | ✅ | Contrats + comms + performance. |
 
-**Gaps M8 :** ~~#8 catégorisation/segmentation absente~~ **fait (B5)** ; #10 onboarding = cycle de statut (pas d'assistant dédié).
+**Gaps M8 :** ~~#8 catégorisation/segmentation absente~~ **fait (B5)** ; ~~#10 onboarding = cycle de statut (pas d'assistant dédié)~~ **fait (M8 #10, 2026-06-28)** : wizard 3 étapes + garde backend + tests. **M8 désormais sans gap.**
 
 ---
 

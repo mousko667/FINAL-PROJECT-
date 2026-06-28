@@ -1811,8 +1811,8 @@ origin/main blocked → route via origin/backup/phase11-2026-06-13. ASK the user
 
 ## Session Checkpoint
 **Date:** 2026-06-28
-**Last completed work:** M11 #7 — correction documentaire : tendances temporelles deja livrees, recap TASKS.md aligne
-**Next work:** M8 #10 — cadrage assistant d'onboarding fournisseur multi-etapes
+**Last completed work:** M8 #10 — Assistant d'onboarding fournisseur multi-etapes
+**Next work:** M9 #1 — Arborescence de dossiers dans /archive (a trancher avec l'utilisateur : dans le perimetre PFE ou → FUTURE_IDEAS ?)
 **Branch:** chore/sanitize-docs-migrations
-**Last commit:** cb27f7f
-**Notes:** Verification code reelle : `GET /api/v1/reports/volume-trend`, `VolumeTrendDTO`, `ReportServiceImpl.getVolumeTrend`, `VolumeTrendSection` et tests backend/front existent deja. Aucune implementation necessaire ; seul `docs/TASKS.md` etait stale sur la ligne `Gaps M11`. Worktree contenait deja des changements non lies (`.gitignore`, spec/plan M4, docs audit non suivies) ; ne pas les inclure dans le commit M11.
+**Last commit:** (pending commit feat(supplier): M8 #10)
+**Notes:** Codex avait deja implemente l'essentiel avant la limite d'usage : SupplierOnboardingPage.tsx (wizard 3 etapes), route /admin/suppliers/new, SupplierServiceImpl.ensureOnboardingComplete, SupplierServiceTest (3 tests unitaires), SupplierIntegrationTest (3 tests backend), SupplierOnboardingPage.test.tsx (2 tests front), cles i18n FR/EN (messages_fr.properties l.277 + fr.json + en.json). Manquait uniquement : TASKS.md (M8 #10 🟠→✅) + MEMORY.md. Gate vert : vitest 79/79 passes, tsc 0 erreur. NB : tests backend (SpringBootTest) necessitent la DB PostgreSQL (5433) — non executes en environnement sans DB active. M11 #7 (volume-trend) verifie comme deja fait et TASKS.md mis a jour precedemment (commit 7db76cf). Reste un seul candidat actionnable : M9 #1 arborescence /archive — decision de perimetre PFE requise.

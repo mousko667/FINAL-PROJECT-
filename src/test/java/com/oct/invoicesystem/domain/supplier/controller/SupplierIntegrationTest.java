@@ -2,8 +2,13 @@ package com.oct.invoicesystem.domain.supplier.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oct.invoicesystem.domain.supplier.dto.SupplierCreateRequest;
+import com.oct.invoicesystem.domain.supplier.model.SupplierDocument;
+import com.oct.invoicesystem.domain.supplier.model.SupplierDocumentType;
 import com.oct.invoicesystem.domain.supplier.model.SupplierStatus;
+import com.oct.invoicesystem.domain.supplier.repository.SupplierDocumentRepository;
 import com.oct.invoicesystem.domain.supplier.repository.SupplierRepository;
+import com.oct.invoicesystem.domain.user.model.User;
+import com.oct.invoicesystem.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -31,6 +36,12 @@ class SupplierIntegrationTest {
 
     @Autowired
     private SupplierRepository supplierRepository;
+
+    @Autowired
+    private SupplierDocumentRepository supplierDocumentRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Test
     @WithMockUser(roles = "ADMIN")
@@ -73,7 +84,88 @@ class SupplierIntegrationTest {
                 .andExpect(jsonPath("$.data.accuracyRate").exists());
                 
         // Cleanup
+        supplierDocumentRepository.findBySupplierId(java.util.UUID.fromString(id))
+                .forEach(supplierDocumentRepository::delete);
         supplierRepository.deleteById(java.util.UUID.fromString(id));
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    void shouldActivateSupplierAfterOnboardingDocumentsArePresent() throws Exception {
+        SupplierCreateRequest createReq = new SupplierCreateRequest(
+                "Onboarded Integration",
+                "TAX-INT-ACT-001",
+                "onboarded.int@example.com",
+                "+123456780",
+                "BANK-ACT-001",
+                "1 Activation St"
+        );
+
+        String createResponse = mockMvc.perform(post("/api/v1/suppliers")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createReq)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.status").value(SupplierStatus.PENDING_VERIFICATION.name()))
+                .andReturn().getResponse().getContentAsString();
+
+        java.util.UUID supplierId = java.util.UUID.fromString(objectMapper.readTree(createResponse).get("data").get("id").asText());
+        User admin = userRepository.findByUsername("admin").orElseThrow();
+
+        supplierDocumentRepository.save(SupplierDocument.builder()
+                .supplier(supplierRepository.findByIdAndDeletedAtIsNull(supplierId).orElseThrow())
+                .documentType(SupplierDocumentType.TAX_CERTIFICATE)
+                .originalFilename("tax.pdf")
+                .minioObjectKey("supplier-docs/" + supplierId + "/tax.pdf")
+                .fileSizeBytes(123L)
+                .checksumSha256("a".repeat(64))
+                .uploadedBy(admin)
+                .build());
+        supplierDocumentRepository.save(SupplierDocument.builder()
+                .supplier(supplierRepository.findByIdAndDeletedAtIsNull(supplierId).orElseThrow())
+                .documentType(SupplierDocumentType.CONTRACT)
+                .originalFilename("contract.pdf")
+                .minioObjectKey("supplier-docs/" + supplierId + "/contract.pdf")
+                .fileSizeBytes(456L)
+                .checksumSha256("b".repeat(64))
+                .uploadedBy(admin)
+                .build());
+
+        mockMvc.perform(post("/api/v1/suppliers/{id}/activate", supplierId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+
+        mockMvc.perform(get("/api/v1/suppliers/{id}", supplierId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value(SupplierStatus.ACTIVE.name()));
+
+        supplierDocumentRepository.findBySupplierId(supplierId).forEach(supplierDocumentRepository::delete);
+        supplierRepository.deleteById(supplierId);
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    void shouldRejectActivationWhenOnboardingIsIncomplete() throws Exception {
+        SupplierCreateRequest createReq = new SupplierCreateRequest(
+                "Incomplete Integration",
+                "TAX-INT-MISS-001",
+                "incomplete.int@example.com",
+                "+123456781",
+                "BANK-MISS-001",
+                "2 Missing St"
+        );
+
+        String createResponse = mockMvc.perform(post("/api/v1/suppliers")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createReq)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        java.util.UUID supplierId = java.util.UUID.fromString(objectMapper.readTree(createResponse).get("data").get("id").asText());
+
+        mockMvc.perform(post("/api/v1/suppliers/{id}/activate", supplierId))
+                .andExpect(status().isBadRequest());
+
+        supplierRepository.deleteById(supplierId);
     }
 
     @Test
@@ -104,6 +196,8 @@ class SupplierIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.content").isEmpty());
 
+        supplierDocumentRepository.findBySupplierId(java.util.UUID.fromString(id))
+                .forEach(supplierDocumentRepository::delete);
         supplierRepository.deleteById(java.util.UUID.fromString(id));
     }
 }

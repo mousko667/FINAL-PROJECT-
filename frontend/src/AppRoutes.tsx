@@ -46,6 +46,7 @@ const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 const SuppliersPage = lazy(() => import('@/pages/admin/SuppliersPage'))
 const SupplierDetailPage = lazy(() => import('@/pages/admin/SupplierDetailPage'))
 const SupplierFormPage = lazy(() => import('@/pages/admin/SupplierFormPage'))
+const SupplierOnboardingPage = lazy(() => import('@/pages/admin/SupplierOnboardingPage'))
 const SupplierDashboardPage = lazy(() => import('@/pages/supplier/SupplierDashboardPage'))
 const SupplierInvoicesPage = lazy(() => import('@/pages/supplier/SupplierInvoicesPage'))
 const SupplierInvoiceSubmitPage = lazy(() => import('@/pages/supplier/SupplierInvoiceSubmitPage'))
@@ -121,7 +122,7 @@ function AppRoutes() {
             <Route path="/admin/integrations" element={<IntegrationsPage />} />
             <Route path="/admin/department-access" element={<DepartmentAccessPage />} />
             <Route path="/admin/suppliers" element={<SuppliersPage />} />
-            <Route path="/admin/suppliers/new" element={<SupplierFormPage />} />
+            <Route path="/admin/suppliers/new" element={<SupplierOnboardingPage />} />
             <Route path="/admin/suppliers/:id" element={<SupplierDetailPage />} />
             <Route path="/admin/suppliers/:id/edit" element={<SupplierFormPage />} />
           </Route>

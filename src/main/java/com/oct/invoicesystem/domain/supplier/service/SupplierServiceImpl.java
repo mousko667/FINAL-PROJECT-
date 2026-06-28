@@ -18,11 +18,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.Instant;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -70,9 +74,12 @@ public class SupplierServiceImpl implements SupplierService {
     }
 
     @Override
-    public void activateSupplier(UUID id) {
+    public void activateSupplier(UUID id, User activatedBy) {
         Supplier supplier = findEntityById(id);
+        ensureOnboardingComplete(supplier);
         supplier.setStatus(SupplierStatus.ACTIVE);
+        supplier.setOnboardedBy(activatedBy);
+        supplier.setOnboardedAt(Instant.now());
         supplierRepository.save(supplier);
     }
 
@@ -113,6 +120,24 @@ public class SupplierServiceImpl implements SupplierService {
     @Transactional(readOnly = true)
     public List<SupplierDocument> listDocuments(UUID supplierId) {
         return supplierDocumentRepository.findBySupplierId(supplierId);
+    }
+
+    private void ensureOnboardingComplete(Supplier supplier) {
+        if (!StringUtils.hasText(supplier.getCompanyName())
+                || !StringUtils.hasText(supplier.getTaxId())
+                || !StringUtils.hasText(supplier.getContactEmail())
+                || !StringUtils.hasText(supplier.getBankDetails())) {
+            throw new ValidationException("error.supplier.onboarding_incomplete");
+        }
+
+        Set<SupplierDocumentType> documentTypes = supplierDocumentRepository.findBySupplierId(supplier.getId()).stream()
+                .map(SupplierDocument::getDocumentType)
+                .collect(Collectors.toCollection(() -> EnumSet.noneOf(SupplierDocumentType.class)));
+
+        if (!documentTypes.contains(SupplierDocumentType.TAX_CERTIFICATE)
+                || !documentTypes.contains(SupplierDocumentType.CONTRACT)) {
+            throw new ValidationException("error.supplier.onboarding_incomplete");
+        }
     }
 
     @Override
