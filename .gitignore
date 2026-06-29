@@ -7,6 +7,9 @@
 .env.local
 .env.*.local
 *.env
+*.p12
+*.jks
+certs/
 
 # ── Maven ────────────────────────────────────────────────────
 target/
@@ -35,6 +38,12 @@ spring-shell.log
 *.log
 logs/
 log/
+build-errors.txt
+compile-errors.txt
+compile_errors.txt
+test-logs.txt
+test-output.txt
+test_output.txt
 
 # ── IntelliJ IDEA (kept for compatibility) ───────────────────
 .idea/
