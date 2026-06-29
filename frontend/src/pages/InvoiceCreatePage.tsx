@@ -130,7 +130,7 @@ export default function InvoiceCreatePage() {
       const invoice = await invoiceService.create({
         supplierId: detailsData.supplierId,
         purchaseOrderId: detailsData.purchaseOrderId || undefined,
-        department: { id: detailsData.departmentId } as any,
+        departmentId: detailsData.departmentId,
         amount: detailsData.amount,
         currency: detailsData.currency,
         issueDate: detailsData.issueDate,
