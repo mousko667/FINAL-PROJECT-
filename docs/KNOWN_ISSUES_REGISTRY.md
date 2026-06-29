@@ -891,6 +891,54 @@
 
 ---
 
+### [PROB-069] Migration V38 référence une table inexistante → le backend ne démarre pas sur une base fraîche
+- **Catégorie :** Backend / Flyway / Schéma
+- **Sévérité :** 🔴 Critique (échec de démarrage total sur toute base propre).
+- **Découvert :** 2026-06-29 — Audit QA final, phase runtime. `java -jar` contre PostgreSQL 18 (5433) : log Flyway « Migrating schema to version 38 … failed! Changes successfully rolled back » puis `UnsatisfiedDependencyException` en cascade (`mfaSetupEnforcementFilter` → `securityPolicyService` → `entityManagerFactory` jamais créé) → Tomcat ne démarre pas.
+- **Symptôme :** `ERREUR: la relation « purchase_order_lines » n'existe pas` à `V38__create_matching_line_resolutions.sql:1`. La DB de dev était figée à v37 (V38 n'avait jamais réussi), ce qui masquait le bug — l'app « tournait » uniquement parce que le conteneur n'avait jamais été reconstruit sur une base propre.
+- **Cause racine :** la FK `po_line_id` de la table `three_way_matching_line_resolutions` référençait `purchase_order_lines(id)`, table **jamais créée**. La table réelle des lignes de bon de commande est `purchase_order_items` (`V6__create_purchase_orders.sql:15`). L'entité JPA `ThreeWayMatchingLineResolution.java:35` mappe pourtant correctement `PurchaseOrderItem poLine` sur la colonne `po_line_id` → seul le SQL de migration était erroné (faute de frappe sur le nom de table).
+- **Solution appliquée :** dans `V38__create_matching_line_resolutions.sql`, `REFERENCES purchase_order_lines(id)` → `REFERENCES purchase_order_items(id)`. V38 n'ayant jamais été appliquée (absente de `flyway_schema_history`, rollback systématique), l'édition en place est conforme à PROB-009 (aucun checksum verrouillé). Après correctif : backend UP (HTTP 200), 39 migrations OK, page `/matching` fonctionnelle (UI 200 + API `GET /matching` 200).
+- **Règle préventive :** TOUTE migration Flyway doit être validée sur une **base vierge** (pas seulement sur la base de dev incrémentale) avant d'être considérée comme « faite » — une migration qui échoue mais reste dans le repo donne une fausse impression de complétude tant que la DB locale est en avance. Vérifier que chaque FK référence une table effectivement créée par une migration **antérieure**, et que le nom de table SQL correspond au `@Table`/`@JoinColumn` de l'entité JPA.
+- **Fichiers modifiés :** `V38__create_matching_line_resolutions.sql` (1 mot).
+
+---
+
+### [PROB-070] Formulaire de création de facture (staff) envoie `department:{id}` au lieu de `departmentId` → POST /invoices 400
+- **Catégorie :** Frontend / Contrat API
+- **Sévérité :** 🔴 Critique (l'Assistant Comptable ne peut créer AUCUNE facture via l'UI).
+- **Découvert :** 2026-06-29 — Test E2E runtime (Playwright). Le formulaire `/invoices/new` rempli et soumis renvoie `400 {"errors":["departmentId: must not be null"]}`.
+- **Cause racine :** `InvoiceCreatePage.tsx:133` construisait le payload avec `department: { id: detailsData.departmentId } as any` (objet imbriqué, casté en `any` pour forcer le typage). Le DTO backend `InvoiceCreateRequest.java:13` attend un champ plat `@NotNull UUID departmentId`. Le cast `as any` masquait l'incompatibilité (le type du service exposait pourtant bien `departmentId?: string`). Le portail fournisseur (`SupplierInvoiceSubmitPage.tsx:126`) envoyait correctement `departmentId` — d'où le bug passé inaperçu sur la seule voie staff.
+- **Solution appliquée :** `department: { id: ... } as any` → `departmentId: detailsData.departmentId`.
+- **Règle préventive :** ne JAMAIS utiliser `as any` pour faire passer un payload — le cast supprime la vérification du contrat. Quand un type de service déclare un champ (`departmentId`), l'utiliser tel quel. Tester la création réelle via l'UI, pas seulement le rendu du formulaire.
+- **Fichiers modifiés :** `frontend/src/pages/InvoiceCreatePage.tsx`.
+
+### [PROB-071] `LazyInitializationException` sur `Invoice.department` → liste/détail/création de factures = 500 dès qu'une facture existe
+- **Catégorie :** Backend / JPA / Mapping hors-transaction
+- **Sévérité :** 🔴 Critique (tout le module Factures inutilisable en présence de données ; invisible sur base vide).
+- **Découvert :** 2026-06-29 — Test E2E runtime. `POST /invoices` puis `GET /invoices` et `GET /invoices/{id}` renvoient 500 `LazyInitializationException: Could not initialize proxy [Department#...] - no session` à `InvoiceMapperImpl.entityDepartmentCode(:123)`.
+- **Cause racine :** double problème. (1) `InvoiceService.createInvoice` et `createSupplierInvoice` ne résolvaient PAS le département : le contrôleur passe un `new Department()` avec juste l'id (détaché), `save()` le persiste tel quel, et le mapping MapStruct `department.getCode()` s'exécute **après** la fermeture de la transaction. (2) `Invoice.department` est `FetchType.LAZY` (`Invoice.java:58`) : les lectures (`findAllWithFilters`, `findByIdAndDeletedAtIsNull`) renvoient l'entité au contrôleur qui mappe hors-session → proxy lazy non initialisé. `updateInvoice` faisait déjà `resolveDepartment` mais pas les deux méthodes de création.
+- **Solution appliquée :** (a) ajouter `invoice.setDepartment(resolveDepartment(invoice.getDepartment()))` dans `createInvoice` ET `createSupplierInvoice` ; (b) ajouter `@EntityGraph(attributePaths = {"department","supplier"})` sur `findByIdAndDeletedAtIsNull` et `findAllWithFilters` pour initialiser les associations dans la requête de lecture (compatible pagination, contrairement à un JOIN FETCH).
+- **Règle préventive :** ne jamais mapper une entité vers DTO HORS de la transaction quand elle a des associations LAZY. Soit mapper dans le service `@Transactional`, soit charger les associations via `@EntityGraph` sur la requête. Toujours tester les endpoints de lecture AVEC au moins une ligne en base (un test sur base vide ne déclenche jamais l'initialisation du proxy — c'est exactement ce qui a laissé passer ce bug et nourri le faux « 100% PASS »).
+- **Fichiers modifiés :** `InvoiceService.java` (createInvoice, createSupplierInvoice), `InvoiceRepository.java` (2 × @EntityGraph).
+
+### [PROB-072] Clé d'erreur `error.invoice.no_document` lancée mais absente des fichiers i18n
+- **Catégorie :** i18n / Messages d'erreur
+- **Sévérité :** 🟡 Mineur (l'utilisateur verrait la clé brute si le garde frontend était contourné).
+- **Découvert :** 2026-06-29 — Test E2E : `POST /submit` sans document renvoie `{"message":"error.invoice.no_document"}`. Cette clé n'existe ni dans `messages_en.properties` ni dans `messages_fr.properties` (la clé définie est `error.invoice.document_required`).
+- **Cause racine :** `InvoiceService.java:270` lève `new ValidationException("error.invoice.no_document")` — clé non déclarée. Le frontend masque le problème car il a son propre garde traduit (« Veuillez joindre au moins un document… »), mais une consommation directe de l'API renverrait la clé non résolue.
+- **Solution proposée :** soit aligner sur la clé existante `error.invoice.document_required`, soit ajouter `error.invoice.no_document` en EN + FR (ISO-8859-1).
+- **Fichiers concernés :** `InvoiceService.java:270`, `messages_en.properties`, `messages_fr.properties`. *(non corrigé — décision en attente)*
+
+### [PROB-073] Colonne/champ « Département » affiche « — » dans la liste et le détail des factures
+- **Catégorie :** Frontend / Affichage
+- **Sévérité :** 🟡 Mineur (donnée présente côté API, non affichée).
+- **Découvert :** 2026-06-29 — Test E2E : la colonne « Département » de `/invoices` et le champ « Département » du détail affichent « — » pour toutes les factures, alors que le DTO renvoie `departmentCode` (ex. « FIN », « INFO ») — confirmé par l'export CSV qui contient bien la colonne Department remplie.
+- **Cause racine probable :** le composant liste/détail lit un champ inexistant (ex. `departmentName`) au lieu de `departmentCode` fourni par le DTO.
+- **Solution proposée :** mapper l'affichage sur `departmentCode` (ou ajouter `departmentName` au DTO si le libellé complet est souhaité).
+- **Fichiers concernés :** `frontend/src/pages/InvoiceListPage.tsx`, `frontend/src/pages/InvoiceDetailPage.tsx`. *(non corrigé — décision en attente)*
+
+---
+
 ## RÈGLE OBLIGATOIRE — MISE À JOUR DE CE FICHIER
 
 > Tout agent ou développeur qui :
@@ -900,3 +948,84 @@
 >
 > Ce fichier doit être mis à jour AVANT le commit du fix, pas après.
 > C'est la mémoire technique du projet — elle s'améliore à chaque incident.
+
+### [PROB-074] Clés i18n MFA manquantes en français
+- **Catégorie :** Frontend / Sécurité
+- **Sévérité :** 🟠 Important
+- **Découvert :** Audit final QA - ANO-005
+- **Symptôme :** Clés non traduites pour la configuration MFA et verrouillage de compte (les clés n'existaient pas dans `messages_fr.properties`).
+- **Cause racine :** Oubli d'ajout des 15 clés i18n liées au MFA dans le fichier de propriétés français.
+- **Solution appliquée :** Ajout des clés manquantes dans `messages_fr.properties` via un script Node.js respectant l'encodage ISO-8859-1 pour préserver les accents.
+- **Règle préventive :** Toujours éditer `messages_fr.properties` avec un éditeur/script configuré en ISO-8859-1. Comparer systématiquement les fichiers `_en` et `_fr` lors de l'ajout de nouvelles fonctionnalités.
+- **Fichiers modifiés :** `src/main/resources/i18n/messages_fr.properties`
+
+---
+
+### [PROB-075] Bloc "backups" manquant dans les traductions front
+- **Catégorie :** Frontend
+- **Sévérité :** 🟠 Important
+- **Découvert :** Audit final QA - ANO-006
+- **Symptôme :** Affichage de clés brutes sur l'interface de gestion des sauvegardes pour les utilisateurs francophones.
+- **Cause racine :** Le bloc `backups` présent dans `en.json` manquait intégralement dans `fr.json`.
+- **Solution appliquée :** Ajout du bloc `backups` traduit dans `fr.json` (10 clés au total).
+- **Règle préventive :** S'assurer que chaque bloc métier ajouté à `en.json` est immédiatement reporté dans `fr.json`. Utiliser un linter ou un script pour vérifier la parité des clés JSON.
+- **Fichiers modifiés :** `frontend/src/i18n/fr.json`
+
+---
+
+### [PROB-076] Formatage de dates et montants non localisé
+- **Catégorie :** Frontend
+- **Sévérité :** 🟡 Mineur
+- **Découvert :** Audit final QA - ANO-009
+- **Symptôme :** Affichage incohérent des montants et dates dans `PaymentsPage.tsx` selon le navigateur, sans tenir compte du réglage de langue de l'utilisateur.
+- **Cause racine :** Utilisation de `toLocaleString()` et `toLocaleDateString()` sans spécifier de locale explicite (qui par défaut prend celle du système de l'utilisateur).
+- **Solution appliquée :** Récupération de `i18n` via `useTranslation()` et injection dynamique de la locale (`i18n.language === 'en' ? 'en-US' : 'fr-FR'`) dans les appels de formatage.
+- **Règle préventive :** Toujours passer explicitement la locale courante aux méthodes `Intl` (`toLocaleString`, `toLocaleDateString`) pour garantir la consistance de l'affichage.
+- **Fichiers modifiés :** `frontend/src/pages/PaymentsPage.tsx`
+
+---
+
+### [PROB-077] En-têtes d'export CSV/Excel en dur (anglais)
+- **Catégorie :** Backend
+- **Sévérité :** 🟡 Mineur
+- **Découvert :** Audit final QA - ANO-010
+- **Symptôme :** Les exports CSV et Excel utilisaient toujours les en-têtes en anglais, même pour un utilisateur francophone.
+- **Cause racine :** Les en-têtes étaient hardcodés sous forme de `List.of("Reference", "Supplier", ...)` dans `InvoiceController.java` et `ReportBuilderService.java`.
+- **Solution appliquée :** Injection de `MessageSource`, ajout du paramètre `java.util.Locale` sur les endpoints d'export, et utilisation de `.getMessage(...)` pour générer dynamiquement la liste d'en-têtes. Ajout de clés i18n manquantes (`report.excel.header.field` et `value`).
+- **Règle préventive :** Ne jamais coder en dur des libellés destinés aux exports ou à l'UI dans les classes Java. Utiliser `MessageSource` avec le support de `LocaleContextHolder` ou la résolution via contrôleur.
+- **Fichiers modifiés :** `src/main/java/.../InvoiceController.java`, `src/main/java/.../ReportBuilderService.java`, `src/main/resources/i18n/messages_en.properties`, `src/main/resources/i18n/messages_fr.properties`
+
+---
+
+### [PROB-078] Redondance des verbes HTTP (POST/PATCH) pour l'activation fournisseur
+- **Catégorie :** Backend
+- **Sévérité :** 🟡 Mineur
+- **Découvert :** Audit final QA - ANO-011
+- **Symptôme :** Deux endpoints (`POST` et `PATCH`) exposés pour la même action métier (activer ou suspendre un fournisseur).
+- **Cause racine :** Héritage de versions précédentes, maintenus sans décision stricte. Le front-end n'utilisait que `PATCH`.
+- **Solution appliquée :** Suppression des méthodes `@PostMapping` pour `activate` et `suspend` dans `SupplierController.java`.
+- **Règle préventive :** Exposer une seule méthode HTTP pour une action spécifique pour réduire la surface de l'API. Utiliser `PATCH` pour les changements d'état partiels.
+- **Fichiers modifiés :** `src/main/java/.../SupplierController.java`
+
+---
+
+### [PROB-079] Fichiers de logs périmés à la racine du projet
+- **Catégorie :** Infrastructure
+- **Sévérité :** 🟡 Mineur
+- **Découvert :** Audit final QA - ANO-012
+- **Symptôme :** Présence de fichiers de logs de build et de test à la racine du dépôt git (ex: `build-errors.txt`, `compile-errors.txt`).
+- **Cause racine :** Les fichiers temporaires générés par d'anciennes commandes ou scripts locaux n'étaient pas ajoutés au `.gitignore`.
+- **Solution appliquée :** Suppression manuelle de ces fichiers à la racine et ajout des motifs associés dans `.gitignore`.
+- **Règle préventive :** Nettoyer le répertoire de travail et configurer `.gitignore` au fur et à mesure que l'on introduit des fichiers d'outillage ou de logs.
+- **Fichiers modifiés :** `.gitignore`
+
+---
+
+### [PROB-080] `LazyInitializationException` sur `User.userRoles` → PUT /api/v1/profile = 500 (mise à jour de profil impossible)
+- **Catégorie :** Backend / JPA / Mapping hors-transaction (+ Frontend / form)
+- **Sévérité :** 🟠 Important (toute mise à jour de profil via l'UI échoue en 500 ; endpoint non couvert par les tests).
+- **Découvert :** 2026-06-29 — Vérification runtime post-audit (Playwright). Sur `/profile`, un clic « Configurer la MFA » a déclenché un `PUT /api/v1/profile` renvoyant 500 `LazyInitializationException: failed to lazily initialize a collection of role: User.userRoles - no Session` à `UserProfileController.updateProfile:53`. **Pré-existant**, indépendant des correctifs d'audit ANO-004→012 (fichiers `UserProfileController.java` / `UserService.java` / `ProfilePage.tsx` non modifiés par l'audit).
+- **Cause racine :** double problème, même famille que PROB-071. (1) **Backend :** `UserService.updateProfile` chargeait l'entité via `userRepository.findById(...)` (hérité de `JpaRepository`, sans `@EntityGraph`) ; `User.userRoles` est `@OneToMany` LAZY. Le contrôleur mappe ensuite `userMapper.toDto(saved)` — qui lit `userRoles` — **après** la fermeture de la transaction → proxy lazy non initialisé. Le `GET /profile` ne plantait pas car il passe par `securityHelper.currentUser()` → `findByUsername` qui, lui, porte déjà `@EntityGraph({"userRoles","userRoles.role"})`. (2) **Frontend :** la section MFA est rendue à l'intérieur du `<form>` de profil et ses boutons (`Configurer la MFA`, `Confirmer`, `Annuler`, `Reconfigurer`) n'avaient pas `type="button"` → en HTML un `<button>` sans `type` dans un form vaut `submit`, donc le clic soumettait le formulaire profil et déclenchait le PUT par inadvertance.
+- **Solution appliquée :** (a) **Backend :** ajout de `Optional<User> findWithRolesById(UUID id)` avec `@EntityGraph({"userRoles","userRoles.role"})` dans `UserRepository`, utilisé par `updateProfile` à la place de `findById` → les rôles sont chargés dans la transaction et l'entité reste mappable après commit. (b) **Frontend :** `type="button"` ajouté aux 4 boutons MFA de `ProfilePage.tsx` (défense en profondeur — le PUT ne doit pas partir du tout depuis ces boutons). (c) **Test de régression :** `UserProfileUpdateIntegrationTest` (non `@Transactional` à dessein, pour que la session se ferme et reproduire le bug) — rouge avant le fix (LazyInit), vert après. Vérifié en runtime : `PUT /api/v1/profile` (compte `aa`) renvoie 200 + `roles` correctement mappés.
+- **Règle préventive :** identique à PROB-071 — ne jamais mapper une entité vers DTO HORS transaction quand elle a des associations LAZY ; charger via `@EntityGraph` sur la requête du service. Côté React : tout `<button>` à l'intérieur d'un `<form>` qui ne doit PAS soumettre DOIT porter `type="button"`. Et : tester les endpoints de **mise à jour** (pas seulement la lecture) avec une entité réellement chargée, hors session.
+- **Fichiers modifiés :** `UserRepository.java`, `UserService.java`, `frontend/src/pages/ProfilePage.tsx`, `src/test/java/.../user/service/UserProfileUpdateIntegrationTest.java` (nouveau).
