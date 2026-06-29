@@ -361,7 +361,7 @@ Source de vérité : `Project requirements.txt:378-403`. Vérifié contre `V1__c
 | RBAC DAF / AA / supplier | API | ✅ | DAF `/users`=403 ; AA `/audit-logs/financial`=403 ; supplier `/invoices`=403, `/reports`=403 |
 | **SoD intra-workflow** | API | ✅ | `rsi` (N1) tentant `validate-n2` → **403** |
 | Bascule langue **FR↔EN** (écran factures) | Playwright UI | ✅ | statuts traduits (Brouillon→Draft, Bon à payer→Authorised to Pay, Archivé→Archived…), 0 clé brute |
-| En-têtes de sécurité | API | ✅ | `X-Frame-Options: DENY`, `nosniff`, CSP stricte, HSTS, pas de `X-Powered-By` (PROB-068) |
+| En-têtes de sécurité | API | ✅ | `X-Frame-Options: DENY`, `nosniff`, CSP stricte, HSTS, pas de `X-Powered-By` (PROB-085) |
 
 ### 5.3 Limites du test E2E (honnêteté)
 
@@ -439,7 +439,7 @@ Source de vérité : `Project requirements.txt:378-403`. Vérifié contre `V1__c
 | **Audit immuable (append-only)** | ✅ | `V32__enforce_append_only_logs.sql` (triggers UPDATE/DELETE bloqués sur audit_logs, webhook_deliveries, document_access_log) |
 | **Rétention financière 10 ans** | ✅ | `V33__enforce_financial_retention.sql` (trigger BEFORE DELETE) |
 | **Webhooks signés** | ✅ | `WebhookService.java:64` HMAC-SHA256 + retries backoff |
-| **En-têtes HTTP durcis** | ✅ | runtime : `X-Frame-Options: DENY`, `nosniff`, CSP stricte, HSTS preload, pas de `X-Powered-By` (PROB-068) |
+| **En-têtes HTTP durcis** | ✅ | runtime : `X-Frame-Options: DENY`, `nosniff`, CSP stricte, HSTS preload, pas de `X-Powered-By` (PROB-085) |
 | **XXE / upload** | ✅ | `InvoiceXmlParser.java:39` (DOCTYPE/entités externes désactivés) ; Tika MIME |
 
 **Verdict sécurité : très solide.** L'immuabilité de l'audit et la rétention sont imposées **au niveau base** (non contournables par l'application) — au-delà du niveau attendu pour un PFE.

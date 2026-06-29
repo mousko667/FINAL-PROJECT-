@@ -51,7 +51,7 @@ class HttpSecurityHeadersFilterTest {
 
     filter.doFilter(request, response, chain);
 
-    // Regression for PROB-068: setHeader(name, "") used to leak an empty header that
+    // Regression for PROB-085: setHeader(name, "") used to leak an empty header that
     // ZAP rule 10037 still flagged. The headers must be completely absent.
     assertThat(response.containsHeader("X-Powered-By")).isFalse();
     assertThat(response.containsHeader("Server")).isFalse();

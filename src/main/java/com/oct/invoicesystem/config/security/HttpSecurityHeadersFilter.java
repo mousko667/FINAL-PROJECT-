@@ -59,7 +59,7 @@ public class HttpSecurityHeadersFilter extends OncePerRequestFilter {
     // Boot / Tomcat do not emit X-Powered-By by default, and the Server header is
     // stripped at the reverse-proxy (nginx) layer in production. Leaving them unset
     // keeps both headers absent from the response.
-    // ⚠ LESSON LEARNED (PROB-068, 2026-06-27): setHeader(name, "") leaks an empty header.
+    // ⚠ LESSON LEARNED (PROB-085, 2026-06-27): setHeader(name, "") leaks an empty header.
     // See docs/KNOWN_ISSUES_REGISTRY.md for full context.
 
     filterChain.doFilter(request, response);

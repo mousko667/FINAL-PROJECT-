@@ -879,7 +879,8 @@
 
 ---
 
-### [PROB-068] (G3) Scan OWASP ZAP : `X-Powered-By` / `Server` émis vides → fuite d'information (rule 10037)
+### [PROB-085] (G3) Scan OWASP ZAP : `X-Powered-By` / `Server` émis vides → fuite d'information (rule 10037)
+> Renuméroté depuis PROB-068 (collision avec PROB-068/M5#1 matching-500, antérieur) lors de l'audit du 2026-06-29.
 - **Catégorie :** Sécurité / Durcissement HTTP
 - **Sévérité :** 🟠 Moyen (WARN ZAP rule 10037 « Server Leaks Information via X-Powered-By », non bloquant mais légitime).
 - **Découvert :** 2026-06-27 — G3 : baseline scan OWASP ZAP (`zaproxy/zap-stable`, `zap-baseline.py`) lancé en local contre le backend (`http://host.docker.internal:8080`) avec `.github/zap-rules.tsv`. Résultat : 0 FAIL, 2 WARN, 65 PASS.
@@ -891,7 +892,8 @@
 
 ---
 
-### [PROB-069] Migration V38 référence une table inexistante → le backend ne démarre pas sur une base fraîche
+### [PROB-082] Migration V38 référence une table inexistante → le backend ne démarre pas sur une base fraîche
+> Renuméroté depuis PROB-069 (collision avec PROB-069/R3) lors de l'audit du 2026-06-29. Mappe l'ancien ANO-001 / bug 🔴 #1.
 - **Catégorie :** Backend / Flyway / Schéma
 - **Sévérité :** 🔴 Critique (échec de démarrage total sur toute base propre).
 - **Découvert :** 2026-06-29 — Audit QA final, phase runtime. `java -jar` contre PostgreSQL 18 (5433) : log Flyway « Migrating schema to version 38 … failed! Changes successfully rolled back » puis `UnsatisfiedDependencyException` en cascade (`mfaSetupEnforcementFilter` → `securityPolicyService` → `entityManagerFactory` jamais créé) → Tomcat ne démarre pas.
@@ -903,7 +905,8 @@
 
 ---
 
-### [PROB-070] Formulaire de création de facture (staff) envoie `department:{id}` au lieu de `departmentId` → POST /invoices 400
+### [PROB-083] Formulaire de création de facture (staff) envoie `department:{id}` au lieu de `departmentId` → POST /invoices 400
+> Renuméroté depuis PROB-070 (collision avec PROB-070/R5) lors de l'audit du 2026-06-29.
 - **Catégorie :** Frontend / Contrat API
 - **Sévérité :** 🔴 Critique (l'Assistant Comptable ne peut créer AUCUNE facture via l'UI).
 - **Découvert :** 2026-06-29 — Test E2E runtime (Playwright). Le formulaire `/invoices/new` rempli et soumis renvoie `400 {"errors":["departmentId: must not be null"]}`.
@@ -912,7 +915,8 @@
 - **Règle préventive :** ne JAMAIS utiliser `as any` pour faire passer un payload — le cast supprime la vérification du contrat. Quand un type de service déclare un champ (`departmentId`), l'utiliser tel quel. Tester la création réelle via l'UI, pas seulement le rendu du formulaire.
 - **Fichiers modifiés :** `frontend/src/pages/InvoiceCreatePage.tsx`.
 
-### [PROB-071] `LazyInitializationException` sur `Invoice.department` → liste/détail/création de factures = 500 dès qu'une facture existe
+### [PROB-084] `LazyInitializationException` sur `Invoice.department` → liste/détail/création de factures = 500 dès qu'une facture existe
+> Renuméroté depuis PROB-071 (collision avec PROB-071/R8 WCAG) lors de l'audit du 2026-06-29.
 - **Catégorie :** Backend / JPA / Mapping hors-transaction
 - **Sévérité :** 🔴 Critique (tout le module Factures inutilisable en présence de données ; invisible sur base vide).
 - **Découvert :** 2026-06-29 — Test E2E runtime. `POST /invoices` puis `GET /invoices` et `GET /invoices/{id}` renvoient 500 `LazyInitializationException: Could not initialize proxy [Department#...] - no session` à `InvoiceMapperImpl.entityDepartmentCode(:123)`.
@@ -1025,7 +1029,19 @@
 - **Catégorie :** Backend / JPA / Mapping hors-transaction (+ Frontend / form)
 - **Sévérité :** 🟠 Important (toute mise à jour de profil via l'UI échoue en 500 ; endpoint non couvert par les tests).
 - **Découvert :** 2026-06-29 — Vérification runtime post-audit (Playwright). Sur `/profile`, un clic « Configurer la MFA » a déclenché un `PUT /api/v1/profile` renvoyant 500 `LazyInitializationException: failed to lazily initialize a collection of role: User.userRoles - no Session` à `UserProfileController.updateProfile:53`. **Pré-existant**, indépendant des correctifs d'audit ANO-004→012 (fichiers `UserProfileController.java` / `UserService.java` / `ProfilePage.tsx` non modifiés par l'audit).
-- **Cause racine :** double problème, même famille que PROB-071. (1) **Backend :** `UserService.updateProfile` chargeait l'entité via `userRepository.findById(...)` (hérité de `JpaRepository`, sans `@EntityGraph`) ; `User.userRoles` est `@OneToMany` LAZY. Le contrôleur mappe ensuite `userMapper.toDto(saved)` — qui lit `userRoles` — **après** la fermeture de la transaction → proxy lazy non initialisé. Le `GET /profile` ne plantait pas car il passe par `securityHelper.currentUser()` → `findByUsername` qui, lui, porte déjà `@EntityGraph({"userRoles","userRoles.role"})`. (2) **Frontend :** la section MFA est rendue à l'intérieur du `<form>` de profil et ses boutons (`Configurer la MFA`, `Confirmer`, `Annuler`, `Reconfigurer`) n'avaient pas `type="button"` → en HTML un `<button>` sans `type` dans un form vaut `submit`, donc le clic soumettait le formulaire profil et déclenchait le PUT par inadvertance.
+- **Cause racine :** double problème, même famille que PROB-084. (1) **Backend :** `UserService.updateProfile` chargeait l'entité via `userRepository.findById(...)` (hérité de `JpaRepository`, sans `@EntityGraph`) ; `User.userRoles` est `@OneToMany` LAZY. Le contrôleur mappe ensuite `userMapper.toDto(saved)` — qui lit `userRoles` — **après** la fermeture de la transaction → proxy lazy non initialisé. Le `GET /profile` ne plantait pas car il passe par `securityHelper.currentUser()` → `findByUsername` qui, lui, porte déjà `@EntityGraph({"userRoles","userRoles.role"})`. (2) **Frontend :** la section MFA est rendue à l'intérieur du `<form>` de profil et ses boutons (`Configurer la MFA`, `Confirmer`, `Annuler`, `Reconfigurer`) n'avaient pas `type="button"` → en HTML un `<button>` sans `type` dans un form vaut `submit`, donc le clic soumettait le formulaire profil et déclenchait le PUT par inadvertance.
 - **Solution appliquée :** (a) **Backend :** ajout de `Optional<User> findWithRolesById(UUID id)` avec `@EntityGraph({"userRoles","userRoles.role"})` dans `UserRepository`, utilisé par `updateProfile` à la place de `findById` → les rôles sont chargés dans la transaction et l'entité reste mappable après commit. (b) **Frontend :** `type="button"` ajouté aux 4 boutons MFA de `ProfilePage.tsx` (défense en profondeur — le PUT ne doit pas partir du tout depuis ces boutons). (c) **Test de régression :** `UserProfileUpdateIntegrationTest` (non `@Transactional` à dessein, pour que la session se ferme et reproduire le bug) — rouge avant le fix (LazyInit), vert après. Vérifié en runtime : `PUT /api/v1/profile` (compte `aa`) renvoie 200 + `roles` correctement mappés.
-- **Règle préventive :** identique à PROB-071 — ne jamais mapper une entité vers DTO HORS transaction quand elle a des associations LAZY ; charger via `@EntityGraph` sur la requête du service. Côté React : tout `<button>` à l'intérieur d'un `<form>` qui ne doit PAS soumettre DOIT porter `type="button"`. Et : tester les endpoints de **mise à jour** (pas seulement la lecture) avec une entité réellement chargée, hors session.
+- **Règle préventive :** identique à PROB-084 — ne jamais mapper une entité vers DTO HORS transaction quand elle a des associations LAZY ; charger via `@EntityGraph` sur la requête du service. Côté React : tout `<button>` à l'intérieur d'un `<form>` qui ne doit PAS soumettre DOIT porter `type="button"`. Et : tester les endpoints de **mise à jour** (pas seulement la lecture) avec une entité réellement chargée, hors session.
 - **Fichiers modifiés :** `UserRepository.java`, `UserService.java`, `frontend/src/pages/ProfilePage.tsx`, `src/test/java/.../user/service/UserProfileUpdateIntegrationTest.java` (nouveau).
+
+---
+
+### [PROB-081] Table `three_way_matching_line_resolutions` non immuable — risque pour la non-répudiation (piste d'audit financière)
+- **Catégorie :** Sécurité / Intégrité du contrôle financier / Non-répudiation
+- **Sévérité :** 🟡 Mineur (risque théorique : aucun chemin applicatif d'altération aujourd'hui, mais pas de garde-fou structurel).
+- **Découvert :** 2026-06-29 — Revue de sécurité automatique du commit de V38 (durcissement post-audit).
+- **Symptôme :** La table `three_way_matching_line_resolutions` (V38) enregistre la résolution manuelle d'un écart de rapprochement trois-voies — `resolved_by`, `reason`, `created_at` — c.-à-d. une décision financière à valeur probante (qui a accepté l'écart, pourquoi, quand). Or rien n'empêche structurellement un UPDATE/DELETE a posteriori : l'entité `ThreeWayMatchingLineResolution` n'est pas `@Immutable` et la table n'a ni trigger ni révocation de privilèges. Une réécriture briserait la non-répudiation.
+- **Atténuation actuelle :** `created_at` est `updatable = false` ; la contrainte `UNIQUE (invoice_id, po_line_id)` empêche les doublons ; et **aucun** code service n'expose d'update/delete sur ces résolutions (création seule). Le risque résiduel est l'accès SQL direct ou un futur code de modification.
+- **Solution appliquée :** défense en profondeur sur deux niveaux. (a) **Application :** entité `ThreeWayMatchingLineResolution` annotée `@org.hibernate.annotations.Immutable` → Hibernate ignore tout UPDATE. (b) **SGBD :** nouvelle migration `V41__matching_line_resolutions_append_only.sql` (V38 jamais modifiée — PROB-009) créant un trigger PostgreSQL `BEFORE UPDATE OR DELETE` (`reject_matching_resolution_mutation()`) qui lève une exception → l'INSERT reste autorisé, mais UPDATE/DELETE sont rejetés même via SQL direct. Vérifié en runtime sur PostgreSQL : V41 appliquée (`flyway_schema_history` 41=success) ; INSERT d'une résolution → OK ; `UPDATE` → `ERREUR: ...is append-only (PROB-081): UPDATE is not allowed` ; `DELETE` → idem ; ligne intacte après tentative. Backend 538/0/0, aucun flux applicatif ne faisait d'UPDATE/DELETE (repo en findBy seul) donc zéro régression. Tests sur H2 non impactés (Flyway désactivé en profil test).
+- **Règle préventive :** toute table à valeur de piste d'audit (résolutions, logs financiers, historiques de statut) doit être append-only par construction : entité `@Immutable` + interdiction UPDATE/DELETE au niveau SGBD (trigger ou REVOKE), pas seulement par convention applicative. Nettoyage admin : `ALTER TABLE ... DISABLE TRIGGER` ponctuel.
+- **Fichiers modifiés :** `V41__matching_line_resolutions_append_only.sql` (nouveau), `ThreeWayMatchingLineResolution.java` (`@Immutable`).
