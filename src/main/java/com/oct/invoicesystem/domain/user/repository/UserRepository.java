@@ -14,6 +14,11 @@ import java.util.UUID;
 public interface UserRepository extends JpaRepository<User, UUID> {
     @EntityGraph(attributePaths = {"userRoles", "userRoles.role"})
     Optional<User> findByUsername(String username);
+
+    // PROB-080: load roles eagerly so the entity can be mapped to a DTO outside the transaction
+    // (e.g. UserProfileController.updateProfile) without a LazyInitializationException.
+    @EntityGraph(attributePaths = {"userRoles", "userRoles.role"})
+    Optional<User> findWithRolesById(UUID id);
     Optional<User> findByEmail(String email);
 
     @Query("SELECT u FROM User u JOIN u.userRoles ur WHERE ur.role.name = :roleName AND u.active = true")

@@ -182,7 +182,9 @@ public class UserService {
 
     @Transactional
     public User updateProfile(UUID userId, String firstName, String lastName, String preferredLang) {
-        User user = userRepository.findById(userId)
+        // PROB-080: load with roles so the returned entity can be mapped to a DTO after the
+        // transaction commits (the controller maps userRoles outside the session).
+        User user = userRepository.findWithRolesById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
         if (firstName != null) user.setFirstName(firstName);
         if (lastName != null) user.setLastName(lastName);

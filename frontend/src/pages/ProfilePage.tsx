@@ -129,6 +129,7 @@ function MfaSection({ profile }: { profile: StaffProfile }) {
             {t('mfa.setupDesc', 'Scannez le QR code avec Google Authenticator, Authy ou toute application TOTP compatible.')}
           </p>
           <button
+            type="button"
             onClick={() => setupMutation.mutate()}
             disabled={setupMutation.isPending}
             className="flex items-center gap-2 px-4 py-2 bg-oct-navy text-white text-sm font-medium rounded-lg hover:bg-oct-navy-light transition-colors disabled:opacity-60"
@@ -189,6 +190,7 @@ function MfaSection({ profile }: { profile: StaffProfile }) {
                     onKeyDown={e => e.key === 'Enter' && otpCode.length === 6 && confirmMutation.mutate()}
                   />
                   <button
+                    type="button"
                     onClick={() => confirmMutation.mutate()}
                     disabled={otpCode.length !== 6 || confirmMutation.isPending}
                     className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
@@ -202,6 +204,7 @@ function MfaSection({ profile }: { profile: StaffProfile }) {
             </div>
           </div>
           <button
+            type="button"
             onClick={() => { setSetupData(null); setOtpCode(''); setConfirmError('') }}
             className="text-xs text-gray-400 hover:text-gray-600"
           >
@@ -213,6 +216,7 @@ function MfaSection({ profile }: { profile: StaffProfile }) {
       {/* Re-configure when already active */}
       {isMfaActive && !setupData && (
         <button
+          type="button"
           onClick={() => setupMutation.mutate()}
           disabled={setupMutation.isPending}
           className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
