@@ -855,6 +855,17 @@
     "priceVariance": "Price variance",
     "verdict": "Verdict",
     "export": "Export",
+    "resolved": "RESOLVED",
+    "resolveBtn": "Resolve",
+    "resolve": {
+      "title": "Resolve Discrepancy",
+      "description": "Please justify the acceptance of the discrepancy for item: {{item}}.",
+      "reasonLabel": "Justification",
+      "reasonPlaceholder": "e.g. Supplier entry error, accepted by business unit...",
+      "submit": "Record Resolution",
+      "errorLength": "Justification must be at least 5 characters.",
+      "errorGeneric": "Failed to resolve discrepancy."
+    },
     "verdicts": {
       "MATCHED": "Matched",
       "WITHIN_TOLERANCE": "Within tolerance",
@@ -1097,7 +1108,8 @@
     "enterCode": "2. Enter the 6-digit code",
     "confirm": "Confirm",
     "reconfigure": "Reconfigure authenticator app",
-    "qrCodeAlt": "QR code for MFA setup — scan with an authenticator app"
+    "qrCodeAlt": "QR code for MFA setup — scan with an authenticator app",
+    "setupTitle": "Two-factor authentication setup"
   },
   "payments": {
     "subtitle": "Record payments and view history",
@@ -1165,6 +1177,18 @@
     "PUBLIC": "Public",
     "INTERNAL": "Internal",
     "CONFIDENTIAL": "Confidential"
+  },
+  "backups": {
+    "navTitle": "Backups",
+    "title": "Backup & Restore",
+    "description": "Manage database backups",
+    "createBtn": "Create Backup",
+    "lastStatus": "Last status",
+    "empty": "No backups available",
+    "filename": "Backup file",
+    "restoreBtn": "Restore",
+    "restoreConfirmTitle": "Restore System",
+    "restoreConfirmDesc": "Are you sure you want to simulate restoring from {{file}}? In production, this would overwrite current data."
   },
   "escalationRules": {
     "title": "Escalation Rules",

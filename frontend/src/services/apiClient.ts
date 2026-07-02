@@ -13,7 +13,9 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem('accessToken')
-    if (token && config.headers) {
+    // Never clobber an explicit per-request token (e.g. the MFA enrollment calls
+    // made from the login page before the session is established).
+    if (token && config.headers && !config.headers['Authorization']) {
       config.headers['Authorization'] = `Bearer ${token}`
     }
     return config

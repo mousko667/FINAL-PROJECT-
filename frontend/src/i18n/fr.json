@@ -855,6 +855,17 @@
     "priceVariance": "Écart prix",
     "verdict": "Verdict",
     "export": "Exporter",
+    "resolved": "RÉSOLU",
+    "resolveBtn": "Résoudre",
+    "resolve": {
+      "title": "Résoudre un écart",
+      "description": "Justifiez l'acceptation de l'écart pour la ligne : {{item}}.",
+      "reasonLabel": "Justification",
+      "reasonPlaceholder": "Ex: Erreur de saisie fournisseur, toléré par le métier...",
+      "submit": "Enregistrer la résolution",
+      "errorLength": "La justification doit faire au moins 5 caractères.",
+      "errorGeneric": "Erreur lors de la résolution."
+    },
     "verdicts": {
       "MATCHED": "Conforme",
       "WITHIN_TOLERANCE": "Dans tolérance",
@@ -1097,7 +1108,8 @@
     "enterCode": "2. Entrez le code à 6 chiffres",
     "confirm": "Confirmer",
     "reconfigure": "Reconfigurer l'application d'authentification",
-    "qrCodeAlt": "QR code pour la configuration MFA — scannez-le avec une application d'authentification"
+    "qrCodeAlt": "QR code pour la configuration MFA — scannez-le avec une application d'authentification",
+    "setupTitle": "Activation de la double authentification"
   },
   "payments": {
     "subtitle": "Enregistrez les paiements et consultez l'historique",
@@ -1165,6 +1177,18 @@
     "PUBLIC": "Public",
     "INTERNAL": "Interne",
     "CONFIDENTIAL": "Confidentiel"
+  },
+  "backups": {
+    "navTitle": "Sauvegardes",
+    "title": "Sauvegarde et restauration",
+    "description": "Gérer les sauvegardes de la base de données",
+    "createBtn": "Créer une sauvegarde",
+    "lastStatus": "Dernier statut",
+    "empty": "Aucune sauvegarde disponible",
+    "filename": "Fichier de sauvegarde",
+    "restoreBtn": "Restaurer",
+    "restoreConfirmTitle": "Restaurer le système",
+    "restoreConfirmDesc": "Voulez-vous vraiment simuler une restauration depuis {{file}} ? En production, cela écraserait les données actuelles."
   },
   "escalationRules": {
     "title": "Règles d'escalade",
