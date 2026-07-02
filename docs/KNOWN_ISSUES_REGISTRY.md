@@ -1056,3 +1056,25 @@
 - **Solution appliquée :** étape d'enrôlement TOTP intégrée à `LoginPage.tsx` : sur `mfa_setup_required`, la page conserve l'accessToken en mémoire (pas de session Redux), appelle `POST /auth/mfa/setup` avec ce token en header explicite, affiche le QR + clé manuelle + saisie OTP, confirme via `POST /auth/mfa/confirm`, puis **rejoue le login** — le backend renvoie alors `mfa_required` et l'étape OTP existante prend le relais. L'intercepteur request d'`apiClient.ts` ne remplace plus un header `Authorization` déjà posé (un token périmé en localStorage aurait écrasé le token d'enrôlement). Clé i18n `mfa.setupTitle` ajoutée (fr/en). Vérifié en runtime Playwright : login `daf` → écran QR → confirmation OTP → écran « Vérification en deux étapes » → OTP → dashboard.
 - **Règle préventive :** tout flag de réponse d'API qui déclenche un parcours utilisateur (ex. `mfa_setup_required`, `mfa_required`) doit avoir un gestionnaire frontend explicite et testé — jamais de commentaire « le backend s'en charge » sans code vérifiable. Quand un filtre backend restreint les endpoints accessibles, le parcours frontend correspondant doit fonctionner uniquement avec ces endpoints.
 - **Fichiers modifiés :** `frontend/src/pages/LoginPage.tsx`, `frontend/src/services/apiClient.ts`, `frontend/src/i18n/fr.json`, `frontend/src/i18n/en.json`.
+
+---
+
+### [PROB-087] `LazyInitializationException` sur GET /purchase-orders/{id} et la liste paginée — pages Bons de commande inutilisables
+- **Catégorie :** Backend / JPA / Mapping hors-transaction (même famille que PROB-080/084)
+- **Sévérité :** 🟠 Important (détail ET liste des bons de commande renvoyaient 500).
+- **Découvert :** 2026-07-02 — Seed de données de test via API : GET /purchase-orders/{id} → 500 `LazyInitializationException: PurchaseOrder.items — no Session` dans `PurchaseOrderMapperImpl` appelé depuis le contrôleur ; même erreur sur GET /purchase-orders (liste paginée, `PageImpl.map`).
+- **Cause racine :** `PurchaseOrderRepository.findByIdActive` / `findAllActive` / `findBySupplierId` chargeaient l'entité sans fetch de `items` (`@OneToMany` LAZY) ; le mapper est invoqué dans le contrôleur, hors transaction.
+- **Solution appliquée :** `LEFT JOIN FETCH po.items` sur `findByIdActive` ; `@EntityGraph(attributePaths = "items")` sur `findAllActive` (paginée) et `findBySupplierId`. Vérifié en runtime : GET détail + liste = 200 avec items.
+- **Règle préventive :** identique à PROB-080/084 — toute requête repository dont le résultat est mappé en DTO hors transaction DOIT charger ses associations via `@EntityGraph`/`JOIN FETCH`. Vérifier systématiquement le endpoint LISTE en plus du détail.
+- **Fichiers modifiés :** `PurchaseOrderRepository.java`.
+
+---
+
+### [PROB-088] Secret TOTP envoyé à un service tiers via la génération du QR code MFA (api.qrserver.com)
+- **Catégorie :** Sécurité / Fuite de secret / MFA
+- **Sévérité :** 🟠 Important (l'URI `otpauth://` contient le secret TOTP en clair ; l'envoyer à un service externe permettrait à ce tiers de générer des OTP valides).
+- **Découvert :** 2026-07-02 — Revue de sécurité automatique du commit PROB-086 ; le pattern existait déjà dans `ProfilePage.tsx` et a été initialement recopié dans `LoginPage.tsx`.
+- **Cause racine :** le QR d'enrôlement était rendu par `<img src="https://api.qrserver.com/...?data=<otpauth-uri>">` : le navigateur transmet l'URI complète (secret inclus) au service tiers.
+- **Solution appliquée :** rendu 100% local via `qrcode.react` (`QRCodeSVG`) dans `LoginPage.tsx` ET `ProfilePage.tsx` ; plus aucune requête externe ne contient le secret.
+- **Règle préventive :** un secret (TOTP, token, clé) ne doit JAMAIS apparaître dans l'URL d'une ressource externe (img/script/fetch). Tout rendu de QR contenant un secret doit être généré côté client ou côté serveur, jamais délégué à un service tiers.
+- **Fichiers modifiés :** `frontend/src/pages/LoginPage.tsx`, `frontend/src/pages/ProfilePage.tsx`, `frontend/package.json` (+lock, dépendance `qrcode.react`).

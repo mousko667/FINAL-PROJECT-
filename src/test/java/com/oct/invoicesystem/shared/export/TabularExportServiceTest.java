@@ -65,4 +65,14 @@ class TabularExportServiceTest {
         String head = new String(bytes, 0, 4, StandardCharsets.US_ASCII);
         assertEquals("%PDF", head);
     }
+
+    @Test
+    void pdf_embedsLetterheadLogo() {
+        byte[] bytes = service.export(TabularExportService.Format.PDF, "Report",
+                List.of("a", "b"), List.of(List.of("1", "2")));
+        // The OCT logo is embedded as a PDF image XObject; a logo-less document has none.
+        String content = new String(bytes, StandardCharsets.ISO_8859_1);
+        assertTrue(content.contains("/XObject"),
+                "PDF export should embed the OCT letterhead logo as an image XObject");
+    }
 }

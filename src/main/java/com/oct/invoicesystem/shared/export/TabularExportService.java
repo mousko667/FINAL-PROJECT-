@@ -153,6 +153,7 @@ public class TabularExportService {
             PdfDocument pdf = new PdfDocument(writer);
             Document document = new Document(pdf);
 
+            PdfBranding.addLetterhead(document);
             document.add(new Paragraph(title == null ? "Export" : title).setBold().setFontSize(14));
 
             float[] widths = new float[headers.size()];

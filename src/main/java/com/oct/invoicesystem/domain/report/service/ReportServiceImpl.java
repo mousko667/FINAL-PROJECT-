@@ -301,6 +301,8 @@ public class ReportServiceImpl implements ReportService {
             PdfDocument pdf = new PdfDocument(writer);
             Document document = new Document(pdf);
 
+            com.oct.invoicesystem.shared.export.PdfBranding.addLetterhead(document);
+
             // Title
             document.add(new Paragraph(messageSource.getMessage("report.pdf.audit.title", null, locale))
                     .setTextAlignment(TextAlignment.CENTER)
@@ -371,6 +373,8 @@ public class ReportServiceImpl implements ReportService {
             PdfWriter writer = new PdfWriter(out);
             PdfDocument pdf = new PdfDocument(writer);
             Document document = new Document(pdf);
+
+            com.oct.invoicesystem.shared.export.PdfBranding.addLetterhead(document);
 
             // Title
             document.add(new Paragraph(messageSource.getMessage("report.pdf.compliance.title", null, locale))
