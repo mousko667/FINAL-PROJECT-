@@ -9,6 +9,7 @@ import { useAppDispatch } from '@/store/hooks'
 import { setCredentials } from '@/store/slices/authSlice'
 import apiClient from '@/services/apiClient'
 import { AlertCircle, Loader2, Globe, ShieldCheck, ArrowLeft, KeyRound } from 'lucide-react'
+import { QRCodeSVG } from 'qrcode.react'
 
 const loginSchema = z.object({
   username: z.string().min(1, 'validation.required'),
@@ -225,11 +226,15 @@ export default function LoginPage() {
                   </p>
 
                   <div className="flex justify-center">
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(setupData.qrCodeUrl)}&size=180x180&margin=8`}
-                      alt={t('mfa.qrCodeAlt', 'QR code for MFA setup — scan with an authenticator app')}
-                      className="w-44 h-44 border rounded-lg"
-                    />
+                    {/* Rendered locally — the otpauth URI embeds the TOTP secret and must
+                        never be sent to a third-party QR service. */}
+                    <div
+                      className="border rounded-lg p-2 bg-white"
+                      role="img"
+                      aria-label={t('mfa.qrCodeAlt', 'QR code for MFA setup — scan with an authenticator app')}
+                    >
+                      <QRCodeSVG value={setupData.qrCodeUrl} size={168} marginSize={1} />
+                    </div>
                   </div>
 
                   <div className="text-center">

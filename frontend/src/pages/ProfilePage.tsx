@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { CheckCircle, Shield, ShieldCheck, ShieldOff, Loader2, QrCode, KeyRound } from 'lucide-react'
+import { QRCodeSVG } from 'qrcode.react'
 import apiClient from '@/services/apiClient'
 import { useAppSelector } from '@/store/hooks'
 
@@ -146,13 +147,16 @@ function MfaSection({ profile }: { profile: StaffProfile }) {
       {setupData && (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row gap-6 items-start">
-            {/* QR Code via Google Charts API — otpauth URI embedded */}
+            {/* Rendered locally — the otpauth URI embeds the TOTP secret and must
+                never be sent to a third-party QR service. */}
             <div className="flex-shrink-0">
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(setupData.qrCodeUrl)}&size=160x160&margin=8`}
-                alt={t('mfa.qrCodeAlt', 'QR code for MFA setup — scan with an authenticator app')}
-                className="w-40 h-40 border rounded-lg"
-              />
+              <div
+                className="border rounded-lg p-2 bg-white inline-block"
+                role="img"
+                aria-label={t('mfa.qrCodeAlt', 'QR code for MFA setup — scan with an authenticator app')}
+              >
+                <QRCodeSVG value={setupData.qrCodeUrl} size={144} marginSize={1} />
+              </div>
             </div>
             <div className="space-y-3 flex-1 min-w-0">
               <div>

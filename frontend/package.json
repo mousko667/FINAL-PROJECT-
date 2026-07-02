@@ -9,6 +9,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:a11y": "pa11y-ci",
     "test:e2e": "playwright test"
   },
   "dependencies": {
@@ -22,6 +24,7 @@
     "i18next": "^26.0.3",
     "i18next-browser-languagedetector": "^8.2.1",
     "lucide-react": "^1.7.0",
+    "qrcode.react": "^4.2.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-hook-form": "^7.72.1",
@@ -49,6 +52,7 @@
     "@types/sockjs-client": "^1.5.4",
     "@vitejs/plugin-react": "^6.0.1",
     "@vitejs/plugin-react-swc": "^4.3.0",
+    "@vitest/coverage-v8": "^4.1.2",
     "autoprefixer": "^10.4.27",
     "bcryptjs": "^3.0.3",
     "eslint": "^9.39.4",
@@ -56,6 +60,7 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.4.0",
     "jsdom": "^29.0.1",
+    "pa11y-ci": "^4.1.1",
     "path": "^0.12.7",
     "pg": "^8.20.0",
     "postcss": "^8.5.8",
