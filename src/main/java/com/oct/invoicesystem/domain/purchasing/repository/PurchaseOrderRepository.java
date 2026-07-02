@@ -3,6 +3,7 @@ package com.oct.invoicesystem.domain.purchasing.repository;
 import com.oct.invoicesystem.domain.purchasing.model.PurchaseOrder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -16,12 +17,14 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, UU
 
     Optional<PurchaseOrder> findByPoNumber(String poNumber);
 
+    @EntityGraph(attributePaths = "items")
     @Query("SELECT po FROM PurchaseOrder po WHERE po.supplier.id = ?1 AND po.deletedAt IS NULL")
     List<PurchaseOrder> findBySupplierId(UUID supplierId);
 
-    @Query("SELECT po FROM PurchaseOrder po WHERE po.id = ?1 AND po.deletedAt IS NULL")
+    @Query("SELECT po FROM PurchaseOrder po LEFT JOIN FETCH po.items WHERE po.id = ?1 AND po.deletedAt IS NULL")
     Optional<PurchaseOrder> findByIdActive(UUID id);
 
+    @EntityGraph(attributePaths = "items")
     @Query("SELECT po FROM PurchaseOrder po WHERE po.deletedAt IS NULL")
     Page<PurchaseOrder> findAllActive(Pageable pageable);
 }
