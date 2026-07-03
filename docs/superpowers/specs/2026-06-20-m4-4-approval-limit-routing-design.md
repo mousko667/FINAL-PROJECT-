@@ -70,6 +70,7 @@ private void ensureWithinApprovalLimit(User approver, Invoice invoice) {
 ### Internationalisation
 
 - Clé `approval.limit.exceeded`, **sans paramètre** (message générique).
+- Chemin des fichiers i18n : `src/main/resources/i18n/messages_{fr,en}.properties`.
 - `messages_fr.properties` : ajouté en **ISO-8859-1** via `iconv -f UTF-8 -t ISO-8859-1`
   (jamais d'append UTF-8 direct — corrompt les accents). Pas d'em-dash ni de guillemets courbes.
 - `messages_en.properties` : ASCII.

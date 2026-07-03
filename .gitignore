@@ -73,6 +73,10 @@ dist/
 dist-ssr/
 *.local
 
+# ── Local Maven repo cache + throwaway scripts (not source) ──
+.m2repo/
+update_fr_props.js
+
 # ── OS — Windows ─────────────────────────────────────────────
 Thumbs.db
 Thumbs.db:encdata
