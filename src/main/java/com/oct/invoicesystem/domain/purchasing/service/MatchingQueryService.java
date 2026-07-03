@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
+import com.oct.invoicesystem.domain.purchasing.model.ThreeWayMatchingLineResolution;
 
 /** Lecture seule : liste des rapprochements + recomposition ligne-à-ligne (M5 #1/#4). Aucune écriture. */
 @Service
@@ -31,6 +32,7 @@ public class MatchingQueryService {
     private final GoodsReceiptNoteRepository goodsReceiptNoteRepository;
     private final MatchingConfigRepository matchingConfigRepository;
     private final MatchingComparator matchingComparator;
+    private final ThreeWayMatchingLineResolutionRepository resolutionRepository;
 
     /** Liste paginée du dernier résultat de rapprochement par facture. */
     @Transactional(readOnly = true)
@@ -61,6 +63,8 @@ public class MatchingQueryService {
             }
         }
 
+        List<ThreeWayMatchingLineResolution> resolutions = resolutionRepository.findByInvoiceId(invoiceId);
+
         List<LineComparison> lines = new ArrayList<>();
         for (InvoiceItem inv : invoice.getItems()) {
             PurchaseOrderItem poItem = po.getItems().stream()
@@ -69,18 +73,28 @@ public class MatchingQueryService {
             if (poItem == null) {
                 lines.add(new LineComparison(inv.getDescription(), null, null,
                         receivedByDesc.get(inv.getDescription()),
-                        inv.getQuantity(), inv.getUnitPrice(), null, null, LineVerdict.MISSING_IN_PO));
+                        inv.getQuantity(), inv.getUnitPrice(), null, null, LineVerdict.MISSING_IN_PO,
+                        null, null, null, null, null));
                 continue;
             }
             LineVerdict verdict = matchingComparator.verdictForLine(
                     inv.getQuantity(), inv.getUnitPrice(), poItem.getQuantity(), poItem.getUnitPrice(), config);
+            
+            ThreeWayMatchingLineResolution res = resolutions.stream()
+                    .filter(r -> r.getPoLine().getId().equals(poItem.getId()))
+                    .findFirst().orElse(null);
+
             lines.add(new LineComparison(
                     inv.getDescription(), poItem.getQuantity(), poItem.getUnitPrice(),
                     receivedByDesc.get(poItem.getItemDescription()),
                     inv.getQuantity(), inv.getUnitPrice(),
                     variancePct(inv.getQuantity(), poItem.getQuantity()),
                     variancePct(inv.getUnitPrice(), poItem.getUnitPrice()),
-                    verdict));
+                    verdict, poItem.getId(),
+                    res != null ? res.getStatus() : null,
+                    res != null ? res.getReason() : null,
+                    res != null ? (res.getResolvedBy() != null ? res.getResolvedBy().getId() : null) : null,
+                    res != null ? res.getCreatedAt() : null));
         }
 
         Optional<ThreeWayMatchingResult> last = matchingRepository.findByInvoiceId(invoiceId);

@@ -11,7 +11,10 @@ import com.oct.invoicesystem.domain.purchasing.model.PurchaseOrder;
 import com.oct.invoicesystem.domain.purchasing.model.PurchaseOrderItem;
 import com.oct.invoicesystem.domain.purchasing.model.ThreeWayMatchingResult;
 import com.oct.invoicesystem.domain.purchasing.repository.MatchingConfigRepository;
+import com.oct.invoicesystem.domain.purchasing.repository.PurchaseOrderItemRepository;
+import com.oct.invoicesystem.domain.purchasing.repository.ThreeWayMatchingLineResolutionRepository;
 import com.oct.invoicesystem.domain.purchasing.repository.ThreeWayMatchingResultRepository;
+import com.oct.invoicesystem.domain.purchasing.model.ThreeWayMatchingLineResolution;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -36,6 +39,8 @@ public class ThreeWayMatchingService {
     private final ThreeWayMatchingResultRepository matchingResultRepository;
     private final MatchingConfigRepository matchingConfigRepository;
     private final MatchingComparator matchingComparator;
+    private final ThreeWayMatchingLineResolutionRepository resolutionRepository;
+    private final PurchaseOrderItemRepository poItemRepository;
 
     /**
      * Perform three-way matching between invoice, PO, and GRN.
@@ -234,5 +239,135 @@ public class ThreeWayMatchingService {
 
         log.info("Recording override for invoice {} by user {}", invoiceId, overriddenBy.getId());
         return matchingResultRepository.save(override);
+    }
+
+    /**
+     * Records a line-level resolution for a mismatched line and updates the invoice matching state if all are resolved.
+     */
+    public ThreeWayMatchingResult resolveLine(java.util.UUID invoiceId, java.util.UUID poLineId, String reason, com.oct.invoicesystem.domain.user.model.User resolvedBy) {
+        if (reason == null || reason.trim().length() < 5) {
+            throw new ValidationException("Resolution reason must be at least 5 characters");
+        }
+
+        ThreeWayMatchingResult existing = matchingResultRepository.findByInvoiceId(invoiceId)
+            .orElseThrow(() -> new ResourceNotFoundException("No matching result found for invoice"));
+
+        PurchaseOrderItem poItem = poItemRepository.findById(poLineId)
+            .orElseThrow(() -> new ResourceNotFoundException("PO Line not found"));
+
+        // Save or update resolution
+        ThreeWayMatchingLineResolution resolution = resolutionRepository.findByInvoiceIdAndPoLineId(invoiceId, poLineId)
+            .orElse(ThreeWayMatchingLineResolution.builder()
+                .invoice(existing.getInvoice())
+                .poLine(poItem)
+                .build());
+        
+        resolution.setStatus("RESOLVED");
+        resolution.setReason(reason.trim());
+        resolution.setResolvedBy(resolvedBy);
+        resolutionRepository.save(resolution);
+
+        // Check if all lines are now resolved
+        // We have to re-evaluate the full matching. We can call performMatching and check if the only MISMATCH lines have resolutions.
+        // Wait, performMatching returns MISMATCH if any line is outside tolerance.
+        // So we need to re-run the matching logic but treat resolved lines as MATCHED.
+        MatchingConfig config = matchingConfigRepository.findByIsActiveTrue()
+            .orElseThrow(() -> new ValidationException("No active matching configuration found"));
+
+        MatchingStatus newStatus = performMatchingWithResolutions(existing.getInvoice(), existing.getPurchaseOrder(), existing.getGoodsReceiptNote(), config);
+        
+        if (newStatus != existing.getStatus()) {
+            ThreeWayMatchingResult update = ThreeWayMatchingResult.builder()
+                .invoice(existing.getInvoice())
+                .purchaseOrder(existing.getPurchaseOrder())
+                .goodsReceiptNote(existing.getGoodsReceiptNote())
+                .status(newStatus)
+                .discrepancyNotes(existing.getDiscrepancyNotes())
+                .overriddenBy(resolvedBy) // Record that it was unblocked by this user via line resolution
+                .overrideReason("All mismatched lines resolved manually")
+                .build();
+            return matchingResultRepository.save(update);
+        }
+
+        return existing;
+    }
+
+    private MatchingStatus performMatchingWithResolutions(Invoice invoice, PurchaseOrder purchaseOrder, 
+                                           GoodsReceiptNote goodsReceiptNote, MatchingConfig config) {
+        
+        List<ThreeWayMatchingLineResolution> resolutions = resolutionRepository.findByInvoiceId(invoice.getId());
+
+        List<InvoiceItem> invoiceItems = invoice.getItems();
+        List<PurchaseOrderItem> poItems = purchaseOrder.getItems();
+
+        if (invoiceItems.isEmpty() || poItems.isEmpty()) {
+            throw new ValidationException("Invoice or PO has no line items");
+        }
+        if (goodsReceiptNote != null && goodsReceiptNote.getItems().isEmpty()) {
+            return MatchingStatus.MISMATCH;
+        }
+
+        boolean allLinesPerfectMatch = true;
+        boolean hasAnyLineWithinTolerance = false;
+        boolean hasAnyLineOutsideTolerance = false;
+
+        for (InvoiceItem invItem : invoiceItems) {
+            BigDecimal invoiceQty = invItem.getQuantity();
+            BigDecimal invoicePrice = invItem.getUnitPrice();
+
+            PurchaseOrderItem matchingPoItem = poItems.stream()
+                .filter(poi -> poi.getItemDescription().equalsIgnoreCase(invItem.getDescription()))
+                .findFirst()
+                .orElse(null);
+
+            if (matchingPoItem == null) {
+                hasAnyLineOutsideTolerance = true;
+                allLinesPerfectMatch = false;
+                continue;
+            }
+            
+            boolean isResolved = resolutions.stream().anyMatch(r -> r.getPoLine().getId().equals(matchingPoItem.getId()));
+
+            BigDecimal poQty = matchingPoItem.getQuantity();
+            BigDecimal poPrice = matchingPoItem.getUnitPrice();
+
+            if (invoiceQty.compareTo(poQty) != 0 || invoicePrice.compareTo(poPrice) != 0) {
+                allLinesPerfectMatch = false;
+                if (matchingComparator.isWithinTolerance(invoiceQty, poQty, invoicePrice, poPrice, config)) {
+                    hasAnyLineWithinTolerance = true;
+                } else if (!isResolved) {
+                    hasAnyLineOutsideTolerance = true;
+                }
+            }
+
+            if (goodsReceiptNote != null) {
+                BigDecimal receivedQty = goodsReceiptNote.getItems().stream()
+                    .filter(gri -> gri.getPurchaseOrderItem().getId().equals(matchingPoItem.getId()))
+                    .map(gri -> gri.getReceivedQuantity())
+                    .findFirst()
+                    .orElse(BigDecimal.ZERO);
+
+                if (receivedQty.compareTo(invoiceQty) != 0) {
+                    if (!matchingComparator.isWithinTolerance(receivedQty, invoiceQty, BigDecimal.ONE, BigDecimal.ONE, config)) {
+                        if (!isResolved) {
+                            hasAnyLineOutsideTolerance = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!hasAnyLineOutsideTolerance) {
+            // Unblocked! Because some lines were resolved manually, the status should be OVERRIDDEN
+            // so the system knows it didn't match cleanly.
+            if (resolutions.isEmpty() && allLinesPerfectMatch) {
+                return MatchingStatus.MATCHED;
+            } else if (resolutions.isEmpty() && hasAnyLineWithinTolerance) {
+                return MatchingStatus.PARTIAL;
+            }
+            return MatchingStatus.OVERRIDDEN;
+        } else {
+            return MatchingStatus.MISMATCH;
+        }
     }
 }

@@ -22,6 +22,11 @@ public record MatchingDetailDTO(
             BigDecimal invoiceUnitPrice,
             BigDecimal qtyVariancePct,
             BigDecimal priceVariancePct,
-            LineVerdict verdict) {
+            LineVerdict verdict,
+            UUID poLineId,
+            String resolutionStatus,
+            String resolutionReason,
+            UUID resolvedBy,
+            java.time.Instant resolvedAt) {
     }
 }

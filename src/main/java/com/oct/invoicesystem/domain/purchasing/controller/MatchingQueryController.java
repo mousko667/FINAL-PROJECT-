@@ -4,6 +4,8 @@ import com.oct.invoicesystem.domain.purchasing.dto.MatchingDetailDTO;
 import com.oct.invoicesystem.domain.purchasing.dto.MatchingSummaryDTO;
 import com.oct.invoicesystem.domain.purchasing.model.MatchingStatus;
 import com.oct.invoicesystem.domain.purchasing.service.MatchingQueryService;
+import com.oct.invoicesystem.domain.purchasing.service.ThreeWayMatchingService;
+import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.shared.response.ApiResponse;
 import com.oct.invoicesystem.shared.response.PagedResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,7 +15,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -26,6 +30,7 @@ import java.util.UUID;
 public class MatchingQueryController {
 
     private final MatchingQueryService service;
+    private final ThreeWayMatchingService matchingService;
 
     @GetMapping
     @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER') and !hasRole('ADMIN')")
@@ -46,4 +51,18 @@ public class MatchingQueryController {
     public ResponseEntity<ApiResponse<MatchingDetailDTO>> lines(@PathVariable UUID invoiceId) {
         return ResponseEntity.ok(ApiResponse.success(service.getLines(invoiceId)));
     }
+
+    @PostMapping("/{invoiceId}/lines/{poLineId}/resolve")
+    @PreAuthorize("isAuthenticated() and (hasRole('ADMIN') or hasRole('DAF'))")
+    @Operation(summary = "Résoudre une ligne en écart", description = "Enregistre une résolution manuelle pour une ligne en écart (M5).")
+    public ResponseEntity<ApiResponse<Void>> resolveLine(
+            @PathVariable UUID invoiceId,
+            @PathVariable UUID poLineId,
+            @RequestBody ResolutionRequest request,
+            @AuthenticationPrincipal User user) {
+        matchingService.resolveLine(invoiceId, poLineId, request.reason(), user);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    public record ResolutionRequest(String reason) {}
 }

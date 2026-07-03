@@ -1,10 +1,12 @@
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import apiClient from '@/services/apiClient'
-import { getMatchingLines, type LineComparison } from '@/services/matchingService'
+import { getMatchingLines, resolveMatchingLine, type LineComparison } from '@/services/matchingService'
+import MatchingLineResolveModal from '@/components/matching/MatchingLineResolveModal'
 
 // Real role names — mirrors MatchingListPage. Excludes ROLE_ADMIN (SoD: no financial access).
 const STAFF_ROLES = [
@@ -33,11 +35,19 @@ export default function MatchingDetailPage() {
   const { t } = useTranslation()
   const { invoiceId } = useParams<{ invoiceId: string }>()
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['matching-lines', invoiceId],
     queryFn: () => getMatchingLines(invoiceId!),
     enabled: !!invoiceId,
   })
+
+  const [resolvingLine, setResolvingLine] = useState<{ poLineId: string; description: string } | null>(null)
+
+  const handleResolve = async (reason: string) => {
+    if (!resolvingLine || !invoiceId) return
+    await resolveMatchingLine(invoiceId, resolvingLine.poLineId, reason)
+    refetch()
+  }
 
   const exportReport = async (format: string) => {
     const res = await apiClient.get(`/invoices/${invoiceId}/matching/export`, {
@@ -96,6 +106,7 @@ export default function MatchingDetailPage() {
                   <th>{t('matching.qtyVariance')}</th>
                   <th>{t('matching.priceVariance')}</th>
                   <th>{t('matching.verdict')}</th>
+                  <th>{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -109,11 +120,35 @@ export default function MatchingDetailPage() {
                     <td>{num(l.invoiceUnitPrice)}</td>
                     <td>{pct(l.qtyVariancePct)}</td>
                     <td>{pct(l.priceVariancePct)}</td>
-                    <td>{t(`matching.verdicts.${l.verdict}`)}</td>
+                    <td>
+                      {l.resolutionStatus === 'RESOLVED' ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                          {t('matching.resolved')}
+                        </span>
+                      ) : t(`matching.verdicts.${l.verdict}`)}
+                    </td>
+                    <td className="py-2">
+                      {l.verdict === 'MISMATCH' && l.resolutionStatus !== 'RESOLVED' && l.poLineId && (
+                        <button
+                          onClick={() => setResolvingLine({ poLineId: l.poLineId!, description: l.description })}
+                          className="text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 px-2 py-1 rounded"
+                        >
+                          {t('matching.resolveBtn')}
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+
+            <MatchingLineResolveModal
+              isOpen={!!resolvingLine}
+              onClose={() => setResolvingLine(null)}
+              onResolve={handleResolve}
+              poLineId={resolvingLine?.poLineId || ''}
+              description={resolvingLine?.description || ''}
+            />
           </>
         )}
       </div>

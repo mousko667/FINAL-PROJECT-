@@ -23,6 +23,11 @@ export interface LineComparison {
   qtyVariancePct: number | null
   priceVariancePct: number | null
   verdict: 'MATCHED' | 'WITHIN_TOLERANCE' | 'MISMATCH' | 'MISSING_IN_PO'
+  poLineId?: string
+  resolutionStatus?: string
+  resolutionReason?: string
+  resolvedBy?: string
+  resolvedAt?: string
 }
 
 export interface MatchingDetail {
@@ -41,4 +46,8 @@ export async function listMatching(params: { status?: string; search?: string; p
 export async function getMatchingLines(invoiceId: string) {
   const { data } = await apiClient.get(`/matching/${invoiceId}/lines`)
   return data.data as MatchingDetail
+}
+
+export async function resolveMatchingLine(invoiceId: string, poLineId: string, reason: string) {
+  await apiClient.post(`/matching/${invoiceId}/lines/${poLineId}/resolve`, { reason })
 }

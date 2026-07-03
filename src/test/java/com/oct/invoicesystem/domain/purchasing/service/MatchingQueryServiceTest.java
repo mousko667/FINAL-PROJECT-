@@ -32,6 +32,7 @@ class MatchingQueryServiceTest {
     @Mock PurchaseOrderRepository poRepo;
     @Mock GoodsReceiptNoteRepository grnRepo;
     @Mock MatchingConfigRepository configRepo;
+    @Mock ThreeWayMatchingLineResolutionRepository resolutionRepository;
     @Spy MatchingComparator matchingComparator;
     @InjectMocks MatchingQueryService service;
 
@@ -68,6 +69,7 @@ class MatchingQueryServiceTest {
         when(grnRepo.findByPurchaseOrderId(poId)).thenReturn(List.of());
         when(configRepo.findByIsActiveTrue()).thenReturn(Optional.of(config));
         when(matchingRepo.findByInvoiceId(invId)).thenReturn(Optional.empty());
+        when(resolutionRepository.findByInvoiceId(invId)).thenReturn(List.of());
 
         MatchingDetailDTO dto = service.getLines(invId);
         assertThat(dto.lines()).hasSize(1);
@@ -95,6 +97,7 @@ class MatchingQueryServiceTest {
         when(grnRepo.findByPurchaseOrderId(poId)).thenReturn(List.of());
         when(configRepo.findByIsActiveTrue()).thenReturn(Optional.of(config));
         when(matchingRepo.findByInvoiceId(invId)).thenReturn(Optional.empty());
+        when(resolutionRepository.findByInvoiceId(invId)).thenReturn(List.of());
 
         MatchingDetailDTO dto = service.getLines(invId);
         assertThat(dto.lines().get(0).verdict()).isEqualTo(LineVerdict.MISSING_IN_PO);
