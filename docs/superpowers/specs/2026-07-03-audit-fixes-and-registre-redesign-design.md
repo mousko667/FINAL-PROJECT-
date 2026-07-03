@@ -19,7 +19,7 @@ avant de redessiner, pour ne pas retoucher deux fois les composants partagés
   nettoyages i18n/refactor (DTO `department` plat, en-têtes export via `MessageSource`).
 - **Tests de l'arbre existant (vérifiés) :** frontend `tsc --noEmit` **0 erreur** ;
   vitest **80/80** (un timeout flaky isolé sous charge machine, vert en isolation) ;
-  backend `./mvnw test` **en cours de vérification** (PostgreSQL hôte 5433 joignable).
+  backend `./mvnw test` = **539 tests, 0 échec, 3 ERREURS** — voir §0bis.
 - **Migrations :** contiguës V1→V42. **Prochaine = V43.**
 - **Le 🔴 BLOQUANT et la majorité des MAJEURS de l'audit ne sont PAS corrigés** dans ce
   diff (vérifié : aucun appel `/workflow/assign` nulle part dans `frontend/src` ; ADMIN
@@ -30,6 +30,30 @@ avant de redessiner, pour ne pas retoucher deux fois les composants partagés
 puis le committer en commits thématiques (onboarding / archives / backups / cleanups i18n)
 pour repartir sur une base propre AVANT d'appliquer les correctifs d'audit. Si un test est
 rouge (hors flakiness prouvée), STOP + rapport avant de committer.
+
+### 0bis. Les 3 erreurs backend — diagnostic (bloque le commit de l'existant)
+
+`ArchiveFolderIntegrationTest` (fichier non commité, nouveau) échoue 3× dans `setUp:37`
+(`userRepository.findByUsername("admin")`) : `AEADBadTagException: Tag mismatch` au
+déchiffrement de `User.mfaSecret` (`@Convert(EncryptionAttributeConverter)`, ligne 108).
+
+**Cause racine (confirmée avec l'utilisateur) :** lors de la session d'audit (2026-07-02),
+la MFA de l'admin étant déjà configurée, une **clé AES ad-hoc** a été utilisée pour tester ;
+le `mfa_secret` de l'`admin` en base dev (`localhost:5433`) est donc chiffré avec une clé ≠
+de celle du profil `test` (`TestEncryptionKey1234567890ABCDEF` dans
+`application-test.yml` vs `ENCRYPTION_KEY=OCTInvoice2026SecretKeyAES256Dev` côté dev/prod).
+`AbstractPostgresIntegrationTest` pointe la base dev partagée (Flyway off) → le row admin
+n'est pas déchiffrable sous la clé de test. Les autres tests Postgres passent car ils ne
+chargent jamais un champ chiffré de l'admin. **Ce n'est pas un bug du code archives** — c'est
+exactement le symptôme de MAJEUR-6 (row admin dérivé).
+
+**Correctif retenu (avant commit de l'existant) :** rendre `ArchiveFolderIntegrationTest`
+robuste — ne pas dépendre du `mfa_secret` déchiffrable de l'admin. `createFolder` n'utilise
+`user` que pour la FK `createdBy` : récupérer l'id d'un user via une requête ne sélectionnant
+pas le champ chiffré, puis `getReferenceById(id)` (proxy lazy, aucune lecture/déchiffrement),
+ou créer un user de test dédié dans la transaction (le test écrit déjà et compte sur le
+rollback `@Transactional`). Objectif : gate backend **539/0/0** sans retoucher la base à la
+main. Le fond (row admin) sera réglé par la migration **V43** (MAJEUR-6, §A9).
 
 ---
 
