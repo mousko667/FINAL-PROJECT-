@@ -67,6 +67,10 @@ public class Invoice {
     @JoinColumn(name = "supplier_id")
     private Supplier supplier;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "folder_id")
+    private ArchiveFolder folder;
+
     @Column(name = "supplier_name", nullable = false, length = 255)
     private String supplierName;
 

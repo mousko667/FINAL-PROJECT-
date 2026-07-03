@@ -9,13 +9,18 @@ import org.mapstruct.Mapping;
 public interface InvoiceMapper {
 
     @Mapping(target = "departmentId", source = "department.id")
+    @Mapping(target = "departmentCode", source = "department.code")
+    @Mapping(target = "departmentNameFr", source = "department.nameFr")
+    @Mapping(target = "departmentNameEn", source = "department.nameEn")
     @Mapping(target = "submittedBy", source = "submittedBy.id")
     @Mapping(target = "supplierId", source = "supplier.id")
+    @Mapping(target = "folderId", source = "folder.id")
     InvoiceDTO toDto(Invoice entity);
 
     @Mapping(target = "department", ignore = true)
     @Mapping(target = "submittedBy", ignore = true)
     @Mapping(target = "supplier", ignore = true)
+    @Mapping(target = "folder", ignore = true)
     @Mapping(target = "items", ignore = true)
     @Mapping(target = "documents", ignore = true)
     @Mapping(target = "createdAt", ignore = true)

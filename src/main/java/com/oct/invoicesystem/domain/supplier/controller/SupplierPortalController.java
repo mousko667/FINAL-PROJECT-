@@ -9,6 +9,7 @@ import com.oct.invoicesystem.domain.invoice.service.InvoiceDocumentService;
 import com.oct.invoicesystem.domain.invoice.service.InvoiceService;
 import com.oct.invoicesystem.domain.invoice.service.InvoiceStateMachineService;
 import com.oct.invoicesystem.domain.invoice.model.Invoice;
+import com.oct.invoicesystem.domain.invoice.mapper.InvoiceMapper;
 import com.oct.invoicesystem.domain.invoice.statemachine.InvoiceEvent;
 import com.oct.invoicesystem.domain.invoice.statemachine.WorkflowExtendedStateKeys;
 import com.oct.invoicesystem.domain.supplier.dto.SupplierUpdateRequest;
@@ -59,6 +60,7 @@ public class SupplierPortalController {
     private final MinioStorageService minioStorageService;
     private final SecurityHelper securityHelper;
     private final org.springframework.context.MessageSource messageSource;
+    private final InvoiceMapper invoiceMapper;
 
     private UUID getSupplierId(Authentication authentication) {
         User user = securityHelper.currentUser(authentication);
@@ -98,7 +100,7 @@ public class SupplierPortalController {
 
         UUID supplierId = getSupplierId(authentication);
         PagedResponse<Invoice> paged = invoiceService.listInvoices(status, null, from, to, reference, supplierId, page, size, sort);
-        List<InvoiceDTO> mapped = paged.getContent().stream().map(this::toDto).toList();
+        List<InvoiceDTO> mapped = paged.getContent().stream().map(invoiceMapper::toDto).toList();
         return ResponseEntity.ok(ApiResponse.success(
                 new PagedResponse<>(mapped, paged.getPage(), paged.getSize(), paged.getTotalElements(), paged.getTotalPages(), paged.isLast())
         ));
@@ -278,28 +280,7 @@ public class SupplierPortalController {
     }
 
     private InvoiceDTO toDto(Invoice invoice) {
-        return new InvoiceDTO(
-                invoice.getId(),
-                invoice.getReferenceNumber(),
-                invoice.getDepartment() != null ? invoice.getDepartment().getId() : null,
-                invoice.getSubmittedBy() != null ? invoice.getSubmittedBy().getId() : null,
-                invoice.getSupplier() != null ? invoice.getSupplier().getId() : null,
-                invoice.getPurchaseOrderId(),
-                invoice.getSupplierName(),
-                invoice.getSupplierEmail(),
-                invoice.getSupplierTaxId(),
-                invoice.getAmount(),
-                invoice.getCurrency(),
-                invoice.getIssueDate(),
-                invoice.getDueDate(),
-                invoice.getDescription(),
-                invoice.getStatus(),
-                invoice.getDataSensitivity(),
-                invoice.getMatchingStatus(),
-                invoice.getVersion(),
-                invoice.getCreatedAt(),
-                invoice.getUpdatedAt()
-        );
+        return invoiceMapper.toDto(invoice);
     }
 
     private void ensureOwnInvoice(UUID invoiceId, UUID supplierId) {

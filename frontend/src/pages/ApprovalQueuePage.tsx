@@ -12,7 +12,9 @@ interface PendingInvoice {
   amount: number
   currency: string
   status: string
-  department?: { code: string; nameEn: string; nameFr: string }
+  departmentCode?: string
+  departmentNameFr?: string
+  departmentNameEn?: string
   dueDate?: string
   createdAt?: string
 }
@@ -42,7 +44,7 @@ function isSlaNearBreach(inv: PendingInvoice): boolean {
 }
 
 export default function ApprovalQueuePage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const roles = useAppSelector((s) => s.auth.user?.roles ?? [])
   const departmentId = useAppSelector((s) => s.auth.user?.departmentId)
 
@@ -129,7 +131,7 @@ export default function ApprovalQueuePage() {
                     <td className="px-4 py-3 font-mono text-xs font-medium text-gray-900">{inv.referenceNumber}</td>
                     <td className="px-4 py-3 text-gray-700 truncate max-w-[150px]">{inv.supplierName}</td>
                     <td className="px-4 py-3 text-gray-500 text-xs">
-                      {inv.department ? `${inv.department.nameEn} (${inv.department.code})` : '—'}
+                      {inv.departmentCode ? `${(i18n.language === 'en' ? inv.departmentNameEn : inv.departmentNameFr) ?? inv.departmentCode} (${inv.departmentCode})` : '—'}
                     </td>
                     <td className="px-4 py-3 text-right font-medium text-gray-900">
                       {Number(inv.amount).toLocaleString()} {inv.currency}

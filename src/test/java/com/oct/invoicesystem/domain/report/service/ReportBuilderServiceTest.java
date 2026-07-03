@@ -36,13 +36,22 @@ class ReportBuilderServiceTest {
     @Mock private SupplierService supplierService;
     @Mock private AuditLogRepository auditLogRepository;
     @Mock private ReportService reportService;
+    @Mock private org.springframework.context.MessageSource messageSource;
 
     // Real export service (no need to mock byte generation)
     private final TabularExportService exportService = new TabularExportService();
 
     private ReportBuilderService service() {
+        org.mockito.Mockito.lenient().when(messageSource.getMessage(any(String.class), any(), any(java.util.Locale.class)))
+                .thenAnswer(inv -> {
+                    String key = inv.getArgument(0);
+                    int lastDot = key.lastIndexOf('.');
+                    String suffix = lastDot >= 0 ? key.substring(lastDot + 1) : key;
+                    suffix = suffix.replace("_", " ");
+                    return suffix.substring(0, 1).toUpperCase() + suffix.substring(1);
+                });
         return new ReportBuilderService(repository, exportService, invoiceService,
-                supplierService, auditLogRepository, reportService);
+                supplierService, auditLogRepository, reportService, messageSource);
     }
 
     @Test

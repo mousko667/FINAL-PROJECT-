@@ -74,7 +74,7 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
 
   const roles = user.roles ?? []
   const deptId = user.departmentId
-  const invDeptId = invoice.department?.id
+  const invDeptId = invoice.departmentId
   const status = invoice.status
 
   const isAdmin  = roles.includes('ROLE_ADMIN')

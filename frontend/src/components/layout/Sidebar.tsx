@@ -31,6 +31,7 @@ import {
   Trash2,
   ShieldCheck,
   GitCompare,
+  HardDrive,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -214,6 +215,7 @@ export default function Sidebar() {
           </RoleGuard>
           <NavItem to="/admin/security" icon={Shield} label={t('admin.security.title', 'Sécurité')} />
           <NavItem to="/admin/compliance" icon={ShieldAlert} label={t('admin.compliance.navTitle', 'Conformité')} />
+          <NavItem to="/admin/backups" icon={HardDrive} label={t('admin.backups.navTitle', 'Sauvegardes')} />
           <NavItem to="/admin/integrations" icon={Zap} label={t('admin.integrations.title', 'Intégrations')} />
         </RoleGuard>
       </nav>

@@ -42,6 +42,7 @@ public class ReportBuilderService {
     private final SupplierService supplierService;
     private final AuditLogRepository auditLogRepository;
     private final ReportService reportService;
+    private final org.springframework.context.MessageSource messageSource;
 
     @Transactional(readOnly = true)
     public List<ReportDefinitionDTO.Response> list() {
@@ -93,17 +94,39 @@ public class ReportBuilderService {
 
     /** Builds the headers + rows for a definition's dataset. Shared by render() and preview(). */
     public Dataset buildDataset(ReportDefinition def) {
+        java.util.Locale locale = org.springframework.context.i18n.LocaleContextHolder.getLocale();
         return switch (def.getDataset()) {
             case "INVOICES" -> new Dataset("Invoices",
-                    List.of("Reference", "Supplier", "Amount", "Currency", "Status", "Issue date", "Due date", "Department"),
+                    List.of(
+                            messageSource.getMessage("report.excel.header.reference", null, locale),
+                            messageSource.getMessage("report.excel.header.supplier", null, locale),
+                            messageSource.getMessage("report.excel.header.amount", null, locale),
+                            messageSource.getMessage("report.excel.header.currency", null, locale),
+                            messageSource.getMessage("report.excel.header.status", null, locale),
+                            messageSource.getMessage("report.excel.header.issue_date", null, locale),
+                            messageSource.getMessage("report.excel.header.due_date", null, locale),
+                            messageSource.getMessage("report.excel.header.department", null, locale)
+                    ),
                     invoiceService.buildExportRows(null, null, null, null, null));
             case "SUPPLIERS" -> new Dataset("Suppliers",
-                    List.of("Company", "Tax ID", "Email", "Phone", "Status"),
+                    List.of(
+                            messageSource.getMessage("report.excel.header.company", null, locale),
+                            messageSource.getMessage("report.excel.header.tax_id", null, locale),
+                            messageSource.getMessage("report.excel.header.email", null, locale),
+                            messageSource.getMessage("report.excel.header.phone", null, locale),
+                            messageSource.getMessage("report.excel.header.status", null, locale)
+                    ),
                     supplierService.searchSuppliers(null, null, null, null, Pageable.unpaged()).getContent().stream()
                             .map(s -> List.of(ns(s.companyName()), ns(s.taxId()), ns(s.contactEmail()),
                                     ns(s.contactPhone()), s.status() == null ? "" : s.status().name())).toList());
             case "BUDGET" -> new Dataset("Budget vs Actual",
-                    List.of("Department", "Budget", "Actual", "Variance", "Utilization %"),
+                    List.of(
+                            messageSource.getMessage("report.excel.header.department", null, locale),
+                            messageSource.getMessage("report.excel.header.budget", null, locale),
+                            messageSource.getMessage("report.excel.header.actual", null, locale),
+                            messageSource.getMessage("report.excel.header.variance", null, locale),
+                            messageSource.getMessage("report.excel.header.utilization_percent", null, locale)
+                    ),
                     reportService.getBudgetVsActual().lines().stream()
                             .map(l -> List.of(ns(l.departmentCode()),
                                     l.budget() == null ? "" : l.budget().toPlainString(),
@@ -111,7 +134,13 @@ public class ReportBuilderService {
                                     l.variance() == null ? "" : l.variance().toPlainString(),
                                     l.utilizationPercent() == null ? "" : l.utilizationPercent().toPlainString())).toList());
             case "AUDIT" -> new Dataset("Audit",
-                    List.of("Date", "Action", "Entity", "Entity ID", "IP"),
+                    List.of(
+                            messageSource.getMessage("report.excel.header.date", null, locale),
+                            messageSource.getMessage("report.excel.header.action", null, locale),
+                            messageSource.getMessage("report.excel.header.entity", null, locale),
+                            messageSource.getMessage("report.excel.header.entity_id", null, locale),
+                            messageSource.getMessage("report.excel.header.ip", null, locale)
+                    ),
                     auditLogRepository.findAll(org.springframework.data.domain.PageRequest.of(0, 5000,
                             Sort.by(Sort.Direction.DESC, "createdAt"))).getContent().stream()
                             .map(a -> List.of(a.getCreatedAt() == null ? "" : a.getCreatedAt().toString(),
@@ -139,16 +168,20 @@ public class ReportBuilderService {
     public byte[] executiveSummaryPdf() {
         var kpi = reportService.getDashboardKpis();
         var budget = reportService.getBudgetVsActual();
+        java.util.Locale locale = org.springframework.context.i18n.LocaleContextHolder.getLocale();
         List<List<String>> rows = List.of(
-                List.of("Total invoices", String.valueOf(kpi.totalInvoices())),
-                List.of("Overdue invoices", String.valueOf(kpi.overdueCount())),
-                List.of("Avg processing time (days)", String.format("%.1f", kpi.averageProcessingTimeDays())),
-                List.of("Rejection rate", String.format("%.1f%%", kpi.rejectionRate() * 100)),
-                List.of("Total budget", budget.totalBudget() == null ? "0" : budget.totalBudget().toPlainString()),
-                List.of("Total committed spend", budget.totalActual() == null ? "0" : budget.totalActual().toPlainString()),
-                List.of("Webhook delivery success", String.format("%.0f%%", kpi.webhookDeliverySuccessRate() * 100)));
+                List.of(messageSource.getMessage("report.excel.header.total_invoices", null, locale), String.valueOf(kpi.totalInvoices())),
+                List.of(messageSource.getMessage("report.excel.header.overdue_invoices", null, locale), String.valueOf(kpi.overdueCount())),
+                List.of(messageSource.getMessage("report.excel.header.avg_processing_time_days", null, locale), String.format("%.1f", kpi.averageProcessingTimeDays())),
+                List.of(messageSource.getMessage("report.excel.header.rejection_rate", null, locale), String.format("%.1f%%", kpi.rejectionRate() * 100)),
+                List.of(messageSource.getMessage("report.excel.header.total_budget", null, locale), budget.totalBudget() == null ? "0" : budget.totalBudget().toPlainString()),
+                List.of(messageSource.getMessage("report.excel.header.total_committed_spend", null, locale), budget.totalActual() == null ? "0" : budget.totalActual().toPlainString()),
+                List.of(messageSource.getMessage("report.excel.header.webhook_delivery_success", null, locale), String.format("%.0f%%", kpi.webhookDeliverySuccessRate() * 100)));
         return exportService.export(TabularExportService.Format.PDF, "Executive Summary",
-                List.of("Indicator", "Value"), rows);
+                List.of(
+                        messageSource.getMessage("report.excel.header.indicator", null, locale),
+                        messageSource.getMessage("report.excel.header.value", null, locale)
+                ), rows);
     }
 
     private String upperOrThrow(String v, Set<String> allowed, String field) {

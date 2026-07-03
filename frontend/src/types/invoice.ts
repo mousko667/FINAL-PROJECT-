@@ -44,13 +44,10 @@ export interface Invoice {
   dataSensitivity?: 'PUBLIC' | 'INTERNAL' | 'CONFIDENTIAL'
   matchingStatus?: 'MATCHED' | 'PARTIAL' | 'MISMATCH' | 'OVERRIDDEN' | null
   description?: string
-  department?: {
-    id: string
-    name: string
-    nameEn?: string
-    nameFr?: string
-    code: string
-  }
+  departmentId?: string
+  departmentCode?: string
+  departmentNameFr?: string
+  departmentNameEn?: string
   lineItems?: InvoiceLineItem[]
   documents?: InvoiceDocument[]
   createdBy?: string

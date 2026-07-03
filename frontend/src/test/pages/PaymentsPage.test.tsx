@@ -62,7 +62,11 @@ describe('PaymentsPage — statut paiement (planifié / exécuté)', () => {
   it('affiche le bouton Marquer exécuté seulement pour les paiements SCHEDULED', async () => {
     renderPage()
     expect(await screen.findByText('Marquer exécuté')).toBeInTheDocument()
-    expect(screen.getByText('Exécuté')).toBeInTheDocument()
+    // "Exécuté" libellé du badge de statut (SPAN) ; ignorer l'OPTION homonyme du filtre.
+    const executedBadge = screen
+      .getAllByText('Exécuté')
+      .find((el) => el.tagName === 'SPAN')
+    expect(executedBadge).toBeInTheDocument()
     // Only one scheduled payment => only one "Marquer exécuté" button.
     expect(screen.getAllByText('Marquer exécuté')).toHaveLength(1)
   })

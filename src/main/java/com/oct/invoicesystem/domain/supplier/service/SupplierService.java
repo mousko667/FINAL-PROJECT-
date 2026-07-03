@@ -22,7 +22,7 @@ public interface SupplierService {
     SupplierResponse getSupplier(UUID id);
     Page<SupplierResponse> searchSuppliers(String name, String taxId, SupplierStatus status,
                                            SupplierCategory category, Pageable pageable);
-    void activateSupplier(UUID id);
+    void activateSupplier(UUID id, User activatedBy);
     void suspendSupplier(UUID id);
     void softDeleteSupplier(UUID id);
     Supplier findEntityById(UUID id);

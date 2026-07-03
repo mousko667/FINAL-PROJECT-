@@ -58,7 +58,8 @@ public class InvoiceService {
     @Transactional
     public Invoice createInvoice(Invoice invoice, UUID actorId) {
         ensureAssistantComptable(actorId);
-        
+
+        invoice.setDepartment(resolveDepartment(invoice.getDepartment()));
         populateSupplierFields(invoice);
 
         invoice.setId(null);
@@ -266,7 +267,7 @@ public class InvoiceService {
     @Transactional(readOnly = true)
     public void validateDocumentPresent(UUID invoiceId) {
         if (invoiceDocumentRepository.findByInvoiceId(invoiceId).isEmpty()) {
-            throw new ValidationException("error.invoice.no_document");
+            throw new ValidationException("error.invoice.document_required");
         }
     }
 
@@ -309,8 +310,14 @@ public class InvoiceService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Invoice> searchArchived(String keyword, UUID departmentId, Instant from, Instant to, Pageable pageable) {
-        return invoiceRepository.searchArchived(keyword, departmentId, from, to, pageable);
+    public Page<Invoice> searchArchived(String keyword, String departmentCode, String folderId, Instant from, Instant to, Pageable pageable) {
+        UUID departmentId = null;
+        if (departmentCode != null && !departmentCode.trim().isEmpty()) {
+            departmentId = departmentRepository.findByCode(departmentCode)
+                .map(Department::getId)
+                .orElse(UUID.randomUUID()); // If not found, use a random UUID so it matches nothing
+        }
+        return invoiceRepository.searchArchived(keyword, departmentId, folderId, from, to, pageable);
     }
 
     @Transactional
@@ -319,7 +326,8 @@ public class InvoiceService {
         Supplier supplier = new Supplier();
         supplier.setId(supplierId);
         invoice.setSupplier(supplier);
-        
+
+        invoice.setDepartment(resolveDepartment(invoice.getDepartment()));
         populateSupplierFields(invoice);
 
         invoice.setId(null);

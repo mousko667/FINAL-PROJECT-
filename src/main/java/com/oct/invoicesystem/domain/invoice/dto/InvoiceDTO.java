@@ -12,6 +12,9 @@ public record InvoiceDTO(
         UUID id,
         String referenceNumber,
         UUID departmentId,
+        String departmentCode,
+        String departmentNameFr,
+        String departmentNameEn,
         UUID submittedBy,
         UUID supplierId,
         UUID purchaseOrderId,
@@ -28,6 +31,7 @@ public record InvoiceDTO(
         String matchingStatus,
         Integer version,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        UUID folderId
 ) {
 }

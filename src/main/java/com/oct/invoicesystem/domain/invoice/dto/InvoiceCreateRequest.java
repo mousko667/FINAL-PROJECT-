@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 public record InvoiceCreateRequest(
@@ -21,8 +22,16 @@ public record InvoiceCreateRequest(
         @NotBlank String currency,
         @NotNull LocalDate issueDate,
         @NotNull LocalDate dueDate,
-        String description
+        String description,
+        List<LineItem> lineItems
 ) {
+    /** Invoice line for three-way matching (optional; compared against the PO when present). */
+    public record LineItem(
+            String description,
+            BigDecimal quantity,
+            BigDecimal unitPrice,
+            BigDecimal totalPrice
+    ) {}
     public InvoiceCreateRequest(
             UUID departmentId,
             UUID supplierId,
@@ -37,6 +46,6 @@ public record InvoiceCreateRequest(
             String description
     ) {
         this(departmentId, supplierId, null, supplierName, supplierEmail, supplierTaxId,
-                supplierBankDetails, amount, currency, issueDate, dueDate, description);
+                supplierBankDetails, amount, currency, issueDate, dueDate, description, null);
     }
 }

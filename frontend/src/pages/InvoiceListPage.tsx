@@ -25,7 +25,7 @@ const matchingBadge: Record<string, string> = {
 }
 
 export default function InvoiceListPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [showImport, setShowImport] = useState(false)
@@ -231,7 +231,7 @@ export default function InvoiceListPage() {
                           </span>
                         ) : <span className="text-xs text-gray-400">—</span>}
                       </td>
-                      <td className="px-4 py-3 text-gray-500">{invoice.department?.code ?? '—'}</td>
+                      <td className="px-4 py-3 text-gray-500">{(i18n.language === 'en' ? invoice.departmentNameEn : invoice.departmentNameFr) ?? invoice.departmentCode ?? '—'}</td>
                     </tr>
                   ))
                 )}

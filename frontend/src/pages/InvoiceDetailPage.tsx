@@ -72,11 +72,13 @@ function SensitivityBadge({ level }: { level: string }) {
 
 export default function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const roles = useAppSelector((s) => s.auth.user?.roles ?? [])
-  const canOverride = roles.includes('ROLE_DAF') || roles.includes('ROLE_ADMIN') || roles.includes('ROLE_ASSISTANT_COMPTABLE')
+  // Matching override is restricted to DAF/ADMIN on the backend (InvoiceController /matching/override
+  // is @PreAuthorize hasAnyRole('DAF','ADMIN')). ASSISTANT_COMPTABLE must NOT see this button.
+  const canOverride = roles.includes('ROLE_DAF') || roles.includes('ROLE_ADMIN')
   // P11-15: only DAF and Assistant Comptable may reclassify an invoice's data sensitivity.
   const canClassify = roles.includes('ROLE_DAF') || roles.includes('ROLE_ASSISTANT_COMPTABLE')
 
@@ -197,7 +199,7 @@ export default function InvoiceDetailPage() {
                 { label: t('invoice.amount'), value: `${Number(invoice.amount).toLocaleString()} ${invoice.currency}` },
                 { label: t('invoice.issueDate'), value: invoice.issueDate },
                 { label: t('invoice.dueDate'), value: invoice.dueDate },
-                { label: t('invoice.department'), value: invoice.department?.nameEn ?? invoice.department?.name ?? '—' },
+                { label: t('invoice.department'), value: (i18n.language === 'en' ? invoice.departmentNameEn : invoice.departmentNameFr) ?? invoice.departmentCode ?? '—' },
               ].map(({ label, value }) => (
                 <div key={label}>
                   <dt className="text-muted-foreground">{label}</dt>

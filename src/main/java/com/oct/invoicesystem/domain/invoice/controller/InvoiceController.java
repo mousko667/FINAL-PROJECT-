@@ -7,6 +7,7 @@ import com.oct.invoicesystem.domain.invoice.dto.UpdateSensitivityRequest;
 import com.oct.invoicesystem.domain.invoice.dto.InvoiceUpdateRequest;
 import com.oct.invoicesystem.domain.invoice.mapper.InvoiceMapper;
 import com.oct.invoicesystem.domain.invoice.model.Invoice;
+import com.oct.invoicesystem.domain.invoice.model.InvoiceItem;
 import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
 import com.oct.invoicesystem.domain.invoice.service.InvoiceService;
 import com.oct.invoicesystem.domain.invoice.service.InvoiceStateMachineService;
@@ -70,6 +71,7 @@ public class InvoiceController {
     private final SecurityHelper securityHelper;
     private final com.oct.invoicesystem.shared.export.TabularExportService tabularExportService;
     private final com.oct.invoicesystem.domain.invoice.service.InvoiceImportService invoiceImportService;
+    private final org.springframework.context.MessageSource messageSource;
 
     @GetMapping
     @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER') and !hasRole('ADMIN')")
@@ -100,10 +102,20 @@ public class InvoiceController {
             @RequestParam(required = false) UUID department,
             @RequestParam(required = false) LocalDate from,
             @RequestParam(required = false) LocalDate to,
-            @RequestParam(required = false) String reference) {
+            @RequestParam(required = false) String reference,
+            java.util.Locale locale) {
         var fmt = com.oct.invoicesystem.shared.export.TabularExportService.Format.from(format);
         // Build rows inside the service transaction so the lazy Department association can be read.
-        List<String> headers = List.of("Reference", "Supplier", "Amount", "Currency", "Status", "Issue date", "Due date", "Department");
+        List<String> headers = List.of(
+                messageSource.getMessage("report.excel.header.reference", null, locale),
+                messageSource.getMessage("report.excel.header.supplier", null, locale),
+                messageSource.getMessage("report.excel.header.amount", null, locale),
+                messageSource.getMessage("report.excel.header.currency", null, locale),
+                messageSource.getMessage("report.excel.header.status", null, locale),
+                messageSource.getMessage("report.excel.header.issue_date", null, locale),
+                messageSource.getMessage("report.excel.header.due_date", null, locale),
+                messageSource.getMessage("report.excel.header.department", null, locale)
+        );
         List<List<String>> rows = invoiceService.buildExportRows(status, department, from, to, reference);
         byte[] body = tabularExportService.export(fmt, "Invoices", headers, rows);
         return ResponseEntity.ok()
@@ -177,9 +189,13 @@ public class InvoiceController {
             description = "Exports the three-way matching reconciliation report for an invoice in the requested format")
     public ResponseEntity<byte[]> exportMatchingReport(
             @PathVariable UUID id,
-            @RequestParam(defaultValue = "csv") String format) {
+            @RequestParam(defaultValue = "csv") String format,
+            java.util.Locale locale) {
         var fmt = com.oct.invoicesystem.shared.export.TabularExportService.Format.from(format);
-        List<String> headers = List.of("Field", "Value");
+        List<String> headers = List.of(
+                messageSource.getMessage("report.excel.header.field", null, locale),
+                messageSource.getMessage("report.excel.header.value", null, locale)
+        );
         List<List<String>> rows = invoiceService.buildMatchingExportRows(id);
         byte[] body = tabularExportService.export(fmt, "Matching report", headers, rows);
         return ResponseEntity.ok()
@@ -293,13 +309,14 @@ public class InvoiceController {
     @Operation(summary = "Rechercher dans les archives", description = "Full-text search dans les factures archivées")
     public ResponseEntity<ApiResponse<Page<InvoiceDTO>>> searchArchived(
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) UUID department,
+            @RequestParam(required = false) String department,
+            @RequestParam(required = false) String folderId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<Invoice> result = invoiceService.searchArchived(keyword, department, from, to, pageable);
+        Page<Invoice> result = invoiceService.searchArchived(keyword, department, folderId, from, to, pageable);
         return ResponseEntity.ok(ApiResponse.success(result.map(invoiceMapper::toDto)));
     }
 
@@ -325,7 +342,7 @@ public class InvoiceController {
             supplier = new com.oct.invoicesystem.domain.supplier.model.Supplier();
             supplier.setId(request.supplierId());
         }
-        return Invoice.builder()
+        Invoice invoice = Invoice.builder()
                 .department(department)
                 .submittedBy(actor)
                 .supplier(supplier)
@@ -340,6 +357,34 @@ public class InvoiceController {
                 .dueDate(request.dueDate())
                 .description(request.description())
                 .build();
+        attachLineItems(invoice, request.lineItems());
+        return invoice;
+    }
+
+    /**
+     * Attaches optional invoice lines to a freshly built invoice so the three-way matching engine
+     * has line-level data to compare against the PO. The bidirectional link is set on each item and
+     * the cascade on {@code Invoice.items} persists them with the invoice.
+     */
+    private void attachLineItems(Invoice invoice, java.util.List<InvoiceCreateRequest.LineItem> lines) {
+        if (lines == null || lines.isEmpty()) {
+            return;
+        }
+        int lineNumber = 1;
+        for (InvoiceCreateRequest.LineItem line : lines) {
+            if (line == null) {
+                continue;
+            }
+            InvoiceItem item = InvoiceItem.builder()
+                    .invoice(invoice)
+                    .lineNumber(lineNumber++)
+                    .description(line.description())
+                    .quantity(line.quantity())
+                    .unitPrice(line.unitPrice())
+                    .totalPrice(line.totalPrice())
+                    .build();
+            invoice.getItems().add(item);
+        }
     }
 
     private Invoice toInvoice(InvoiceUpdateRequest request, UUID actorId) {

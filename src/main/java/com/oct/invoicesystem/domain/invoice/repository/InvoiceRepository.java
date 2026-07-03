@@ -4,6 +4,7 @@ import com.oct.invoicesystem.domain.invoice.model.Invoice;
 import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -39,6 +40,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
             @Param("since") java.time.Instant since
     );
 
+    @EntityGraph(attributePaths = {"department", "supplier"})
     Optional<Invoice> findByIdAndDeletedAtIsNull(UUID id);
 
     // Every nullable parameter is wrapped in an explicit CAST so PostgreSQL can determine its type
@@ -56,6 +58,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
               AND (:reference IS NULL OR LOWER(i.referenceNumber) LIKE LOWER(CONCAT('%', CAST(:reference AS string), '%')))
               AND (CAST(:supplierId AS uuid) IS NULL OR (i.supplier IS NOT NULL AND i.supplier.id = :supplierId))
             """)
+    @EntityGraph(attributePaths = {"department", "supplier"})
     Page<Invoice> findAllWithFilters(
             @Param("status") InvoiceStatus status,
             @Param("departmentId") UUID departmentId,
@@ -108,6 +111,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
                    OR i.supplier_name ILIKE CONCAT('%', CAST(:keyword AS text), '%')
                    OR i.description ILIKE CONCAT('%', CAST(:keyword AS text), '%'))
               AND (CAST(:department AS uuid) IS NULL OR i.department_id = CAST(:department AS uuid))
+              AND (CAST(:folderId AS text) IS NULL OR (CAST(:folderId AS text) = 'NONE' AND i.folder_id IS NULL) OR i.folder_id = CAST(NULLIF(:folderId, 'NONE') AS uuid))
               AND (CAST(:from AS timestamptz) IS NULL OR i.created_at >= CAST(:from AS timestamptz))
               AND (CAST(:to AS timestamptz) IS NULL OR i.created_at <= CAST(:to AS timestamptz))
             ORDER BY i.created_at DESC
@@ -121,6 +125,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
                    OR i.supplier_name ILIKE CONCAT('%', CAST(:keyword AS text), '%')
                    OR i.description ILIKE CONCAT('%', CAST(:keyword AS text), '%'))
               AND (CAST(:department AS uuid) IS NULL OR i.department_id = CAST(:department AS uuid))
+              AND (CAST(:folderId AS text) IS NULL OR (CAST(:folderId AS text) = 'NONE' AND i.folder_id IS NULL) OR i.folder_id = CAST(NULLIF(:folderId, 'NONE') AS uuid))
               AND (CAST(:from AS timestamptz) IS NULL OR i.created_at >= CAST(:from AS timestamptz))
               AND (CAST(:to AS timestamptz) IS NULL OR i.created_at <= CAST(:to AS timestamptz))
             """,
@@ -128,6 +133,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
     Page<Invoice> searchArchived(
             @Param("keyword") String keyword,
             @Param("department") UUID department,
+            @Param("folderId") String folderId,
             @Param("from") Instant from,
             @Param("to") Instant to,
             Pageable pageable);
@@ -144,4 +150,6 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
           + "WHERE i.status = com.oct.invoicesystem.domain.invoice.model.InvoiceStatus.ARCHIVE "
           + "AND EXISTS (SELECT 1 FROM InvoiceDocument d WHERE d.invoice = i)")
     long countArchivedWithDocument();
+
+    long countByFolderId(UUID folderId);
 }

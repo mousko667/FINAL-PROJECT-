@@ -43,7 +43,7 @@ function RecordPaymentModal({ invoice, onClose, onSuccess }: {
   onClose: () => void
   onSuccess: () => void
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [form, setForm] = useState({
     amountPaid: invoice.amount,
     paymentDate: new Date().toISOString().slice(0, 10),
@@ -82,7 +82,7 @@ function RecordPaymentModal({ invoice, onClose, onSuccess }: {
           </div>
           <div className="text-right">
             <p className="text-xs font-medium text-gray-500">{t('invoice.amount')}</p>
-            <p className="font-bold text-lg text-green-700">{Number(invoice.amount).toLocaleString()} {invoice.currency}</p>
+            <p className="font-bold text-lg text-green-700">{Number(invoice.amount).toLocaleString(i18n.language === 'en' ? 'en-US' : 'fr-FR')} {invoice.currency}</p>
           </div>
         </div>
 
@@ -167,10 +167,11 @@ interface BatchResult {
 }
 
 export default function PaymentsPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
   const [recordingFor, setRecordingFor] = useState<Invoice | null>(null)
   const [page, setPage] = useState(0)
+  const [statusFilter, setStatusFilter] = useState('ALL')
   const [remittanceId, setRemittanceId] = useState<string | null>(null)
   const [remittanceError, setRemittanceError] = useState('')
   // B3 — batch payment of selected BON_A_PAYER invoices.
@@ -194,10 +195,12 @@ export default function PaymentsPage() {
   }
 
   const { data: payments, isLoading: paymentsLoading } = useQuery({
-    queryKey: ['payments', page],
+    queryKey: ['payments', page, statusFilter],
     queryFn: async () => {
+      const params: any = { page, size: 20 }
+      if (statusFilter !== 'ALL') params.status = statusFilter
       const { data } = await apiClient.get<{ data: { content: Payment[]; totalPages: number; totalElements: number } }>(
-        '/payments', { params: { page, size: 20 } }
+        '/payments', { params }
       )
       return data.data
     },
@@ -350,7 +353,7 @@ export default function PaymentsPage() {
                       <td className="px-4 py-3 font-mono text-xs font-semibold">{inv.referenceNumber}</td>
                       <td className="px-4 py-3 text-gray-700">{inv.supplierName ?? '—'}</td>
                       <td className="px-4 py-3 text-right font-medium text-green-700">
-                        {Number(inv.amount).toLocaleString()} {inv.currency}
+                        {Number(inv.amount).toLocaleString(i18n.language === 'en' ? 'en-US' : 'fr-FR')} {inv.currency}
                       </td>
                       <td className="px-4 py-3 text-right flex items-center justify-end gap-2">
                         <Link to={`/invoices/${inv.id}`} className="text-xs text-primary hover:underline flex items-center gap-1">
@@ -374,11 +377,20 @@ export default function PaymentsPage() {
 
         {/* Payment history */}
         <div className="bg-white rounded-xl border overflow-hidden">
-          <div className="flex items-center gap-2 px-5 py-3 border-b">
+          <div className="flex items-center gap-2 px-5 py-3 border-b flex-wrap">
             <FileText className="w-4 h-4 text-gray-500" />
             <h2 className="font-semibold text-gray-800 text-sm">{t('payments.history', 'Historique des paiements')}</h2>
             {payments && <span className="text-xs text-gray-400">{payments.totalElements} {t('payments.total', 'paiements')}</span>}
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-3">
+              <select 
+                value={statusFilter} 
+                onChange={e => { setStatusFilter(e.target.value); setPage(0) }}
+                className="border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
+              >
+                <option value="ALL">{t('matching.all', 'Tous')}</option>
+                <option value="SCHEDULED">{t('payments.status.scheduled', 'Planifié')}</option>
+                <option value="PROCESSED">{t('payments.status.processed', 'Exécuté')}</option>
+              </select>
               <ExportMenu endpoint="/payments/export" filename="payments" />
             </div>
           </div>
@@ -423,10 +435,10 @@ export default function PaymentsPage() {
                       </td>
                       <td className="px-4 py-3 font-mono text-xs text-gray-700">{p.reference}</td>
                       <td className="px-4 py-3 text-right font-medium text-green-700">
-                        {Number(p.amountPaid).toLocaleString()} {p.currency}
+                        {Number(p.amountPaid).toLocaleString(i18n.language === 'en' ? 'en-US' : 'fr-FR')} {p.currency}
                       </td>
                       <td className="px-4 py-3 text-gray-500 text-xs">
-                        {new Date(p.paymentDate).toLocaleDateString()}
+                        {new Date(p.paymentDate).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'fr-FR')}
                       </td>
                       <td className="px-4 py-3">
                         {p.status === 'SCHEDULED' ? (

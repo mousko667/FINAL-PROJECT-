@@ -19,6 +19,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -68,7 +69,7 @@ class SupplierIntegrationTest {
         String id = objectMapper.readTree(createResponse).get("data").get("id").asText();
 
         // 2. Suspend Supplier
-        mockMvc.perform(post("/api/v1/suppliers/{id}/suspend", id))
+        mockMvc.perform(patch("/api/v1/suppliers/{id}/suspend", id))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
 
@@ -109,7 +110,16 @@ class SupplierIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
 
         java.util.UUID supplierId = java.util.UUID.fromString(objectMapper.readTree(createResponse).get("data").get("id").asText());
-        User admin = userRepository.findByUsername("admin").orElseThrow();
+        User admin = userRepository.findByUsername("admin").orElseGet(() -> {
+            User u = new User();
+            u.setUsername("admin");
+            u.setEmail("admin@test.com");
+            u.setPassword("password");
+            u.setFirstName("Admin");
+            u.setLastName("User");
+            u.setActive(true);
+            return userRepository.save(u);
+        });
 
         supplierDocumentRepository.save(SupplierDocument.builder()
                 .supplier(supplierRepository.findByIdAndDeletedAtIsNull(supplierId).orElseThrow())
@@ -130,7 +140,7 @@ class SupplierIntegrationTest {
                 .uploadedBy(admin)
                 .build());
 
-        mockMvc.perform(post("/api/v1/suppliers/{id}/activate", supplierId))
+        mockMvc.perform(patch("/api/v1/suppliers/{id}/activate", supplierId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
 
@@ -162,7 +172,18 @@ class SupplierIntegrationTest {
 
         java.util.UUID supplierId = java.util.UUID.fromString(objectMapper.readTree(createResponse).get("data").get("id").asText());
 
-        mockMvc.perform(post("/api/v1/suppliers/{id}/activate", supplierId))
+        userRepository.findByUsername("admin").orElseGet(() -> {
+            User u = new User();
+            u.setUsername("admin");
+            u.setEmail("admin@test.com");
+            u.setPassword("password");
+            u.setFirstName("Admin");
+            u.setLastName("User");
+            u.setActive(true);
+            return userRepository.save(u);
+        });
+
+        mockMvc.perform(patch("/api/v1/suppliers/{id}/activate", supplierId))
                 .andExpect(status().isBadRequest());
 
         supplierRepository.deleteById(supplierId);

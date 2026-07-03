@@ -81,6 +81,7 @@ class InvoiceServiceTest {
     void createInvoice_Success() {
         assistant.setUserRoles(java.util.Set.of());
         when(userRepository.findById(actorId)).thenReturn(Optional.of(assistant));
+        when(departmentRepository.findById(department.getId())).thenReturn(Optional.of(department));
         when(referenceNumberGenerator.nextReferenceNumber()).thenReturn("FAC-2026-00001");
         when(invoiceRepository.save(any(Invoice.class))).thenAnswer(inv -> inv.getArgument(0));
 

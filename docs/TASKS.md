@@ -35,7 +35,7 @@ Requirements. They supersede the old "Known Gaps — Must Be Fixed" section form
 |----|-----|-----------------|--------|------------|
 | G1 | ~~**CI pipeline (GitHub Actions)** absent~~ → **présent** | Briefing §4.1 / Tooling | ✅ | **Fait** : `.github/workflows/ci.yml` existe — job backend (`actions/setup-java@v4` Java 21 + `postgres:18-alpine` + MinIO, `./mvnw test --batch-mode`, upload artefact `jacoco-report`), job frontend (`npm ci` + `npm test -- --run` + `npm run build`), job docker (`docker compose build`). Reste à capturer une exécution verte pour le mémoire. |
 | G2 | ~~**TLS keystore** not shipped~~ → **documenté + preuve capturée** | Briefing §4.1 / Sécurité | ✅ | **Fait (R2, 2026-06-26)** : génération locale `certs/keystore.p12` (gitignored), placeholders `SSL_KEYSTORE_PATH`/`SSL_KEYSTORE_PASSWORD` dans `.env.example` + `README.md` § TLS 1.3 ; preuve handshake TLSv1.3 dans `docs/audit/tls-handshake-proof.txt` + `docs/audit/tls-keystore-info.txt`. Config prod : `application.yaml` `server.ssl` TLSv1.3. |
-| G3 | ~~**OWASP ZAP baseline scan** — exécution non capturée~~ → **scan exécuté + rapport committé** | Briefing §4.2 / Sécurité | ✅ | **Fait (2026-06-27)** : baseline scan `zaproxy/zap-stable` (`zap-baseline.py`) lancé en local contre le backend (`:8080`) avec `.github/zap-rules.tsv`. Résultat final **0 FAIL / 0 WARN / 66 PASS / 1 IGNORE** (rapport `docs/audit/zap-report.html` + `zap-report.json`). Finding initial corrigé (PROB-068) : `HttpSecurityHeadersFilter` émettait `X-Powered-By`/`Server` vides (rule 10037) → headers supprimés, test `HttpSecurityHeadersFilterTest` ajouté. Le `Non-Storable Content` (10049) sur les 401 d'une API sécurisée est un risque accepté documenté dans `.github/zap-rules.tsv`. Le workflow `.github/workflows/security-scan.yml` reste pour le scan en CI. |
+| G3 | ~~**OWASP ZAP baseline scan** — exécution non capturée~~ → **scan exécuté + rapport committé** | Briefing §4.2 / Sécurité | ✅ | **Fait (2026-06-27)** : baseline scan `zaproxy/zap-stable` (`zap-baseline.py`) lancé en local contre le backend (`:8080`) avec `.github/zap-rules.tsv`. Résultat final **0 FAIL / 0 WARN / 66 PASS / 1 IGNORE** (rapport `docs/audit/zap-report.html` + `zap-report.json`). Finding initial corrigé (PROB-085) : `HttpSecurityHeadersFilter` émettait `X-Powered-By`/`Server` vides (rule 10037) → headers supprimés, test `HttpSecurityHeadersFilterTest` ajouté. Le `Non-Storable Content` (10049) sur les 401 d'une API sécurisée est un risque accepté documenté dans `.github/zap-rules.tsv`. Le workflow `.github/workflows/security-scan.yml` reste pour le scan en CI. |
 | G4 | ~~**SHA-256 document integrity** check~~ → **vérifié au download** | PRD §Module 4 | ✅ | **Fait (R4, 2026-06-26)** : `InvoiceDocumentService.verifyStoredChecksum()` re-télécharge depuis MinIO, recalcule SHA-256 et compare à `checksum_sha256` avant presign ; mismatch → log + `error.document.integrity_mismatch`. Tests : `InvoiceDocumentServiceTest#download_verifiesChecksum`, `#download_checksumMismatch_throwsValidation`. |
 | G5 | ~~**Aging analysis** is basic~~ → **widget tranches + rollup fournisseur** | M2 #3 / M7 / M11 | ✅ | **Fait (R3, 2026-06-26)** : `ReportService.bucketedAging()` + `GET /reports/aging/buckets` (DAF/ASSISTANT_COMPTABLE) ; widget `AgingBucketsWidget` (recharts) sur dashboard finance. Tests : `ReportServiceTest#bucketedAging_*`, `ReportControllerTest#getBucketedAging_*`, `AgingBucketsWidget.test.tsx`. |
 | G6 | ~~**README** at repo root~~ → **écrit** | Submission polish | ✅ | **Fait (R7, 2026-06-26)** : `README.md` racine — stack, prérequis (PostgreSQL hôte 5433 / db `oct_invoice`), `.env`, gestion des secrets, `docker compose up`, profils dev/test/prod, preuve TLS 1.3, commandes de test backend/frontend, comptes de démo (`Test1234!`, usernames vérifiés contre le seed `V34`), index docs. Baseline Flyway V1-V34 confirmée. |
@@ -370,7 +370,7 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 ### UI Elements
 | # | Élément requis | Verdict | Preuve |
 |---|----------------|---------|--------|
-| 1 | Document repository with folder structure | 🟠 | `/archive` : dépôt indexé par métadonnées (recherche/filtres) ; **pas d'arborescence de dossiers** littérale. |
+| 1 | Document repository with folder structure | ✅ | `/archive` : dépôt indexé par métadonnées (recherche/filtres) + **arborescence de dossiers** implémentée (M9 #1). |
 | 2 | Invoice storage by date, supplier, status | ✅ | Filtres date/département + recherche fournisseur/référence (vérifié). |
 | 3 | Advanced search and filter | ✅ | Recherche plein-texte (bug 500 corrigé) + filtres dept + plage de dates. |
 | 4 | Document viewer with zoom/rotate | ✅ | DocumentViewerModal : contrôles zoom/rotation/reset (react-pdf pour PDF, transform CSS pour images) + pagination PDF. (C3) |
@@ -396,7 +396,7 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 | 8 | Reduced physical storage | ✅ | 100% numérique. |
 | 9 | Instant retrieval | ✅ | Recherche + viewer. |
 
-**Gaps M9 :** #1 pas d'arborescence dossiers ; #8 purge non automatisée (par design). (#7 résolu en B2 ; #11 résolu en M14 #11.)
+**Gaps M9 :** ~~#1 pas d'arborescence dossiers~~ **fait (M9 #1, 2026-06-28)** ; #8 purge non automatisée (par design). (#7 résolu en B2 ; #11 résolu en M14 #11.)
 
 ---
 
@@ -571,7 +571,7 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 | 1 | Granular RBAC | ✅ | 14 rôles + @PreAuthorize + séparation des devoirs. |
 | 2 | Data encryption (sensitive financial) | ✅ | AES-GCM (bank details). |
 | 3 | MFA mandatory all roles except supplier | ✅ | Deny-list (PROB-053) vérifié (supplier exempt, staff OTP). |
-| 4 | Automated backup and recovery | 🟠 | Statut de sauvegarde suivi/enregistré ; pas de moteur de sauvegarde/restauration automatisé intégré. |
+| 4 | Automated backup and recovery | ✅ | Moteur de sauvegarde/restauration avec planificateur automatisé, log d'audit, rotation et UI de suivi des opérations (B9, 2026-06-28). |
 | 5 | Data retention policy enforcement | ✅ | DocumentRetentionJob (flag à 10 ans). |
 | 6 | Regulatory compliance monitoring (SOX, IFRS) | ✅ | Checklist + calendrier. |
 | 7 | Security incident detection & reporting | ✅ | Incidents + anomalies d'audit (M10). |
@@ -579,7 +579,7 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 | 9 | Compliance deadline management | ✅ | Calendrier. |
 | 10 | Comprehensive security monitoring | ✅ | Security health dashboard. |
 
-**Gaps M14 :** ~~#10 pas de boîte à outils d'audit dédiée~~ **fait (T3, 2026-06-27)** : section « Préparation d'audit » sur `/admin/compliance` ; feat#4 statut de sauvegarde suivi mais pas de moteur backup/restore automatisé. (#6 résolu en B2.)
+**Gaps M14 :** ~~#10 pas de boîte à outils d'audit dédiée~~ **fait (T3, 2026-06-27)** : section « Préparation d'audit » sur `/admin/compliance` ; ~~feat#4 statut de sauvegarde suivi mais pas de moteur backup/restore automatisé~~ **fait (B9, 2026-06-28)** : ajout du scheduler, rétention/purge, et log d'audit avec UI. (#6 résolu en B2.)
 
 ---
 
@@ -602,7 +602,7 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 | M11 Reporting | 23 | 0 | 0 | 0 | Complet (cash-flow corrigé PROB-054 ; cycle de paiement et tendances temporelles livrés) |
 | M12 Integration | 7 | 9 | 0 | 0 | **Cadre + planif de synchro (B6)** ; pas de sync live externe |
 | M13 User/Access | 22 | 0 | 0 | 0 | Complet (M13 #3 UI dédiée dept access, 2026-06-21) |
-| M14 Security/Compliance | 18 | 3 | 0 | 0 | Très bon |
+| M14 Security/Compliance | 19 | 2 | 0 | 0 | Très bon (Backup M14 #4 résolu B9) |
 
 > Les chiffres comptent chaque puce (UI element OU feature) du document de requirements. Total ≈ **262 items** : ~**239 ✅**, ~**37 🟠**, ~**8 ❌**, ~**0 🔴** (A1 cash-flow + A2 Mobile Money corrigés — PROB-054/055 ; motifs de rejet prédéfinis M4 #8 → C1 ; M13 #3 UI dept access → 2026-06-21 ; M5 #1 page dédiée + M5 #4 comparaison ligne-à-ligne → 2026-06-21 ; M11 #7 tendances temporelles vérifié 2026-06-28).
 

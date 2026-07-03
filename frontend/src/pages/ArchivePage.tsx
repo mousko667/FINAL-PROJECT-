@@ -4,7 +4,9 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import apiClient from '@/services/apiClient'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
-import { Loader2, Archive, Search, Download, Filter, ExternalLink, FileText } from 'lucide-react'
+import { Loader2, Archive, Search, Download, Filter, ExternalLink, FileText, FolderPlus } from 'lucide-react'
+import ArchiveFolderTree from '@/components/archive/ArchiveFolderTree'
+import AssignFolderModal from '@/components/archive/AssignFolderModal'
 
 interface ArchivedInvoice {
   id: string
@@ -17,6 +19,7 @@ interface ArchivedInvoice {
   createdAt: string
   departmentCode?: string
   description?: string
+  folderId?: string
 }
 
 export default function ArchivePage() {
@@ -27,6 +30,9 @@ export default function ArchivePage() {
   const [toDate, setToDate] = useState('')
   const [page, setPage] = useState(0)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null)
+  const [assignModalInvoiceId, setAssignModalInvoiceId] = useState<string | null>(null)
+  const [assignModalCurrentFolderId, setAssignModalCurrentFolderId] = useState<string | undefined>(undefined)
 
   // REQ-15: same download logic as InvoiceDetailPage's "Export PDF".
   const downloadPdf = async (inv: ArchivedInvoice) => {
@@ -45,7 +51,7 @@ export default function ArchivePage() {
   }
 
   const { data, isLoading } = useQuery({
-    queryKey: ['archive', search, deptFilter, fromDate, toDate, page],
+    queryKey: ['archive', search, deptFilter, fromDate, toDate, page, selectedFolderId],
     queryFn: async () => {
       const params: Record<string, string | number> = {
         page,
@@ -53,6 +59,7 @@ export default function ArchivePage() {
       }
       if (search) params.keyword = search
       if (deptFilter) params.department = deptFilter
+      if (selectedFolderId) params.folderId = selectedFolderId
       if (fromDate) params.from = fromDate + 'T00:00:00Z'
       if (toDate) params.to = toDate + 'T23:59:59Z'
       const { data } = await apiClient.get<{ data: { content: ArchivedInvoice[]; totalElements: number; totalPages: number } }>(
@@ -66,17 +73,25 @@ export default function ArchivePage() {
 
   return (
     <PageRoleGuard allowedRoles={['ROLE_DAF', 'ROLE_ASSISTANT_COMPTABLE', 'ROLE_ADMIN']}>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('archive.title', 'Archive Numérique')}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {t('archive.subtitle', 'Toutes les factures archivées — recherche et téléchargement')}
-            {data && <span className="ml-2 font-medium text-gray-700">{data.totalElements} documents</span>}
-          </p>
-        </div>
+      <div className="flex h-[calc(100vh-4rem)]">
+        {/* Sidebar Tree */}
+        <ArchiveFolderTree 
+          selectedFolderId={selectedFolderId}
+          onSelectFolder={(id) => { setSelectedFolderId(id); setPage(0); }}
+        />
 
-        {/* Search & Filters */}
-        <div className="bg-white rounded-xl border p-4 space-y-3">
+        {/* Main Content */}
+        <div className="flex-1 space-y-6 p-6 overflow-y-auto">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{t('archive.title', 'Archive Numérique')}</h1>
+            <p className="text-sm text-gray-500 mt-0.5">
+              {t('archive.subtitle', 'Toutes les factures archivées — recherche et téléchargement')}
+              {data && <span className="ml-2 font-medium text-gray-700">{data.totalElements} documents</span>}
+            </p>
+          </div>
+
+          {/* Search & Filters */}
+          <div className="bg-white rounded-xl border p-4 space-y-3">
           <div className="flex items-center gap-3">
             <div className="flex-1 flex items-center gap-2 border rounded-lg px-3 py-2">
               <Search className="w-4 h-4 text-gray-400 shrink-0" />
@@ -160,6 +175,16 @@ export default function ArchivePage() {
                       <td className="px-4 py-3 text-gray-500 text-xs">{new Date(inv.createdAt).toLocaleDateString()}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2 justify-end">
+                          <button
+                            onClick={() => {
+                              setAssignModalInvoiceId(inv.id)
+                              setAssignModalCurrentFolderId(inv.folderId)
+                            }}
+                            className="flex items-center gap-1 text-xs text-gray-500 hover:text-primary transition-colors"
+                            title={t('archiveFolders.assign')}
+                          >
+                            <FolderPlus className="w-3.5 h-3.5" />
+                          </button>
                           <Link to={`/invoices/${inv.id}`}
                             className="flex items-center gap-1 text-xs text-primary hover:underline">
                             <ExternalLink className="w-3 h-3" /> {t('app.view')}
@@ -192,11 +217,20 @@ export default function ArchivePage() {
           )}
         </div>
 
-        <p className="text-xs text-gray-400">
-          <FileText className="w-3.5 h-3.5 inline mr-1" />
-          {t('archive.retentionNote', 'Une empreinte SHA-256 est calculée et enregistrée au téléversement de chaque document (référence d\'intégrité). La politique de rétention OCT vise une conservation de 10 ans.')}
-        </p>
+          <p className="text-xs text-gray-400">
+            <FileText className="w-3.5 h-3.5 inline mr-1" />
+            {t('archive.retentionNote', 'Une empreinte SHA-256 est calculée et enregistrée au téléversement de chaque document (référence d\'intégrité). La politique de rétention OCT vise une conservation de 10 ans.')}
+          </p>
+        </div>
       </div>
+
+      {assignModalInvoiceId && (
+        <AssignFolderModal
+          invoiceId={assignModalInvoiceId}
+          currentFolderId={assignModalCurrentFolderId}
+          onClose={() => setAssignModalInvoiceId(null)}
+        />
+      )}
     </PageRoleGuard>
   )
 }

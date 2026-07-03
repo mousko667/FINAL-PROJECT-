@@ -3,8 +3,11 @@ package com.oct.invoicesystem.domain.storage.service;
 import io.minio.BucketExistsArgs;
 import io.minio.GetObjectArgs;
 import io.minio.GetPresignedObjectUrlArgs;
+import io.minio.ListObjectsArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
+import io.minio.Result;
+import io.minio.messages.Item;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
 import io.minio.http.Method;
@@ -16,6 +19,8 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @Slf4j
@@ -96,5 +101,16 @@ public class MinioStorageService {
                         .object(objectKey)
                         .build()
         );
+    }
+
+    public List<String> listObjects(String prefix) throws Exception {
+        List<String> items = new ArrayList<>();
+        Iterable<Result<Item>> results = minioClient.listObjects(
+            ListObjectsArgs.builder().bucket(bucket).prefix(prefix).build()
+        );
+        for (Result<Item> result : results) {
+            items.add(result.get().objectName());
+        }
+        return items;
     }
 }

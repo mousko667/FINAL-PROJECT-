@@ -24,5 +24,7 @@ public final class ComplianceDTOs {
 
     public record BackupStatusResponse(Instant lastBackupAt, String status, String detail) {}
 
+    public record BackupAuditLogResponse(UUID id, String operation, String filename, String status, String errorMessage, String triggeredBy, Instant createdAt) {}
+
     public record PrivacyAcceptanceResponse(boolean accepted, String policyVersion) {}
 }

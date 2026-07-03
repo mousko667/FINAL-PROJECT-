@@ -55,6 +55,7 @@ public class SupplierController {
     private final ReportService reportService;
     private final SecurityHelper securityHelper;
     private final com.oct.invoicesystem.shared.export.TabularExportService tabularExportService;
+    private final org.springframework.context.MessageSource messageSource;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -95,8 +96,16 @@ public class SupplierController {
         var fmt = com.oct.invoicesystem.shared.export.TabularExportService.Format.from(format);
         var suppliers = supplierService.searchSuppliers(null, null, null, null,
                 org.springframework.data.domain.Pageable.unpaged()).getContent();
+        java.util.Locale locale = org.springframework.context.i18n.LocaleContextHolder.getLocale();
         java.util.List<String> headers = java.util.List.of(
-                "Company", "Tax ID", "Email", "Phone", "Address", "Status", "Category");
+                messageSource.getMessage("report.excel.header.company", null, locale),
+                messageSource.getMessage("report.excel.header.tax_id", null, locale),
+                messageSource.getMessage("report.excel.header.email", null, locale),
+                messageSource.getMessage("report.excel.header.phone", null, locale),
+                messageSource.getMessage("report.excel.header.address", null, locale),
+                messageSource.getMessage("report.excel.header.status", null, locale),
+                messageSource.getMessage("report.excel.header.category", null, locale)
+        );
         java.util.List<java.util.List<String>> rows = suppliers.stream().map(s -> java.util.List.of(
                 ns(s.companyName()), ns(s.taxId()), ns(s.contactEmail()), ns(s.contactPhone()),
                 ns(s.address()), s.status() == null ? "" : s.status().name(),
@@ -111,32 +120,20 @@ public class SupplierController {
 
     private static String ns(String s) { return s == null ? "" : s; }
 
-    @PostMapping("/{id}/activate")
+    @PatchMapping("/{id}/activate")
     @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
     public ApiResponse<Void> activateSupplier(@PathVariable UUID id, Authentication authentication) {
         log.info("Supplier {} activated by {}", id, authentication != null ? authentication.getName() : "unknown");
-        supplierService.activateSupplier(id);
+        supplierService.activateSupplier(id, securityHelper.currentUser(authentication));
         return ApiResponse.success(null, "supplier.activated.success");
     }
 
-    @PatchMapping("/{id}/activate")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
-    public ApiResponse<Void> activateSupplierPatch(@PathVariable UUID id, Authentication authentication) {
-        return activateSupplier(id, authentication);
-    }
-
-    @PostMapping("/{id}/suspend")
+    @PatchMapping("/{id}/suspend")
     @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
     public ApiResponse<Void> suspendSupplier(@PathVariable UUID id, Authentication authentication) {
         log.info("Supplier {} suspended by {}", id, authentication != null ? authentication.getName() : "unknown");
         supplierService.suspendSupplier(id);
         return ApiResponse.success(null, "supplier.suspended.success");
-    }
-
-    @PatchMapping("/{id}/suspend")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
-    public ApiResponse<Void> suspendSupplierPatch(@PathVariable UUID id, Authentication authentication) {
-        return suspendSupplier(id, authentication);
     }
 
     @DeleteMapping("/{id}")
