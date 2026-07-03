@@ -47,4 +47,10 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     // M13 #3: charge en une passe les users d'un ensemble de départements + leurs rôles (évite N+1).
     @EntityGraph(attributePaths = {"userRoles", "userRoles.role"})
     java.util.List<User> findByDepartmentIdIn(Collection<UUID> departmentIds);
+
+    // PROB-089: id-only projection so callers that only need the FK (e.g. tests referencing a
+    // user via getReferenceById) never materialize — and thus never decrypt — encrypted columns
+    // such as mfa_secret.
+    @Query("select u.id from User u where u.username = :username")
+    Optional<UUID> findIdByUsername(String username);
 }
