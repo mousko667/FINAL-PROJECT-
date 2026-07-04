@@ -331,6 +331,7 @@
       "loadError": "Impossible de charger le document."
     },
     "lineItems": "Lignes de facturation",
+    "startReview": "Démarrer la revue",
     "submit": "Soumettre pour validation",
     "validate": "Valider",
     "reject": "Rejeter",
@@ -891,6 +892,7 @@
     "overdue": "⚠ Retard",
     "review": "Voir",
     "roleLabel": {
+      "soumis": "Factures à prendre en charge",
       "n1": "Factures en attente de votre validation N1",
       "n2": "Factures en attente de votre validation N2",
       "daf": "Factures en attente de votre émission du Bon à Payer"

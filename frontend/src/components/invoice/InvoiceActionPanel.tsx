@@ -42,6 +42,8 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
       switch (action) {
         case 'SUBMIT':
           return apiClient.post(`/invoices/${invoiceId}/submit`)
+        case 'ASSIGN_REVIEWER':
+          return apiClient.post(`/invoices/${invoiceId}/workflow/assign`)
         case 'VALIDATE_N1':
           return apiClient.post(`${base}/validate-n1`, reason ? { comment: reason } : {})
         case 'VALIDATE_N2':
@@ -93,6 +95,11 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
   // AA: submit draft or rejected invoice
   if (isAA && (status === 'BROUILLON' || status === 'REJETE')) {
     buttons.push({ action: 'SUBMIT', label: t('invoice.submit', 'Submit for Validation'), variant: 'primary' })
+  }
+
+  // Take charge of a submitted invoice (SOUMIS → EN_VALIDATION_N1)
+  if ((isAA || isN1) && status === 'SOUMIS') {
+    buttons.push({ action: 'ASSIGN_REVIEWER', label: t('invoice.startReview', 'Start review'), variant: 'primary' })
   }
 
   // N1 validator: approve or reject — only for their department

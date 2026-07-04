@@ -20,6 +20,7 @@ interface PendingInvoice {
 }
 
 function statusColor(status: string) {
+  if (status === 'SOUMIS') return 'bg-blue-100 text-blue-800'
   if (status === 'EN_VALIDATION_N1') return 'bg-yellow-100 text-yellow-800'
   if (status === 'EN_VALIDATION_N2') return 'bg-orange-100 text-orange-800'
   if (status === 'VALIDE') return 'bg-teal-100 text-teal-800'
@@ -51,20 +52,20 @@ export default function ApprovalQueuePage() {
   const isN1 = roles.some((r) => r.startsWith('ROLE_VALIDATEUR_N1_'))
   const isN2 = roles.some((r) => r.startsWith('ROLE_VALIDATEUR_N2_'))
   const isDaf = roles.includes('ROLE_DAF')
+  const isAA = roles.includes('ROLE_ASSISTANT_COMPTABLE')
 
-  const statusFilter = isDaf ? 'VALIDE' : isN2 ? 'EN_VALIDATION_N2' : 'EN_VALIDATION_N1'
+  // N1/AA take charge of SOUMIS, then validate EN_VALIDATION_N1; N2 sees N2; DAF sees VALIDE.
+  const statuses = isDaf ? ['VALIDE'] : isN2 ? ['EN_VALIDATION_N2'] : ['SOUMIS', 'EN_VALIDATION_N1']
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['approval-queue', statusFilter, departmentId],
+    queryKey: ['approval-queue', statuses.join(','), departmentId],
     queryFn: async () => {
-      const params: Record<string, string> = {
-        status: statusFilter,
-        size: '50',
-        sort: 'createdAt,asc',
-      }
-      if (departmentId) params.department = departmentId
-      const response = await apiClient.get('/invoices', { params })
-      return response.data.data as { content: PendingInvoice[] }
+      const results = await Promise.all(statuses.map((status) => {
+        const params: Record<string, string> = { status, size: '50', sort: 'createdAt,asc' }
+        if (departmentId) params.department = departmentId
+        return apiClient.get('/invoices', { params }).then((r) => r.data.data.content as PendingInvoice[])
+      }))
+      return { content: results.flat() }
     },
   })
 
@@ -75,6 +76,8 @@ export default function ApprovalQueuePage() {
     ? t('approvals.roleLabel.daf', 'Invoices awaiting your BON À PAYER authorisation')
     : isN2
     ? t('approvals.roleLabel.n2', 'Invoices awaiting your Level 2 approval')
+    : (isN1 || isAA)
+    ? t('approvals.roleLabel.soumis', 'Invoices to take charge of')
     : t('approvals.roleLabel.n1', 'Invoices awaiting your Level 1 approval')
 
   return (

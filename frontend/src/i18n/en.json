@@ -331,6 +331,7 @@
       "loadError": "Unable to load the document."
     },
     "lineItems": "Line Items",
+    "startReview": "Start review",
     "submit": "Submit for Validation",
     "validate": "Validate",
     "reject": "Reject",
@@ -891,6 +892,7 @@
     "overdue": "⚠ Overdue",
     "review": "Review",
     "roleLabel": {
+      "soumis": "Invoices to take charge of",
       "n1": "Invoices awaiting your Level 1 approval",
       "n2": "Invoices awaiting your Level 2 approval",
       "daf": "Invoices awaiting your Bon à Payer authorisation"
