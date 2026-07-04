@@ -14,6 +14,7 @@
     "search": "Rechercher",
     "filter": "Filtrer",
     "export": "Exporter",
+    "exportError": "Échec de l'export. Veuillez réessayer.",
     "add": "Ajouter",
     "noData": "Aucune donnée disponible",
     "all": "Tous",

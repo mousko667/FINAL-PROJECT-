@@ -27,9 +27,11 @@ export function ExportMenu({ endpoint, filename, params, label }: ExportMenuProp
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const download = async (format: string, ext: string, mime: string) => {
     setBusy(format)
+    setError(null)
     try {
       const res = await apiClient.get(endpoint, {
         params: { ...params, format },
@@ -43,6 +45,8 @@ export function ExportMenu({ endpoint, filename, params, label }: ExportMenuProp
       a.click()
       a.remove()
       window.URL.revokeObjectURL(url)
+    } catch {
+      setError(t('app.exportError', 'Export failed. Please try again.'))
     } finally {
       setBusy(null)
       setOpen(false)
@@ -74,6 +78,11 @@ export function ExportMenu({ endpoint, filename, params, label }: ExportMenuProp
             </button>
           ))}
         </div>
+      )}
+      {error && (
+        <p className="mt-1 text-sm text-red-600" role="alert">
+          {error}
+        </p>
       )}
     </div>
   )

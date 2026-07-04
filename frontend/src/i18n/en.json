@@ -14,6 +14,7 @@
     "search": "Search",
     "filter": "Filter",
     "export": "Export",
+    "exportError": "Export failed. Please try again.",
     "add": "Add",
     "noData": "No data available",
     "all": "All",
