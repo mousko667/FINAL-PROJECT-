@@ -336,6 +336,7 @@
     "validate": "Validate",
     "reject": "Reject",
     "approve": "Issue Bon à Payer",
+    "markPaid": "Record Payment",
     "archive": "Archive",
     "rejectReason": "Rejection reason",
     "rejectReasonCode": "Rejection reason",

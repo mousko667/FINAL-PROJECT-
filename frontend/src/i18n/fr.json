@@ -336,6 +336,7 @@
     "validate": "Valider",
     "reject": "Rejeter",
     "approve": "Émettre le Bon à Payer",
+    "markPaid": "Enregistrer le paiement",
     "archive": "Archiver",
     "rejectReason": "Motif du rejet",
     "rejectReasonCode": "Motif du rejet",
