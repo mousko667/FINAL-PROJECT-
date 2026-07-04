@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { ShieldOff } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useAppSelector } from '@/store/hooks'
 import type { UserRole } from '@/store/slices/authSlice'
 
@@ -9,13 +10,16 @@ interface RoleGuardProps {
   fallback?: ReactNode
 }
 
-const DefaultFallback = () => (
-  <div className="flex flex-col items-center justify-center h-64 gap-3 text-gray-400">
-    <ShieldOff className="w-10 h-10" />
-    <p className="text-sm font-medium">Accès non autorisé</p>
-    <p className="text-xs text-gray-400">Vous n'avez pas les droits nécessaires pour accéder à cette page.</p>
-  </div>
-)
+const DefaultFallback = () => {
+  const { t } = useTranslation()
+  return (
+    <div className="flex flex-col items-center justify-center h-64 gap-3 text-gray-400">
+      <ShieldOff className="w-10 h-10" />
+      <p className="text-sm font-medium">{t('roleGuard.unauthorized')}</p>
+      <p className="text-xs text-gray-400">{t('roleGuard.unauthorizedDetail')}</p>
+    </div>
+  )
+}
 
 /**
  * RoleGuard: Conditionally renders children based on user role.

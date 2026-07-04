@@ -231,7 +231,24 @@
         "61_90": "61-90 jours",
         "90_plus": "90+ jours"
       }
-    }
+    },
+    "validationWorkflows": "Workflows de validation",
+    "mfaSessionsAccess": "MFA, sessions, accès",
+    "webhooksApiKeys": "Webhooks & API keys",
+    "supplierRealtimeTracking": "Suivi de vos factures en temps réel",
+    "pdfJpegPng": "PDF, JPEG ou PNG",
+    "statusTracking": "Suivi du statut",
+    "awaitingMyValidation": "En attente de ma validation",
+    "clickToValidateOrReject": "Cliquer pour valider ou rejeter",
+    "invoiceProcessingOverview": "Vue d'ensemble du traitement des factures",
+    "enterSupplierInvoice": "Saisir une facture fournisseur",
+    "statusDistribution": "Distribution des statuts actuels",
+    "topSuppliersSubtitle": "Volume traité par fournisseur (XOF)",
+    "manageRegistry": "Gérer le registre",
+    "viewPurchaseOrders": "Consulter les BDC",
+    "paymentsPendingSub": "Factures en attente de paiement",
+    "reportsStatsSub": "Rapports & statistiques",
+    "operationsLogSub": "Journal des opérations"
   },
   "po": {
     "title": "Bons de commande",
@@ -761,7 +778,14 @@
       "filename": "Fichier de sauvegarde",
       "restoreBtn": "Restaurer",
       "restoreConfirmTitle": "Restaurer le système",
-      "restoreConfirmDesc": "Voulez-vous vraiment simuler une restauration depuis {{file}} ? En production, cela écraserait les données actuelles."
+      "restoreConfirmDesc": "Voulez-vous vraiment simuler une restauration depuis {{file}} ? En production, cela écraserait les données actuelles.",
+      "colDate": "Date",
+      "colOperation": "Opération",
+      "colStatus": "Statut",
+      "colFile": "Fichier",
+      "colTriggeredBy": "Déclenché par",
+      "historyTitle": "Historique des opérations",
+      "historyEmpty": "Aucun historique d'opération."
     }
   },
   "profile": {
@@ -1161,7 +1185,8 @@
     "status": {
       "scheduled": "Planifié",
       "processed": "Exécuté"
-    }
+    },
+    "notesPlaceholder": "Informations complémentaires sur le paiement..."
   },
   "paymentAlerts": {
     "title": "Règles d'alerte de paiement",
@@ -1184,7 +1209,9 @@
     "searchPlaceholder": "Rechercher par référence, fournisseur, description...",
     "noResults": "Aucun document ne correspond à vos critères de recherche.",
     "empty": "Aucune facture archivée pour le moment.",
-    "retentionNote": "Une empreinte SHA-256 est calculée et enregistrée au téléversement de chaque document (référence d'intégrité). La politique de rétention OCT vise une conservation de 10 ans."
+    "retentionNote": "Une empreinte SHA-256 est calculée et enregistrée au téléversement de chaque document (référence d'intégrité). La politique de rétention OCT vise une conservation de 10 ans.",
+    "allDepartments": "Tous les départements",
+    "resetFilters": "Réinitialiser les filtres"
   },
   "archiveFolders": {
     "title": "Dossiers d'archive",
@@ -1201,7 +1228,8 @@
     "create": "Nouveau GRN",
     "grnNumber": "N° GRN",
     "receivedDate": "Date de réception",
-    "empty": "Aucun bon de réception enregistré"
+    "empty": "Aucun bon de réception enregistré",
+    "qtyPlaceholder": "Qté"
   },
   "register": {
     "supplierOnly": {
@@ -1302,5 +1330,24 @@
     "cancel": "Annuler",
     "loadError": "Échec du chargement des documents à traiter.",
     "actionError": "Échec de la mise à jour de la disposition."
+  },
+  "roleGuard": {
+    "unauthorized": "Accès non autorisé",
+    "unauthorizedDetail": "Vous n'avez pas les droits nécessaires pour accéder à cette page."
+  },
+  "sidebar": {
+    "systemOperational": "Système opérationnel"
+  },
+  "breadcrumb": {
+    "newInvoice": "Nouvelle facture",
+    "approvalMatrix": "Matrice d'approbation",
+    "securitySettings": "Paramètres de sécurité",
+    "detail": "Détail"
+  },
+  "documentUploader": {
+    "tooLarge": "{{name}} : dépasse {{max}} Mo",
+    "dropHere": "Déposez ici…",
+    "dragOrClick": "Glissez-déposez ou cliquez pour ajouter",
+    "formatsHint": "PDF, PNG, JPG, XLSX (max {{max}} Mo par fichier)"
   }
 }

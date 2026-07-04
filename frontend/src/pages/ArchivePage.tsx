@@ -109,7 +109,7 @@ export default function ArchivePage() {
               <Filter className="w-4 h-4 text-gray-400" />
               <select value={deptFilter} onChange={e => { setDeptFilter(e.target.value); setPage(0) }}
                 className="text-sm border rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20">
-                <option value="">Tous les départements</option>
+                <option value="">{t('archive.allDepartments')}</option>
                 {['DRH','DG','FIN','INFO','TERM','COM','QHSSE','INFRA','TECH'].map(d => (
                   <option key={d} value={d}>{d}</option>
                 ))}
@@ -126,7 +126,7 @@ export default function ArchivePage() {
             {(search || deptFilter || fromDate || toDate) && (
               <button onClick={() => { setSearch(''); setDeptFilter(''); setFromDate(''); setToDate(''); setPage(0) }}
                 className="text-xs text-red-500 hover:underline">
-                Réinitialiser les filtres
+                {t('archive.resetFilters')}
               </button>
             )}
           </div>

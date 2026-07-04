@@ -39,7 +39,7 @@ export function DocumentUploader({
 
       for (const f of newFiles) {
         if (f.size > maxBytes) {
-          errs.push(`${f.name}: dépasse ${maxSizeMb} Mo`)
+          errs.push(t('documentUploader.tooLarge', { name: f.name, max: maxSizeMb }))
         } else {
           valid.push(f)
         }
@@ -50,7 +50,7 @@ export function DocumentUploader({
       setFiles(updated)
       onFilesChange(updated)
     },
-    [files, maxSizeMb, onFilesChange]
+    [files, maxSizeMb, onFilesChange, t]
   )
 
   const handleDrop = useCallback(
@@ -94,10 +94,10 @@ export function DocumentUploader({
       >
         <Upload className={cn('w-10 h-10 mb-2', dragOver ? 'text-primary' : 'text-gray-300')} />
         <p className="text-sm font-medium text-gray-600">
-          {dragOver ? 'Déposez ici…' : 'Glissez-déposez ou cliquez pour ajouter'}
+          {dragOver ? t('documentUploader.dropHere') : t('documentUploader.dragOrClick')}
         </p>
         <p className="text-xs text-muted-foreground mt-1">
-          PDF, PNG, JPG, XLSX (max {maxSizeMb} Mo par fichier)
+          {t('documentUploader.formatsHint', { max: maxSizeMb })}
         </p>
         <input
           id="doc-upload-input"

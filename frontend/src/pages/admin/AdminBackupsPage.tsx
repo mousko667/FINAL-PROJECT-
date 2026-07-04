@@ -143,7 +143,7 @@ export default function AdminBackupsPage() {
           <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-2">
             <Activity className="w-5 h-5 text-gray-500" />
             <h2 className="text-lg font-semibold text-gray-900">
-              Historique des opérations
+              {t('admin.backups.historyTitle')}
             </h2>
           </div>
           {auditLogsLoading ? (
@@ -152,18 +152,18 @@ export default function AdminBackupsPage() {
             </div>
           ) : !auditLogs || auditLogs.length === 0 ? (
             <div className="p-8 text-center text-gray-500">
-              Aucun historique d'opération.
+              {t('admin.backups.historyEmpty')}
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm whitespace-nowrap">
                 <thead className="bg-gray-50 border-b">
                   <tr>
-                    <th className="px-6 py-3 font-medium text-gray-500">Date</th>
-                    <th className="px-6 py-3 font-medium text-gray-500">Opération</th>
-                    <th className="px-6 py-3 font-medium text-gray-500">Statut</th>
-                    <th className="px-6 py-3 font-medium text-gray-500">Fichier</th>
-                    <th className="px-6 py-3 font-medium text-gray-500">Déclenché par</th>
+                    <th className="px-6 py-3 font-medium text-gray-500">{t('admin.backups.colDate')}</th>
+                    <th className="px-6 py-3 font-medium text-gray-500">{t('admin.backups.colOperation')}</th>
+                    <th className="px-6 py-3 font-medium text-gray-500">{t('admin.backups.colStatus')}</th>
+                    <th className="px-6 py-3 font-medium text-gray-500">{t('admin.backups.colFile')}</th>
+                    <th className="px-6 py-3 font-medium text-gray-500">{t('admin.backups.colTriggeredBy')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">

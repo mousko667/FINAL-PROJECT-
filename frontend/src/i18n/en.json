@@ -231,7 +231,24 @@
         "61_90": "61-90 days",
         "90_plus": "90+ days"
       }
-    }
+    },
+    "validationWorkflows": "Validation workflows",
+    "mfaSessionsAccess": "MFA, sessions, access",
+    "webhooksApiKeys": "Webhooks and API keys",
+    "supplierRealtimeTracking": "Real-time tracking of your invoices",
+    "pdfJpegPng": "PDF, JPEG or PNG",
+    "statusTracking": "Status tracking",
+    "awaitingMyValidation": "Awaiting my validation",
+    "clickToValidateOrReject": "Click to validate or reject",
+    "invoiceProcessingOverview": "Overview of invoice processing",
+    "enterSupplierInvoice": "Enter a supplier invoice",
+    "statusDistribution": "Distribution of current statuses",
+    "topSuppliersSubtitle": "Volume processed by supplier (XOF)",
+    "manageRegistry": "Manage the registry",
+    "viewPurchaseOrders": "View purchase orders",
+    "paymentsPendingSub": "Invoices awaiting payment",
+    "reportsStatsSub": "Reports and statistics",
+    "operationsLogSub": "Operations log"
   },
   "po": {
     "title": "Purchase Orders",
@@ -761,7 +778,14 @@
       "filename": "Backup file",
       "restoreBtn": "Restore",
       "restoreConfirmTitle": "Restore the system",
-      "restoreConfirmDesc": "Do you really want to simulate a restore from {{file}}? In production, this would overwrite the current data."
+      "restoreConfirmDesc": "Do you really want to simulate a restore from {{file}}? In production, this would overwrite the current data.",
+      "colDate": "Date",
+      "colOperation": "Operation",
+      "colStatus": "Status",
+      "colFile": "File",
+      "colTriggeredBy": "Triggered by",
+      "historyTitle": "Operation history",
+      "historyEmpty": "No operation history."
     }
   },
   "profile": {
@@ -1161,7 +1185,8 @@
     "status": {
       "scheduled": "Scheduled",
       "processed": "Processed"
-    }
+    },
+    "notesPlaceholder": "Additional notes about the payment..."
   },
   "paymentAlerts": {
     "title": "Payment Alert Rules",
@@ -1184,7 +1209,9 @@
     "searchPlaceholder": "Search by reference, supplier, description...",
     "noResults": "No document matches your search criteria.",
     "empty": "No archived invoices yet.",
-    "retentionNote": "A SHA-256 checksum is computed and stored when each document is uploaded (integrity reference). The OCT retention policy targets a 10-year retention period."
+    "retentionNote": "A SHA-256 checksum is computed and stored when each document is uploaded (integrity reference). The OCT retention policy targets a 10-year retention period.",
+    "allDepartments": "All departments",
+    "resetFilters": "Reset filters"
   },
   "archiveFolders": {
     "title": "Archive folders",
@@ -1201,7 +1228,8 @@
     "create": "New GRN",
     "grnNumber": "GRN No.",
     "receivedDate": "Received Date",
-    "empty": "No goods receipt notes recorded"
+    "empty": "No goods receipt notes recorded",
+    "qtyPlaceholder": "Qty"
   },
   "register": {
     "supplierOnly": {
@@ -1302,5 +1330,24 @@
     "cancel": "Cancel",
     "loadError": "Failed to load documents to process.",
     "actionError": "Failed to update the disposition."
+  },
+  "roleGuard": {
+    "unauthorized": "Unauthorized access",
+    "unauthorizedDetail": "You do not have the necessary permissions to access this page."
+  },
+  "sidebar": {
+    "systemOperational": "System operational"
+  },
+  "breadcrumb": {
+    "newInvoice": "New invoice",
+    "approvalMatrix": "Approval matrix",
+    "securitySettings": "Security settings",
+    "detail": "Detail"
+  },
+  "documentUploader": {
+    "tooLarge": "{{name}}: exceeds {{max}} MB",
+    "dropHere": "Drop here…",
+    "dragOrClick": "Drag and drop or click to add files",
+    "formatsHint": "PDF, PNG, JPG, XLSX (max {{max}} MB per file)"
   }
 }

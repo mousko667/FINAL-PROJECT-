@@ -6,42 +6,43 @@ import { LogOut, Globe, ChevronRight } from 'lucide-react'
 import { NotificationDropdown } from './NotificationDropdown'
 
 const BREADCRUMB_MAP: Record<string, string> = {
-  '/dashboard':              'Tableau de bord',
-  '/invoices':               'Factures',
-  '/invoices/new':           'Nouvelle facture',
-  '/approvals':              'File d\'approbation',
-  '/purchase-orders':        'Bons de commande',
-  '/payments':               'Paiements',
-  '/goods-receipts':         'Bons de réception',
-  '/reports':                'Rapports',
-  '/financial-audit':        'Audit financier',
-  '/archive':                'Archive numérique',
-  '/notifications':          'Notifications',
-  '/profile':                'Mon profil',
-  '/admin/users':            'Utilisateurs',
-  '/admin/departments':      'Départements',
-  '/admin/audit':            'Journal d\'audit',
-  '/admin/suppliers':        'Fournisseurs',
-  '/admin/approval-matrix':  'Matrice d\'approbation',
-  '/admin/security':         'Paramètres de sécurité',
-  '/admin/integrations':     'Intégrations',
+  '/dashboard':              'nav.dashboard',
+  '/invoices':               'nav.invoices',
+  '/invoices/new':           'breadcrumb.newInvoice',
+  '/approvals':              'nav.approvals',
+  '/purchase-orders':        'nav.purchaseOrders',
+  '/payments':               'nav.payments',
+  '/goods-receipts':         'nav.goodsReceipts',
+  '/reports':                'nav.reports',
+  '/financial-audit':        'nav.financialAudit',
+  '/archive':                'nav.archive',
+  '/notifications':          'nav.notifications',
+  '/profile':                'nav.profile',
+  '/admin/users':            'nav.users',
+  '/admin/departments':      'nav.departments',
+  '/admin/audit':            'nav.auditLog',
+  '/admin/suppliers':        'nav.suppliers',
+  '/admin/approval-matrix':  'breadcrumb.approvalMatrix',
+  '/admin/security':         'breadcrumb.securitySettings',
+  '/admin/integrations':     'admin.integrations.title',
 }
 
 function useBreadcrumb() {
+  const { t } = useTranslation()
   const { pathname } = useLocation()
   const segments: { label: string; href: string }[] = []
 
   if (pathname === '/dashboard') return segments
 
-  const label = BREADCRUMB_MAP[pathname]
-  if (label) {
-    segments.push({ label, href: pathname })
+  const key = BREADCRUMB_MAP[pathname]
+  if (key) {
+    segments.push({ label: t(key), href: pathname })
   } else if (pathname.startsWith('/invoices/')) {
-    segments.push({ label: 'Factures', href: '/invoices' })
-    segments.push({ label: 'Détail', href: pathname })
+    segments.push({ label: t('nav.invoices'), href: '/invoices' })
+    segments.push({ label: t('breadcrumb.detail'), href: pathname })
   } else if (pathname.startsWith('/admin/suppliers/')) {
-    segments.push({ label: 'Fournisseurs', href: '/admin/suppliers' })
-    segments.push({ label: 'Détail', href: pathname })
+    segments.push({ label: t('nav.suppliers'), href: '/admin/suppliers' })
+    segments.push({ label: t('breadcrumb.detail'), href: pathname })
   }
 
   return segments
@@ -72,7 +73,7 @@ export default function Header() {
       {/* Breadcrumb */}
       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
         <Link to="/dashboard" className="hover:text-foreground transition-colors">
-          Tableau de bord
+          {t('nav.dashboard')}
         </Link>
         {breadcrumbs.map((crumb, i) => (
           <span key={crumb.href} className="flex items-center gap-1.5">

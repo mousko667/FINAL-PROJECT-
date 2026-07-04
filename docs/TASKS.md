@@ -64,6 +64,19 @@ Requirements. They supersede the old "Known Gaps — Must Be Fixed" section form
 > `SecuritySettingsPage`, `PaymentsPage` ×4, `AdminBackupsPage` ×2 déjà `'fr-FR'` explicite). Voir
 > `docs/KNOWN_ISSUES_REGISTRY.md` PROB-102 pour le détail complet.
 
+> **Fix (Task 16, i18n figé, 2026-07-04, PROB-103)** — ~9 chaînes JSX figées en français cassant
+> le mode EN (audit L.112 + L.263) routées via `t()` : `RoleGuard.tsx` (message d'accès refusé),
+> `Sidebar.tsx` (`title` « Système opérationnel »), `Header.tsx` (`BREADCRUMB_MAP` transformé en
+> dict de **clés i18n** résolues au rendu — réutilise `nav.*` existant — + lien racine « Tableau de
+> bord »), `DocumentUploader.tsx` (le hook `t` était importé mais jamais utilisé — message de
+> dépassement de taille, textes de la zone de dépôt, indice de formats), `ArchivePage.tsx`,
+> `AdminBackupsPage.tsx` (en-têtes de tableau + carte d'historique), `PaymentsPage.tsx`,
+> `GoodsReceiptsPage.tsx`, et `DashboardPage.tsx` (une vingtaine de sous-titres/labels résiduels,
+> dont le l.447 « Volume traité par fournisseur (XOF) » toujours figé après le fix devise de la
+> Task 15). 39 clés fr+en ajoutées (arbre i18n resté symétrique, 1094→1133 clés chacun). Tests TDD
+> nouveaux `Header.test.tsx`/`DocumentUploader.test.tsx` (rendu `i18n.language='en'`, assertion de
+> texte anglais). Voir `docs/KNOWN_ISSUES_REGISTRY.md` PROB-103 pour le détail complet.
+
 ---
 
 ## B. OUT OF SCOPE (assumed) — Module 12 Integration

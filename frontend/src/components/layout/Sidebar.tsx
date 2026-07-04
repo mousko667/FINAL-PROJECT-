@@ -223,7 +223,7 @@ export default function Sidebar() {
       {/* Footer */}
       <div className="px-4 py-3 border-t border-white/10 flex items-center justify-between">
         <span className="text-[10px] text-slate-400">v1.0.0 · OCT</span>
-        <div className="w-1.5 h-1.5 rounded-full bg-green-400" title="Système opérationnel" />
+        <div className="w-1.5 h-1.5 rounded-full bg-green-400" title={t('sidebar.systemOperational')} />
       </div>
     </aside>
   )

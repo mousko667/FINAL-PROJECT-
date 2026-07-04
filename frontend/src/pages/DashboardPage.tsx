@@ -175,7 +175,7 @@ export default function DashboardPage() {
             </div>
             <div>
               <p className="text-sm font-semibold text-gray-800">{t('admin.approvalMatrix.title', 'Matrice d\'approbation')}</p>
-              <p className="text-xs text-gray-400">Workflows de validation</p>
+              <p className="text-xs text-gray-400">{t('dashboard.validationWorkflows')}</p>
             </div>
           </Link>
           <Link to="/admin/security" className="flex items-center gap-3 p-4 rounded-xl bg-white border hover:bg-red-50 hover:border-red-200 transition-all group">
@@ -184,7 +184,7 @@ export default function DashboardPage() {
             </div>
             <div>
               <p className="text-sm font-semibold text-gray-800">{t('admin.security.title', 'Paramètres de sécurité')}</p>
-              <p className="text-xs text-gray-400">MFA, sessions, accès</p>
+              <p className="text-xs text-gray-400">{t('dashboard.mfaSessionsAccess')}</p>
             </div>
           </Link>
           <Link to="/admin/integrations" className="flex items-center gap-3 p-4 rounded-xl bg-white border hover:bg-green-50 hover:border-green-200 transition-all group">
@@ -193,7 +193,7 @@ export default function DashboardPage() {
             </div>
             <div>
               <p className="text-sm font-semibold text-gray-800">{t('admin.integrations.title', 'Intégrations')}</p>
-              <p className="text-xs text-gray-400">Webhooks & API keys</p>
+              <p className="text-xs text-gray-400">{t('dashboard.webhooksApiKeys')}</p>
             </div>
           </Link>
         </div>
@@ -215,7 +215,7 @@ export default function DashboardPage() {
       <div className="space-y-6 page-enter">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{t('dashboard.title')}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Suivi de vos factures en temps réel</p>
+          <p className="text-sm text-gray-500 mt-0.5">{t('dashboard.supplierRealtimeTracking')}</p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {kpiItems.map(({ icon: Icon, label, value, iconBg, iconColor }) => (
@@ -233,7 +233,7 @@ export default function DashboardPage() {
             </div>
             <div>
               <p className="font-semibold">{t('supplier.portal.submitInvoice')}</p>
-              <p className="text-xs opacity-70 mt-0.5">PDF, JPEG ou PNG</p>
+              <p className="text-xs opacity-70 mt-0.5">{t('dashboard.pdfJpegPng')}</p>
             </div>
             <ArrowRight className="w-5 h-5 ml-auto opacity-60" />
           </Link>
@@ -243,7 +243,7 @@ export default function DashboardPage() {
             </div>
             <div>
               <p className="font-semibold text-gray-900">{t('supplier.portal.viewInvoices')}</p>
-              <p className="text-xs text-gray-500 mt-0.5">Suivi du statut</p>
+              <p className="text-xs text-gray-500 mt-0.5">{t('dashboard.statusTracking')}</p>
             </div>
             <ArrowRight className="w-5 h-5 ml-auto text-gray-300" />
           </Link>
@@ -265,7 +265,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-white rounded-xl border p-5 text-center">
             <p className="text-3xl font-bold text-amber-600">{queue.length}</p>
-            <p className="text-xs text-gray-500 mt-1">En attente de ma validation</p>
+            <p className="text-xs text-gray-500 mt-1">{t('dashboard.awaitingMyValidation')}</p>
           </div>
           <div className="bg-white rounded-xl border p-5 text-center">
             <p className="text-3xl font-bold text-gray-900">{validatorStatsLoading ? '…' : (validatorStats?.processedThisMonth ?? '—')}</p>
@@ -281,7 +281,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between px-5 py-4 border-b bg-gray-50">
             <div>
               <h2 className="font-semibold text-gray-900">{t('dashboard.validatorQueue')}</h2>
-              <p className="text-xs text-gray-500 mt-0.5">Cliquer pour valider ou rejeter</p>
+              <p className="text-xs text-gray-500 mt-0.5">{t('dashboard.clickToValidateOrReject')}</p>
             </div>
             <Link to="/approvals" className="flex items-center gap-1 text-sm text-primary font-medium hover:underline">
               {t('app.view')} <ArrowRight className="w-3.5 h-3.5" />
@@ -328,13 +328,13 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{t('dashboard.title')}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Vue d'ensemble du traitement des factures</p>
+          <p className="text-sm text-gray-500 mt-0.5">{t('dashboard.invoiceProcessingOverview')}</p>
         </div>
         {isAA && (
           <Link to="/invoices/new"
             className="flex items-center gap-2 px-4 py-2 bg-oct-navy text-white text-sm font-medium rounded-lg hover:bg-oct-navy-light transition-colors">
             <Plus className="w-4 h-4" />
-            Nouvelle facture
+            {t('breadcrumb.newInvoice')}
           </Link>
         )}
       </div>
@@ -379,9 +379,9 @@ export default function DashboardPage() {
       {/* Quick Actions for AA */}
       {isAA && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <QuickLink to="/invoices/new" icon={Plus} label="Nouvelle facture" sub="Saisir une facture fournisseur" color="bg-oct-navy text-white border-transparent hover:bg-oct-navy-light" />
-          <QuickLink to="/admin/suppliers" icon={Users} label={t('nav.suppliers')} sub="Gérer le registre" color="bg-white text-gray-800 border-gray-200 hover:bg-gray-50" />
-          <QuickLink to="/purchase-orders" icon={FileText} label={t('nav.purchaseOrders', 'Bons de commande')} sub="Consulter les BDC" color="bg-white text-gray-800 border-gray-200 hover:bg-gray-50" />
+          <QuickLink to="/invoices/new" icon={Plus} label={t('breadcrumb.newInvoice')} sub={t('dashboard.enterSupplierInvoice')} color="bg-oct-navy text-white border-transparent hover:bg-oct-navy-light" />
+          <QuickLink to="/admin/suppliers" icon={Users} label={t('nav.suppliers')} sub={t('dashboard.manageRegistry')} color="bg-white text-gray-800 border-gray-200 hover:bg-gray-50" />
+          <QuickLink to="/purchase-orders" icon={FileText} label={t('nav.purchaseOrders', 'Bons de commande')} sub={t('dashboard.viewPurchaseOrders')} color="bg-white text-gray-800 border-gray-200 hover:bg-gray-50" />
         </div>
       )}
 
@@ -425,7 +425,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl border p-5">
             <h2 className="font-semibold text-gray-800 mb-1">{t('dashboard.invoicesByStatus')}</h2>
-            <p className="text-xs text-gray-400 mb-4">Distribution des statuts actuels</p>
+            <p className="text-xs text-gray-400 mb-4">{t('dashboard.statusDistribution')}</p>
             {pieData.length > 0 ? (
               <ResponsiveContainer width="100%" height={220}>
                 <PieChart>
@@ -445,7 +445,7 @@ export default function DashboardPage() {
 
           <div className="bg-white rounded-xl border p-5">
             <h2 className="font-semibold text-gray-800 mb-1">{t('dashboard.topSuppliers')}</h2>
-            <p className="text-xs text-gray-400 mb-4">Volume traité par fournisseur (XOF)</p>
+            <p className="text-xs text-gray-400 mb-4">{t('dashboard.topSuppliersSubtitle')}</p>
             {supplierData.length > 0 ? (
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={supplierData} layout="vertical">
@@ -469,9 +469,9 @@ export default function DashboardPage() {
       {/* DAF shortcuts */}
       {isDaf && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <QuickLink to="/payments" icon={DollarSign} label="Paiements" sub="Factures en attente de paiement" color="bg-white text-gray-800 border-gray-200 hover:bg-gray-50" />
-          <QuickLink to="/reports" icon={BarChart3} label={t('nav.reports')} sub="Rapports & statistiques" color="bg-white text-gray-800 border-gray-200 hover:bg-gray-50" />
-          <QuickLink to="/financial-audit" icon={ScrollText} label="Audit financier" sub="Journal des opérations" color="bg-white text-gray-800 border-gray-200 hover:bg-gray-50" />
+          <QuickLink to="/payments" icon={DollarSign} label={t('nav.payments')} sub={t('dashboard.paymentsPendingSub')} color="bg-white text-gray-800 border-gray-200 hover:bg-gray-50" />
+          <QuickLink to="/reports" icon={BarChart3} label={t('nav.reports')} sub={t('dashboard.reportsStatsSub')} color="bg-white text-gray-800 border-gray-200 hover:bg-gray-50" />
+          <QuickLink to="/financial-audit" icon={ScrollText} label={t('nav.financialAudit')} sub={t('dashboard.operationsLogSub')} color="bg-white text-gray-800 border-gray-200 hover:bg-gray-50" />
         </div>
       )}
     </div>

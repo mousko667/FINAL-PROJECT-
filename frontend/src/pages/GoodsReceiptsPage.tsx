@@ -135,7 +135,7 @@ export default function GoodsReceiptsPage() {
                   <div key={i} className="grid grid-cols-12 gap-2 items-center">
                     <input placeholder="Description" value={item.description} onChange={e => updateItem(i, 'description', e.target.value)}
                       className="col-span-6 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                    <input type="number" placeholder="Qté" value={item.quantityReceived} onChange={e => updateItem(i, 'quantityReceived', Number(e.target.value))}
+                    <input type="number" placeholder={t('grn.qtyPlaceholder')} value={item.quantityReceived} onChange={e => updateItem(i, 'quantityReceived', Number(e.target.value))}
                       className="col-span-2 border rounded-lg px-3 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary/30" />
                     <input type="number" placeholder="Prix unitaire" value={item.unitPrice} onChange={e => updateItem(i, 'unitPrice', Number(e.target.value))}
                       className="col-span-3 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
