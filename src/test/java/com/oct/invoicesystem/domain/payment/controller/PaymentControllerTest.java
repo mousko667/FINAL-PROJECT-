@@ -84,6 +84,8 @@ class PaymentControllerTest {
 
     private User assistant;
     private User auditeur;
+    private User daf;
+    private User admin;
     private Invoice invoice;
 
     @BeforeEach
@@ -149,6 +151,55 @@ class PaymentControllerTest {
                 .build();
         auditeur.getUserRoles().add(urAud);
         auditeur = userRepository.save(auditeur);
+
+        // PROB-065 (SoD): DAF must retain read access to payments; ADMIN must not.
+        Role roleDaf = roleRepository.findByName("ROLE_DAF").orElseGet(() -> {
+            Role r = new Role();
+            r.setName("ROLE_DAF");
+            return roleRepository.save(r);
+        });
+
+        daf = new User();
+        daf.setUsername("daf_pay_test");
+        daf.setEmail("daf_pay_test@mail.com");
+        daf.setPassword(passwordEncoder.encode("Password123!"));
+        daf.setFirstName("Daf");
+        daf.setLastName("Test");
+        daf.setMfaEnabled(true);
+        daf.setMfaVerified(true);
+        daf = userRepository.save(daf);
+
+        UserRole urDaf = UserRole.builder()
+                .id(new UserRoleId(daf.getId(), roleDaf.getId()))
+                .user(daf)
+                .role(roleDaf)
+                .build();
+        daf.getUserRoles().add(urDaf);
+        daf = userRepository.save(daf);
+
+        Role roleAdmin = roleRepository.findByName("ROLE_ADMIN").orElseGet(() -> {
+            Role r = new Role();
+            r.setName("ROLE_ADMIN");
+            return roleRepository.save(r);
+        });
+
+        admin = new User();
+        admin.setUsername("admin_pay_test");
+        admin.setEmail("admin_pay_test@mail.com");
+        admin.setPassword(passwordEncoder.encode("Password123!"));
+        admin.setFirstName("Admin");
+        admin.setLastName("Test");
+        admin.setMfaEnabled(true);
+        admin.setMfaVerified(true);
+        admin = userRepository.save(admin);
+
+        UserRole urAdmin = UserRole.builder()
+                .id(new UserRoleId(admin.getId(), roleAdmin.getId()))
+                .user(admin)
+                .role(roleAdmin)
+                .build();
+        admin.getUserRoles().add(urAdmin);
+        admin = userRepository.save(admin);
 
         invoice = new Invoice();
         invoice.setReferenceNumber("INV-12345");
@@ -363,5 +414,64 @@ class PaymentControllerTest {
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Payment already recorded for this invoice"));
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // PROB-065 (MAJEUR-2): Separation of Duties — ADMIN must NOT read payment data.
+    // ReportController already excludes ADMIN; the 4 PaymentController GET endpoints
+    // must match. DAF must retain read access (fix must not be over-broad).
+    // ──────────────────────────────────────────────────────────────────────────
+
+    @Test
+    void getPaymentByInvoiceId_forbiddenForAdmin() throws Exception {
+        recordOnePayment();
+
+        mockMvc.perform(get("/api/v1/payments/invoice/" + invoice.getId())
+                        .with(SecurityMockMvcRequestPostProcessors.authentication(
+                                new UsernamePasswordAuthenticationToken(admin, null, java.util.List.of(
+                                        new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void getPaymentByInvoiceId_allowedForDaf() throws Exception {
+        recordOnePayment();
+
+        mockMvc.perform(get("/api/v1/payments/invoice/" + invoice.getId())
+                        .with(SecurityMockMvcRequestPostProcessors.authentication(
+                                new UsernamePasswordAuthenticationToken(daf, null, java.util.List.of(
+                                        new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_DAF"))))))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void listPayments_forbiddenForAdmin() throws Exception {
+        mockMvc.perform(get("/api/v1/payments")
+                        .with(SecurityMockMvcRequestPostProcessors.authentication(
+                                new UsernamePasswordAuthenticationToken(admin, null, java.util.List.of(
+                                        new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void getRemittanceDownloadUrl_forbiddenForAdmin() throws Exception {
+        // recordOnePayment() auto-generates the remittance advice (PaymentServiceImpl:120-121)
+        recordOnePayment();
+        var payment = paymentRepository.findByInvoiceId(invoice.getId()).orElseThrow();
+
+        mockMvc.perform(get("/api/v1/payments/" + payment.getId() + "/remittance")
+                        .with(SecurityMockMvcRequestPostProcessors.authentication(
+                                new UsernamePasswordAuthenticationToken(admin, null, java.util.List.of(
+                                        new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void exportPayments_forbiddenForAdmin() throws Exception {
+        mockMvc.perform(get("/api/v1/payments/export").param("format", "csv")
+                        .with(SecurityMockMvcRequestPostProcessors.authentication(
+                                new UsernamePasswordAuthenticationToken(admin, null, java.util.List.of(
+                                        new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))))))
+                .andExpect(status().isForbidden());
     }
 }

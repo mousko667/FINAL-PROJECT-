@@ -800,6 +800,15 @@
 - **Règle préventive :** Toute liste de destinataires d'escalade ou de notification contenant des données financières (montants, fournisseurs, coordonnées bancaires) doit être construite **sans jamais inclure ROLE_ADMIN**. La séparation des devoirs s'applique aux flux d'email et de notification autant qu'aux endpoints API. Valider la liste des destinataires contre la règle `admin-no-financial-access` avant chaque implémentation d'un job d'escalade ou de rappel.
 - **Fichiers modifiés :** `src/main/java/com/oct/invoicesystem/domain/notification/scheduler/DeadlineReminderJob.java` (commits 073ad37, 0ef8df3).
 
+#### Récurrence (2026-07-04, audit général — MAJEUR-2, Task 5) — 4 endpoints REST cette fois, même cause racine
+
+- **Découvert :** `docs/AUDIT_GENERAL_2026-07-02.md` (MAJEUR-2) ; `PaymentController.java:72,80,91,99` annotait les 4 lectures paiement `hasAnyRole('ASSISTANT_COMPTABLE', 'DAF', 'ADMIN')`. Incohérent avec `InvoiceController`/`MatchingQueryController`/`ReportController`, qui excluent déjà l'ADMIN.
+- **Symptôme :** un compte `ROLE_ADMIN` pouvait appeler `GET /payments/invoice/{id}`, `GET /payments`, `GET /{id}/remittance` et `GET /export` et obtenir des montants, méthodes de paiement et avis de règlement — même violation de `admin-no-financial-access` que PROB-065, cette fois sur des endpoints REST directs plutôt qu'un flux d'email.
+- **Cause racine :** les 4 `@PreAuthorize` avaient été écrits avec `'ADMIN'` inclus dès la création du contrôleur, sans jamais être audités contre la règle `admin-no-financial-access` (le `ReportController` équivalent, lui, l'excluait déjà — incohérence non détectée faute de revue croisée entre contrôleurs financiers).
+- **Solution appliquée (Task 5, TDD) :** retrait de `'ADMIN'` des 4 annotations, qui deviennent `@PreAuthorize("hasAnyRole('ASSISTANT_COMPTABLE', 'DAF')")`. Les 3 endpoints d'écriture (`POST /invoice/{id}`, `POST /batch`, `POST /{id}/process`, déjà `hasRole('ASSISTANT_COMPTABLE')`) sont inchangés. Tests ajoutés dans `PaymentControllerTest` : 4 tests `ROLE_ADMIN` → 403 (un par endpoint) + 1 test `ROLE_DAF` → 200 prouvant que le fix n'est pas trop restrictif. RED confirmé (4 échecs 200≠403) avant le fix, GREEN après (15/15).
+- **Règle préventive renforcée :** quand un contrôleur expose des données financières (paiements, rapports, remises), auditer systématiquement chaque `@PreAuthorize` contre `admin-no-financial-access` **au moment de la revue de code**, pas seulement lors d'un audit ponctuel — comparer avec les contrôleurs financiers frères (`ReportController`, `MatchingQueryController`) qui font référence. Un `grep -n "ADMIN" **/payment*/**Controller.java **/report*/**Controller.java` avant chaque ajout d'endpoint financier aurait détecté l'incohérence plus tôt.
+- **Fichiers modifiés :** `src/main/java/com/oct/invoicesystem/domain/payment/controller/PaymentController.java` (lignes 72, 80, 91, 99) ; `src/test/java/com/oct/invoicesystem/domain/payment/controller/PaymentControllerTest.java` (+DAF/ADMIN fixtures et 5 tests).
+
 ---
 
 ### [PROB-066] 4 échecs vitest pré-existants — fixtures de tests périmées + e2e Playwright ramassés par vitest
