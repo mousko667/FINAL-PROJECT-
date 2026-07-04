@@ -102,7 +102,7 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 | 5 | Email verification interface | ✅ | Route `/verify-email` (EmailVerificationPage) ; endpoint `/auth/verify-email` permitAll. |
 | 6 | Login page (username/email + password) | ✅ | `/login` : champs username + password, vérifié. |
 | 7 | Password recovery/reset flow | ✅ | `/forgot-password` (email → Envoyer le lien) + `/reset-password` (nouveau mot de passe). |
-| 8 | MFA setup (mandatory all roles except supplier) | ✅ | Login 2-step OTP vérifié (admin+dg) ; supplier connecté **sans** OTP. Deny-list (PROB-053). |
+| 8 | MFA setup (mandatory all roles except supplier) | ✅ | Login 2-step OTP vérifié (admin+dg) ; supplier connecté **sans** OTP. Deny-list (PROB-053). **Fix (Task 10, MAJEUR-6, 2026-07-04, PROB-097)** : le compte `admin` semé en V5 n'initialisait pas les colonnes MFA (→ `mfa_verified=false`, `mfa_secret=NULL`), donc `MfaSetupEnforcementFilter` bloquait toute action admin avec `mfa_setup_required` ; les correctifs manuels en base ne survivaient pas à un re-seed. Migration **V43** idempotente (`UPDATE users SET mfa_verified=true, mfa_secret=NULL, mfa_enabled=false WHERE username='admin'`) — cohérent avec `enforce-secret-check:false` (dev), aucun secret en clair. |
 | 9 | Session management & timeout controls | ✅ | `/admin/security` : « Délai d'expiration de session (60 min) » + table **Sessions actives** avec Révoquer. |
 | 10 | Role-based dashboard redirection | ✅ | staff → `/dashboard`, supplier → `/supplier/dashboard` (vérifié). |
 | 11 | Profile management screen | ✅ | `/profile` : édition email/prénom/nom/langue, section Affectation (matricule/département/limite), Rôles attribués, bloc MFA (Configurer la MFA), Enregistrer. |
