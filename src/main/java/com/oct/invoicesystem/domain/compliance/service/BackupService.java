@@ -5,6 +5,7 @@ import com.oct.invoicesystem.domain.compliance.dto.ComplianceDTOs.BackupStatusRe
 import com.oct.invoicesystem.domain.compliance.model.BackupAuditLog;
 import com.oct.invoicesystem.domain.compliance.repository.BackupAuditLogRepository;
 import com.oct.invoicesystem.domain.storage.service.MinioStorageService;
+import com.oct.invoicesystem.shared.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -81,6 +82,12 @@ public class BackupService {
 
     @Transactional
     public BackupStatusResponse restoreBackup(String filename) {
+        // Must be validated BEFORE the try block below: that block catches(Exception)
+        // and swallows any exception into a "FAILED" success response (200), which
+        // would defeat a path-traversal rejection if thrown from inside it.
+        if (filename == null || !filename.matches("[A-Za-z0-9._-]+")) {
+            throw new ValidationException("error.backup.invalid_filename");
+        }
         String triggeredBy = getCurrentUser();
         try {
             // Validate the file exists

@@ -4,6 +4,7 @@ import com.oct.invoicesystem.domain.compliance.dto.ComplianceDTOs.BackupAuditLog
 import com.oct.invoicesystem.domain.compliance.dto.ComplianceDTOs.BackupStatusResponse;
 import com.oct.invoicesystem.domain.compliance.repository.BackupAuditLogRepository;
 import com.oct.invoicesystem.domain.storage.service.MinioStorageService;
+import com.oct.invoicesystem.shared.exception.ValidationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -133,5 +137,55 @@ class BackupServiceIntegrationTest {
         assertEquals(1, logs.size());
         assertEquals("CREATE", logs.get(0).operation());
         assertEquals("SYSTEM", logs.get(0).triggeredBy());
+    }
+
+    // --- B-2: path traversal sanitization on restoreBackup(filename) ---
+
+    @Test
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    void restoreBackup_rejectsPathTraversal_dotdotSlash() throws Exception {
+        ValidationException ex = assertThrows(ValidationException.class,
+                () -> backupService.restoreBackup("../../etc/passwd"));
+        assertEquals("error.backup.invalid_filename", ex.getMessage());
+        verify(minioStorageService, never()).download(anyString());
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    void restoreBackup_rejectsPathTraversal_nestedSlash() throws Exception {
+        ValidationException ex = assertThrows(ValidationException.class,
+                () -> backupService.restoreBackup("a/b"));
+        assertEquals("error.backup.invalid_filename", ex.getMessage());
+        verify(minioStorageService, never()).download(anyString());
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    void restoreBackup_rejectsPathTraversal_backslash() throws Exception {
+        ValidationException ex = assertThrows(ValidationException.class,
+                () -> backupService.restoreBackup("..\\..\\x"));
+        assertEquals("error.backup.invalid_filename", ex.getMessage());
+        verify(minioStorageService, never()).download(anyString());
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    void restoreBackup_rejectsNullFilename() throws Exception {
+        ValidationException ex = assertThrows(ValidationException.class,
+                () -> backupService.restoreBackup(null));
+        assertEquals("error.backup.invalid_filename", ex.getMessage());
+        verify(minioStorageService, never()).download(anyString());
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    void restoreBackup_acceptsValidFilename_pastesValidationAndAttemptsDownload() throws Exception {
+        String validFilename = "backup-20260704.sql.gz";
+
+        // Must not throw the filename-validation exception; it may still proceed to
+        // attempt (and mock-succeed at) the download step.
+        assertDoesNotThrow(() -> backupService.restoreBackup(validFilename));
+
+        verify(minioStorageService).download("backups/" + validFilename);
     }
 }
