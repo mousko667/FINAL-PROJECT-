@@ -77,6 +77,27 @@ Requirements. They supersede the old "Known Gaps — Must Be Fixed" section form
 > nouveaux `Header.test.tsx`/`DocumentUploader.test.tsx` (rendu `i18n.language='en'`, assertion de
 > texte anglais). Voir `docs/KNOWN_ISSUES_REGISTRY.md` PROB-103 pour le détail complet.
 
+> **Fix (Task 17, RT-5+MAJEUR-F2+F3, 2026-07-04, PROB-104)** — **RECADRÉ après investigation** :
+> pas de migration : `name_fr`/`name_en` déjà en base depuis `V1__create_departments.sql` (le
+> "V45 rename départements" du plan d'origine était une prémisse fausse) ; les "15 clés EN
+> manquantes" étaient déjà résolues côté backend (244/244 symétrique). Le vrai bug RT-5 était un
+> hardcode `dept.nameEn` côté frontend sur 4 écrans (`AdminDelegationsPage`, `AdminUserFormPage`,
+> `InvoiceCreatePage`, `SupplierInvoiceSubmitPage`) — corrigé en `i18n.language==='fr' ? nameFr :
+> nameEn` (`ProfilePage` faisait déjà ce choix, non modifié ; `AdminDepartmentsPage.tsx:99`
+> volontairement non touchée — tableau bilingue intentionnel). MAJEUR-F2 : nouveau composant
+> partagé `frontend/src/components/ui/ConfirmDialog.tsx` câblé sur 12 actions destructives
+> auparavant sans aucune confirmation (revoke délégation ×2, toggle actif + reset MFA utilisateur,
+> delete webhook, revoke session, delete checklist/calendrier conformité, delete annonce, delete
+> définition de rapport, delete connecteur, delete contrat fournisseur — les 3 derniers découverts
+> par un grep complémentaire de tous les `apiClient.delete`, hors liste initiale). Les 4 sites
+> `window.confirm()` préexistants (+1 `ArchiveFolderTree` découvert au grep) laissés tels quels,
+> fonctionnels, pas de régression. MAJEUR-F3 : bouton PO « Import » remplacé par un état désactivé
+> honnête (`po.importUnavailable`) — retrait du faux handler et du message anglais figé mentant sur
+> un import ERP "in progress" (Module 12 hors-scope) ; création manuelle de PO inchangée. Tests TDD
+> nouveaux `ConfirmDialog.test.tsx` (7 cas) + `InvoiceCreateDepartmentLocale.test.tsx` (2 cas, RED
+> confirmé via `git stash` sur le code non corrigé). Suite complète **108/108** (99 + 9 nouveaux),
+> `tsc` 0 erreur. Voir `docs/KNOWN_ISSUES_REGISTRY.md` PROB-104 pour le détail complet.
+
 ---
 
 ## B. OUT OF SCOPE (assumed) — Module 12 Integration

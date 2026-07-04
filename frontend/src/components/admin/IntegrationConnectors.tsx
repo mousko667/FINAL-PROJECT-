@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import { Plug, Plus, Trash2, Loader2, Wifi, RefreshCw, Clock } from 'lucide-react'
 import { formatDateTime } from '@/lib/format'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 interface Connector {
   id: string; name: string; type: string; endpoint: string | null; enabled: boolean
@@ -23,6 +24,7 @@ export function IntegrationConnectors() {
   const [endpoint, setEndpoint] = useState('')
   const [testing, setTesting] = useState<string | null>(null)
   const [syncing, setSyncing] = useState<string | null>(null)
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
 
   const { data: connectors = [], isLoading } = useQuery<Connector[]>({
     queryKey: ['integration-connectors'],
@@ -40,7 +42,7 @@ export function IntegrationConnectors() {
   })
   const del = useMutation({
     mutationFn: (id: string) => apiClient.delete(`/integrations/connectors/${id}`),
-    onSuccess: invalidate,
+    onSuccess: () => { invalidate(); setDeleteTargetId(null) },
   })
   const syncNow = useMutation({
     mutationFn: (id: string) => apiClient.post(`/integrations/connectors/${id}/sync`),
@@ -131,7 +133,7 @@ export function IntegrationConnectors() {
                       className="text-primary hover:text-primary/80" title={t('admin.connectors.test', 'Tester')}>
                       {testing === c.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wifi className="w-4 h-4" />}
                     </button>
-                    <button onClick={() => del.mutate(c.id)} className="text-gray-400 hover:text-red-500" title={t('app.delete', 'Supprimer')}>
+                    <button onClick={() => setDeleteTargetId(c.id)} className="text-gray-400 hover:text-red-500" title={t('app.delete', 'Supprimer')}>
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -141,6 +143,15 @@ export function IntegrationConnectors() {
           </tbody>
         </table>
       )}
+
+      <ConfirmDialog
+        open={deleteTargetId !== null}
+        title={t('admin.connectors.deleteConfirmTitle', 'Delete this connector?')}
+        message={t('admin.connectors.deleteConfirmBody', 'Scheduled synchronisation for this connector will stop immediately.')}
+        variant="danger"
+        onConfirm={() => { if (deleteTargetId) del.mutate(deleteTargetId) }}
+        onCancel={() => setDeleteTargetId(null)}
+      />
     </div>
   )
 }

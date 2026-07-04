@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import { Megaphone, Loader2, Trash2, Plus } from 'lucide-react'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 interface Announcement {
   id: string
@@ -22,6 +23,7 @@ export default function AdminAnnouncementsPage() {
   const [body, setBody] = useState('')
   const [severity, setSeverity] = useState('INFO')
   const [formError, setFormError] = useState<string | null>(null)
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
 
   const { data: announcements = [], isLoading } = useQuery<Announcement[]>({
     queryKey: ['announcements', 'all'],
@@ -47,7 +49,7 @@ export default function AdminAnnouncementsPage() {
 
   const remove = useMutation({
     mutationFn: (id: string) => apiClient.delete(`/announcements/${id}`),
-    onSuccess: invalidate,
+    onSuccess: () => { invalidate(); setDeleteTargetId(null) },
   })
 
   const onSubmit = (e: React.FormEvent) => {
@@ -118,7 +120,7 @@ export default function AdminAnnouncementsPage() {
                     </button>
                   </td>
                   <td className="px-4 py-2.5 text-right">
-                    <button onClick={() => remove.mutate(a.id)} className="text-gray-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                    <button onClick={() => setDeleteTargetId(a.id)} className="text-gray-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
                   </td>
                 </tr>
               ))}
@@ -126,6 +128,15 @@ export default function AdminAnnouncementsPage() {
           </table>
         )}
       </div>
+
+      <ConfirmDialog
+        open={deleteTargetId !== null}
+        title={t('admin.announcements.deleteConfirmTitle', 'Delete this announcement?')}
+        message={t('admin.announcements.deleteConfirmBody', 'This announcement will no longer be visible on any dashboard.')}
+        variant="danger"
+        onConfirm={() => { if (deleteTargetId) remove.mutate(deleteTargetId) }}
+        onCancel={() => setDeleteTargetId(null)}
+      />
     </div>
   )
 }

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import { FileText, MessageSquare, Plus, Trash2, Loader2 } from 'lucide-react'
 import { formatDateTime } from '@/lib/format'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 interface Contract {
   id: string; reference: string; title: string
@@ -31,6 +32,7 @@ export function SupplierRelationship({ supplierId, canEdit }: { supplierId: stri
   const [cRef, setCRef] = useState(''); const [cTitle, setCTitle] = useState('')
   const [cStart, setCStart] = useState(''); const [cEnd, setCEnd] = useState('')
   const [mChannel, setMChannel] = useState('NOTE'); const [mSubject, setMSubject] = useState(''); const [mBody, setMBody] = useState('')
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
 
   const addContract = useMutation({
     mutationFn: () => apiClient.post(`/suppliers/${supplierId}/contracts`, {
@@ -39,7 +41,10 @@ export function SupplierRelationship({ supplierId, canEdit }: { supplierId: stri
   })
   const delContract = useMutation({
     mutationFn: (id: string) => apiClient.delete(`/suppliers/${supplierId}/contracts/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['supplier-contracts', supplierId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['supplier-contracts', supplierId] })
+      setDeleteTargetId(null)
+    },
   })
   const addComm = useMutation({
     mutationFn: () => apiClient.post(`/suppliers/${supplierId}/communications`, { channel: mChannel, subject: mSubject, body: mBody }),
@@ -74,7 +79,7 @@ export function SupplierRelationship({ supplierId, canEdit }: { supplierId: stri
               <li key={c.id} className="flex items-center justify-between py-2 text-sm">
                 <div><span className="font-medium text-gray-900">{c.reference}</span> — {c.title}
                   <span className="text-gray-400 ml-2">{c.startDate ?? '?'} → {c.endDate ?? '?'} · {c.status}</span></div>
-                {canEdit && <button onClick={() => delContract.mutate(c.id)} className="text-gray-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>}
+                {canEdit && <button onClick={() => setDeleteTargetId(c.id)} className="text-gray-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>}
               </li>
             ))}
           </ul>
@@ -118,6 +123,15 @@ export function SupplierRelationship({ supplierId, canEdit }: { supplierId: stri
           </ul>
         )}
       </div>
+
+      <ConfirmDialog
+        open={deleteTargetId !== null}
+        title={t('supplier.contracts.deleteConfirmTitle', 'Delete this contract?')}
+        message={t('supplier.contracts.deleteConfirmBody', 'This action is permanent.')}
+        variant="danger"
+        onConfirm={() => { if (deleteTargetId) delContract.mutate(deleteTargetId) }}
+        onCancel={() => setDeleteTargetId(null)}
+      />
     </div>
   )
 }

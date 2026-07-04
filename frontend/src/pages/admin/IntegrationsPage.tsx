@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import { Loader2, Plus, Trash2, Zap, CheckCircle, XCircle, Activity, ScrollText } from 'lucide-react'
 import { IntegrationConnectors } from '@/components/admin/IntegrationConnectors'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { formatDateTime } from '@/lib/format'
 
 interface Webhook {
@@ -47,6 +48,7 @@ export default function IntegrationsPage() {
   const [url, setUrl] = useState('')
   const [event, setEvent] = useState('INVOICE_SUBMITTED')
   const [logsWebhookId, setLogsWebhookId] = useState<string | null>(null)
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
 
   const { data: webhooks, isLoading } = useQuery({
     queryKey: ['webhooks'],
@@ -89,6 +91,7 @@ export default function IntegrationsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['webhooks'] })
       queryClient.invalidateQueries({ queryKey: ['integration-status'] })
+      setDeleteTargetId(null)
     },
   })
 
@@ -215,7 +218,7 @@ export default function IntegrationsPage() {
                         <ScrollText className="w-3.5 h-3.5" /> {t('admin.integrations.viewLogs', 'Logs')}
                       </button>
                       <button
-                        onClick={() => deleteMutation.mutate(wh.id)}
+                        onClick={() => setDeleteTargetId(wh.id)}
                         disabled={deleteMutation.isPending}
                         className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
                       >
@@ -275,6 +278,15 @@ export default function IntegrationsPage() {
           )}
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteTargetId !== null}
+        title={t('admin.integrations.deleteWebhookConfirmTitle', 'Delete this webhook?')}
+        message={t('admin.integrations.deleteWebhookConfirmBody', 'Deliveries to this endpoint will stop immediately.')}
+        variant="danger"
+        onConfirm={() => { if (deleteTargetId) deleteMutation.mutate(deleteTargetId) }}
+        onCancel={() => setDeleteTargetId(null)}
+      />
     </div>
   )
 }

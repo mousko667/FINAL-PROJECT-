@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import { ShieldAlert, Database, ListChecks, CalendarClock, Plus, Trash2, Loader2, ClipboardCheck } from 'lucide-react'
 import { formatDate, formatDateTime } from '@/lib/format'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 interface Incident { id: string; title: string; severity: string; status: string; reportedAt: string }
 interface ChecklistItem { id: string; framework: string; label: string; completed: boolean }
@@ -30,12 +31,14 @@ export default function AdminCompliancePage() {
   const [clFw, setClFw] = useState('SOX'); const [clLabel, setClLabel] = useState('')
   const addChecklist = useMutation({ mutationFn: () => apiClient.post('/compliance/checklist', { framework: clFw, label: clLabel }), onSuccess: () => { setClLabel(''); qc.invalidateQueries({ queryKey: ['checklist'] }) } })
   const toggleChecklist = useMutation({ mutationFn: ({ id, completed }: { id: string; completed: boolean }) => apiClient.patch(`/compliance/checklist/${id}?completed=${completed}`), onSuccess: () => qc.invalidateQueries({ queryKey: ['checklist'] }) })
-  const delChecklist = useMutation({ mutationFn: (id: string) => apiClient.delete(`/compliance/checklist/${id}`), onSuccess: () => qc.invalidateQueries({ queryKey: ['checklist'] }) })
+  const [deleteChecklistTargetId, setDeleteChecklistTargetId] = useState<string | null>(null)
+  const delChecklist = useMutation({ mutationFn: (id: string) => apiClient.delete(`/compliance/checklist/${id}`), onSuccess: () => { qc.invalidateQueries({ queryKey: ['checklist'] }); setDeleteChecklistTargetId(null) } })
 
   const [calTitle, setCalTitle] = useState(''); const [calDue, setCalDue] = useState('')
   const addCalendar = useMutation({ mutationFn: () => apiClient.post('/compliance/calendar', { title: calTitle, dueDate: calDue }), onSuccess: () => { setCalTitle(''); setCalDue(''); qc.invalidateQueries({ queryKey: ['calendar'] }) } })
   const toggleCalendar = useMutation({ mutationFn: ({ id, completed }: { id: string; completed: boolean }) => apiClient.patch(`/compliance/calendar/${id}?completed=${completed}`), onSuccess: () => qc.invalidateQueries({ queryKey: ['calendar'] }) })
-  const delCalendar = useMutation({ mutationFn: (id: string) => apiClient.delete(`/compliance/calendar/${id}`), onSuccess: () => qc.invalidateQueries({ queryKey: ['calendar'] }) })
+  const [deleteCalendarTargetId, setDeleteCalendarTargetId] = useState<string | null>(null)
+  const delCalendar = useMutation({ mutationFn: (id: string) => apiClient.delete(`/compliance/calendar/${id}`), onSuccess: () => { qc.invalidateQueries({ queryKey: ['calendar'] }); setDeleteCalendarTargetId(null) } })
 
   const badge = (ok: boolean) => ok ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'
 
@@ -141,7 +144,7 @@ export default function AdminCompliancePage() {
                   <span className="text-xs font-mono bg-gray-100 px-1.5 py-0.5 rounded">{c.framework}</span>
                   <span className={c.completed ? 'line-through text-gray-400' : 'text-gray-700'}>{c.label}</span>
                 </label>
-                <button onClick={() => delChecklist.mutate(c.id)} className="text-gray-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                <button onClick={() => setDeleteChecklistTargetId(c.id)} className="text-gray-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
               </li>
             ))}
           </ul>
@@ -165,12 +168,29 @@ export default function AdminCompliancePage() {
                   <span className={e.completed ? 'line-through text-gray-400' : 'text-gray-700'}>{e.title}</span>
                   <span className="text-xs text-gray-400">{e.dueDate}</span>
                 </label>
-                <button onClick={() => delCalendar.mutate(e.id)} className="text-gray-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                <button onClick={() => setDeleteCalendarTargetId(e.id)} className="text-gray-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
               </li>
             ))}
           </ul>
         )}
       </div>
+
+      <ConfirmDialog
+        open={deleteChecklistTargetId !== null}
+        title={t('admin.compliance.deleteChecklistConfirmTitle', 'Delete this checklist item?')}
+        message={t('admin.compliance.deleteChecklistConfirmBody', 'This action is permanent.')}
+        variant="danger"
+        onConfirm={() => { if (deleteChecklistTargetId) delChecklist.mutate(deleteChecklistTargetId) }}
+        onCancel={() => setDeleteChecklistTargetId(null)}
+      />
+      <ConfirmDialog
+        open={deleteCalendarTargetId !== null}
+        title={t('admin.compliance.deleteCalendarConfirmTitle', 'Delete this deadline?')}
+        message={t('admin.compliance.deleteCalendarConfirmBody', 'This action is permanent.')}
+        variant="danger"
+        onConfirm={() => { if (deleteCalendarTargetId) delCalendar.mutate(deleteCalendarTargetId) }}
+        onCancel={() => setDeleteCalendarTargetId(null)}
+      />
     </div>
   )
 }

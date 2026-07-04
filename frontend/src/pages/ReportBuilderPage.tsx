@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { FileBarChart, Loader2, Plus, Trash2, Play, FileText, Eye, X, Download } from 'lucide-react'
 
 interface ReportDef {
@@ -25,6 +26,7 @@ export default function ReportBuilderPage() {
   const [format, setFormat] = useState('CSV')
   const [frequency, setFrequency] = useState('MANUAL')
   const [recipients, setRecipients] = useState('')
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
 
   const { data: defs = [], isLoading } = useQuery<ReportDef[]>({
     queryKey: ['report-definitions'],
@@ -37,7 +39,10 @@ export default function ReportBuilderPage() {
   })
   const del = useMutation({
     mutationFn: (id: string) => apiClient.delete(`/reports/definitions/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['report-definitions'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['report-definitions'] })
+      setDeleteTargetId(null)
+    },
   })
 
   const [running, setRunning] = useState<string | null>(null)
@@ -138,7 +143,7 @@ export default function ReportBuilderPage() {
                         <button onClick={() => runReport(d)} disabled={running === d.id} className="text-primary hover:text-primary/80" title={t('reportBuilder.run', 'Exécuter')}>
                           {running === d.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
                         </button>
-                        <button onClick={() => del.mutate(d.id)} className="text-gray-400 hover:text-red-500" title={t('app.delete', 'Supprimer')}>
+                        <button onClick={() => setDeleteTargetId(d.id)} className="text-gray-400 hover:text-red-500" title={t('app.delete', 'Supprimer')}>
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -199,6 +204,15 @@ export default function ReportBuilderPage() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={deleteTargetId !== null}
+        title={t('reportBuilder.deleteConfirmTitle', 'Delete this report definition?')}
+        message={t('reportBuilder.deleteConfirmBody', 'Scheduled runs for this report will stop.')}
+        variant="danger"
+        onConfirm={() => { if (deleteTargetId) del.mutate(deleteTargetId) }}
+        onCancel={() => setDeleteTargetId(null)}
+      />
     </PageRoleGuard>
   )
 }

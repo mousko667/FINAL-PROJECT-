@@ -15,6 +15,7 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, opts?: any) =>
       typeof opts === 'object' && opts?.count !== undefined ? `${key}:${opts.count}` : key,
+    i18n: { language: 'fr' },
   }),
 }))
 

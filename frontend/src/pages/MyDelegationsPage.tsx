@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { UserCheck, Loader2, Trash2, Plus, AlertCircle } from 'lucide-react'
 
 interface Delegation {
@@ -25,6 +26,7 @@ export default function MyDelegationsPage() {
   const [toDate, setToDate] = useState('')
   const [reason, setReason] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
+  const [revokeTargetId, setRevokeTargetId] = useState<string | null>(null)
 
   const { data: delegations = [], isLoading } = useQuery<Delegation[]>({
     queryKey: ['my-delegations'],
@@ -53,7 +55,7 @@ export default function MyDelegationsPage() {
 
   const revoke = useMutation({
     mutationFn: (id: string) => apiClient.delete(`/approvals/delegations/mine/${id}`),
-    onSuccess: invalidate,
+    onSuccess: () => { invalidate(); setRevokeTargetId(null) },
   })
 
   const onSubmit = (e: React.FormEvent) => {
@@ -132,7 +134,7 @@ export default function MyDelegationsPage() {
                     </span>
                   </td>
                   <td className="px-4 py-2.5 text-right">
-                    <button onClick={() => revoke.mutate(d.id)} className="text-gray-400 hover:text-red-500" title={t('delegations.revoke', 'Révoquer')}>
+                    <button onClick={() => setRevokeTargetId(d.id)} className="text-gray-400 hover:text-red-500" title={t('delegations.revoke', 'Révoquer')}>
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </td>
@@ -142,6 +144,15 @@ export default function MyDelegationsPage() {
           </table>
         )}
       </div>
+
+      <ConfirmDialog
+        open={revokeTargetId !== null}
+        title={t('delegations.revokeConfirmTitle', 'Revoke this delegation?')}
+        message={t('delegations.revokeConfirmBody', "You will no longer be able to approve on this delegate's behalf once revoked.")}
+        variant="danger"
+        onConfirm={() => { if (revokeTargetId) revoke.mutate(revokeTargetId) }}
+        onCancel={() => setRevokeTargetId(null)}
+      />
     </div>
   )
 }

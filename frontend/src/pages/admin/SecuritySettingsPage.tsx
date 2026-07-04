@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Shield, CheckCircle, Clock, Lock, Key, Users, Trash2, Loader2, AlertCircle } from 'lucide-react'
 import apiClient from '@/services/apiClient'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 interface ActiveSession {
   id: string
@@ -42,6 +43,7 @@ export default function SecuritySettingsPage() {
   const [minPassword, setMinPassword]      = useState(8)
   const [saved, setSaved] = useState(false)
   const [formError, setFormError] = useState('')
+  const [revokeTargetUserId, setRevokeTargetUserId] = useState<string | null>(null)
 
   const { data: policy, isLoading: policyLoading } = useQuery<SecurityPolicy>({
     queryKey: ['security-policy'],
@@ -82,7 +84,10 @@ export default function SecuritySettingsPage() {
 
   const revokeSession = useMutation({
     mutationFn: (userId: string) => apiClient.delete(`/admin/sessions/user/${userId}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin', 'sessions'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'sessions'] })
+      setRevokeTargetUserId(null)
+    },
   })
 
   // P11-53: security-health snapshot (REQ-24, partial — 2 of 8 items)
@@ -272,7 +277,7 @@ export default function SecuritySettingsPage() {
                     <td className="py-2 pr-4 text-gray-500">{new Date(s.expiresAt).toLocaleString(dateLocale)}</td>
                     <td className="py-2">
                       <button
-                        onClick={() => revokeSession.mutate(s.userId)}
+                        onClick={() => setRevokeTargetUserId(s.userId)}
                         disabled={revokeSession.isPending}
                         className="flex items-center gap-1 text-xs text-red-600 hover:text-red-800 disabled:opacity-50"
                       >
@@ -287,6 +292,15 @@ export default function SecuritySettingsPage() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={revokeTargetUserId !== null}
+        title={t('admin.security.revokeSessionConfirmTitle', 'Revoke this session?')}
+        message={t('admin.security.revokeSessionConfirmBody', 'The user will be signed out immediately and will need to log in again.')}
+        variant="danger"
+        onConfirm={() => { if (revokeTargetUserId) revokeSession.mutate(revokeTargetUserId) }}
+        onCancel={() => setRevokeTargetUserId(null)}
+      />
     </div>
   )
 }
