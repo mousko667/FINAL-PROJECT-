@@ -1144,7 +1144,6 @@
 - **Règle préventive :** quand deux endpoints exposent la même donnée métier par deux chemins différents (ici `/suppliers/{id}/performance` et `/reports/supplier/{id}/performance`), leurs règles d'autorisation DOIVENT être vérifiées comme un même invariant — grep les deux `@PreAuthorize` côte à côte avant de considérer un fix de SoD terminé. Ne jamais catcher une exception métier (`ResourceNotFoundException`) dans un contrôleur pour la remplacer par une réponse de succès fabriquée : soit l'absence de données est un vrai 404, soit le service doit retourner un DTO explicite (ex. `Optional` ou compteurs à 0 avec un flag `hasData:false`) — jamais un mensonge silencieux à 200.
 - **Fichiers modifiés :** `src/main/java/com/oct/invoicesystem/domain/supplier/controller/SupplierController.java`, `src/test/java/com/oct/invoicesystem/domain/supplier/controller/SupplierIntegrationTest.java`.
 
-### [PROB-094] `InvoiceStateMachineServiceImpl.performMatchingCheck` avalait toute exception non-WorkflowException 
 ### [PROB-094] `InvoiceStateMachineServiceImpl.performMatchingCheck` avalait toute exception non-WorkflowException → garde MISMATCH contournable
 - **Catégorie :** Sécurité / Workflow (intégrité du contrôle métier — fail-open)
 - **Sévérité :** 🟠 Majeur (MAJEUR-3 de l'audit : une facture liée à un bon de commande pouvait passer à SOUMIS sans que le rapprochement à trois voies soit réellement évalué, rendant contournable le blocage MISMATCH exigé par WORKFLOW/CLAUDE §Three-Way Matching).
