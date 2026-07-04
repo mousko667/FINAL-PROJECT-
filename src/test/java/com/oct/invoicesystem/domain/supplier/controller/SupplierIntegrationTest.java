@@ -1,7 +1,13 @@
 package com.oct.invoicesystem.domain.supplier.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.oct.invoicesystem.domain.department.model.Department;
+import com.oct.invoicesystem.domain.department.repository.DepartmentRepository;
+import com.oct.invoicesystem.domain.invoice.model.Invoice;
+import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
+import com.oct.invoicesystem.domain.invoice.repository.InvoiceRepository;
 import com.oct.invoicesystem.domain.supplier.dto.SupplierCreateRequest;
+import com.oct.invoicesystem.domain.supplier.model.Supplier;
 import com.oct.invoicesystem.domain.supplier.model.SupplierDocument;
 import com.oct.invoicesystem.domain.supplier.model.SupplierDocumentType;
 import com.oct.invoicesystem.domain.supplier.model.SupplierStatus;
@@ -17,6 +23,9 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -43,6 +52,12 @@ class SupplierIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private InvoiceRepository invoiceRepository;
+
+    @Autowired
+    private DepartmentRepository departmentRepository;
 
     @Test
     @WithMockUser(roles = "ADMIN")
@@ -126,6 +141,89 @@ class SupplierIntegrationTest {
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.success").value(false));
         } finally {
+            cleanupSupplier(id);
+        }
+    }
+
+    @Test
+    @WithMockUser(roles = "DAF")
+    void getPerformanceMetrics_returnsRealMetricsForAuthorizedRole() throws Exception {
+        // MAJEUR-11/12 follow-up: an authorized role (DAF) with a supplier that HAS invoices
+        // must get a real 200 with real metrics — not a 403 (SoD scope) and not a 404
+        // (no-fabrication scope). This is the positive path the two negative tests don't cover.
+        //
+        // Two invoices are seeded: one MISMATCH and one REJETE, so the computed
+        // accuracyRate (0.5) and rejectionRate (0.5) are genuinely derived from the fixture data,
+        // not the old fabricated constants (accuracy=1.0, rejection=0.0) that the bug always
+        // returned regardless of actual invoice state.
+        String id = createSupplier("Perf DAF Co", "TAX-PERF-DAF-001", "perf.daf@example.com");
+        java.util.UUID supplierId = java.util.UUID.fromString(id);
+        java.util.List<java.util.UUID> invoiceIds = new java.util.ArrayList<>();
+        try {
+            Department department = departmentRepository.findAll().stream().findFirst()
+                    .orElseGet(() -> departmentRepository.save(Department.builder()
+                            .code("DEPT-PERF")
+                            .nameFr("Departement Perf")
+                            .nameEn("Perf Department")
+                            .n1Role("ROLE_MANAGER")
+                            .isActive(true)
+                            .requiresN2(false)
+                            .build()));
+
+            User submitter = userRepository.findByUsername("perf_daf_submitter").orElseGet(() -> {
+                User u = new User();
+                u.setUsername("perf_daf_submitter");
+                u.setEmail("perf.daf.submitter@test.com");
+                u.setPassword("password");
+                u.setFirstName("Perf");
+                u.setLastName("Submitter");
+                u.setActive(true);
+                return userRepository.save(u);
+            });
+
+            Supplier supplier = supplierRepository.findByIdAndDeletedAtIsNull(supplierId).orElseThrow();
+
+            Invoice mismatchInvoice = Invoice.builder()
+                    .referenceNumber("FAC-PERF-DAF-001")
+                    .department(department)
+                    .submittedBy(submitter)
+                    .supplier(supplier)
+                    .supplierName("Perf DAF Co")
+                    .supplierEmail("perf.daf@example.com")
+                    .amount(BigDecimal.valueOf(1000))
+                    .currency("EUR")
+                    .status(InvoiceStatus.BON_A_PAYER)
+                    .matchingStatus("MISMATCH")
+                    .issueDate(LocalDate.now().minusDays(20))
+                    .dueDate(LocalDate.now().minusDays(5))
+                    .build();
+            invoiceIds.add(invoiceRepository.save(mismatchInvoice).getId());
+
+            Invoice rejectedInvoice = Invoice.builder()
+                    .referenceNumber("FAC-PERF-DAF-002")
+                    .department(department)
+                    .submittedBy(submitter)
+                    .supplier(supplier)
+                    .supplierName("Perf DAF Co")
+                    .supplierEmail("perf.daf@example.com")
+                    .amount(BigDecimal.valueOf(500))
+                    .currency("EUR")
+                    .status(InvoiceStatus.REJETE)
+                    .issueDate(LocalDate.now().minusDays(10))
+                    .dueDate(LocalDate.now().plusDays(10))
+                    .build();
+            invoiceIds.add(invoiceRepository.save(rejectedInvoice).getId());
+
+            mockMvc.perform(get("/api/v1/suppliers/{id}/performance", id))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.supplierId").value(id))
+                    .andExpect(jsonPath("$.data.totalInvoicesSubmitted").value(2))
+                    .andExpect(jsonPath("$.data.mismatchedInvoices").value(1))
+                    .andExpect(jsonPath("$.data.invoiceAccuracyRate").value(0.5))
+                    .andExpect(jsonPath("$.data.rejectionRate").value(0.5));
+        } finally {
+            invoiceIds.forEach(invoiceRepository::deleteById);
             cleanupSupplier(id);
         }
     }
