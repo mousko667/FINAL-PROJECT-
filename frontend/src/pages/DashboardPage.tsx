@@ -19,6 +19,7 @@ import {
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { SkeletonCard, SkeletonDashboard, Skeleton } from '@/components/ui/Skeleton'
 import type { InvoiceStatus } from '@/types/invoice'
+import { formatAmount } from '@/lib/format'
 
 const STATUS_COLORS: Record<string, string> = {
   BROUILLON:        '#94a3b8',
@@ -294,7 +295,7 @@ export default function DashboardPage() {
                 <span className="text-sm text-gray-700 truncate flex-1">{inv.supplierName}</span>
                 <StatusBadge status={inv.status as InvoiceStatus} />
                 <span className="text-sm font-mono text-gray-700 text-right w-28 shrink-0">
-                  {Number(inv.amount).toLocaleString()} XAF
+                  {formatAmount(inv.amount)} XOF
                 </span>
                 <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
               </Link>
@@ -404,7 +405,7 @@ export default function DashboardPage() {
                 <span className="text-sm text-gray-700 truncate flex-1">{invoice.supplierName}</span>
                 <StatusBadge status={invoice.status as InvoiceStatus} />
                 <span className="text-sm font-mono text-gray-700 text-right w-28 shrink-0">
-                  {Number(invoice.amount).toLocaleString()} XAF
+                  {formatAmount(invoice.amount)} XOF
                 </span>
                 <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
               </Link>
@@ -444,7 +445,7 @@ export default function DashboardPage() {
 
           <div className="bg-white rounded-xl border p-5">
             <h2 className="font-semibold text-gray-800 mb-1">{t('dashboard.topSuppliers')}</h2>
-            <p className="text-xs text-gray-400 mb-4">Volume traité par fournisseur (XAF)</p>
+            <p className="text-xs text-gray-400 mb-4">Volume traité par fournisseur (XOF)</p>
             {supplierData.length > 0 ? (
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={supplierData} layout="vertical">
@@ -453,7 +454,7 @@ export default function DashboardPage() {
                   <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 10, fill: '#6b7280' }} axisLine={false} tickLine={false} />
                   <Tooltip
                     contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
-                    formatter={(v) => [`${Number(v).toLocaleString()} XAF`]}
+                    formatter={(v) => [`${formatAmount(v)} XOF`]}
                   />
                   <Bar dataKey="value" fill="#0F2540" radius={[0, 4, 4, 0]} />
                 </BarChart>

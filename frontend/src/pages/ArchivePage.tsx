@@ -7,6 +7,7 @@ import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { Loader2, Archive, Search, Download, Filter, ExternalLink, FileText, FolderPlus } from 'lucide-react'
 import ArchiveFolderTree from '@/components/archive/ArchiveFolderTree'
 import AssignFolderModal from '@/components/archive/AssignFolderModal'
+import { formatAmount, formatDate } from '@/lib/format'
 
 interface ArchivedInvoice {
   id: string
@@ -169,10 +170,10 @@ export default function ArchivePage() {
                           : <span className="text-gray-400">—</span>}
                       </td>
                       <td className="px-4 py-3 text-right font-medium text-gray-900">
-                        {Number(inv.amount).toLocaleString()} {inv.currency}
+                        {formatAmount(inv.amount)} {inv.currency}
                       </td>
-                      <td className="px-4 py-3 text-gray-500 text-xs">{new Date(inv.issueDate).toLocaleDateString()}</td>
-                      <td className="px-4 py-3 text-gray-500 text-xs">{new Date(inv.createdAt).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">{formatDate(inv.issueDate)}</td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">{formatDate(inv.createdAt)}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2 justify-end">
                           <button

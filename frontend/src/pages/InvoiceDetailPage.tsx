@@ -13,6 +13,7 @@ import { ExportMenu } from '@/components/ui/ExportMenu'
 import { ValidationChecklist } from '@/components/invoice/ValidationChecklist'
 import { useAppSelector } from '@/store/hooks'
 import { Loader2, ArrowLeft, Download, CheckCircle, XCircle, AlertTriangle, MinusCircle, Clock, User, FileDown, Lock, Eye } from 'lucide-react'
+import { formatAmount, formatDate, formatDateTime } from '@/lib/format'
 
 interface ApprovalStep {
   id: string
@@ -196,7 +197,7 @@ export default function InvoiceDetailPage() {
             <h2 className="font-semibold text-gray-800 mb-4">{t('invoice.details')}</h2>
             <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
               {[
-                { label: t('invoice.amount'), value: `${Number(invoice.amount).toLocaleString()} ${invoice.currency}` },
+                { label: t('invoice.amount'), value: `${formatAmount(invoice.amount)} ${invoice.currency}` },
                 { label: t('invoice.issueDate'), value: invoice.issueDate },
                 { label: t('invoice.dueDate'), value: invoice.dueDate },
                 { label: t('invoice.department'), value: (i18n.language === 'en' ? invoice.departmentNameEn : invoice.departmentNameFr) ?? invoice.departmentCode ?? '—' },
@@ -386,7 +387,7 @@ export default function InvoiceDetailPage() {
                             </div>
                             {step.actionAt && (
                               <span className="text-xs text-gray-400 shrink-0">
-                                {new Date(step.actionAt).toLocaleString()}
+                                {formatDateTime(step.actionAt)}
                               </span>
                             )}
                           </div>
@@ -401,7 +402,7 @@ export default function InvoiceDetailPage() {
                           {isPending && step.deadline && (
                             <div className="flex items-center gap-1.5 text-xs text-amber-600 mt-1">
                               <Clock className="w-3 h-3" />
-                              {t('invoice.deadline', 'Délai')}: {new Date(step.deadline).toLocaleDateString()}
+                              {t('invoice.deadline', 'Délai')}: {formatDate(step.deadline)}
                               {new Date(step.deadline) < new Date() && (
                                 <span className="text-red-600 font-semibold ml-1">— {t('invoice.overdue', 'DÉPASSÉ')}</span>
                               )}

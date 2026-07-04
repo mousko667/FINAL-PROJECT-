@@ -5,6 +5,7 @@ import apiClient from '@/services/apiClient'
 import { useAppSelector } from '@/store/hooks'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { Loader2, Plus, ChevronLeft, ChevronRight, Upload, FileSpreadsheet } from 'lucide-react'
+import { formatAmount, formatDate } from '@/lib/format'
 
 interface PurchaseOrder {
   id: string
@@ -27,7 +28,7 @@ export default function PurchaseOrdersPage() {
 
   const [page, setPage] = useState(0)
   const [showCreate, setShowCreate] = useState(false)
-  const [form, setForm] = useState({ poNumber: '', supplierId: '', totalAmount: '', currency: 'XAF', status: 'OPEN' })
+  const [form, setForm] = useState({ poNumber: '', supplierId: '', totalAmount: '', currency: 'XOF', status: 'OPEN' })
   const fileRef = useRef<HTMLInputElement>(null)
   const [importError, setImportError] = useState<string | null>(null)
 
@@ -201,11 +202,11 @@ export default function PurchaseOrdersPage() {
                     <tr key={po.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3 font-mono text-xs font-medium text-gray-900">{po.poNumber}</td>
                       <td className="px-4 py-3 text-gray-700">{po.supplierName ?? '—'}</td>
-                      <td className="px-4 py-3 text-right font-mono">{Number(po.totalAmount).toLocaleString()} {po.currency ?? 'XOF'}</td>
+                      <td className="px-4 py-3 text-right font-mono">{formatAmount(po.totalAmount)} {po.currency ?? 'XOF'}</td>
                       <td className="px-4 py-3">
                         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusBadge(po.status)}`}>{po.status}</span>
                       </td>
-                      <td className="px-4 py-3 text-gray-500 text-xs">{new Date(po.createdAt).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">{formatDate(po.createdAt)}</td>
                     </tr>
                   ))}
                 </tbody>

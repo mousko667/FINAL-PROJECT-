@@ -9,6 +9,7 @@ import {
   FileText, CheckCircle, Clock, XCircle, AlertCircle,
   RefreshCw, ChevronRight, Building2,
 } from 'lucide-react'
+import { formatAmount, formatDate } from '@/lib/format'
 
 interface SupplierInvoice {
   id: string
@@ -173,10 +174,10 @@ function InvoiceDetailView({ invoice, onBack }: { invoice: SupplierInvoice; onBa
       {/* Meta grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { icon: DollarSign, label: t('invoice.amount', 'Montant'), value: `${Number(invoice.amount).toLocaleString()} ${invoice.currency}` },
+          { icon: DollarSign, label: t('invoice.amount', 'Montant'), value: `${formatAmount(invoice.amount)} ${invoice.currency}` },
           { icon: Building2,  label: t('invoice.department', 'Département'), value: invoice.departmentCode ?? '—' },
-          { icon: Calendar,   label: t('invoice.issueDate', 'Date d\'émission'), value: new Date(invoice.issueDate).toLocaleDateString() },
-          { icon: Calendar,   label: t('invoice.dueDate', 'Date d\'échéance'), value: new Date(invoice.dueDate).toLocaleDateString() },
+          { icon: Calendar,   label: t('invoice.issueDate', 'Date d\'émission'), value: formatDate(invoice.issueDate) },
+          { icon: Calendar,   label: t('invoice.dueDate', 'Date d\'échéance'), value: formatDate(invoice.dueDate) },
         ].map(({ icon: Icon, label, value }) => (
           <div key={label} className="bg-white rounded-xl border p-4">
             <div className="flex items-center gap-1.5 text-gray-400 mb-1">
@@ -324,13 +325,13 @@ export default function SupplierInvoicesPage() {
                     onClick={() => setSelectedInvoice(inv)}
                   >
                     <td className="px-4 py-3 font-mono text-xs font-semibold text-gray-900">{inv.referenceNumber}</td>
-                    <td className="px-4 py-3 font-medium text-gray-700">{Number(inv.amount).toLocaleString()} {inv.currency}</td>
+                    <td className="px-4 py-3 font-medium text-gray-700">{formatAmount(inv.amount)} {inv.currency}</td>
                     <td className="px-4 py-3"><StatusPill status={inv.status} /></td>
                     <td className="px-4 py-3 hidden md:table-cell w-48">
                       <ApprovalTimeline status={inv.status} />
                     </td>
                     <td className="px-4 py-3 text-gray-500 text-xs hidden md:table-cell">
-                      {new Date(inv.dueDate).toLocaleDateString()}
+                      {formatDate(inv.dueDate)}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <ChevronRight className="w-4 h-4 text-gray-400 ml-auto" />

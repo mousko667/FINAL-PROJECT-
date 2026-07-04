@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import { Plug, Plus, Trash2, Loader2, Wifi, RefreshCw, Clock } from 'lucide-react'
+import { formatDateTime } from '@/lib/format'
 
 interface Connector {
   id: string; name: string; type: string; endpoint: string | null; enabled: boolean
@@ -116,7 +117,7 @@ export function IntegrationConnectors() {
                       {c.lastSyncStatus === 'SUCCESS'
                         ? t('admin.connectors.syncOk', 'Dernière synchro OK')
                         : t('admin.connectors.syncFail', 'Échec synchro')}
-                      {c.lastSyncAt && ` · ${new Date(c.lastSyncAt).toLocaleString()}`}
+                      {c.lastSyncAt && ` · ${formatDateTime(c.lastSyncAt)}`}
                     </div>
                   )}
                 </td>

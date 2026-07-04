@@ -8,6 +8,7 @@ import {
   Bell, CheckCheck, Info, AlertTriangle, CheckCircle, XCircle,
   FileText, Loader2, BellOff,
 } from 'lucide-react'
+import { formatDateTime } from '@/lib/format'
 
 interface ApiNotification {
   id: string
@@ -131,7 +132,7 @@ export default function NotificationsPage() {
                   </p>
                   <div className="flex items-center gap-3 mt-1">
                     <span className="text-xs text-gray-400">
-                      {new Date(notif.createdAt).toLocaleString()}
+                      {formatDateTime(notif.createdAt)}
                     </span>
                     {notif.invoiceId && (
                       <Link

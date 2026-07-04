@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import { FileText, MessageSquare, Plus, Trash2, Loader2 } from 'lucide-react'
+import { formatDateTime } from '@/lib/format'
 
 interface Contract {
   id: string; reference: string; title: string
@@ -109,7 +110,7 @@ export function SupplierRelationship({ supplierId, canEdit }: { supplierId: stri
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-mono bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{c.channel}</span>
                   <span className="font-medium text-gray-900">{c.subject}</span>
-                  <span className="text-gray-400 ml-auto text-xs">{new Date(c.loggedAt).toLocaleString()}</span>
+                  <span className="text-gray-400 ml-auto text-xs">{formatDateTime(c.loggedAt)}</span>
                 </div>
                 {c.body && <p className="text-gray-600 mt-0.5">{c.body}</p>}
               </li>

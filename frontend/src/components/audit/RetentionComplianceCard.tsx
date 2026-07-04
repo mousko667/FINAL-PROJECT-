@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { ShieldCheck } from 'lucide-react'
 import apiClient from '@/services/apiClient'
 import type { ApiResponse } from '@/types/invoice'
+import { formatDateTime } from '@/lib/format'
 
 type RetentionStatus = 'CONFORME' | 'ATTENTION' | 'NON_CONFORME'
 
@@ -66,7 +67,7 @@ export default function RetentionComplianceCard() {
         <div>
           <dt className="text-gray-400 text-xs">{t('admin.audit.retention.lastSweep')}</dt>
           <dd className="text-gray-700">
-            {data.lastSweepAt ? new Date(data.lastSweepAt).toLocaleString() : t('admin.audit.retention.never')}
+            {data.lastSweepAt ? formatDateTime(data.lastSweepAt) : t('admin.audit.retention.never')}
           </dd>
         </div>
         <div>

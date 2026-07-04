@@ -6,6 +6,7 @@ import { CheckCircle, Shield, ShieldCheck, ShieldOff, Loader2, QrCode, KeyRound 
 import { QRCodeSVG } from 'qrcode.react'
 import apiClient from '@/services/apiClient'
 import { useAppSelector } from '@/store/hooks'
+import { formatAmount } from '@/lib/format'
 
 interface StaffProfile {
   id: string
@@ -363,7 +364,7 @@ export default function ProfilePage() {
               {t('profile.approvalLimit')}
               <input
                 value={data?.approvalLimit != null
-                  ? `${Number(data.approvalLimit).toLocaleString()} XAF`
+                  ? `${formatAmount(data.approvalLimit)} XOF`
                   : t('profile.approvalLimitNone')}
                 disabled
                 className="mt-1 w-full border rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500"

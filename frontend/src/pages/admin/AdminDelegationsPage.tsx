@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { Loader2, UserCheck, Trash2, Plus, ArrowRight, AlertCircle } from 'lucide-react'
+import { formatDate } from '@/lib/format'
 
 interface Department {
   id: string
@@ -184,7 +185,7 @@ export default function AdminDelegationsPage() {
                         <td className="px-2 py-3 text-gray-400"><ArrowRight className="w-4 h-4" /></td>
                         <td className="px-4 py-3 text-gray-900">{d.delegateeUsername}</td>
                         <td className="px-4 py-3 text-gray-500 text-xs">
-                          {new Date(d.fromDate).toLocaleDateString()} – {new Date(d.toDate).toLocaleDateString()}
+                          {formatDate(d.fromDate)} – {formatDate(d.toDate)}
                         </td>
                         <td className="px-4 py-3 text-gray-500 truncate max-w-[200px]">{d.reason || '—'}</td>
                         <td className="px-4 py-3 text-right">

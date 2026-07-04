@@ -9,6 +9,7 @@ import { ExportMenu } from '@/components/ui/ExportMenu'
 import { ImportInvoicesModal } from '@/components/invoice/ImportInvoicesModal'
 import type { InvoiceStatus } from '@/types/invoice'
 import { Plus, Upload, Search, ChevronLeft, ChevronRight, Loader2, Archive, Lock } from 'lucide-react'
+import { formatAmount } from '@/lib/format'
 
 const ALL_STATUSES: InvoiceStatus[] = [
   'BROUILLON', 'SOUMIS', 'EN_VALIDATION_N1', 'EN_VALIDATION_N2',
@@ -219,7 +220,7 @@ export default function InvoiceListPage() {
                       </td>
                       <td className="px-4 py-3 text-gray-700">{invoice.supplierName}</td>
                       <td className="px-4 py-3 text-right font-mono">
-                        {invoice.amount.toLocaleString()} {invoice.currency}
+                        {formatAmount(invoice.amount)} {invoice.currency}
                       </td>
                       <td className="px-4 py-3 text-gray-500">{invoice.issueDate}</td>
                       <td className="px-4 py-3 text-gray-500">{invoice.dueDate}</td>

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import { ShieldAlert, Database, ListChecks, CalendarClock, Plus, Trash2, Loader2, ClipboardCheck } from 'lucide-react'
+import { formatDate, formatDateTime } from '@/lib/format'
 
 interface Incident { id: string; title: string; severity: string; status: string; reportedAt: string }
 interface ChecklistItem { id: string; framework: string; label: string; completed: boolean }
@@ -70,7 +71,7 @@ export default function AdminCompliancePage() {
           {stat(t('admin.compliance.auditPrep.openIncidents'), String(openIncidentCount), openIncidentCount > 0)}
           {stat(t('admin.compliance.auditPrep.checklistProgress'), checklistTotal ? `${checklistDone}/${checklistTotal}` : '—')}
           {stat(t('admin.compliance.auditPrep.upcomingDeadlines'), String(upcomingDeadlines.length))}
-          {stat(t('admin.compliance.auditPrep.backupStatus'), backup.data?.lastBackupAt ? new Date(backup.data.lastBackupAt).toLocaleDateString() : '—', backup.data?.status === 'FAILED')}
+          {stat(t('admin.compliance.auditPrep.backupStatus'), backup.data?.lastBackupAt ? formatDate(backup.data.lastBackupAt) : '—', backup.data?.status === 'FAILED')}
         </div>
         <div className="mt-4">
           <h3 className="text-sm font-medium text-gray-700 mb-2">{t('admin.compliance.auditPrep.nextDeadlinesTitle')}</h3>
@@ -97,7 +98,7 @@ export default function AdminCompliancePage() {
         </div>
         <div className="mt-2 text-sm">
           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${backup.data?.status === 'OK' ? 'bg-green-100 text-green-800' : backup.data?.status === 'FAILED' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-500'}`}>{backup.data?.status ?? 'UNKNOWN'}</span>
-          <span className="text-gray-500 ml-2">{backup.data?.lastBackupAt ? new Date(backup.data.lastBackupAt).toLocaleString() : t('admin.compliance.noBackup', 'Aucune sauvegarde enregistrée')}</span>
+          <span className="text-gray-500 ml-2">{backup.data?.lastBackupAt ? formatDateTime(backup.data.lastBackupAt) : t('admin.compliance.noBackup', 'Aucune sauvegarde enregistrée')}</span>
         </div>
       </div>
 

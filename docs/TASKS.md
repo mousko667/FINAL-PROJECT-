@@ -53,6 +53,17 @@ Requirements. They supersede the old "Known Gaps — Must Be Fixed" section form
 > filtrer/marquer ces factures côté liste serait un plus UX. (b) Ajouter un `@DataJpaTest`
 > dédié à `PaymentRepository.findProcessedBetween` (actuellement couvert uniquement par mocks).
 
+> **Fix (Task 15, RT-4+MAJEUR-F4, 2026-07-04, PROB-102)** — Devise XAF→XOF corrigée partout
+> (code + `fr.json`/`en.json`) y compris `PurchaseOrdersPage.tsx` (le `<select>` ne proposait que
+> XOF/EUR/USD, XAF n'était jamais sélectionnable). Nouveau helper partagé
+> `frontend/src/lib/format.ts` (`formatAmount`/`formatDate`/`formatDateTime`, locale fr-FR forcée)
+> et routage de 55 call-sites (33 fichiers) qui appelaient `toLocaleString()`/`toLocaleDateString()`
+> sans locale (défaut runtime → format US M/D/YYYY, virgule des milliers, AM/PM). 9 sites qui
+> passaient déjà une locale dynamique respectant la langue active de l'UI ont été laissés tels
+> quels (`AdminRetentionPolicyPage`, `AdminRetentionDispositionPage`, `AdminArchiveCompliancePage`,
+> `SecuritySettingsPage`, `PaymentsPage` ×4, `AdminBackupsPage` ×2 déjà `'fr-FR'` explicite). Voir
+> `docs/KNOWN_ISSUES_REGISTRY.md` PROB-102 pour le détail complet.
+
 ---
 
 ## B. OUT OF SCOPE (assumed) — Module 12 Integration

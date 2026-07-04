@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { Loader2, Plus, Package, CheckCircle, Calendar } from 'lucide-react'
+import { formatDate } from '@/lib/format'
 
 interface GoodsReceipt {
   id: string
@@ -190,7 +191,7 @@ export default function GoodsReceiptsPage() {
                     <td className="px-4 py-3 text-gray-500 text-xs">
                       <div className="flex items-center gap-1.5">
                         <Calendar className="w-3.5 h-3.5" />
-                        {new Date(grn.receivedDate).toLocaleDateString()}
+                        {formatDate(grn.receivedDate)}
                       </div>
                     </td>
                     <td className="px-4 py-3">

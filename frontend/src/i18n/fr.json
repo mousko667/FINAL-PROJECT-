@@ -434,7 +434,7 @@
     "trends": {
       "title": "Tendances volume / valeur",
       "desc": "Nombre de factures et montant total par mois sur les 12 derniers mois (par date de facture).",
-      "amount": "Montant (XAF)",
+      "amount": "Montant (XOF)",
       "count": "Nb de factures"
     },
     "dateRangeRequired": "Sélectionnez une période pour générer le rapport de conformité.",
@@ -443,7 +443,7 @@
     "avgDays": "Moy. jours",
     "invoiceCount": "Factures",
     "daysOverdue": "Jours de retard",
-    "amountDue": "Montant dû (XAF)"
+    "amountDue": "Montant dû (XOF)"
   },
   "role": {
     "admin": "Administrateur",
@@ -489,7 +489,7 @@
       "deptHint": "Obligatoire pour les rôles de validateur par département.",
       "employeeId": "Matricule",
       "employeeIdPlaceholder": "ex. EMP-0042",
-      "approvalLimit": "Limite d'approbation (XAF)",
+      "approvalLimit": "Limite d'approbation (XOF)",
       "approvalLimitPlaceholder": "ex. 50000",
       "approvalLimitHint": "Montant maximum que cet utilisateur peut approuver. Laisser vide pour aucune limite.",
       "preferredLang": "Langue préférée",

@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
+import { formatAmount } from '@/lib/format'
 
 interface AgingBucket {
   bucketKey: string
@@ -90,7 +91,7 @@ export default function AgingBucketsWidget() {
               <span className="text-gray-600">
                 {t('dashboard.agingBuckets.totalAmount')}:{' '}
                 <strong className="text-gray-900 font-mono">
-                  {Number(data.totalOverdueAmount).toLocaleString()} XAF
+                  {formatAmount(data.totalOverdueAmount)} XOF
                 </strong>
               </span>
             </div>
@@ -102,7 +103,7 @@ export default function AgingBucketsWidget() {
                 <Tooltip
                   formatter={(value: number, name: string) =>
                     name === 'amount'
-                      ? [`${value.toLocaleString()} XAF`, t('dashboard.agingBuckets.amount')]
+                      ? [`${formatAmount(value)} XOF`, t('dashboard.agingBuckets.amount')]
                       : [value, t('dashboard.agingBuckets.invoices')]
                   }
                 />
@@ -119,7 +120,7 @@ export default function AgingBucketsWidget() {
                     <div key={row.supplierId ?? row.supplierName} className="flex justify-between py-2 text-sm">
                       <span className="text-gray-700 truncate pr-4">{row.supplierName}</span>
                       <span className="font-mono text-gray-900 shrink-0">
-                        {Number(row.totalOverdueAmount).toLocaleString()} XAF
+                        {formatAmount(row.totalOverdueAmount)} XOF
                       </span>
                     </div>
                   ))}

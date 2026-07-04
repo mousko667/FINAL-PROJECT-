@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { Loader2, SlidersHorizontal, Save, CheckCircle, AlertCircle } from 'lucide-react'
+import { formatDateTime } from '@/lib/format'
 
 interface MatchingConfig {
   id: string
@@ -156,7 +157,7 @@ export default function AdminMatchingConfigPage() {
 
             {config?.updatedAt && (
               <p className="text-xs text-gray-400 border-t pt-3">
-                {t('admin.matchingConfig.lastUpdated', 'Last updated')}: {new Date(config.updatedAt).toLocaleString()}
+                {t('admin.matchingConfig.lastUpdated', 'Last updated')}: {formatDateTime(config.updatedAt)}
               </p>
             )}
           </div>

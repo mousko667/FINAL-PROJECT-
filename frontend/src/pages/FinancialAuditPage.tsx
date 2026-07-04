@@ -7,6 +7,7 @@ import { Loader2, Search, ChevronLeft, ChevronRight, FileDown } from 'lucide-rea
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { reportService } from '@/services/reportService'
 import AuditSummary from '@/components/audit/AuditSummary'
+import { formatDateTime } from '@/lib/format'
 
 interface AuditLog {
   id: string
@@ -161,7 +162,7 @@ export default function FinancialAuditPage() {
                           const raw = log.createdAt ?? log.performedAt
                           if (!raw) return '—'
                           const d = new Date(raw)
-                          return isNaN(d.getTime()) ? raw : d.toLocaleString()
+                          return isNaN(d.getTime()) ? raw : formatDateTime(d)
                         })()}
                       </td>
                       <td className="px-4 py-3 font-medium text-gray-700 text-xs">

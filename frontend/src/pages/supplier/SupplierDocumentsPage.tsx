@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import { Upload, FileText, Loader2, AlertCircle } from 'lucide-react'
+import { formatDate } from '@/lib/format'
 
 interface SupplierDocument {
   id: string
@@ -143,7 +144,7 @@ export default function SupplierDocumentsPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-gray-500 text-xs">
-                    {doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString() : '—'}
+                    {doc.uploadedAt ? formatDate(doc.uploadedAt) : '—'}
                   </td>
                 </tr>
               ))}

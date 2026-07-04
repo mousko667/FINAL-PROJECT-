@@ -434,7 +434,7 @@
     "trends": {
       "title": "Volume / value trends",
       "desc": "Invoice count and total amount per month over the last 12 months (by invoice date).",
-      "amount": "Amount (XAF)",
+      "amount": "Amount (XOF)",
       "count": "Invoice count"
     },
     "dateRangeRequired": "Select a date range to generate the compliance report.",
@@ -443,7 +443,7 @@
     "avgDays": "Avg. Days",
     "invoiceCount": "Invoices",
     "daysOverdue": "Days Overdue",
-    "amountDue": "Amount Due (XAF)"
+    "amountDue": "Amount Due (XOF)"
   },
   "role": {
     "admin": "Administrator",
@@ -489,7 +489,7 @@
       "deptHint": "Required for department-specific approver roles.",
       "employeeId": "Employee ID",
       "employeeIdPlaceholder": "e.g. EMP-0042",
-      "approvalLimit": "Approval Limit (XAF)",
+      "approvalLimit": "Approval Limit (XOF)",
       "approvalLimitPlaceholder": "e.g. 50000",
       "approvalLimitHint": "Maximum invoice amount this user can approve. Leave blank for no limit.",
       "preferredLang": "Preferred Language",

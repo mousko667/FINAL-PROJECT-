@@ -6,6 +6,7 @@ import { useAppSelector } from '@/store/hooks'
 import { SupplierStatusBadge } from '@/components/SupplierStatusBadge'
 import { ExportMenu } from '@/components/ui/ExportMenu'
 import { Loader2, Search, Filter, Eye, CheckCircle, Ban, Trash2, Plus } from 'lucide-react'
+import { formatDate } from '@/lib/format'
 
 export default function SuppliersPage() {
   const { t } = useTranslation()
@@ -123,7 +124,7 @@ export default function SuppliersPage() {
                         {supplier.category ? t(`supplier.category.${supplier.category}`, supplier.category) : '—'}
                       </td>
                       <td className="px-4 py-3 text-gray-500">
-                        {supplier.createdAt ? new Date(supplier.createdAt).toLocaleDateString() : '—'}
+                        {supplier.createdAt ? formatDate(supplier.createdAt) : '—'}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">

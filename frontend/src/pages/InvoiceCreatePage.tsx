@@ -9,6 +9,7 @@ import { invoiceService } from '@/services/invoiceService'
 import apiClient from '@/services/apiClient'
 import { ChevronRight, ChevronLeft, Loader2, Plus, Trash2, AlertTriangle } from 'lucide-react'
 import type { ApiResponse, PagedResponse } from '@/types/invoice'
+import { formatAmount } from '@/lib/format'
 
 interface Supplier { id: string; companyName: string; taxId: string; status: string }
 interface Department { id: string; code: string; nameEn: string; nameFr: string }
@@ -226,7 +227,7 @@ export default function InvoiceCreatePage() {
                       <option value="">{t('invoice.noPO', '— No linked PO —')}</option>
                       {(supplierPOs ?? []).map((po) => (
                         <option key={po.id} value={po.id}>
-                          {po.poNumber} — {po.totalAmount.toLocaleString()} XOF
+                          {po.poNumber} — {formatAmount(po.totalAmount)} XOF
                         </option>
                       ))}
                     </select>

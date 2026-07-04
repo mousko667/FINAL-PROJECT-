@@ -5,6 +5,7 @@ import apiClient from '@/services/apiClient'
 import { Loader2, FileText, Clock, CheckCircle, DollarSign, XCircle, ArrowRight, Calendar } from 'lucide-react'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { InvoiceStatus } from '@/types/invoice'
+import { formatDate } from '@/lib/format'
 
 interface SupplierDashboard {
   submittedCount: number
@@ -68,7 +69,7 @@ export default function SupplierDashboardPage() {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">{t('supplier.portal.lastPayment', 'Last Payment')}</p>
-                    <p className="font-semibold text-gray-900">{new Date(data.lastPaymentDate).toLocaleDateString()}</p>
+                    <p className="font-semibold text-gray-900">{formatDate(data.lastPaymentDate)}</p>
                   </div>
                 </div>
               )}
@@ -79,7 +80,7 @@ export default function SupplierDashboardPage() {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">{t('supplier.portal.nextPayment', 'Next Expected Payment')}</p>
-                    <p className="font-semibold text-gray-900">{new Date(data.nextExpectedPaymentDate).toLocaleDateString()}</p>
+                    <p className="font-semibold text-gray-900">{formatDate(data.nextExpectedPaymentDate)}</p>
                   </div>
                 </div>
               )}
@@ -101,7 +102,7 @@ export default function SupplierDashboardPage() {
                     <div>
                       <p className="font-medium text-sm text-gray-900">{invoice.referenceNumber}</p>
                       {invoice.dueDate && (
-                        <p className="text-xs text-gray-400">{t('invoice.dueDate')}: {new Date(invoice.dueDate).toLocaleDateString()}</p>
+                        <p className="text-xs text-gray-400">{t('invoice.dueDate')}: {formatDate(invoice.dueDate)}</p>
                       )}
                     </div>
                     <StatusBadge status={invoice.status as InvoiceStatus} />

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import { Loader2, Plus, Trash2, Zap, CheckCircle, XCircle, Activity, ScrollText } from 'lucide-react'
 import { IntegrationConnectors } from '@/components/admin/IntegrationConnectors'
+import { formatDateTime } from '@/lib/format'
 
 interface Webhook {
   id: string
@@ -126,7 +127,7 @@ export default function IntegrationsPage() {
                 <span className="font-mono text-xs text-gray-700 truncate flex-1">{s.url}</span>
                 {s.lastDeliveredAt
                   ? <span className="text-xs text-gray-400">
-                      {t('admin.integrations.lastDelivery', 'Last')}: {new Date(s.lastDeliveredAt).toLocaleString()}
+                      {t('admin.integrations.lastDelivery', 'Last')}: {formatDateTime(s.lastDeliveredAt)}
                       {s.lastResponseStatus != null && ` · HTTP ${s.lastResponseStatus}`}
                     </span>
                   : <span className="text-xs text-gray-400">{t('admin.integrations.neverDelivered', 'No delivery yet')}</span>}
@@ -265,7 +266,7 @@ export default function IntegrationsPage() {
                         : <XCircle className="w-4 h-4 text-red-500 mx-auto" />}
                     </td>
                     <td className="px-4 py-2.5 text-xs text-gray-400">
-                      {new Date(d.lastAttemptedAt ?? d.createdAt).toLocaleString()}
+                      {formatDateTime(d.lastAttemptedAt ?? d.createdAt)}
                     </td>
                   </tr>
                 ))}

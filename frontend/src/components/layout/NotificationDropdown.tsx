@@ -8,6 +8,7 @@ import {
   type Notification,
 } from '@/store/slices/notificationSlice'
 import { cn } from '@/lib/utils'
+import { formatDateTime } from '@/lib/format'
 
 const typeStyles: Record<Notification['type'], string> = {
   INFO: 'bg-blue-50 border-blue-100 text-blue-700',
@@ -115,7 +116,7 @@ export function NotificationDropdown() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-gray-700 leading-snug">{n.message}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {new Date(n.createdAt).toLocaleString()}
+                      {formatDateTime(n.createdAt)}
                     </p>
                   </div>
                   {!n.read && (

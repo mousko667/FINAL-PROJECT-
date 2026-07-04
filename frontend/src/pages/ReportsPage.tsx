@@ -13,6 +13,7 @@ import {
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
+import { formatAmount } from '@/lib/format'
 
 function KpiCard({ title, value, sub, icon, color }: { title: string; value: string | number; sub?: string; icon: React.ReactNode; color: string }) {
   return (
@@ -183,11 +184,11 @@ export default function ReportsPage() {
                       <tr key={l.departmentCode} className="border-b last:border-0">
                         <td className="px-3 py-2 font-medium text-gray-900">{l.departmentCode}</td>
                         <td className="px-3 py-2 text-right text-gray-600">
-                          {l.budget != null ? `${Number(l.budget).toLocaleString()} XAF` : <span className="text-gray-300">—</span>}
+                          {l.budget != null ? `${formatAmount(l.budget)} XOF` : <span className="text-gray-300">—</span>}
                         </td>
-                        <td className="px-3 py-2 text-right text-gray-600">{Number(l.actual).toLocaleString()} XAF</td>
+                        <td className="px-3 py-2 text-right text-gray-600">{formatAmount(l.actual)} XOF</td>
                         <td className={`px-3 py-2 text-right font-medium ${l.variance == null ? 'text-gray-300' : over ? 'text-red-600' : 'text-green-700'}`}>
-                          {l.variance != null ? `${Number(l.variance).toLocaleString()} XAF` : '—'}
+                          {l.variance != null ? `${formatAmount(l.variance)} XOF` : '—'}
                         </td>
                         <td className="px-3 py-2 text-right">
                           {l.utilizationPercent != null ? (
@@ -201,8 +202,8 @@ export default function ReportsPage() {
                 <tfoot>
                   <tr className="border-t-2 font-semibold text-gray-800">
                     <td className="px-3 py-2">{t('reports.budgetTotal')}</td>
-                    <td className="px-3 py-2 text-right">{Number(budget.totalBudget).toLocaleString()} XAF</td>
-                    <td className="px-3 py-2 text-right">{Number(budget.totalActual).toLocaleString()} XAF</td>
+                    <td className="px-3 py-2 text-right">{formatAmount(budget.totalBudget)} XOF</td>
+                    <td className="px-3 py-2 text-right">{formatAmount(budget.totalActual)} XOF</td>
                     <td className="px-3 py-2" colSpan={2}></td>
                   </tr>
                 </tfoot>
@@ -230,7 +231,7 @@ export default function ReportsPage() {
                     />
                   </div>
                   <div className="text-xs text-gray-500 w-20 text-right shrink-0">
-                    {b.count} inv — {Number(b.totalAmount).toLocaleString()} XAF
+                    {b.count} inv — {formatAmount(b.totalAmount)} XOF
                   </div>
                 </div>
               ))}
@@ -337,7 +338,7 @@ export default function ReportsPage() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="weekLabel" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `${(v/1000).toFixed(0)}k`} />
-                <Tooltip formatter={(v) => [`${Number(v).toLocaleString()} XAF`]} />
+                <Tooltip formatter={(v) => [`${formatAmount(v)} XOF`]} />
                 <Bar dataKey="totalAmount" fill="#6366f1" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>

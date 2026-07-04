@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { useAppSelector } from '@/store/hooks'
 import apiClient from '@/services/apiClient'
 import { Loader2, CheckCircle, Clock, AlertTriangle } from 'lucide-react'
+import { formatAmount, formatDate } from '@/lib/format'
 
 interface PendingInvoice {
   id: string
@@ -137,7 +138,7 @@ export default function ApprovalQueuePage() {
                       {inv.departmentCode ? `${(i18n.language === 'en' ? inv.departmentNameEn : inv.departmentNameFr) ?? inv.departmentCode} (${inv.departmentCode})` : '—'}
                     </td>
                     <td className="px-4 py-3 text-right font-medium text-gray-900">
-                      {Number(inv.amount).toLocaleString()} {inv.currency}
+                      {formatAmount(inv.amount)} {inv.currency}
                     </td>
                     {/* SLA indicator */}
                     <td className="px-4 py-3">
@@ -152,7 +153,7 @@ export default function ApprovalQueuePage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-gray-500 text-xs">
-                      {inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : '—'}
+                      {inv.dueDate ? formatDate(inv.dueDate) : '—'}
                     </td>
                     <td className="px-4 py-3">
                       <Link to={`/invoices/${inv.id}`} className="text-xs font-medium text-primary hover:underline whitespace-nowrap">

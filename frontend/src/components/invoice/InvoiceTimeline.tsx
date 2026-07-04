@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import type { Invoice } from '@/types/invoice'
 import apiClient from '@/services/apiClient'
+import { formatDateTime } from '@/lib/format'
 
 interface InvoiceTimelineProps {
   invoice: Invoice
@@ -46,7 +47,7 @@ export function InvoiceTimeline({ invoice }: InvoiceTimelineProps) {
                 <StatusBadge status={h.toStatus as never} />
               </div>
               <div className="mt-1 text-xs text-muted-foreground">
-                {h.changedByUsername ?? 'System'} - {new Date(h.changedAt).toLocaleString()}
+                {h.changedByUsername ?? 'System'} - {formatDateTime(h.changedAt)}
               </div>
               {h.changeReason && (
                 <p className="mt-1 text-xs text-gray-600 italic">{h.changeReason}</p>

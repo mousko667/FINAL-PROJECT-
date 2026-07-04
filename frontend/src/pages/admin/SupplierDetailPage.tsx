@@ -13,6 +13,7 @@ import {
 import { useAppSelector } from '@/store/hooks'
 import { SupplierStatusBadge } from '@/components/SupplierStatusBadge'
 import { SupplierRelationship } from '@/components/supplier/SupplierRelationship'
+import { formatDate } from '@/lib/format'
 import { Loader2, ArrowLeft, CheckCircle, Ban, Trash2, Building, Mail, Phone, MapPin, Calendar, FileText, Activity, Upload } from 'lucide-react'
 
 export default function SupplierDetailPage() {
@@ -197,7 +198,7 @@ export default function SupplierDetailPage() {
                 {t('supplier.fields.onboardingDate', 'Created Date')}
               </label>
               <p className="font-medium text-gray-900">
-                {supplier.createdAt ? new Date(supplier.createdAt).toLocaleDateString() : '—'}
+                {supplier.createdAt ? formatDate(supplier.createdAt) : '—'}
               </p>
             </div>
           </div>
@@ -265,7 +266,7 @@ export default function SupplierDetailPage() {
                       </div>
                     </div>
                     <div className="text-sm text-gray-400">
-                      {new Date(doc.uploadedAt).toLocaleDateString()}
+                      {formatDate(doc.uploadedAt)}
                     </div>
                   </li>
                 ))}

@@ -7,6 +7,7 @@ import { Loader2, Search, ChevronLeft, ChevronRight, Activity } from 'lucide-rea
 import { ExportMenu } from '@/components/ui/ExportMenu'
 import AuditSummary from '@/components/audit/AuditSummary'
 import RetentionComplianceCard from '@/components/audit/RetentionComplianceCard'
+import { formatDateTime } from '@/lib/format'
 
 interface AuditLog {
   id: string
@@ -38,7 +39,7 @@ function relativeTime(raw: string | undefined, t: (k: string, o?: object) => str
   if (secs < 60) return t('admin.audit.recent.justNow')
   if (secs < 3600) return t('admin.audit.recent.minutesAgo', { count: Math.floor(secs / 60) })
   if (secs < 86400) return t('admin.audit.recent.hoursAgo', { count: Math.floor(secs / 3600) })
-  return d.toLocaleString()
+  return formatDateTime(d)
 }
 
 /**
@@ -260,7 +261,7 @@ export default function AdminAuditPage() {
                           const raw = log.createdAt ?? log.performedAt
                           if (!raw) return '—'
                           const d = new Date(raw)
-                          return isNaN(d.getTime()) ? raw : d.toLocaleString()
+                          return isNaN(d.getTime()) ? raw : formatDateTime(d)
                         })()}
                       </td>
                       <td className="px-4 py-3 font-medium text-gray-700 text-xs">
