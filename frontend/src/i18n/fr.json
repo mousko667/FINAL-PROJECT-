@@ -6,6 +6,7 @@
     "retry": "Réessayer",
     "confirm": "Confirmer",
     "cancel": "Annuler",
+    "confirmTitle": "Confirmation requise",
     "save": "Enregistrer",
     "delete": "Supprimer",
     "edit": "Modifier",
@@ -119,6 +120,8 @@
     "previewShowing": "Aperçu des {{shown}} premières lignes sur {{total}}",
     "previewEmpty": "Aucune donnée à afficher.",
     "download": "Télécharger",
+    "deleteConfirmTitle": "Supprimer cette définition de rapport ?",
+    "deleteConfirmBody": "Les exécutions planifiées de ce rapport seront arrêtées.",
     "dataset": {
       "INVOICES": "Factures",
       "SUPPLIERS": "Fournisseurs",
@@ -154,7 +157,9 @@
     "active": "Active",
     "inactive": "Inactive",
     "revoke": "Révoquer",
-    "none": "Aucune délégation."
+    "none": "Aucune délégation.",
+    "revokeConfirmTitle": "Révoquer cette délégation ?",
+    "revokeConfirmBody": "Vous ne pourrez plus approuver pour le compte de ce délégataire une fois révoquée."
   },
   "accessRequests": {
     "navMine": "Mes demandes d'accès",
@@ -257,6 +262,7 @@
     "poNumber": "Numéro de BC",
     "importFile": "Importer depuis un fichier",
     "importHint": "Téléversez un fichier Excel ou CSV exporté de votre système d'achat.",
+    "importUnavailable": "Import ERP indisponible — saisie manuelle",
     "supplier": "Fournisseur",
     "totalAmount": "Montant total",
     "status": "Statut",
@@ -523,7 +529,13 @@
       "importCreated": "Créés",
       "importFailed": "Échoués",
       "importLine": "Ligne",
-      "importReason": "Raison"
+      "importReason": "Raison",
+      "disableConfirmTitle": "Désactiver ce compte ?",
+      "disableConfirmBody": "L'utilisateur ne pourra plus se connecter au système tant que le compte n'est pas réactivé.",
+      "activateConfirmTitle": "Activer ce compte ?",
+      "activateConfirmBody": "L'utilisateur pourra à nouveau se connecter au système.",
+      "resetMfaConfirmTitle": "Réinitialiser le MFA de ce compte ?",
+      "resetMfaConfirmBody": "L'utilisateur devra reconfigurer son application d'authentification à sa prochaine connexion."
     },
     "departments": {
       "title": "Gestion des départements",
@@ -637,7 +649,9 @@
       "sessionCreated": "Créée le",
       "sessionExpires": "Expire le",
       "sessionAction": "Action",
-      "revoke": "Révoquer"
+      "revoke": "Révoquer",
+      "revokeSessionConfirmTitle": "Révoquer cette session ?",
+      "revokeSessionConfirmBody": "L'utilisateur sera immédiatement déconnecté et devra se reconnecter."
     },
     "permissions": {
       "navTitle": "Matrice des permissions",
@@ -662,7 +676,9 @@
       "statusCol": "Actif",
       "active": "Actif",
       "inactive": "Inactif",
-      "none": "Aucune annonce."
+      "none": "Aucune annonce.",
+      "deleteConfirmTitle": "Supprimer cette annonce ?",
+      "deleteConfirmBody": "Cette annonce ne sera plus visible sur aucun tableau de bord."
     },
     "compliance": {
       "navTitle": "Conformité",
@@ -680,6 +696,10 @@
       "calendar": "Calendrier de conformité",
       "calendarTitle": "Échéance",
       "noCalendar": "Aucune échéance.",
+      "deleteChecklistConfirmTitle": "Supprimer cet élément de checklist ?",
+      "deleteChecklistConfirmBody": "Cette action est définitive.",
+      "deleteCalendarConfirmTitle": "Supprimer cette échéance ?",
+      "deleteCalendarConfirmBody": "Cette action est définitive.",
       "auditPrep": {
         "title": "Préparation d'audit",
         "subtitle": "Synthèse de préparation : incidents ouverts, avancement de la checklist et prochaines échéances.",
@@ -705,7 +725,9 @@
       "off": "Off",
       "intervalHint": "Intervalle en minutes (vide = désactivé)",
       "syncOk": "Dernière synchro OK",
-      "syncFail": "Échec synchro"
+      "syncFail": "Échec synchro",
+      "deleteConfirmTitle": "Supprimer ce connecteur ?",
+      "deleteConfirmBody": "La synchronisation planifiée de ce connecteur sera arrêtée immédiatement."
     },
     "integrations": {
       "title": "Intégrations & Webhooks",
@@ -727,7 +749,9 @@
       "deliveryStatus": "HTTP",
       "deliveryAttempts": "Tentatives",
       "deliveryResult": "Résultat",
-      "deliveryTime": "Dernière tentative"
+      "deliveryTime": "Dernière tentative",
+      "deleteWebhookConfirmTitle": "Supprimer ce webhook ?",
+      "deleteWebhookConfirmBody": "Les livraisons vers ce point de terminaison cesseront immédiatement."
     },
     "delegations": {
       "title": "Délégations d'approbation",
@@ -741,6 +765,8 @@
       "period": "Période",
       "reason": "Motif",
       "revoke": "Révoquer",
+      "revokeConfirmTitle": "Révoquer cette délégation ?",
+      "revokeConfirmBody": "Le délégant retrouvera seul son autorité d'approbation pour ce département.",
       "createTitle": "Créer une délégation",
       "selectUser": "— Sélectionner un utilisateur —",
       "fromDate": "Du",
@@ -1104,7 +1130,9 @@
       "title": "Contrats & accords",
       "reference": "Référence",
       "titleField": "Intitulé",
-      "none": "Aucun contrat."
+      "none": "Aucun contrat.",
+      "deleteConfirmTitle": "Supprimer ce contrat ?",
+      "deleteConfirmBody": "Cette action est définitive."
     },
     "comms": {
       "title": "Journal de communication",

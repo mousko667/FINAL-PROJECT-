@@ -31,7 +31,7 @@ type UserFormData = z.infer<typeof userSchema>
 
 export default function AdminUserFormPage() {
   const navigate = useNavigate()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
 
   const { data: deptData } = useQuery({
     queryKey: ['departments'],
@@ -209,7 +209,7 @@ export default function AdminUserFormPage() {
                     <option value="">{t('admin.users.selectDepartment', 'Select a department...')}</option>
                     {(deptData ?? []).map((dept) => (
                       <option key={dept.id} value={dept.id}>
-                        {dept.nameEn} ({dept.code})
+                        {i18n.language === 'fr' ? dept.nameFr : dept.nameEn} ({dept.code})
                       </option>
                     ))}
                   </select>

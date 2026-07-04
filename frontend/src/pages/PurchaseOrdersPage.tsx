@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
@@ -29,8 +29,6 @@ export default function PurchaseOrdersPage() {
   const [page, setPage] = useState(0)
   const [showCreate, setShowCreate] = useState(false)
   const [form, setForm] = useState({ poNumber: '', supplierId: '', totalAmount: '', currency: 'XOF', status: 'OPEN' })
-  const fileRef = useRef<HTMLInputElement>(null)
-  const [importError, setImportError] = useState<string | null>(null)
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['purchase-orders', page],
@@ -87,26 +85,18 @@ export default function PurchaseOrdersPage() {
           </div>
           {isAA && (
             <div className="flex items-center gap-2">
-              {/* File import */}
-              <label className="cursor-pointer">
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept=".xlsx,.xls,.csv"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (!file) return
-                    setImportError(`File "${file.name}" selected. Bulk import via ERP integration is in progress — manually enter the PO details below for now.`)
-                    if (fileRef.current) fileRef.current.value = ''
-                    setShowCreate(true)
-                  }}
-                />
-                <span className="flex items-center gap-2 px-3 py-2 border rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors cursor-pointer">
-                  <FileSpreadsheet className="w-4 h-4 text-green-600" />
-                  {t('po.importFile', 'Import')}
-                </span>
-              </label>
+              {/* Bulk import is not implemented (no ERP integration, Module 12 out of scope) —
+                  the button is honestly disabled instead of pretending a feature exists. */}
+              <button
+                type="button"
+                disabled
+                title={t('po.importUnavailable', 'ERP import unavailable — enter manually')}
+                aria-disabled="true"
+                className="flex items-center gap-2 px-3 py-2 border rounded-lg text-sm font-medium text-gray-400 cursor-not-allowed"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                {t('po.importFile', 'Import')}
+              </button>
               <button
                 onClick={() => setShowCreate(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
@@ -117,15 +107,11 @@ export default function PurchaseOrdersPage() {
           )}
         </div>
 
-        {/* Import note */}
-        {importError && (
-          <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl p-4">
-            <FileSpreadsheet className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-blue-800">{importError}</p>
-              <p className="text-xs text-blue-600 mt-0.5">{t('po.importHint')}</p>
-            </div>
-            <button onClick={() => setImportError(null)} className="ml-auto text-blue-400 hover:text-blue-600 text-lg leading-none shrink-0">×</button>
+        {/* Honest note: bulk import is unavailable, manual entry works below */}
+        {isAA && (
+          <div className="flex items-start gap-3 bg-gray-50 border border-gray-200 rounded-xl p-4">
+            <FileSpreadsheet className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" />
+            <p className="text-sm font-medium text-gray-600">{t('po.importUnavailable', 'ERP import unavailable — enter manually')}</p>
           </div>
         )}
 

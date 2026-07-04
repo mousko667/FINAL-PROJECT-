@@ -40,7 +40,7 @@ const STEPS = ['details', 'lineItems', 'documents'] as const
 type Step = typeof STEPS[number]
 
 export default function InvoiceCreatePage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const [step, setStep] = useState<Step>('details')
   const [lineItems, setLineItems] = useState<LineItemData[]>([])
@@ -251,7 +251,7 @@ export default function InvoiceCreatePage() {
                   <select {...field} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
                     <option value="">{t('invoice.selectDept', '— Select department —')}</option>
                     {(departments ?? []).map((d) => (
-                      <option key={d.id} value={d.id}>{d.nameEn} ({d.code})</option>
+                      <option key={d.id} value={d.id}>{i18n.language === 'fr' ? d.nameFr : d.nameEn} ({d.code})</option>
                     ))}
                   </select>
                 )}

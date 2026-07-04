@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Loader2, UserCheck, Trash2, Plus, ArrowRight, AlertCircle } from 'lucide-react'
 import { formatDate } from '@/lib/format'
 
@@ -37,7 +38,7 @@ function userLabel(u: User): string {
 }
 
 export default function AdminDelegationsPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
 
   const [dept, setDept] = useState('')
@@ -47,6 +48,7 @@ export default function AdminDelegationsPage() {
   const [toDate, setToDate] = useState('')
   const [reason, setReason] = useState('')
   const [formError, setFormError] = useState('')
+  const [revokeTargetId, setRevokeTargetId] = useState<string | null>(null)
 
   const { data: departments } = useQuery({
     queryKey: ['departments'],
@@ -101,7 +103,10 @@ export default function AdminDelegationsPage() {
 
   const revokeMutation = useMutation({
     mutationFn: (id: string) => apiClient.delete(`/approvals/delegations/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['delegations', dept] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['delegations', dept] })
+      setRevokeTargetId(null)
+    },
   })
 
   const submit = () => {
@@ -146,7 +151,7 @@ export default function AdminDelegationsPage() {
           >
             <option value="">{t('admin.delegations.selectDepartment', '— Select a department —')}</option>
             {(departments ?? []).map((d) => (
-              <option key={d.id} value={d.code}>{d.code} — {d.nameEn}</option>
+              <option key={d.id} value={d.code}>{d.code} — {i18n.language === 'fr' ? d.nameFr : d.nameEn}</option>
             ))}
           </select>
         </div>
@@ -190,7 +195,7 @@ export default function AdminDelegationsPage() {
                         <td className="px-4 py-3 text-gray-500 truncate max-w-[200px]">{d.reason || '—'}</td>
                         <td className="px-4 py-3 text-right">
                           <button
-                            onClick={() => revokeMutation.mutate(d.id)}
+                            onClick={() => setRevokeTargetId(d.id)}
                             disabled={revokeMutation.isPending}
                             className="inline-flex items-center gap-1 text-xs text-red-600 hover:text-red-700 disabled:opacity-50"
                           >
@@ -259,6 +264,15 @@ export default function AdminDelegationsPage() {
             </div>
           </>
         )}
+
+        <ConfirmDialog
+          open={revokeTargetId !== null}
+          title={t('admin.delegations.revokeConfirmTitle', 'Revoke this delegation?')}
+          message={t('admin.delegations.revokeConfirmBody', "The delegator will regain sole approval authority for this department.")}
+          variant="danger"
+          onConfirm={() => { if (revokeTargetId) revokeMutation.mutate(revokeTargetId) }}
+          onCancel={() => setRevokeTargetId(null)}
+        />
       </div>
     </PageRoleGuard>
   )

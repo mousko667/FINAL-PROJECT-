@@ -37,7 +37,7 @@ type ConfirmData = z.infer<typeof confirmSchema>
 type Stage = 'upload' | 'confirm' | 'manual'
 
 export default function SupplierInvoiceSubmitPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
 
   const [stage, setStage] = useState<Stage>('upload')
@@ -201,7 +201,7 @@ export default function SupplierInvoiceSubmitPage() {
               <select {...field} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
                 <option value="">{t('invoice.selectDept', '— Select department —')}</option>
                 {(departments ?? []).map((d) => (
-                  <option key={d.id} value={d.id}>{d.nameEn} ({d.code})</option>
+                  <option key={d.id} value={d.id}>{i18n.language === 'fr' ? d.nameFr : d.nameEn} ({d.code})</option>
                 ))}
               </select>
             )}

@@ -6,6 +6,7 @@
     "retry": "Retry",
     "confirm": "Confirm",
     "cancel": "Cancel",
+    "confirmTitle": "Confirmation required",
     "save": "Save",
     "delete": "Delete",
     "edit": "Edit",
@@ -119,6 +120,8 @@
     "previewShowing": "Showing first {{shown}} of {{total}} rows",
     "previewEmpty": "No data to display.",
     "download": "Download",
+    "deleteConfirmTitle": "Delete this report definition?",
+    "deleteConfirmBody": "Scheduled runs for this report will stop.",
     "dataset": {
       "INVOICES": "Invoices",
       "SUPPLIERS": "Suppliers",
@@ -154,7 +157,9 @@
     "active": "Active",
     "inactive": "Inactive",
     "revoke": "Revoke",
-    "none": "No delegations."
+    "none": "No delegations.",
+    "revokeConfirmTitle": "Revoke this delegation?",
+    "revokeConfirmBody": "You will no longer be able to approve on this delegate's behalf once revoked."
   },
   "accessRequests": {
     "navMine": "My Access Requests",
@@ -257,6 +262,7 @@
     "poNumber": "PO Number",
     "importFile": "Import from file",
     "importHint": "Upload an Excel or CSV file exported from your procurement system.",
+    "importUnavailable": "ERP import unavailable — enter manually",
     "supplier": "Supplier",
     "totalAmount": "Total Amount",
     "status": "Status",
@@ -523,7 +529,13 @@
       "importCreated": "Created",
       "importFailed": "Failed",
       "importLine": "Line",
-      "importReason": "Reason"
+      "importReason": "Reason",
+      "disableConfirmTitle": "Disable this account?",
+      "disableConfirmBody": "The user will no longer be able to sign in until the account is reactivated.",
+      "activateConfirmTitle": "Activate this account?",
+      "activateConfirmBody": "The user will be able to sign in again.",
+      "resetMfaConfirmTitle": "Reset MFA for this account?",
+      "resetMfaConfirmBody": "The user will need to set up their authenticator app again at their next login."
     },
     "departments": {
       "title": "Department Management",
@@ -637,7 +649,9 @@
       "sessionCreated": "Created",
       "sessionExpires": "Expires",
       "sessionAction": "Action",
-      "revoke": "Revoke"
+      "revoke": "Revoke",
+      "revokeSessionConfirmTitle": "Revoke this session?",
+      "revokeSessionConfirmBody": "The user will be signed out immediately and will need to log in again."
     },
     "permissions": {
       "navTitle": "Permission Matrix",
@@ -662,7 +676,9 @@
       "statusCol": "Active",
       "active": "Active",
       "inactive": "Inactive",
-      "none": "No announcements."
+      "none": "No announcements.",
+      "deleteConfirmTitle": "Delete this announcement?",
+      "deleteConfirmBody": "This announcement will no longer be visible on any dashboard."
     },
     "compliance": {
       "navTitle": "Compliance",
@@ -680,6 +696,10 @@
       "calendar": "Compliance calendar",
       "calendarTitle": "Deadline",
       "noCalendar": "No deadlines.",
+      "deleteChecklistConfirmTitle": "Delete this checklist item?",
+      "deleteChecklistConfirmBody": "This action is permanent.",
+      "deleteCalendarConfirmTitle": "Delete this deadline?",
+      "deleteCalendarConfirmBody": "This action is permanent.",
       "auditPrep": {
         "title": "Audit preparation",
         "subtitle": "At-a-glance readiness: open incidents, checklist progress and upcoming deadlines.",
@@ -705,7 +725,9 @@
       "off": "Off",
       "intervalHint": "Interval in minutes (empty = disabled)",
       "syncOk": "Last sync OK",
-      "syncFail": "Sync failed"
+      "syncFail": "Sync failed",
+      "deleteConfirmTitle": "Delete this connector?",
+      "deleteConfirmBody": "Scheduled synchronisation for this connector will stop immediately."
     },
     "integrations": {
       "title": "Integrations & Webhooks",
@@ -727,7 +749,9 @@
       "deliveryStatus": "HTTP",
       "deliveryAttempts": "Attempts",
       "deliveryResult": "Result",
-      "deliveryTime": "Last attempt"
+      "deliveryTime": "Last attempt",
+      "deleteWebhookConfirmTitle": "Delete this webhook?",
+      "deleteWebhookConfirmBody": "Deliveries to this endpoint will stop immediately."
     },
     "delegations": {
       "title": "Approval Delegations",
@@ -741,6 +765,8 @@
       "period": "Period",
       "reason": "Reason",
       "revoke": "Revoke",
+      "revokeConfirmTitle": "Revoke this delegation?",
+      "revokeConfirmBody": "The delegator will regain sole approval authority for this department.",
       "createTitle": "Create a delegation",
       "selectUser": "— Select a user —",
       "fromDate": "From",
@@ -1104,7 +1130,9 @@
       "title": "Contracts & agreements",
       "reference": "Reference",
       "titleField": "Title",
-      "none": "No contracts."
+      "none": "No contracts.",
+      "deleteConfirmTitle": "Delete this contract?",
+      "deleteConfirmBody": "This action is permanent."
     },
     "comms": {
       "title": "Communication log",
