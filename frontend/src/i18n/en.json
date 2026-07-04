@@ -289,6 +289,7 @@
     "purchaseOrder": "Purchase Order",
     "noPO": "— No linked PO —",
     "poHint": "Linking a PO enables automatic three-way matching on submission.",
+    "duplicateWarning": "A similar invoice already exists for this supplier in the last 12 months. Please check before submitting.",
     "duplicateWarning_one": "A similar invoice already exists for this supplier in the last 12 months. Please check before submitting.",
     "duplicateWarning_other": "{{count}} similar invoices already exist for this supplier in the last 12 months. Please check before submitting.",
     "selectDept": "— Select department —",
@@ -748,6 +749,18 @@
       "saveError": "Could not save the configuration.",
       "badPercentage": "Tolerance percentage must be between 0 and 100.",
       "badAmount": "Tolerance amount must be 0 or greater."
+    },
+    "backups": {
+      "navTitle": "Backups",
+      "title": "Backup and restore",
+      "description": "Manage database backups",
+      "createBtn": "Create a backup",
+      "lastStatus": "Last status",
+      "empty": "No backups available",
+      "filename": "Backup file",
+      "restoreBtn": "Restore",
+      "restoreConfirmTitle": "Restore the system",
+      "restoreConfirmDesc": "Do you really want to simulate a restore from {{file}}? In production, this would overwrite the current data."
     }
   },
   "profile": {
@@ -1087,6 +1100,19 @@
       "accuracyRate": "Accuracy Rate",
       "rejectionRate": "Rejection Rate",
       "averagePaymentTime": "Avg. Payment Time"
+    },
+    "onboarding": {
+      "title": "Supplier onboarding",
+      "subtitle": "Guide a supplier through creation, verification, and activation readiness.",
+      "step1": "Step 1",
+      "step2": "Step 2",
+      "step3": "Step 3",
+      "summaryHelp": "Review the collected information before creating the supplier record.",
+      "summaryTitle": "Onboarding summary",
+      "ready": "The supplier can be created once the banking details are confirmed.",
+      "previous": "Previous",
+      "next": "Next",
+      "finish": "Create supplier"
     }
   },
   "mfa": {
@@ -1158,6 +1184,15 @@
     "noResults": "No document matches your search criteria.",
     "empty": "No archived invoices yet.",
     "retentionNote": "A SHA-256 checksum is computed and stored when each document is uploaded (integrity reference). The OCT retention policy targets a 10-year retention period."
+  },
+  "archiveFolders": {
+    "title": "Archive folders",
+    "all": "All documents",
+    "unclassified": "Unclassified",
+    "new": "New folder",
+    "name": "Folder name",
+    "assign": "Assign to folder",
+    "deleteConfirm": "Are you sure you want to delete this folder?"
   },
   "grn": {
     "title": "Goods Receipt Notes (GRN)",

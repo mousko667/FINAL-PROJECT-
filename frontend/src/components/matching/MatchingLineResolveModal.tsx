@@ -70,7 +70,7 @@ export default function MatchingLineResolveModal({ isOpen, onClose, onResolve, p
               disabled={loading}
               className="px-4 py-2 text-sm border rounded hover:bg-gray-50"
             >
-              {t('common.cancel')}
+              {t('app.cancel')}
             </button>
             <button
               type="submit"

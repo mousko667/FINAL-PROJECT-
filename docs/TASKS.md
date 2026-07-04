@@ -357,7 +357,7 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 | 4 | Supplier performance monitoring | ✅ | Métriques performance. |
 | 5 | Communication logging | ✅ | Journal communications. |
 | 6 | Self-service portal | ✅ | Portail. |
-| 7 | Onboarding workflow | ✅ | Wizard multi-étapes (voir UI #10 — M8 #10, 2026-06-28). |
+| 7 | Onboarding workflow | ✅ | Wizard multi-étapes (voir UI #10 — M8 #10, 2026-06-28). **Fix (Task 8, MAJEUR-5, 2026-07-04, PROB-095)** : le namespace i18n `supplier.onboarding.*` (titre, sous-titre, libellés des 3 étapes, récapitulatif, boutons Précédent/Suivant/Créer) était entièrement absent de `fr.json`/`en.json` — `SupplierOnboardingPage.tsx` retombait sur le texte anglais figé passé en fallback. 11 clés ajoutées, FR/EN symétriques. |
 | 8 | Centralized supplier database | ✅ | Annuaire. |
 | 9 | Enhanced supplier relationship mgmt | ✅ | Contrats + comms + performance. |
 
@@ -370,7 +370,7 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 ### UI Elements
 | # | Élément requis | Verdict | Preuve |
 |---|----------------|---------|--------|
-| 1 | Document repository with folder structure | ✅ | `/archive` : dépôt indexé par métadonnées (recherche/filtres) + **arborescence de dossiers** implémentée (M9 #1). |
+| 1 | Document repository with folder structure | ✅ | `/archive` : dépôt indexé par métadonnées (recherche/filtres) + **arborescence de dossiers** implémentée (M9 #1). **Fix (Task 8, MAJEUR-5, 2026-07-04, PROB-095)** : le namespace i18n `archiveFolders.*` (titre, dossier « Tous »/« Non classés », création, suppression) était entièrement absent de `fr.json`/`en.json` — `ArchiveFolderTree.tsx`/`AssignFolderModal.tsx`/`ArchivePage.tsx` affichaient la clé brute non résolue. 7 clés ajoutées, FR/EN symétriques. |
 | 2 | Invoice storage by date, supplier, status | ✅ | Filtres date/département + recherche fournisseur/référence (vérifié). |
 | 3 | Advanced search and filter | ✅ | Recherche plein-texte (bug 500 corrigé) + filtres dept + plage de dates. |
 | 4 | Document viewer with zoom/rotate | ✅ | DocumentViewerModal : contrôles zoom/rotation/reset (react-pdf pour PDF, transform CSS pour images) + pagination PDF. (C3) |
@@ -571,7 +571,7 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 | 1 | Granular RBAC | ✅ | 14 rôles + @PreAuthorize + séparation des devoirs. |
 | 2 | Data encryption (sensitive financial) | ✅ | AES-GCM (bank details). |
 | 3 | MFA mandatory all roles except supplier | ✅ | Deny-list (PROB-053) vérifié (supplier exempt, staff OTP). |
-| 4 | Automated backup and recovery | ✅ | Moteur de sauvegarde/restauration avec planificateur automatisé, log d'audit, rotation et UI de suivi des opérations (B9, 2026-06-28). |
+| 4 | Automated backup and recovery | ✅ | Moteur de sauvegarde/restauration avec planificateur automatisé, log d'audit, rotation et UI de suivi des opérations (B9, 2026-06-28). **Fix (Task 8, MAJEUR-5, 2026-07-04, PROB-095)** : `AdminBackupsPage.tsx` appelait `admin.backups.*`, un chemin qui n'existait pas — le namespace `backups.*` existant était placé à la racine au lieu de sous `admin.*`. 10 clés dupliquées sous `admin.backups.*` (FR/EN symétriques) ; en profitant du même correctif, les 2 appels `common.cancel`/`common.actions` de cette page (namespace `common` inexistant) ont été corrigés vers `app.cancel`/`app.actions`. |
 | 5 | Data retention policy enforcement | ✅ | DocumentRetentionJob (flag à 10 ans). |
 | 6 | Regulatory compliance monitoring (SOX, IFRS) | ✅ | Checklist + calendrier. |
 | 7 | Security incident detection & reporting | ✅ | Incidents + anomalies d'audit (M10). |

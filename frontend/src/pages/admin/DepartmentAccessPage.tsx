@@ -18,7 +18,7 @@ export default function DepartmentAccessPage() {
 
   const name = (d: DepartmentAccess) => (i18n.language === 'en' ? d.nameEn : d.nameFr)
 
-  if (loading) return <div className="p-6">{t('common.loading')}</div>
+  if (loading) return <div className="p-6">{t('app.loading')}</div>
   if (error) return <div className="p-6 text-red-600">{t(error)}</div>
 
   return (

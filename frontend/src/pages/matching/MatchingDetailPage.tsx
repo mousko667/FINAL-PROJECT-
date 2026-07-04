@@ -106,7 +106,7 @@ export default function MatchingDetailPage() {
                   <th>{t('matching.qtyVariance')}</th>
                   <th>{t('matching.priceVariance')}</th>
                   <th>{t('matching.verdict')}</th>
-                  <th>{t('common.actions')}</th>
+                  <th>{t('app.actions')}</th>
                 </tr>
               </thead>
               <tbody>

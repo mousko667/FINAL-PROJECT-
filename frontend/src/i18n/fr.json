@@ -289,6 +289,7 @@
     "purchaseOrder": "Bon de commande",
     "noPO": "— Sans bon de commande —",
     "poHint": "Lier un BC active le rapprochement automatique à trois voies à la soumission.",
+    "duplicateWarning": "Une facture similaire existe déjà pour ce fournisseur sur les 12 derniers mois. Veuillez vérifier avant de soumettre.",
     "duplicateWarning_one": "Une facture similaire existe déjà pour ce fournisseur sur les 12 derniers mois. Veuillez vérifier avant de soumettre.",
     "duplicateWarning_other": "{{count}} factures similaires existent déjà pour ce fournisseur sur les 12 derniers mois. Veuillez vérifier avant de soumettre.",
     "selectDept": "— Sélectionner un département —",
@@ -748,6 +749,18 @@
       "saveError": "Impossible d'enregistrer la configuration.",
       "badPercentage": "Le pourcentage de tolérance doit être compris entre 0 et 100.",
       "badAmount": "Le montant de tolérance doit être supérieur ou égal à 0."
+    },
+    "backups": {
+      "navTitle": "Sauvegardes",
+      "title": "Sauvegarde et restauration",
+      "description": "Gérer les sauvegardes de la base de données",
+      "createBtn": "Créer une sauvegarde",
+      "lastStatus": "Dernier statut",
+      "empty": "Aucune sauvegarde disponible",
+      "filename": "Fichier de sauvegarde",
+      "restoreBtn": "Restaurer",
+      "restoreConfirmTitle": "Restaurer le système",
+      "restoreConfirmDesc": "Voulez-vous vraiment simuler une restauration depuis {{file}} ? En production, cela écraserait les données actuelles."
     }
   },
   "profile": {
@@ -1087,6 +1100,19 @@
       "accuracyRate": "Taux de conformité",
       "rejectionRate": "Taux de rejet",
       "averagePaymentTime": "Délai moyen de paiement"
+    },
+    "onboarding": {
+      "title": "Intégration d'un fournisseur",
+      "subtitle": "Accompagnez un fournisseur dans les étapes de création, de vérification et de préparation à l'activation.",
+      "step1": "Étape 1",
+      "step2": "Étape 2",
+      "step3": "Étape 3",
+      "summaryHelp": "Vérifiez les informations collectées avant de créer la fiche fournisseur.",
+      "summaryTitle": "Récapitulatif de l'intégration",
+      "ready": "Le fournisseur peut être créé une fois les coordonnées bancaires confirmées.",
+      "previous": "Précédent",
+      "next": "Suivant",
+      "finish": "Créer le fournisseur"
     }
   },
   "mfa": {
@@ -1158,6 +1184,15 @@
     "noResults": "Aucun document ne correspond à vos critères de recherche.",
     "empty": "Aucune facture archivée pour le moment.",
     "retentionNote": "Une empreinte SHA-256 est calculée et enregistrée au téléversement de chaque document (référence d'intégrité). La politique de rétention OCT vise une conservation de 10 ans."
+  },
+  "archiveFolders": {
+    "title": "Dossiers d'archive",
+    "all": "Tous les documents",
+    "unclassified": "Non classés",
+    "new": "Nouveau dossier",
+    "name": "Nom du dossier",
+    "assign": "Classer dans un dossier",
+    "deleteConfirm": "Êtes-vous sûr de vouloir supprimer ce dossier ?"
   },
   "grn": {
     "title": "Bons de Réception (GRN)",

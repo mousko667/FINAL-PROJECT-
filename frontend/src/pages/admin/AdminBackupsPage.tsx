@@ -112,7 +112,7 @@ export default function AdminBackupsPage() {
               <thead className="bg-gray-50 border-b">
                 <tr>
                   <th className="px-6 py-3 font-medium text-gray-500">{t('admin.backups.filename')}</th>
-                  <th className="px-6 py-3 font-medium text-gray-500 text-right">{t('common.actions')}</th>
+                  <th className="px-6 py-3 font-medium text-gray-500 text-right">{t('app.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -228,7 +228,7 @@ export default function AdminBackupsPage() {
                 disabled={restoreMutation.isPending}
                 className="px-4 py-2 text-sm border rounded font-medium hover:bg-gray-50"
               >
-                {t('common.cancel')}
+                {t('app.cancel')}
               </button>
               <button
                 onClick={handleRestore}
