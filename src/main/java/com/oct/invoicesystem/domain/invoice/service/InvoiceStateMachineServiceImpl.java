@@ -195,12 +195,13 @@ public class InvoiceStateMachineServiceImpl implements InvoiceStateMachineServic
             }
 
             log.info("Matching check passed for invoice {} with status {}", invoice.getId(), result.getStatus());
+        } catch (WorkflowException e) {
+            throw e;
         } catch (Exception e) {
-            if (e instanceof WorkflowException) {
-                throw (WorkflowException) e;
-            }
-            // If matching fails for other reasons, log but continue (graceful degradation)
-            log.warn("Matching check failed for invoice {}: {}", invoice.getId(), e.getMessage());
+            // Critical path: matching MUST be evaluated. Do not proceed to SOUMIS if it
+            // cannot be — surface the failure instead of silently degrading (MAJEUR-3).
+            log.error("Matching check could not be evaluated for invoice {}: {}", invoice.getId(), e.getMessage(), e);
+            throw new WorkflowException("error.matching.evaluation_failed");
         }
     }
 

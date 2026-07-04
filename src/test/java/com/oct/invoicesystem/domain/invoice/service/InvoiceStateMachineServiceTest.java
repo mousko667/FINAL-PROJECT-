@@ -10,6 +10,10 @@ import com.oct.invoicesystem.domain.invoice.statemachine.WorkflowExtendedStateKe
 import com.oct.invoicesystem.domain.notification.event.listener.EmailNotificationListener;
 import com.oct.invoicesystem.domain.notification.event.listener.PersistNotificationListener;
 import com.oct.invoicesystem.domain.notification.event.listener.WebSocketNotificationListener;
+import com.oct.invoicesystem.domain.purchasing.model.PurchaseOrder;
+import com.oct.invoicesystem.domain.purchasing.repository.GoodsReceiptNoteRepository;
+import com.oct.invoicesystem.domain.purchasing.repository.PurchaseOrderRepository;
+import com.oct.invoicesystem.domain.purchasing.repository.ThreeWayMatchingResultRepository;
 import com.oct.invoicesystem.domain.user.model.Role;
 import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.domain.user.model.UserRole;
@@ -67,6 +71,15 @@ class InvoiceStateMachineServiceTest {
 
     @MockBean
     private WebhookEventPublisher webhookEventPublisher;
+
+    @MockBean
+    private PurchaseOrderRepository purchaseOrderRepository;
+
+    @MockBean
+    private GoodsReceiptNoteRepository goodsReceiptNoteRepository;
+
+    @MockBean
+    private ThreeWayMatchingResultRepository matchingResultRepository;
 
     private Invoice invoice;
     private User currentUser;
@@ -132,6 +145,33 @@ class InvoiceStateMachineServiceTest {
         
         // Allowed regardless of role initially but let's assume valid state
         invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.SUBMIT, null);
+    }
+
+    @Test
+    void submit_WithPurchaseOrderAndUnevaluableMatching_ThrowsWorkflowException() {
+        // MAJEUR-3: an invoice with a purchaseOrderId whose matching check cannot be
+        // evaluated (e.g. no active matching configuration — a ValidationException,
+        // NOT a WorkflowException) must NOT be silently swallowed and allowed to
+        // proceed to SOUMIS. Submission must fail closed.
+        invoice.setDocuments(List.of(new InvoiceDocument()));
+        UUID purchaseOrderId = UUID.randomUUID();
+        invoice.setPurchaseOrderId(purchaseOrderId);
+
+        when(matchingResultRepository.findByInvoiceId(invoice.getId())).thenReturn(Optional.empty());
+
+        PurchaseOrder po = PurchaseOrder.builder()
+                .id(purchaseOrderId)
+                .items(List.of())
+                .build();
+        when(purchaseOrderRepository.findByIdActive(purchaseOrderId)).thenReturn(Optional.of(po));
+        when(goodsReceiptNoteRepository.findByPurchaseOrderId(purchaseOrderId)).thenReturn(List.of());
+
+        // No MatchingConfig is seeded in the test H2 DB, so the real ThreeWayMatchingService
+        // bean throws ValidationException("No active matching configuration found") here —
+        // a non-WorkflowException that must not be swallowed.
+        assertThrows(WorkflowException.class, () ->
+            invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.SUBMIT, null)
+        );
     }
 
     @Test
