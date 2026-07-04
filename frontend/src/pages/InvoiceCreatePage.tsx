@@ -65,20 +65,6 @@ export default function InvoiceCreatePage() {
     },
   })
 
-  const selectedSupplierId = useForm<DetailsFormData>().watch?.('supplierId')
-
-  const { data: purchaseOrders } = useQuery({
-    queryKey: ['pos', selectedSupplierId],
-    queryFn: async () => {
-      if (!selectedSupplierId) return []
-      const { data } = await apiClient.get<ApiResponse<PagedResponse<PurchaseOrder>>>('/purchase-orders', {
-        params: { supplierId: selectedSupplierId, status: 'OPEN', size: 100 },
-      })
-      return data.data?.content ?? []
-    },
-    enabled: !!selectedSupplierId,
-  })
-
   const {
     register,
     handleSubmit,

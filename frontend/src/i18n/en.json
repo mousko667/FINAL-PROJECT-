@@ -649,9 +649,9 @@
       "sessionCreated": "Created",
       "sessionExpires": "Expires",
       "sessionAction": "Action",
-      "revoke": "Revoke",
-      "revokeSessionConfirmTitle": "Revoke this session?",
-      "revokeSessionConfirmBody": "The user will be signed out immediately and will need to log in again."
+      "revoke": "Log out all sessions",
+      "revokeSessionConfirmTitle": "Log out all of this user's sessions?",
+      "revokeSessionConfirmBody": "All of this user's active sessions will be revoked: they will be signed out everywhere immediately and will need to log in again."
     },
     "permissions": {
       "navTitle": "Permission Matrix",

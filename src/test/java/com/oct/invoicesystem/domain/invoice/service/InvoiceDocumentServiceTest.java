@@ -240,7 +240,7 @@ class InvoiceDocumentServiceTest {
         when(minioStorageService.download("invoices/k")).thenReturn(tampered);
 
         ValidationException ex = assertThrows(ValidationException.class,
-                () -> service.generateDownloadUrl(invoiceId, docId));
+                () -> service.generateDownloadUrlAndLog(invoiceId, docId, "assistant", "10.0.0.1", "JUnit"));
         assertEquals("error.document.integrity_mismatch", ex.getMessage());
         verify(documentAccessLogRepository, org.mockito.Mockito.never()).save(any());
     }

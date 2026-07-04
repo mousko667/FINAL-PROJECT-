@@ -98,6 +98,18 @@ Requirements. They supersede the old "Known Gaps — Must Be Fixed" section form
 > confirmé via `git stash` sur le code non corrigé). Suite complète **108/108** (99 + 9 nouveaux),
 > `tsc` 0 erreur. Voir `docs/KNOWN_ISSUES_REGISTRY.md` PROB-104 pour le détail complet.
 
+> **Fix (Task 18, MAJEUR-F1 + code mort + OCR 400, 2026-07-04, PROB-105)** — trois nettoyages finaux
+> (prémisses vérifiées contre le code réel avant correction) : (F1) le bouton de révocation de session
+> (`SecuritySettingsPage`) déclenche `DELETE /admin/sessions/user/{id}` qui révoque TOUTES les sessions
+> de l'utilisateur (`revokeAllForUser`) — libellé + dialogue de confirmation reformulés « Déconnecter
+> toutes les sessions » (aucun endpoint de session unique n'existe). (2) code mort supprimé : 2ᵉ `useForm`
+> fantôme + query `purchaseOrders` non consommée dans `InvoiceCreatePage`, et méthode superseded
+> `InvoiceDocumentService.generateDownloadUrl(UUID,UUID)` (assertion d'intégrité du test retargetée sur
+> `generateDownloadUrlAndLog`, couverture préservée). (3) `POST /ocr/extract` avec fichier vide/absent
+> renvoie désormais 400 (garde `file.isEmpty()` → `ValidationException`) au lieu de 500 ; nouveau
+> `OcrControllerTest`. Aucune migration. Gate : backend `./mvnw test` **565/0/0**, frontend `tsc` 0 /
+> `vitest` 109/109. Voir `docs/KNOWN_ISSUES_REGISTRY.md` PROB-105 pour le détail complet.
+
 ---
 
 ## B. OUT OF SCOPE (assumed) — Module 12 Integration

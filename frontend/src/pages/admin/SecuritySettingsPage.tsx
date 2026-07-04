@@ -282,7 +282,7 @@ export default function SecuritySettingsPage() {
                         className="flex items-center gap-1 text-xs text-red-600 hover:text-red-800 disabled:opacity-50"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
-                        {t('admin.security.revoke', 'Revoke')}
+                        {t('admin.security.revoke', 'Log out all sessions')}
                       </button>
                     </td>
                   </tr>

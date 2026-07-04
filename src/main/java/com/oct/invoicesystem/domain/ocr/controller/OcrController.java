@@ -2,6 +2,7 @@ package com.oct.invoicesystem.domain.ocr.controller;
 
 import com.oct.invoicesystem.domain.ocr.dto.OcrExtractionResult;
 import com.oct.invoicesystem.domain.ocr.service.OcrService;
+import com.oct.invoicesystem.shared.exception.ValidationException;
 import com.oct.invoicesystem.shared.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -36,6 +37,9 @@ public class OcrController {
     public ResponseEntity<ApiResponse<OcrExtractionResult>> extract(
             @RequestParam("file") MultipartFile file) throws IOException {
 
+        if (file == null || file.isEmpty()) {
+            throw new ValidationException("error.ocr.empty_file");
+        }
         byte[] bytes = file.getBytes();
         String filename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "upload";
         OcrExtractionResult result = ocrService.extract(bytes, filename);

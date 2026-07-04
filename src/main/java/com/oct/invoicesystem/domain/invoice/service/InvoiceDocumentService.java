@@ -200,22 +200,6 @@ public class InvoiceDocumentService {
     }
 
     /**
-     * Generates a pre-signed download URL for an invoice document after re-verifying SHA-256 integrity.
-     *
-     * @param invoiceId invoice id
-     * @param documentId document id
-     * @return pre-signed URL
-     * @throws Exception if URL generation fails
-     */
-    @Transactional(readOnly = true)
-    public String generateDownloadUrl(UUID invoiceId, UUID documentId) throws Exception {
-        InvoiceDocument document = invoiceDocumentRepository.findByIdAndInvoiceId(documentId, invoiceId)
-                .orElseThrow(() -> new ResourceNotFoundException("Document not found with id: " + documentId));
-        verifyStoredChecksum(document);
-        return minioStorageService.generateDownloadUrl(document.getMinioObjectKey());
-    }
-
-    /**
      * Generates a pre-signed download URL AND records an append-only access-log entry
      * (P11-50 / REQ-16). The access log captures who downloaded which document, when, and from
      * where — a tamper-evident trail distinct from the generic HTTP audit log. Integrity is

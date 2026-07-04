@@ -649,9 +649,9 @@
       "sessionCreated": "Créée le",
       "sessionExpires": "Expire le",
       "sessionAction": "Action",
-      "revoke": "Révoquer",
-      "revokeSessionConfirmTitle": "Révoquer cette session ?",
-      "revokeSessionConfirmBody": "L'utilisateur sera immédiatement déconnecté et devra se reconnecter."
+      "revoke": "Déconnecter toutes les sessions",
+      "revokeSessionConfirmTitle": "Déconnecter toutes les sessions de cet utilisateur ?",
+      "revokeSessionConfirmBody": "Toutes les sessions actives de cet utilisateur seront révoquées : il sera immédiatement déconnecté partout et devra se reconnecter."
     },
     "permissions": {
       "navTitle": "Matrice des permissions",
