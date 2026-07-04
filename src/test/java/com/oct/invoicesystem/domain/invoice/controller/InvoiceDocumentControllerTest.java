@@ -75,6 +75,30 @@ class InvoiceDocumentControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "ASSISTANT_COMPTABLE", username = "assistant")
+    void list_AsAssistantComptable_Returns200() throws Exception {
+        UUID invoiceId = UUID.randomUUID();
+        when(invoiceDocumentService.listByInvoice(invoiceId))
+                .thenReturn(List.of(sampleDocument(invoiceId, UUID.randomUUID())));
+
+        mockMvc.perform(get("/api/v1/invoices/{invoiceId}/documents", invoiceId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data[0].originalFilename").value("invoice.pdf"));
+    }
+
+    @Test
+    @WithMockUser(roles = "SUPPLIER", username = "supplier")
+    void list_AsSupplier_Returns403() throws Exception {
+        // IDOR fix (MAJEUR-1): generic staff-facing document list must not be reachable by SUPPLIER.
+        // Suppliers have their own guarded portal routes (SupplierPortalController + ensureOwnInvoice).
+        UUID invoiceId = UUID.randomUUID();
+
+        mockMvc.perform(get("/api/v1/invoices/{invoiceId}/documents", invoiceId))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     @WithMockUser(roles = "ADMIN")
     void download_AsAdmin_Returns200() throws Exception {
         UUID invoiceId = UUID.randomUUID();
@@ -86,6 +110,30 @@ class InvoiceDocumentControllerTest {
         mockMvc.perform(get("/api/v1/invoices/{invoiceId}/documents/{docId}/download", invoiceId, docId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.url").value("http://localhost:9000/mock-url"));
+    }
+
+    @Test
+    @WithMockUser(roles = "ASSISTANT_COMPTABLE", username = "assistant")
+    void download_AsAssistantComptable_Returns200() throws Exception {
+        UUID invoiceId = UUID.randomUUID();
+        UUID docId = UUID.randomUUID();
+        when(invoiceDocumentService.generateDownloadUrlAndLog(eq(invoiceId), eq(docId), any(), any(), any()))
+                .thenReturn("http://localhost:9000/mock-url");
+
+        mockMvc.perform(get("/api/v1/invoices/{invoiceId}/documents/{docId}/download", invoiceId, docId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.url").value("http://localhost:9000/mock-url"));
+    }
+
+    @Test
+    @WithMockUser(roles = "SUPPLIER", username = "supplier")
+    void download_AsSupplier_Returns403() throws Exception {
+        // IDOR fix (MAJEUR-1): generic staff-facing download must not be reachable by SUPPLIER.
+        UUID invoiceId = UUID.randomUUID();
+        UUID docId = UUID.randomUUID();
+
+        mockMvc.perform(get("/api/v1/invoices/{invoiceId}/documents/{docId}/download", invoiceId, docId))
+                .andExpect(status().isForbidden());
     }
 
     private InvoiceDocument sampleDocument(UUID invoiceId, UUID uploadedById) {
