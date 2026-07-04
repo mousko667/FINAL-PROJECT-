@@ -1,5 +1,6 @@
 package com.oct.invoicesystem.domain.webhook.model;
 
+import com.oct.invoicesystem.shared.util.EncryptionAttributeConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,7 +35,8 @@ public class IntegrationConnector {
     @Column(length = 500)
     private String endpoint;
 
-    @Column(length = 4000)
+    @Convert(converter = EncryptionAttributeConverter.class)
+    @Column(name = "config", columnDefinition = "TEXT")
     private String config;
 
     @Column(nullable = false)
