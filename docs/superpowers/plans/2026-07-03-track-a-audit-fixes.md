@@ -378,28 +378,50 @@ git commit -m "fix(security): remove ADMIN from payment read endpoints (SoD, PRO
 - Modify: `src/main/java/com/oct/invoicesystem/domain/supplier/controller/SupplierController.java:147,150-164`
 - Test: `src/test/java/.../SupplierControllerTest.java` or `SupplierIntegrationTest.java`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 (a) `ROLE_ADMIN` → `GET /suppliers/{id}/performance` expects `403`; `ROLE_DAF` → `200`.
 (b) `getPerformanceMetrics` for a non-existent supplier id → `404` (no fabricated metrics body).
 
-- [ ] **Step 2: Run to verify they fail**
+No standalone `SupplierControllerTest.java` existed; tests added to `SupplierIntegrationTest.java`
+(the only existing controller test for this class). Also added a 3rd case beyond the brief: a
+supplier that DOES exist but has zero invoices — `ReportServiceImpl.getSupplierPerformance` throws
+`ResourceNotFoundException` for that case too (not just unknown id), and that was exactly the case
+the old fallback was fabricating metrics for. The pre-existing test
+`shouldCreateSuspendAndGetMetricsForSupplier` asserted a fabricated-metrics 200 as ADMIN on a
+no-invoice supplier — split into `shouldCreateAndSuspendSupplier` (metrics assertion removed) since
+it was locking in the bug.
 
-Run: `./mvnw test -Dtest=SupplierControllerTest` (or the integration test) → FAIL.
+- [x] **Step 2: Run to verify they fail**
 
-- [ ] **Step 3: Fix the annotation and the fallback**
+Run: `./mvnw test -Dtest=SupplierIntegrationTest` → RED confirmed: `getPerformanceMetrics_forbiddenForAdmin`
+(403 expected, got 200) and `getPerformanceMetrics_notFoundForSupplierWithNoInvoices_doesNotFabricateMetrics`
+(404 expected, got 200) failed as expected. The unknown-id-404 case already passed pre-fix (the first
+`getSupplier(id)` call already 404s before reaching the try/catch).
 
-Line 147: change `hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE', 'DAF')` → `hasAnyRole('ASSISTANT_COMPTABLE', 'DAF')`.
-In `getPerformanceMetrics`: remove the `catch (ResourceNotFoundException …)` that fabricates metrics — let it propagate (GlobalExceptionHandler → 404). Remove the duplicate `getSupplier(id)` call.
+- [x] **Step 3: Fix the annotation and the fallback**
 
-- [ ] **Step 4: Run to verify they pass**
+Line 147: `hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE', 'DAF')` → `hasAnyRole('ASSISTANT_COMPTABLE', 'DAF')`.
+`getPerformanceMetrics`: removed the `catch (ResourceNotFoundException …)` fabrication block and the
+duplicate `getSupplier(id)` call — now just validates existence once, then returns
+`reportService.getSupplierPerformance(id)` directly; `ResourceNotFoundException` propagates to
+`GlobalExceptionHandler` → real 404. Removed the now-unused `ResourceNotFoundException` import
+(`SupplierResponse` import kept — still used by 4 other methods in the file).
 
-Run: `./mvnw test -Dtest=SupplierControllerTest` → PASS.
+- [x] **Step 4: Run to verify they pass**
 
-- [ ] **Step 5: Log and commit**
+`./mvnw test -Dtest=SupplierIntegrationTest` → GREEN, 7/7. Full `./mvnw test` → 0 failures/errors
+(see commit message for exact count).
+
+- [x] **Step 5: Log and commit**
+
+Logged as `docs/KNOWN_ISSUES_REGISTRY.md` PROB-093 (includes an out-of-scope note: the ADMIN-facing
+`SupplierDetailPage.tsx` Performance tab actually calls `/reports/supplier/{id}/performance`, which
+already excluded ADMIN — that page was already broken for ADMIN independent of this fix). `docs/TASKS.md`
+§C module 6 (Supplier performance metrics) annotated.
 
 ```bash
-git add src/main/java/com/oct/invoicesystem/domain/supplier/controller/SupplierController.java src/test/java/**/Supplier*Test.java docs/KNOWN_ISSUES_REGISTRY.md docs/TASKS.md
+git add src/main/java/com/oct/invoicesystem/domain/supplier/controller/SupplierController.java src/test/java/com/oct/invoicesystem/domain/supplier/controller/SupplierIntegrationTest.java docs/KNOWN_ISSUES_REGISTRY.md docs/TASKS.md docs/superpowers/plans/2026-07-03-track-a-audit-fixes.md
 git commit -m "fix(security): supplier /performance excludes ADMIN + no fabricated metrics on 404"
 ```
 

@@ -11,7 +11,6 @@ import com.oct.invoicesystem.domain.supplier.model.SupplierStatus;
 import com.oct.invoicesystem.domain.supplier.service.SupplierService;
 import com.oct.invoicesystem.domain.storage.service.MinioStorageService;
 import com.oct.invoicesystem.domain.user.model.User;
-import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 import com.oct.invoicesystem.shared.response.ApiResponse;
 import com.oct.invoicesystem.shared.response.PagedResponse;
 import com.oct.invoicesystem.shared.util.SecurityHelper;
@@ -144,24 +143,10 @@ public class SupplierController {
     }
 
     @GetMapping("/{id}/performance")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE', 'DAF')")
+    @PreAuthorize("hasAnyRole('ASSISTANT_COMPTABLE', 'DAF')")
     public ApiResponse<SupplierPerformanceDTO> getPerformanceMetrics(@PathVariable UUID id) {
-        supplierService.getSupplier(id);
-        try {
-            return ApiResponse.success(reportService.getSupplierPerformance(id));
-        } catch (ResourceNotFoundException ex) {
-            SupplierResponse supplier = supplierService.getSupplier(id);
-            return ApiResponse.success(SupplierPerformanceDTO.builder()
-                    .supplierId(id.toString())
-                    .supplierName(supplier.companyName())
-                    .invoiceAccuracyRate(1.0)
-                    .rejectionRate(0.0)
-                    .averagePaymentDays(0.0)
-                    .totalInvoicesSubmitted(0L)
-                    .matchedInvoices(0L)
-                    .mismatchedInvoices(0L)
-                    .build());
-        }
+        supplierService.getSupplier(id); // validates existence -> 404 if missing
+        return ApiResponse.success(reportService.getSupplierPerformance(id));
     }
 
     @GetMapping("/{id}/documents")

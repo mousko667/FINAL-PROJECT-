@@ -46,7 +46,7 @@ class SupplierIntegrationTest {
 
     @Test
     @WithMockUser(roles = "ADMIN")
-    void shouldCreateSuspendAndGetMetricsForSupplier() throws Exception {
+    void shouldCreateAndSuspendSupplier() throws Exception {
         // 1. Create Supplier
         SupplierCreateRequest createReq = new SupplierCreateRequest(
                 "Acme Integration",
@@ -78,16 +78,76 @@ class SupplierIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value(SupplierStatus.SUSPENDED.name()));
 
-        // 4. Retrieve Metrics
-        mockMvc.perform(get("/api/v1/suppliers/{id}/performance", id))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.accuracyRate").exists());
-                
         // Cleanup
         supplierDocumentRepository.findBySupplierId(java.util.UUID.fromString(id))
                 .forEach(supplierDocumentRepository::delete);
         supplierRepository.deleteById(java.util.UUID.fromString(id));
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // MAJEUR-11 (SoD, PROB-065 family): ADMIN must NOT read supplier performance
+    // metrics (financial data) — DAF/ASSISTANT_COMPTABLE only, matching ReportController.
+    // MAJEUR-12: getPerformanceMetrics must NOT fabricate metrics on
+    // ResourceNotFoundException (e.g. supplier with no invoices, or unknown id) —
+    // it must propagate to a real 404, never a fake 200.
+    // ──────────────────────────────────────────────────────────────────────────
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void getPerformanceMetrics_forbiddenForAdmin() throws Exception {
+        String id = createSupplier("Perf Admin Co", "TAX-PERF-ADMIN-001", "perf.admin@example.com");
+        try {
+            mockMvc.perform(get("/api/v1/suppliers/{id}/performance", id))
+                    .andExpect(status().isForbidden());
+        } finally {
+            cleanupSupplier(id);
+        }
+    }
+
+    @Test
+    @WithMockUser(roles = "DAF")
+    void getPerformanceMetrics_notFoundForUnknownSupplier_doesNotFabricateMetrics() throws Exception {
+        java.util.UUID unknownId = java.util.UUID.randomUUID();
+
+        mockMvc.perform(get("/api/v1/suppliers/{id}/performance", unknownId))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.success").value(false));
+    }
+
+    @Test
+    @WithMockUser(roles = "DAF")
+    void getPerformanceMetrics_notFoundForSupplierWithNoInvoices_doesNotFabricateMetrics() throws Exception {
+        // A supplier with zero invoices makes ReportService.getSupplierPerformance throw
+        // ResourceNotFoundException. Before the fix, the controller caught this and returned
+        // a fake 200 (accuracy=1.0, rejection=0.0, ...). It must now propagate to a real 404.
+        String id = createSupplier("Perf NoInvoice Co", "TAX-PERF-NOINV-001", "perf.noinv@example.com");
+        try {
+            mockMvc.perform(get("/api/v1/suppliers/{id}/performance", id))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.success").value(false));
+        } finally {
+            cleanupSupplier(id);
+        }
+    }
+
+    private String createSupplier(String companyName, String taxId, String email) throws Exception {
+        SupplierCreateRequest createReq = new SupplierCreateRequest(
+                companyName, taxId, email, "+123456789", "BANK123", "123 Integration St");
+
+        String createResponse = mockMvc.perform(post("/api/v1/suppliers")
+                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("admin").roles("ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createReq)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        return objectMapper.readTree(createResponse).get("data").get("id").asText();
+    }
+
+    private void cleanupSupplier(String id) {
+        java.util.UUID uuid = java.util.UUID.fromString(id);
+        supplierDocumentRepository.findBySupplierId(uuid).forEach(supplierDocumentRepository::delete);
+        supplierRepository.deleteById(uuid);
     }
 
     @Test
