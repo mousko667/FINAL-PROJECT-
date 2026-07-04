@@ -74,4 +74,24 @@ describe('ConfirmDialog', () => {
     const confirmBtn = screen.getByText(i18n.t('app.confirm'))
     expect(confirmBtn.className).toMatch(/red/)
   })
+
+  it('backdrop click cancels without bubbling to an outer handler', () => {
+    // Guards against the nested-modal double-close: when a ConfirmDialog is
+    // rendered inside another backdrop-closing modal, clicking its own backdrop
+    // must not also trigger the parent's onClick.
+    const onCancel = vi.fn()
+    const outerClick = vi.fn()
+    render(
+      <I18nextProvider i18n={i18n}>
+        <div onClick={outerClick}>
+          <ConfirmDialog open={true} title="t" message="m" onConfirm={vi.fn()} onCancel={onCancel} />
+        </div>
+      </I18nextProvider>
+    )
+    // The backdrop is the dialog's outermost element (parent of role="dialog").
+    const backdrop = screen.getByRole('dialog').parentElement as HTMLElement
+    fireEvent.click(backdrop)
+    expect(onCancel).toHaveBeenCalledTimes(1)
+    expect(outerClick).not.toHaveBeenCalled()
+  })
 })
