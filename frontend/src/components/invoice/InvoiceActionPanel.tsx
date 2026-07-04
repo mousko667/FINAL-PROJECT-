@@ -52,13 +52,6 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
           return apiClient.post(`${base}/reject`, { reasonCode: code, rejectionReason: reason })
         case 'BON_A_PAYER':
           return apiClient.post(`${base}/bon-a-payer`, {})
-        case 'MARK_PAID':
-          return apiClient.post(`/payments/invoice/${invoiceId}`, {
-            amountPaid: invoice.amount,
-            paymentDate: new Date().toISOString(),
-            paymentMethod: 'BANK_TRANSFER',
-            reference: `PAY-${invoice.referenceNumber}`,
-          })
         default:
           throw new Error('Unknown action: ' + action)
       }
@@ -120,10 +113,7 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
     buttons.push({ action: 'REJECT', label: t('invoice.reject', 'Reject'), variant: 'danger', requiresReason: true })
   }
 
-  // AA: record payment once BON_A_PAYER issued
-  if (isAA && status === 'BON_A_PAYER') {
-    buttons.push({ action: 'MARK_PAID', label: t('invoice.markPaid', 'Record Payment'), variant: 'primary' })
-  }
+  // Payment recording is handled via PaymentsPage modal — see PaymentsPage.tsx
 
   // Admin-only actions
   if (isAdmin && status === 'EN_VALIDATION_N1') {

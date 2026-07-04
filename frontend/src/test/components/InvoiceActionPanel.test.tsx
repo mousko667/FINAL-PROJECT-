@@ -107,10 +107,10 @@ describe('InvoiceActionPanel', () => {
     expect(screen.getByText(/bon à payer/i)).toBeDefined()
   })
 
-  it('shows Record Payment for ASSISTANT_COMPTABLE on BON_A_PAYER invoice', () => {
-    // MARK_PAID is shown to the AA (who records the payment), not the DAF.
+  it('does NOT show Record Payment for ASSISTANT_COMPTABLE on BON_A_PAYER invoice', () => {
+    // MARK_PAID button was removed (invalid BANK_TRANSFER method); payment recording is via PaymentsPage modal.
     renderPanel(makeInvoice('BON_A_PAYER'), assistantUser)
-    expect(screen.getByText(/paiement/i)).toBeDefined()
+    expect(screen.queryByRole('button')).toBeNull()
   })
 
   it('renders nothing for wrong role+status combo', () => {
