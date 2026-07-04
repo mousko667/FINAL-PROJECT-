@@ -47,13 +47,13 @@ class AccessRequestServiceIntegrationTest {
     @Test
     void create_persistsPendingRequest() {
         User requester = staff("ar-create");
-        role("ROLE_DAF");
+        role("ROLE_ASSISTANT_COMPTABLE");
 
         AccessRequestDTO dto = accessRequestService.create(
-                requester.getId(), new AccessRequestCreateRequest("ROLE_DAF", "I manage finance"));
+                requester.getId(), new AccessRequestCreateRequest("ROLE_ASSISTANT_COMPTABLE", "I manage finance"));
 
         assertThat(dto.status()).isEqualTo(AccessRequestStatus.PENDING);
-        assertThat(dto.requestedRole()).isEqualTo("ROLE_DAF");
+        assertThat(dto.requestedRole()).isEqualTo("ROLE_ASSISTANT_COMPTABLE");
         assertThat(dto.requesterId()).isEqualTo(requester.getId());
         assertThat(dto.reason()).isEqualTo("I manage finance");
     }
@@ -70,11 +70,11 @@ class AccessRequestServiceIntegrationTest {
     @Test
     void create_duplicatePending_throwsValidation() {
         User requester = staff("ar-dup");
-        role("ROLE_DAF");
-        accessRequestService.create(requester.getId(), new AccessRequestCreateRequest("ROLE_DAF", "first"));
+        role("ROLE_ASSISTANT_COMPTABLE");
+        accessRequestService.create(requester.getId(), new AccessRequestCreateRequest("ROLE_ASSISTANT_COMPTABLE", "first"));
 
         assertThatThrownBy(() -> accessRequestService.create(
-                requester.getId(), new AccessRequestCreateRequest("ROLE_DAF", "second")))
+                requester.getId(), new AccessRequestCreateRequest("ROLE_ASSISTANT_COMPTABLE", "second")))
                 .isInstanceOf(ValidationException.class);
     }
 
@@ -82,9 +82,9 @@ class AccessRequestServiceIntegrationTest {
     void approve_addsRequestedRoleToRequester() {
         User requester = staff("ar-approve");
         User admin = staff("ar-admin");
-        role("ROLE_DAF");
+        role("ROLE_ASSISTANT_COMPTABLE");
         AccessRequestDTO created = accessRequestService.create(
-                requester.getId(), new AccessRequestCreateRequest("ROLE_DAF", "need it"));
+                requester.getId(), new AccessRequestCreateRequest("ROLE_ASSISTANT_COMPTABLE", "need it"));
 
         AccessRequestDTO reviewed = accessRequestService.review(
                 created.id(), admin.getId(), new AccessRequestReviewRequest(true, "approved"));
@@ -96,16 +96,16 @@ class AccessRequestServiceIntegrationTest {
         User reloaded = userRepository.findById(requester.getId()).orElseThrow();
         assertThat(reloaded.getAuthorities())
                 .extracting("authority")
-                .contains("ROLE_DAF");
+                .contains("ROLE_ASSISTANT_COMPTABLE");
     }
 
     @Test
     void reject_doesNotGrantRole() {
         User requester = staff("ar-reject");
         User admin = staff("ar-admin2");
-        role("ROLE_DAF");
+        role("ROLE_ASSISTANT_COMPTABLE");
         AccessRequestDTO created = accessRequestService.create(
-                requester.getId(), new AccessRequestCreateRequest("ROLE_DAF", "need it"));
+                requester.getId(), new AccessRequestCreateRequest("ROLE_ASSISTANT_COMPTABLE", "need it"));
 
         AccessRequestDTO reviewed = accessRequestService.review(
                 created.id(), admin.getId(), new AccessRequestReviewRequest(false, "denied"));
@@ -116,16 +116,16 @@ class AccessRequestServiceIntegrationTest {
         User reloaded = userRepository.findById(requester.getId()).orElseThrow();
         assertThat(reloaded.getAuthorities())
                 .extracting("authority")
-                .doesNotContain("ROLE_DAF");
+                .doesNotContain("ROLE_ASSISTANT_COMPTABLE");
     }
 
     @Test
     void review_alreadyReviewed_throwsValidation() {
         User requester = staff("ar-twice");
         User admin = staff("ar-admin3");
-        role("ROLE_DAF");
+        role("ROLE_ASSISTANT_COMPTABLE");
         AccessRequestDTO created = accessRequestService.create(
-                requester.getId(), new AccessRequestCreateRequest("ROLE_DAF", "need it"));
+                requester.getId(), new AccessRequestCreateRequest("ROLE_ASSISTANT_COMPTABLE", "need it"));
         accessRequestService.review(created.id(), admin.getId(), new AccessRequestReviewRequest(true, null));
 
         assertThatThrownBy(() -> accessRequestService.review(

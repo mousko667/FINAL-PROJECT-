@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -35,8 +36,12 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AccessRequestService {
 
-    // ROLE_SUPPLIER is portal-managed and never assignable via this workflow.
-    private static final String ROLE_SUPPLIER = "ROLE_SUPPLIER";
+    // Roles that can never be granted via this self-service workflow:
+    // - ROLE_SUPPLIER is portal-managed, never assignable here.
+    // - ROLE_ADMIN / ROLE_DAF are privileged/financial-approver roles; an inadvertent
+    //   approval would be a privilege escalation (separation of duties, MAJEUR-10).
+    private static final Set<String> NON_SELF_REQUESTABLE_ROLES =
+            Set.of("ROLE_SUPPLIER", "ROLE_ADMIN", "ROLE_DAF");
 
     private final AccessRequestRepository accessRequestRepository;
     private final UserRepository userRepository;
@@ -49,7 +54,7 @@ public class AccessRequestService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + requesterId));
 
         String requestedRole = request.requestedRole();
-        if (ROLE_SUPPLIER.equals(requestedRole)) {
+        if (NON_SELF_REQUESTABLE_ROLES.contains(requestedRole)) {
             throw new ValidationException("Role cannot be requested via self-service: " + requestedRole);
         }
         // The role must exist in the catalogue (authoritative list of assignable roles).

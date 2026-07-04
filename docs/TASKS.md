@@ -523,7 +523,7 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 | 5 | User activity monitoring | ✅ | Audit (M10) + sessions actives. |
 | 6 | Account status management | ✅ | Active/inactif + verrouillage (5 échecs) + déverrouillage admin. |
 | 7 | Bulk user import/export | ✅ | `/admin/users` : Importer CSV + Exporter (CSV/Excel/PDF) — vérifié. |
-| 8 | Access request workflow | ✅ | `/access-requests` (demande) + `/admin/access-requests` (approbation auto-attribue le rôle). |
+| 8 | Access request workflow | ✅ | `/access-requests` (demande) + `/admin/access-requests` (approbation auto-attribue le rôle). **Fix (Task 11, MAJEUR-10, 2026-07-04, PROB-098)** : `AccessRequestService.create` ne rejetait que `ROLE_SUPPLIER` en self-service ; `ROLE_ADMIN`/`ROLE_DAF` demandables par tout staff (escalade de privilège si approuvé par inadvertance). Corrigé par un ensemble `NON_SELF_REQUESTABLE_ROLES` (SUPPLIER+ADMIN+DAF) vérifié avant la recherche du rôle en base ; message littéral anglais inchangé (cohérent avec les 5 messages sœurs, non résolus par `MessageSource`). |
 | 9 | Permission matrix editor | ✅ | `/admin/permissions` (vérifié). |
 | 10 | Session management overview | ✅ | `/admin/security` : table sessions actives + Révoquer (vérifié). |
 | 11 | User audit trail viewer | ✅ | Journal d'audit filtrable par user. |
