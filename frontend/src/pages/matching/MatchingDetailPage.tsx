@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
+import { Panel } from '@/components/ui/Panel'
 import apiClient from '@/services/apiClient'
 import { getMatchingLines, resolveMatchingLine, type LineComparison } from '@/services/matchingService'
 import MatchingLineResolveModal from '@/components/matching/MatchingLineResolveModal'
@@ -29,7 +30,7 @@ const pct = (v: number | null) => (v == null ? '—' : `${v}%`)
 const num = (v: number | null) => (v == null ? '—' : String(v))
 
 const rowClass = (verdict: string) =>
-  verdict === 'MISMATCH' || verdict === 'MISSING_IN_PO' ? 'bg-red-50' : ''
+  verdict === 'MISMATCH' || verdict === 'MISSING_IN_PO' ? 'bg-crit-bg' : ''
 
 export default function MatchingDetailPage() {
   const { t } = useTranslation()
@@ -64,29 +65,29 @@ export default function MatchingDetailPage() {
 
   return (
     <PageRoleGuard allowedRoles={STAFF_ROLES}>
-      <div className="max-w-5xl mx-auto space-y-6">
-        <Link to="/matching" className="text-sm text-blue-600">
+      <div className="max-w-5xl mx-auto space-y-6 page-enter">
+        <Link to="/matching" className="text-sm text-gold-deep hover:underline">
           {t('matching.back')}
         </Link>
 
         {isLoading ? (
           <div className="flex justify-center py-20">
-            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            <Loader2 className="w-6 h-6 animate-spin text-ink-faint" />
           </div>
         ) : isError || !data ? (
-          <p className="text-sm text-red-500">{t('matching.error')}</p>
+          <p className="text-sm text-crit">{t('matching.error')}</p>
         ) : (
           <>
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-gray-900">
-                {data.summary.invoiceNumber} · {data.summary.supplierName}
+              <h1 className="text-2xl font-bold text-ink">
+                <span className="num">{data.summary.invoiceNumber}</span> · {data.summary.supplierName}
               </h1>
               <div className="flex gap-2">
                 {(['csv', 'excel', 'pdf'] as const).map((f) => (
                   <button
                     key={f}
                     onClick={() => exportReport(f)}
-                    className="text-sm border rounded-lg px-3 py-1.5"
+                    className="text-sm border border-hairline rounded-[4px] px-3 py-1.5 text-ink-soft hover:bg-ground"
                   >
                     {t('matching.export')} {f.toUpperCase()}
                   </button>
@@ -94,53 +95,55 @@ export default function MatchingDetailPage() {
               </div>
             </div>
 
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-gray-500 border-b">
-                  <th className="py-2">{t('matching.description')}</th>
-                  <th>{t('matching.poQty')}</th>
-                  <th>{t('matching.poPrice')}</th>
-                  <th>{t('matching.received')}</th>
-                  <th>{t('matching.invQty')}</th>
-                  <th>{t('matching.invPrice')}</th>
-                  <th>{t('matching.qtyVariance')}</th>
-                  <th>{t('matching.priceVariance')}</th>
-                  <th>{t('matching.verdict')}</th>
-                  <th>{t('app.actions')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.lines.map((l: LineComparison, i: number) => (
-                  <tr key={i} className={`border-b ${rowClass(l.verdict)}`}>
-                    <td className="py-2 font-medium">{l.description}</td>
-                    <td>{num(l.poQuantity)}</td>
-                    <td>{num(l.poUnitPrice)}</td>
-                    <td>{num(l.receivedQuantity)}</td>
-                    <td>{num(l.invoiceQuantity)}</td>
-                    <td>{num(l.invoiceUnitPrice)}</td>
-                    <td>{pct(l.qtyVariancePct)}</td>
-                    <td>{pct(l.priceVariancePct)}</td>
-                    <td>
-                      {l.resolutionStatus === 'RESOLVED' ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                          {t('matching.resolved')}
-                        </span>
-                      ) : t(`matching.verdicts.${l.verdict}`)}
-                    </td>
-                    <td className="py-2">
-                      {l.verdict === 'MISMATCH' && l.resolutionStatus !== 'RESOLVED' && l.poLineId && (
-                        <button
-                          onClick={() => setResolvingLine({ poLineId: l.poLineId!, description: l.description })}
-                          className="text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 px-2 py-1 rounded"
-                        >
-                          {t('matching.resolveBtn')}
-                        </button>
-                      )}
-                    </td>
+            <Panel className="overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-ground">
+                  <tr>
+                    <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.description')}</th>
+                    <th className="text-right px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.poQty')}</th>
+                    <th className="text-right px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.poPrice')}</th>
+                    <th className="text-right px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.received')}</th>
+                    <th className="text-right px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.invQty')}</th>
+                    <th className="text-right px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.invPrice')}</th>
+                    <th className="text-right px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.qtyVariance')}</th>
+                    <th className="text-right px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.priceVariance')}</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.verdict')}</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('app.actions')}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-hairline">
+                  {data.lines.map((l: LineComparison, i: number) => (
+                    <tr key={i} className={rowClass(l.verdict)}>
+                      <td className="px-4 py-3 font-medium text-ink">{l.description}</td>
+                      <td className="num px-4 py-3 text-right text-ink-soft">{num(l.poQuantity)}</td>
+                      <td className="num px-4 py-3 text-right text-ink-soft">{num(l.poUnitPrice)}</td>
+                      <td className="num px-4 py-3 text-right text-ink-soft">{num(l.receivedQuantity)}</td>
+                      <td className="num px-4 py-3 text-right text-ink-soft">{num(l.invoiceQuantity)}</td>
+                      <td className="num px-4 py-3 text-right text-ink-soft">{num(l.invoiceUnitPrice)}</td>
+                      <td className="num px-4 py-3 text-right text-ink-soft">{pct(l.qtyVariancePct)}</td>
+                      <td className="num px-4 py-3 text-right text-ink-soft">{pct(l.priceVariancePct)}</td>
+                      <td className="px-4 py-3 text-ink-soft">
+                        {l.resolutionStatus === 'RESOLVED' ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-pos-bg text-pos">
+                            {t('matching.resolved')}
+                          </span>
+                        ) : t(`matching.verdicts.${l.verdict}`)}
+                      </td>
+                      <td className="px-4 py-3">
+                        {l.verdict === 'MISMATCH' && l.resolutionStatus !== 'RESOLVED' && l.poLineId && (
+                          <button
+                            onClick={() => setResolvingLine({ poLineId: l.poLineId!, description: l.description })}
+                            className="text-xs bg-info-bg text-info hover:opacity-80 px-2 py-1 rounded"
+                          >
+                            {t('matching.resolveBtn')}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Panel>
 
             <MatchingLineResolveModal
               isOpen={!!resolvingLine}

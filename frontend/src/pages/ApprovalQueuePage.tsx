@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { useAppSelector } from '@/store/hooks'
 import apiClient from '@/services/apiClient'
+import { Panel } from '@/components/ui/Panel'
 import { Loader2, CheckCircle, Clock, AlertTriangle } from 'lucide-react'
 import { formatAmount, formatDate } from '@/lib/format'
 
@@ -45,6 +46,8 @@ function isSlaNearBreach(inv: PendingInvoice): boolean {
   return d === 3
 }
 
+const rowHoverTint = 'hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)] transition-colors'
+
 export default function ApprovalQueuePage() {
   const { t, i18n } = useTranslation()
   const roles = useAppSelector((s) => s.auth.user?.roles ?? [])
@@ -82,68 +85,69 @@ export default function ApprovalQueuePage() {
     : t('approvals.roleLabel.n1', 'Invoices awaiting your Level 1 approval')
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 page-enter">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('nav.approvals', 'Approval Queue')}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{roleLabel}</p>
+          <h1 className="text-2xl font-bold text-ink">{t('nav.approvals', 'Approval Queue')}</h1>
+          <p className="text-sm text-ink-soft mt-0.5">{roleLabel}</p>
         </div>
-        <button onClick={() => refetch()} className="text-sm text-primary hover:underline">{t('app.retry', 'Refresh')}</button>
+        <button onClick={() => refetch()} className="text-sm text-gold-deep hover:underline">{t('app.retry', 'Refresh')}</button>
       </div>
 
       {/* SLA breach banner */}
       {breachedCount > 0 && (
-        <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-          <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
-          <p className="text-sm text-red-800 font-medium">
+        <div className="flex items-center gap-3 bg-crit-bg border border-crit/30 rounded-[4px] px-4 py-3">
+          <AlertTriangle className="w-5 h-5 text-crit shrink-0" />
+          <p className="text-sm text-crit font-medium">
             {t('approvals.slaBreached', '{{count}} invoice(s) have exceeded the 3-day SLA — immediate action required.', { count: breachedCount })}
           </p>
         </div>
       )}
 
-      <div className="bg-white rounded-xl border overflow-hidden">
+      <Panel className="overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            <Loader2 className="w-6 h-6 animate-spin text-ink-faint" />
           </div>
         ) : invoices.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-2">
-            <CheckCircle className="w-10 h-10 text-green-400" />
+          <div className="flex flex-col items-center justify-center py-20 text-ink-faint gap-2">
+            <CheckCircle className="w-10 h-10 text-pos" />
             <p className="text-sm font-medium">{t('approvals.empty', 'No invoices pending your approval')}</p>
           </div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-ground">
               <tr>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.reference')}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.supplier')}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.department')}</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-600">{t('invoice.amount')}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('approvals.waiting', 'Waiting')}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.dueDate')}</th>
+                <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.reference')}</th>
+                <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.supplier')}</th>
+                <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.department')}</th>
+                <th className="text-right px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.amount')}</th>
+                <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('approvals.waiting', 'Waiting')}</th>
+                <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.dueDate')}</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-hairline">
               {invoices.map((inv) => {
                 const breached = isSlaBreached(inv)
                 const nearBreach = isSlaNearBreach(inv)
                 const days = daysWaiting(inv)
 
                 return (
-                  <tr key={inv.id} className={`hover:bg-gray-50 ${breached ? 'bg-red-50' : nearBreach ? 'bg-amber-50' : ''}`}>
-                    <td className="px-4 py-3 font-mono text-xs font-medium text-gray-900">{inv.referenceNumber}</td>
-                    <td className="px-4 py-3 text-gray-700 truncate max-w-[150px]">{inv.supplierName}</td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">
+                  <tr key={inv.id} className={`${rowHoverTint} ${breached ? 'bg-crit-bg' : nearBreach ? 'bg-warn-bg' : ''}`}>
+                    <td className="num px-4 py-3 text-xs font-medium text-ink">{inv.referenceNumber}</td>
+                    <td className="px-4 py-3 text-ink-soft truncate max-w-[150px]">{inv.supplierName}</td>
+                    <td className="px-4 py-3 text-ink-faint text-xs">
                       {inv.departmentCode ? `${(i18n.language === 'en' ? inv.departmentNameEn : inv.departmentNameFr) ?? inv.departmentCode} (${inv.departmentCode})` : '—'}
                     </td>
-                    <td className="px-4 py-3 text-right font-medium text-gray-900">
-                      {formatAmount(inv.amount)} {inv.currency}
+                    <td className="px-4 py-3 text-right">
+                      <span className="num font-medium text-ink">{formatAmount(inv.amount)}</span>{' '}
+                      <span className="text-ink-faint text-xs">{inv.currency}</span>
                     </td>
                     {/* SLA indicator */}
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full
-                        ${breached ? 'bg-red-100 text-red-700' : nearBreach ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'}`}>
+                        ${breached ? 'bg-crit-bg text-crit' : nearBreach ? 'bg-warn-bg text-warn' : 'bg-ground text-ink-soft'}`}>
                         {breached && <AlertTriangle className="w-3 h-3" />}
                         {!breached && <Clock className="w-3 h-3" />}
                         {days === 0
@@ -152,11 +156,11 @@ export default function ApprovalQueuePage() {
                         {breached && <span className="ml-0.5">{t('approvals.overdue', '⚠ Overdue')}</span>}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">
+                    <td className="px-4 py-3 text-ink-faint text-xs">
                       {inv.dueDate ? formatDate(inv.dueDate) : '—'}
                     </td>
                     <td className="px-4 py-3">
-                      <Link to={`/invoices/${inv.id}`} className="text-xs font-medium text-primary hover:underline whitespace-nowrap">
+                      <Link to={`/invoices/${inv.id}`} className="text-xs font-medium text-gold-deep hover:underline whitespace-nowrap">
                         {t('app.view', 'Review')} →
                       </Link>
                     </td>
@@ -166,9 +170,9 @@ export default function ApprovalQueuePage() {
             </tbody>
           </table>
         )}
-      </div>
+      </Panel>
 
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-ink-faint">
         {t('approvals.hint', 'Click "Review" to open the invoice and record your decision.')}
         {' '}{t('approvals.slaNote', 'SLA: 3 business days per approval level. Red = SLA breached. Amber = last day.')}
       </p>

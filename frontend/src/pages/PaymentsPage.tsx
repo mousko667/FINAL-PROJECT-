@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import apiClient from '@/services/apiClient'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { ExportMenu } from '@/components/ui/ExportMenu'
+import { Panel } from '@/components/ui/Panel'
 import {
   Loader2, DollarSign, ExternalLink, Download, CheckCircle,
   FileText, CreditCard, Calendar, Hash, BellRing,
@@ -67,63 +68,63 @@ function RecordPaymentModal({ invoice, onClose, onSuccess }: {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 space-y-5" onClick={e => e.stopPropagation()}>
+      <div className="bg-surface rounded-[4px] shadow-2xl w-full max-w-lg p-6 space-y-5 border border-hairline" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900">{t('invoice.markPaid', 'Enregistrer le paiement')}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+          <h2 className="text-lg font-bold text-ink">{t('invoice.markPaid', 'Enregistrer le paiement')}</h2>
+          <button onClick={onClose} className="text-ink-faint hover:text-ink-soft text-xl leading-none">×</button>
         </div>
 
         {/* Invoice summary */}
-        <div className="bg-gray-50 rounded-xl p-4 flex items-center justify-between">
+        <div className="bg-ground rounded-[4px] p-4 flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-gray-500">{t('invoice.reference')}</p>
-            <p className="font-mono font-bold text-gray-900">{invoice.referenceNumber}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{invoice.supplierName}</p>
+            <p className="text-xs font-medium text-ink-faint">{t('invoice.reference')}</p>
+            <p className="num font-bold text-ink">{invoice.referenceNumber}</p>
+            <p className="text-xs text-ink-faint mt-0.5">{invoice.supplierName}</p>
           </div>
           <div className="text-right">
-            <p className="text-xs font-medium text-gray-500">{t('invoice.amount')}</p>
-            <p className="font-bold text-lg text-green-700">{Number(invoice.amount).toLocaleString(i18n.language === 'en' ? 'en-US' : 'fr-FR')} {invoice.currency}</p>
+            <p className="text-xs font-medium text-ink-faint">{t('invoice.amount')}</p>
+            <p className="num font-bold text-lg text-pos">{Number(invoice.amount).toLocaleString(i18n.language === 'en' ? 'en-US' : 'fr-FR')} {invoice.currency}</p>
           </div>
         </div>
 
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoice.paymentMethod', 'Mode de paiement')} *</label>
+              <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.paymentMethod', 'Mode de paiement')} *</label>
               <select value={form.paymentMethod} onChange={e => setForm(p => ({ ...p, paymentMethod: e.target.value }))}
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+                className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-gold-deep/30">
                 {PAYMENT_METHODS.map(m => <option key={m} value={m}>{t(`invoice.paymentMethods.${m}`, m)}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoice.paymentDate', 'Date de paiement')} *</label>
+              <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.paymentDate', 'Date de paiement')} *</label>
               <input type="date" value={form.paymentDate} onChange={e => setForm(p => ({ ...p, paymentDate: e.target.value }))}
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-gold-deep/30" />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoice.paymentReference', 'Référence de paiement')} *</label>
+            <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.paymentReference', 'Référence de paiement')} *</label>
             <input value={form.reference} onChange={e => setForm(p => ({ ...p, reference: e.target.value }))}
               placeholder="ex. VIR-2026-001"
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-gold-deep/30" />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoice.amount', 'Montant payé')} ({invoice.currency}) *</label>
+            <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.amount', 'Montant payé')} ({invoice.currency}) *</label>
             <input type="number" step="0.01" value={form.amountPaid}
               onChange={e => setForm(p => ({ ...p, amountPaid: Number(e.target.value) }))}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-gold-deep/30" />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notes (optionnel)</label>
+            <label className="block text-sm font-medium text-ink-soft mb-1">Notes (optionnel)</label>
             <textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+              className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-gold-deep/30 resize-none"
               placeholder={t('payments.notesPlaceholder')} />
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-gray-700">
+          <label className="flex items-center gap-2 text-sm text-ink-soft">
             <input type="checkbox" checked={form.scheduled}
               onChange={e => setForm(p => ({ ...p, scheduled: e.target.checked }))} />
             {t('payments.scheduleThis', 'Planifier ce paiement (à exécuter plus tard)')}
@@ -131,17 +132,17 @@ function RecordPaymentModal({ invoice, onClose, onSuccess }: {
         </div>
 
         {mutation.isError && (
-          <p className="text-xs text-red-600 bg-red-50 p-2 rounded border border-red-200">
+          <p className="text-xs text-crit bg-crit-bg p-2 rounded border border-crit/30">
             {(mutation.error as any)?.response?.data?.message ?? t('app.error')}
           </p>
         )}
 
-        <div className="flex justify-end gap-3 pt-2 border-t">
-          <button onClick={onClose} className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">{t('app.cancel')}</button>
+        <div className="flex justify-end gap-3 pt-2 border-t border-hairline">
+          <button onClick={onClose} className="px-4 py-2 border border-hairline rounded-[4px] text-sm hover:bg-ground text-ink-soft">{t('app.cancel')}</button>
           <button
             onClick={() => mutation.mutate()}
             disabled={mutation.isPending || !form.reference || !form.paymentDate}
-            className="flex items-center gap-2 px-5 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-60"
+            className="flex items-center gap-2 px-5 py-2 bg-pos text-white rounded-[4px] text-sm font-medium hover:opacity-90 disabled:opacity-60"
           >
             {mutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
             {form.scheduled ? t('payments.scheduleBtn', 'Planifier le paiement') : t('invoice.markPaid', 'Enregistrer le paiement')}
@@ -165,6 +166,8 @@ interface BatchResult {
   failed: number
   results: BatchLineResult[]
 }
+
+const rowHoverTint = 'hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)] transition-colors'
 
 export default function PaymentsPage() {
   const { t, i18n } = useTranslation()
@@ -257,15 +260,15 @@ export default function PaymentsPage() {
 
   return (
     <PageRoleGuard allowedRoles={['ROLE_ASSISTANT_COMPTABLE', 'ROLE_DAF']}>
-      <div className="space-y-6">
+      <div className="space-y-6 page-enter">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{t('nav.payments', 'Paiements')}</h1>
-            <p className="text-sm text-gray-500 mt-0.5">{t('payments.subtitle', 'Enregistrez les paiements et consultez l\'historique')}</p>
+            <h1 className="text-2xl font-bold text-ink">{t('nav.payments', 'Paiements')}</h1>
+            <p className="text-sm text-ink-soft mt-0.5">{t('payments.subtitle', 'Enregistrez les paiements et consultez l\'historique')}</p>
           </div>
           <Link
             to="/payments/alert-rules"
-            className="flex items-center gap-2 border px-3 py-2 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700"
+            className="flex items-center gap-2 border border-hairline px-3 py-2 rounded-[4px] hover:bg-ground text-sm font-medium text-ink-soft"
           >
             <BellRing className="w-4 h-4" />
             {t('paymentAlerts.configureLink', 'Alert rules')}
@@ -274,26 +277,26 @@ export default function PaymentsPage() {
 
         {/* Invoices awaiting payment */}
         {(invoicesLoading || pendingInvoices.length > 0) && (
-          <div className="bg-white rounded-xl border overflow-hidden">
-            <div className="flex items-center gap-2 px-5 py-3 border-b bg-green-50">
-              <DollarSign className="w-4 h-4 text-green-600" />
-              <h2 className="font-semibold text-green-800 text-sm">
+          <Panel className="overflow-hidden">
+            <div className="flex items-center gap-2 px-5 py-3 border-b border-hairline bg-pos-bg">
+              <DollarSign className="w-4 h-4 text-pos" />
+              <h2 className="font-semibold text-pos text-sm">
                 {t('payments.awaitingPayment', 'Factures Bon à Payer — en attente de règlement')}
                 {pendingInvoices.length > 0 && (
-                  <span className="ml-2 bg-green-600 text-white text-xs px-2 py-0.5 rounded-full">{pendingInvoices.length}</span>
+                  <span className="num ml-2 bg-pos text-white text-xs px-2 py-0.5 rounded-full">{pendingInvoices.length}</span>
                 )}
               </h2>
             </div>
             {/* B3 — batch payment toolbar (visible once invoices are selected) */}
             {selectedIds.size > 0 && (
-              <div className="flex flex-wrap items-center gap-3 px-5 py-3 bg-blue-50 border-b border-blue-100">
-                <span className="text-sm font-medium text-blue-800">
+              <div className="flex flex-wrap items-center gap-3 px-5 py-3 bg-info-bg border-b border-info/30">
+                <span className="text-sm font-medium text-info">
                   {t('payments.batchSelected', '{{count}} selected', { count: selectedIds.size })}
                 </span>
                 <select
                   value={batchMethod}
                   onChange={e => setBatchMethod(e.target.value)}
-                  className="border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="border border-hairline rounded-[4px] px-2 py-1.5 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-gold-deep/30"
                 >
                   {PAYMENT_METHODS.map(m => <option key={m} value={m}>{t(`invoice.paymentMethods.${m}`, m)}</option>)}
                 </select>
@@ -301,29 +304,29 @@ export default function PaymentsPage() {
                   type="date"
                   value={batchDate}
                   onChange={e => setBatchDate(e.target.value)}
-                  className="border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="border border-hairline rounded-[4px] px-2 py-1.5 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-gold-deep/30"
                 />
                 <button
                   onClick={() => batchMutation.mutate()}
                   disabled={batchMutation.isPending}
-                  className="flex items-center gap-1.5 px-4 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-60"
+                  className="flex items-center gap-1.5 px-4 py-1.5 bg-pos text-white rounded-[4px] text-sm font-medium hover:opacity-90 disabled:opacity-60"
                 >
                   {batchMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <DollarSign className="w-4 h-4" />}
                   {t('payments.paySelected', 'Pay selected')}
                 </button>
-                <button onClick={() => setSelectedIds(new Set())} className="text-sm text-gray-500 hover:underline">
+                <button onClick={() => setSelectedIds(new Set())} className="text-sm text-ink-faint hover:underline">
                   {t('app.cancel', 'Cancel')}
                 </button>
               </div>
             )}
 
             {invoicesLoading ? (
-              <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+              <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-ink-faint" /></div>
             ) : pendingInvoices.length === 0 ? (
-              <div className="py-8 text-center text-sm text-gray-400">{t('payments.noPending', 'Aucune facture en attente de paiement')}</div>
+              <div className="py-8 text-center text-sm text-ink-faint">{t('payments.noPending', 'Aucune facture en attente de paiement')}</div>
             ) : (
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b">
+                <thead className="bg-ground">
                   <tr>
                     <th className="px-4 py-3 w-10">
                       <input
@@ -333,15 +336,15 @@ export default function PaymentsPage() {
                         onChange={toggleSelectAll}
                       />
                     </th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.reference')}</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.supplier')}</th>
-                    <th className="text-right px-4 py-3 font-medium text-gray-600">{t('invoice.amount')}</th>
-                    <th className="text-right px-4 py-3 font-medium text-gray-600">{t('app.actions')}</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.reference')}</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.supplier')}</th>
+                    <th className="text-right px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.amount')}</th>
+                    <th className="text-right px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('app.actions')}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y">
+                <tbody className="divide-y divide-hairline">
                   {pendingInvoices.map(inv => (
-                    <tr key={inv.id} className="hover:bg-gray-50">
+                    <tr key={inv.id} className={rowHoverTint}>
                       <td className="px-4 py-3">
                         <input
                           type="checkbox"
@@ -350,18 +353,19 @@ export default function PaymentsPage() {
                           onChange={() => toggleSelect(inv.id)}
                         />
                       </td>
-                      <td className="px-4 py-3 font-mono text-xs font-semibold">{inv.referenceNumber}</td>
-                      <td className="px-4 py-3 text-gray-700">{inv.supplierName ?? '—'}</td>
-                      <td className="px-4 py-3 text-right font-medium text-green-700">
-                        {Number(inv.amount).toLocaleString(i18n.language === 'en' ? 'en-US' : 'fr-FR')} {inv.currency}
+                      <td className="num px-4 py-3 text-xs font-semibold text-ink">{inv.referenceNumber}</td>
+                      <td className="px-4 py-3 text-ink-soft">{inv.supplierName ?? '—'}</td>
+                      <td className="px-4 py-3 text-right">
+                        <span className="num font-medium text-pos">{Number(inv.amount).toLocaleString(i18n.language === 'en' ? 'en-US' : 'fr-FR')}</span>{' '}
+                        <span className="text-ink-faint text-xs">{inv.currency}</span>
                       </td>
                       <td className="px-4 py-3 text-right flex items-center justify-end gap-2">
-                        <Link to={`/invoices/${inv.id}`} className="text-xs text-primary hover:underline flex items-center gap-1">
+                        <Link to={`/invoices/${inv.id}`} className="text-xs text-gold-deep hover:underline flex items-center gap-1">
                           <ExternalLink className="w-3 h-3" /> {t('app.view')}
                         </Link>
                         <button
                           onClick={() => setRecordingFor(inv)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 transition-colors"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-pos text-white rounded-[4px] text-xs font-medium hover:opacity-90 transition-colors"
                         >
                           <DollarSign className="w-3.5 h-3.5" />
                           {t('invoice.markPaid', 'Payer')}
@@ -372,20 +376,20 @@ export default function PaymentsPage() {
                 </tbody>
               </table>
             )}
-          </div>
+          </Panel>
         )}
 
         {/* Payment history */}
-        <div className="bg-white rounded-xl border overflow-hidden">
-          <div className="flex items-center gap-2 px-5 py-3 border-b flex-wrap">
-            <FileText className="w-4 h-4 text-gray-500" />
-            <h2 className="font-semibold text-gray-800 text-sm">{t('payments.history', 'Historique des paiements')}</h2>
-            {payments && <span className="text-xs text-gray-400">{payments.totalElements} {t('payments.total', 'paiements')}</span>}
+        <Panel className="overflow-hidden">
+          <div className="flex items-center gap-2 px-5 py-3 border-b border-hairline flex-wrap">
+            <FileText className="w-4 h-4 text-ink-faint" />
+            <h2 className="font-semibold text-ink text-sm">{t('payments.history', 'Historique des paiements')}</h2>
+            {payments && <span className="text-xs text-ink-faint">{payments.totalElements} {t('payments.total', 'paiements')}</span>}
             <div className="ml-auto flex items-center gap-3">
-              <select 
-                value={statusFilter} 
+              <select
+                value={statusFilter}
                 onChange={e => { setStatusFilter(e.target.value); setPage(0) }}
-                className="border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
+                className="border border-hairline rounded-[4px] px-2 py-1.5 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-gold-deep/30"
               >
                 <option value="ALL">{t('matching.all', 'Tous')}</option>
                 <option value="SCHEDULED">{t('payments.status.scheduled', 'Planifié')}</option>
@@ -396,64 +400,65 @@ export default function PaymentsPage() {
           </div>
 
           {remittanceError && (
-            <p className="px-5 py-2 text-xs text-amber-700 bg-amber-50 border-b border-amber-100">{remittanceError}</p>
+            <p className="px-5 py-2 text-xs text-warn bg-warn-bg border-b border-warn/30">{remittanceError}</p>
           )}
 
           {paymentsLoading ? (
-            <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+            <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-ink-faint" /></div>
           ) : paymentList.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-500">
+            <div className="flex flex-col items-center justify-center py-12 gap-2 text-ink-faint">
               <CreditCard className="w-8 h-8" />
               <p className="text-sm">{t('payments.noHistory', 'Aucun paiement enregistré')}</p>
             </div>
           ) : (
             <>
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b">
+                <thead className="bg-ground">
                   <tr>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.reference')}</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.paymentMethod')}</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.paymentReference')}</th>
-                    <th className="text-right px-4 py-3 font-medium text-gray-600">{t('invoice.amount')}</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.paymentDate')}</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t('payments.colStatus', 'Statut')}</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.reference')}</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.paymentMethod')}</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.paymentReference')}</th>
+                    <th className="text-right px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.amount')}</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.paymentDate')}</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('payments.colStatus', 'Statut')}</th>
                     <th className="px-4 py-3" />
                   </tr>
                 </thead>
-                <tbody className="divide-y">
+                <tbody className="divide-y divide-hairline">
                   {paymentList.map(p => (
-                    <tr key={p.id} className="hover:bg-gray-50">
+                    <tr key={p.id} className={rowHoverTint}>
                       <td className="px-4 py-3">
-                        <Link to={`/invoices/${p.invoiceId}`} className="font-mono text-xs font-semibold text-primary hover:underline">
+                        <Link to={`/invoices/${p.invoiceId}`} className="num text-xs font-semibold text-gold-deep hover:underline">
                           {p.invoiceReference ?? p.invoiceId.slice(0, 8)}
                         </Link>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-100">
+                        <span className="text-xs bg-info-bg text-info px-2 py-0.5 rounded border border-info/30">
                           {t(`invoice.paymentMethods.${p.paymentMethod}`, p.paymentMethod)}
                         </span>
                       </td>
-                      <td className="px-4 py-3 font-mono text-xs text-gray-700">{p.reference}</td>
-                      <td className="px-4 py-3 text-right font-medium text-green-700">
-                        {Number(p.amountPaid).toLocaleString(i18n.language === 'en' ? 'en-US' : 'fr-FR')} {p.currency}
+                      <td className="num px-4 py-3 text-xs text-ink-soft">{p.reference}</td>
+                      <td className="px-4 py-3 text-right">
+                        <span className="num font-medium text-pos">{Number(p.amountPaid).toLocaleString(i18n.language === 'en' ? 'en-US' : 'fr-FR')}</span>{' '}
+                        <span className="text-ink-faint text-xs">{p.currency}</span>
                       </td>
-                      <td className="px-4 py-3 text-gray-500 text-xs">
+                      <td className="px-4 py-3 text-ink-faint text-xs">
                         {new Date(p.paymentDate).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'fr-FR')}
                       </td>
                       <td className="px-4 py-3">
                         {p.status === 'SCHEDULED' ? (
                           <div className="flex flex-col items-start gap-1">
-                            <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded border border-amber-100">
+                            <span className="text-xs bg-warn-bg text-warn px-2 py-0.5 rounded border border-warn/30">
                               {t('payments.status.scheduled', 'Planifié')}
                             </span>
                             <button onClick={() => processMutation.mutate(p.id)}
                               disabled={processMutation.isPending}
-                              className="flex items-center gap-1 text-xs bg-amber-100 text-amber-800 border border-amber-200 px-2 py-1 rounded hover:bg-amber-200 disabled:opacity-50">
+                              className="flex items-center gap-1 text-xs bg-warn-bg text-warn border border-warn/30 px-2 py-1 rounded hover:opacity-90 disabled:opacity-50">
                               <CheckCircle className="w-3.5 h-3.5" />
                               {t('payments.markProcessed', 'Marquer exécuté')}
                             </button>
                             {processMutation.isError && processMutation.variables === p.id && (
-                              <span className="text-xs text-red-600">
+                              <span className="text-xs text-crit">
                                 {(processMutation.error as any)?.response?.data?.message
                                   ? t((processMutation.error as any).response.data.message)
                                   : t('app.error', 'Une erreur est survenue')}
@@ -461,7 +466,7 @@ export default function PaymentsPage() {
                             )}
                           </div>
                         ) : (
-                          <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded border border-green-100">
+                          <span className="text-xs bg-pos-bg text-pos px-2 py-0.5 rounded border border-pos/30">
                             {t('payments.status.processed', 'Exécuté')}
                           </span>
                         )}
@@ -471,7 +476,7 @@ export default function PaymentsPage() {
                           <button
                             onClick={() => downloadRemittance(p.id)}
                             disabled={remittanceId === p.id}
-                            className="flex items-center gap-1 text-xs text-gray-500 hover:text-primary transition-colors ml-auto disabled:opacity-50">
+                            className="flex items-center gap-1 text-xs text-ink-faint hover:text-gold-deep transition-colors ml-auto disabled:opacity-50">
                             {remittanceId === p.id
                               ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                               : <Download className="w-3.5 h-3.5" />}
@@ -485,17 +490,17 @@ export default function PaymentsPage() {
               </table>
 
               {payments && payments.totalPages > 1 && (
-                <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
-                  <span className="text-sm text-gray-500">{t('pagination.page')} {page + 1} / {payments.totalPages}</span>
+                <div className="flex items-center justify-between px-4 py-3 border-t border-hairline bg-ground">
+                  <span className="text-sm text-ink-faint">{t('pagination.page')} {page + 1} / {payments.totalPages}</span>
                   <div className="flex gap-2">
-                    <button disabled={page === 0} onClick={() => setPage(p => p - 1)} className="px-3 py-1.5 bg-white border rounded-lg text-sm disabled:opacity-40">{t('app.previous')}</button>
-                    <button disabled={page >= payments.totalPages - 1} onClick={() => setPage(p => p + 1)} className="px-3 py-1.5 bg-white border rounded-lg text-sm disabled:opacity-40">{t('app.next')}</button>
+                    <button disabled={page === 0} onClick={() => setPage(p => p - 1)} className="px-3 py-1.5 bg-surface border border-hairline rounded-[4px] text-sm disabled:opacity-40 text-ink-soft">{t('app.previous')}</button>
+                    <button disabled={page >= payments.totalPages - 1} onClick={() => setPage(p => p + 1)} className="px-3 py-1.5 bg-surface border border-hairline rounded-[4px] text-sm disabled:opacity-40 text-ink-soft">{t('app.next')}</button>
                   </div>
                 </div>
               )}
             </>
           )}
-        </div>
+        </Panel>
       </div>
 
       {recordingFor && (
@@ -513,33 +518,33 @@ export default function PaymentsPage() {
       {/* B3 — batch payment result (per-line) */}
       {batchResult && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setBatchResult(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-surface rounded-[4px] shadow-2xl w-full max-w-lg p-6 space-y-4 border border-hairline" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-900">{t('payments.batchResultTitle', 'Batch payment result')}</h2>
-              <button onClick={() => setBatchResult(null)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+              <h2 className="text-lg font-bold text-ink">{t('payments.batchResultTitle', 'Batch payment result')}</h2>
+              <button onClick={() => setBatchResult(null)} className="text-ink-faint hover:text-ink-soft text-xl leading-none">×</button>
             </div>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-ink-soft">
               {t('payments.batchSummary', '{{ok}} succeeded, {{ko}} failed out of {{total}}', {
                 ok: batchResult.succeeded, ko: batchResult.failed, total: batchResult.total,
               })}
             </p>
             <ul className="space-y-2 max-h-80 overflow-y-auto">
               {batchResult.results.map(r => (
-                <li key={r.invoiceId} className={`flex items-start gap-2 text-sm rounded-lg p-2 border ${r.success ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
+                <li key={r.invoiceId} className={`flex items-start gap-2 text-sm rounded-[4px] p-2 border ${r.success ? 'bg-pos-bg border-pos/30' : 'bg-crit-bg border-crit/30'}`}>
                   {r.success
-                    ? <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
-                    : <span className="w-4 h-4 text-red-600 mt-0.5 shrink-0 font-bold text-center">✕</span>}
+                    ? <CheckCircle className="w-4 h-4 text-pos mt-0.5 shrink-0" />
+                    : <span className="w-4 h-4 text-crit mt-0.5 shrink-0 font-bold text-center">✕</span>}
                   <div className="min-w-0">
-                    <span className="font-mono text-xs font-semibold">{refByInvoice(r.invoiceId)}</span>
+                    <span className="num text-xs font-semibold text-ink">{refByInvoice(r.invoiceId)}</span>
                     {r.success
-                      ? <span className="text-green-700 ml-2 text-xs">{r.reference}</span>
-                      : <span className="text-red-700 ml-2 text-xs">{r.error}</span>}
+                      ? <span className="text-pos ml-2 text-xs">{r.reference}</span>
+                      : <span className="text-crit ml-2 text-xs">{r.error}</span>}
                   </div>
                 </li>
               ))}
             </ul>
-            <div className="flex justify-end pt-2 border-t">
-              <button onClick={() => setBatchResult(null)} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90">
+            <div className="flex justify-end pt-2 border-t border-hairline">
+              <button onClick={() => setBatchResult(null)} className="px-4 py-2 bg-oct-navy text-white rounded-[4px] text-sm font-medium hover:bg-oct-navy-light">
                 {t('app.close', 'Close')}
               </button>
             </div>

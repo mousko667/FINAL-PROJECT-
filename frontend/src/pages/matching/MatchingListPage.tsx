@@ -4,7 +4,10 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
+import { Panel } from '@/components/ui/Panel'
 import { listMatching, type MatchingSummary } from '@/services/matchingService'
+
+const rowHoverTint = 'hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)] transition-colors'
 
 // Real role names from constants/roles.ts — excludes ROLE_ADMIN (SoD: no financial access)
 const STAFF_ROLES = [
@@ -36,21 +39,21 @@ export default function MatchingListPage() {
 
   return (
     <PageRoleGuard allowedRoles={STAFF_ROLES}>
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="max-w-5xl mx-auto space-y-6 page-enter">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('matching.pageTitle')}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{t('matching.pageSubtitle')}</p>
+          <h1 className="text-2xl font-bold text-ink">{t('matching.pageTitle')}</h1>
+          <p className="text-sm text-ink-soft mt-0.5">{t('matching.pageSubtitle')}</p>
         </div>
 
         <div className="flex gap-3">
           <input
-            className="border rounded-lg px-3 py-1.5 text-sm flex-1"
+            className="border border-hairline rounded-[4px] px-3 py-1.5 text-sm flex-1 bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-gold-deep/30"
             placeholder={t('matching.search')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
           <select
-            className="border rounded-lg px-3 py-1.5 text-sm"
+            className="border border-hairline rounded-[4px] px-3 py-1.5 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-gold-deep/30"
             value={status}
             onChange={(e) => setStatus(e.target.value)}
           >
@@ -65,37 +68,39 @@ export default function MatchingListPage() {
 
         {isLoading ? (
           <div className="flex justify-center py-20">
-            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            <Loader2 className="w-6 h-6 animate-spin text-ink-faint" />
           </div>
         ) : isError ? (
-          <p className="text-sm text-red-500">{t('matching.error')}</p>
+          <p className="text-sm text-crit">{t('matching.error')}</p>
         ) : !data || data.content.length === 0 ? (
-          <p className="text-sm text-gray-400">{t('matching.empty')}</p>
+          <p className="text-sm text-ink-faint">{t('matching.empty')}</p>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-gray-500 border-b">
-                <th className="py-2">{t('matching.invoiceNumber')}</th>
-                <th>{t('matching.supplier')}</th>
-                <th>{t('matching.poNumber')}</th>
-                <th>{t('matching.status')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.content.map((m: MatchingSummary) => (
-                <tr
-                  key={m.invoiceId}
-                  className="border-b hover:bg-gray-50 cursor-pointer"
-                  onClick={() => navigate(`/matching/${m.invoiceId}`)}
-                >
-                  <td className="py-2 font-medium">{m.invoiceNumber}</td>
-                  <td>{m.supplierName}</td>
-                  <td>{m.purchaseOrderNumber ?? '—'}</td>
-                  <td>{m.status ? t(`matching.statuses.${m.status}`) : '—'}</td>
+          <Panel className="overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-ground">
+                <tr>
+                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.invoiceNumber')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.supplier')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.poNumber')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.status')}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-hairline">
+                {data.content.map((m: MatchingSummary) => (
+                  <tr
+                    key={m.invoiceId}
+                    className={`cursor-pointer ${rowHoverTint}`}
+                    onClick={() => navigate(`/matching/${m.invoiceId}`)}
+                  >
+                    <td className="num px-4 py-3 font-medium text-ink">{m.invoiceNumber}</td>
+                    <td className="px-4 py-3 text-ink-soft">{m.supplierName}</td>
+                    <td className="num px-4 py-3 text-ink-soft">{m.purchaseOrderNumber ?? '—'}</td>
+                    <td className="px-4 py-3 text-ink-soft">{m.status ? t(`matching.statuses.${m.status}`) : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Panel>
         )}
       </div>
     </PageRoleGuard>

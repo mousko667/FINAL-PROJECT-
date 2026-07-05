@@ -10,6 +10,7 @@ import { InvoiceActionPanel } from '@/components/invoice/InvoiceActionPanel'
 import { BulkDocumentUpload } from '@/components/invoice/BulkDocumentUpload'
 import { DocumentViewerModal } from '@/components/invoice/DocumentViewerModal'
 import { ExportMenu } from '@/components/ui/ExportMenu'
+import { Panel } from '@/components/ui/Panel'
 import { ValidationChecklist } from '@/components/invoice/ValidationChecklist'
 import { useAppSelector } from '@/store/hooks'
 import { Loader2, ArrowLeft, Download, CheckCircle, XCircle, AlertTriangle, MinusCircle, Clock, User, FileDown, Lock, Eye } from 'lucide-react'
@@ -42,10 +43,10 @@ interface MatchingResult {
 function MatchingBadge({ status }: { status: string }) {
   const { t } = useTranslation()
   const map: Record<string, { icon: React.ReactNode; cls: string; label: string }> = {
-    MATCHED:   { icon: <CheckCircle className="w-4 h-4" />, cls: 'bg-green-100 text-green-800', label: t('matching.MATCHED', 'Matched') },
-    PARTIAL:   { icon: <MinusCircle className="w-4 h-4" />, cls: 'bg-yellow-100 text-yellow-800', label: t('matching.PARTIAL', 'Partial Match') },
-    MISMATCH:  { icon: <XCircle className="w-4 h-4" />, cls: 'bg-red-100 text-red-800', label: t('matching.MISMATCH', 'Mismatch') },
-    OVERRIDDEN:{ icon: <AlertTriangle className="w-4 h-4" />, cls: 'bg-orange-100 text-orange-800', label: t('matching.OVERRIDDEN', 'Overridden') },
+    MATCHED:   { icon: <CheckCircle className="w-4 h-4" />, cls: 'bg-pos-bg text-pos', label: t('matching.MATCHED', 'Matched') },
+    PARTIAL:   { icon: <MinusCircle className="w-4 h-4" />, cls: 'bg-warn-bg text-warn', label: t('matching.PARTIAL', 'Partial Match') },
+    MISMATCH:  { icon: <XCircle className="w-4 h-4" />, cls: 'bg-crit-bg text-crit', label: t('matching.MISMATCH', 'Mismatch') },
+    OVERRIDDEN:{ icon: <AlertTriangle className="w-4 h-4" />, cls: 'bg-hot-bg text-hot', label: t('matching.OVERRIDDEN', 'Overridden') },
   }
   const config = map[status] ?? map.PARTIAL
   return (
@@ -56,9 +57,9 @@ function MatchingBadge({ status }: { status: string }) {
 }
 
 const SENSITIVITY_STYLES: Record<string, string> = {
-  PUBLIC: 'bg-gray-100 text-gray-700',
-  INTERNAL: 'bg-blue-100 text-blue-800',
-  CONFIDENTIAL: 'bg-red-100 text-red-800',
+  PUBLIC: 'bg-ground text-ink-soft',
+  INTERNAL: 'bg-info-bg text-info',
+  CONFIDENTIAL: 'bg-crit-bg text-crit',
 }
 
 function SensitivityBadge({ level }: { level: string }) {
@@ -135,28 +136,28 @@ export default function InvoiceDetailPage() {
 
   if (isLoading) return (
     <div className="flex items-center justify-center h-64">
-      <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      <Loader2 className="w-8 h-8 animate-spin text-ink-faint" />
     </div>
   )
 
   if (isError || !invoice) return (
     <div className="text-center py-20">
-      <p className="text-red-500 mb-4">{t('app.error')}</p>
-      <button onClick={() => navigate('/invoices')} className="text-primary underline text-sm">{t('app.back')}</button>
+      <p className="text-crit mb-4">{t('app.error')}</p>
+      <button onClick={() => navigate('/invoices')} className="text-gold-deep underline text-sm">{t('app.back')}</button>
     </div>
   )
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6 page-enter">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/invoices')} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500">
+          <button onClick={() => navigate('/invoices')} className="p-2 rounded-[4px] hover:bg-ground text-ink-faint">
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{invoice.referenceNumber}</h1>
-            <p className="text-sm text-muted-foreground">{invoice.supplierName}</p>
+            <h1 className="num text-2xl font-bold text-ink">{invoice.referenceNumber}</h1>
+            <p className="text-sm text-ink-soft">{invoice.supplierName}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -179,7 +180,7 @@ export default function InvoiceDetailPage() {
               }
             }}
             disabled={pdfLoading}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm border rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-hairline rounded-[4px] hover:bg-ground transition-colors disabled:opacity-50 text-ink-soft"
             title={t('invoice.exportPdf', 'Exporter en PDF')}
           >
             {pdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
@@ -193,48 +194,47 @@ export default function InvoiceDetailPage() {
         <div className="col-span-2 space-y-6">
 
           {/* Invoice summary */}
-          <div className="bg-white rounded-xl border p-6">
-            <h2 className="font-semibold text-gray-800 mb-4">{t('invoice.details')}</h2>
+          <Panel title={t('invoice.details')}>
             <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
               {[
-                { label: t('invoice.amount'), value: `${formatAmount(invoice.amount)} ${invoice.currency}` },
+                { label: t('invoice.amount'), value: `${formatAmount(invoice.amount)} ${invoice.currency}`, num: true },
                 { label: t('invoice.issueDate'), value: invoice.issueDate },
                 { label: t('invoice.dueDate'), value: invoice.dueDate },
                 { label: t('invoice.department'), value: (i18n.language === 'en' ? invoice.departmentNameEn : invoice.departmentNameFr) ?? invoice.departmentCode ?? '—' },
-              ].map(({ label, value }) => (
+              ].map(({ label, value, num }) => (
                 <div key={label}>
-                  <dt className="text-muted-foreground">{label}</dt>
-                  <dd className="font-medium text-gray-800 mt-0.5">{value}</dd>
+                  <dt className="text-ink-faint">{label}</dt>
+                  <dd className={`font-medium text-ink mt-0.5 ${num ? 'num' : ''}`}>{value}</dd>
                 </div>
               ))}
               {invoice.purchaseOrderId && (
                 <div>
-                  <dt className="text-muted-foreground">{t('invoice.purchaseOrder', 'Purchase Order')}</dt>
-                  <dd className="font-mono text-xs text-gray-700 mt-0.5">{invoice.purchaseOrderId}</dd>
+                  <dt className="text-ink-faint">{t('invoice.purchaseOrder', 'Purchase Order')}</dt>
+                  <dd className="num text-xs text-ink-soft mt-0.5">{invoice.purchaseOrderId}</dd>
                 </div>
               )}
               {invoice.description && (
                 <div className="col-span-2">
-                  <dt className="text-muted-foreground">{t('invoice.description')}</dt>
-                  <dd className="mt-0.5 text-gray-700">{invoice.description}</dd>
+                  <dt className="text-ink-faint">{t('invoice.description')}</dt>
+                  <dd className="mt-0.5 text-ink-soft">{invoice.description}</dd>
                 </div>
               )}
             </dl>
-          </div>
+          </Panel>
 
           {/* Data Sensitivity Classification (P11-15) */}
-          <div className="bg-white rounded-xl border p-6">
-            <div className="flex items-center justify-between gap-4">
+          <Panel>
+            <div className="flex items-center justify-between gap-4 p-5">
               <div>
-                <h2 className="font-semibold text-gray-800">{t('sensitivity.title', 'Data Sensitivity')}</h2>
-                <p className="text-sm text-muted-foreground mt-0.5">{t('sensitivity.subtitle', 'Confidentiality level of this financial record.')}</p>
+                <h2 className="font-semibold text-ink">{t('sensitivity.title', 'Data Sensitivity')}</h2>
+                <p className="text-sm text-ink-soft mt-0.5">{t('sensitivity.subtitle', 'Confidentiality level of this financial record.')}</p>
               </div>
               {canClassify ? (
                 <select
                   value={invoice.dataSensitivity ?? 'INTERNAL'}
                   onChange={(e) => sensitivityMutation.mutate(e.target.value)}
                   disabled={sensitivityMutation.isPending}
-                  className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+                  className="border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-gold-deep/30 disabled:opacity-50"
                 >
                   <option value="PUBLIC">{t('sensitivity.PUBLIC', 'Public')}</option>
                   <option value="INTERNAL">{t('sensitivity.INTERNAL', 'Internal')}</option>
@@ -244,13 +244,14 @@ export default function InvoiceDetailPage() {
                 <SensitivityBadge level={invoice.dataSensitivity ?? 'INTERNAL'} />
               )}
             </div>
-          </div>
+          </Panel>
 
           {/* Three-Way Matching Result */}
           {invoice.purchaseOrderId && (
-            <div className="bg-white rounded-xl border p-6">
+            <Panel>
+              <div className="p-5">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-semibold text-gray-800">{t('matching.title', 'Three-Way Matching')}</h2>
+                <h2 className="font-semibold text-ink">{t('matching.title', 'Three-Way Matching')}</h2>
                 <div className="flex items-center gap-3">
                   {matchingResult && <MatchingBadge status={matchingResult.status} />}
                   {matchingResult && (
@@ -264,20 +265,20 @@ export default function InvoiceDetailPage() {
               </div>
 
               {!matchingResult ? (
-                <p className="text-sm text-gray-400">{t('matching.pending', 'Matching will be performed on submission.')}</p>
+                <p className="text-sm text-ink-faint">{t('matching.pending', 'Matching will be performed on submission.')}</p>
               ) : (
                 <div className="space-y-3">
                   {matchingResult.discrepancyNotes && (
-                    <div className="text-sm bg-gray-50 rounded-lg p-3 border">
-                      <p className="font-medium text-gray-700 mb-1">{t('matching.notes', 'Matching details:')}</p>
-                      <p className="text-gray-600 text-xs whitespace-pre-wrap">{matchingResult.discrepancyNotes}</p>
+                    <div className="text-sm bg-ground rounded-[4px] p-3 border border-hairline">
+                      <p className="font-medium text-ink-soft mb-1">{t('matching.notes', 'Matching details:')}</p>
+                      <p className="text-ink-soft text-xs whitespace-pre-wrap">{matchingResult.discrepancyNotes}</p>
                     </div>
                   )}
 
                   {matchingResult.status === 'OVERRIDDEN' && matchingResult.overrideReason && (
-                    <div className="text-sm bg-orange-50 rounded-lg p-3 border border-orange-100">
-                      <p className="font-medium text-orange-800 mb-1">{t('matching.overrideJustification', 'Override justification:')}</p>
-                      <p className="text-orange-700 text-xs">{matchingResult.overrideReason}</p>
+                    <div className="text-sm bg-hot-bg rounded-[4px] p-3 border border-hot/30">
+                      <p className="font-medium text-hot mb-1">{t('matching.overrideJustification', 'Override justification:')}</p>
+                      <p className="text-hot text-xs">{matchingResult.overrideReason}</p>
                     </div>
                   )}
 
@@ -287,31 +288,31 @@ export default function InvoiceDetailPage() {
                       {!showOverrideForm ? (
                         <button
                           onClick={() => setShowOverrideForm(true)}
-                          className="text-sm text-orange-600 hover:text-orange-800 font-medium underline"
+                          className="text-sm text-hot hover:opacity-80 font-medium underline"
                         >
                           {t('matching.override', 'Override mismatch with justification')}
                         </button>
                       ) : (
                         <div className="space-y-2">
-                          <label className="block text-sm font-medium text-gray-700">
+                          <label className="block text-sm font-medium text-ink-soft">
                             {t('matching.overrideReason', 'Override justification')} * ({t('matching.minChars', 'min. 10 characters')})
                           </label>
                           <textarea
                             value={overrideReason}
                             onChange={(e) => setOverrideReason(e.target.value)}
                             rows={3}
-                            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+                            className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-hot/30"
                             placeholder={t('matching.overridePlaceholder', 'Explain why this discrepancy is acceptable...')}
                           />
                           <div className="flex gap-2">
                             <button
                               onClick={() => overrideMutation.mutate()}
                               disabled={overrideReason.length < 10 || overrideMutation.isPending}
-                              className="px-3 py-1.5 bg-orange-600 text-white rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-orange-700"
+                              className="px-3 py-1.5 bg-hot text-white rounded-[4px] text-sm font-medium disabled:opacity-50 hover:opacity-90"
                             >
                               {overrideMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin inline" /> : t('matching.confirmOverride', 'Confirm Override')}
                             </button>
-                            <button onClick={() => setShowOverrideForm(false)} className="px-3 py-1.5 border rounded-lg text-sm hover:bg-gray-50">
+                            <button onClick={() => setShowOverrideForm(false)} className="px-3 py-1.5 border border-hairline rounded-[4px] text-sm hover:bg-ground text-ink-soft">
                               {t('app.cancel')}
                             </button>
                           </div>
@@ -321,7 +322,8 @@ export default function InvoiceDetailPage() {
                   )}
                 </div>
               )}
-            </div>
+              </div>
+            </Panel>
           )}
 
           {/* Validation checklist (B1) — renders only when a template applies to this invoice */}
@@ -329,11 +331,10 @@ export default function InvoiceDetailPage() {
 
           {/* Approval Steps — vertical timeline */}
           {approvalSteps && approvalSteps.length > 0 && (
-            <div className="bg-white rounded-xl border p-6">
-              <h2 className="font-semibold text-gray-800 mb-5">{t('invoice.approvalSteps', 'Historique d\'approbation')}</h2>
+            <Panel title={t('invoice.approvalSteps', 'Historique d\'approbation')}>
               <div className="relative">
                 {/* Vertical connector line */}
-                <div className="absolute left-4 top-5 bottom-5 w-px bg-gray-200" />
+                <div className="absolute left-4 top-5 bottom-5 w-px bg-hairline" />
                 <div className="space-y-0">
                   {approvalSteps.map((step, idx) => {
                     const isApproved = step.status === 'APPROVED'
@@ -342,12 +343,12 @@ export default function InvoiceDetailPage() {
                     const isLast     = idx === approvalSteps.length - 1
 
                     const dotClass = isApproved
-                      ? 'bg-green-500 border-green-500 text-white'
+                      ? 'bg-pos border-pos text-white'
                       : isRejected
-                      ? 'bg-red-500 border-red-500 text-white'
-                      : 'bg-white border-gray-300 text-gray-400'
+                      ? 'bg-crit border-crit text-white'
+                      : 'bg-surface border-hairline-strong text-ink-faint'
 
-                    const lineClass = isApproved && !isLast ? 'bg-green-400' : 'bg-gray-200'
+                    const lineClass = isApproved && !isLast ? 'bg-pos/50' : 'bg-hairline'
 
                     return (
                       <div key={step.id} className="flex gap-4 relative pb-6 last:pb-0">
@@ -362,61 +363,61 @@ export default function InvoiceDetailPage() {
                         </div>
 
                         {/* Content */}
-                        <div className={`flex-1 min-w-0 rounded-lg border px-4 py-3 mb-0 ${
-                          isApproved ? 'border-green-200 bg-green-50/50' :
-                          isRejected ? 'border-red-200 bg-red-50/50' :
-                          'border-gray-200 bg-gray-50/50'
+                        <div className={`flex-1 min-w-0 rounded-[4px] border px-4 py-3 mb-0 ${
+                          isApproved ? 'border-pos/30 bg-pos-bg/50' :
+                          isRejected ? 'border-crit/30 bg-crit-bg/50' :
+                          'border-hairline bg-ground/50'
                         }`}>
                           <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
                             <div className="flex items-center gap-2">
-                              <span className="font-semibold text-sm text-gray-900">
+                              <span className="font-semibold text-sm text-ink">
                                 {step.stepNameFr ?? step.stepName}
                               </span>
                               {step.departmentCode && (
-                                <span className="text-[10px] font-mono bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">
+                                <span className="num text-[10px] bg-ground text-ink-soft px-1.5 py-0.5 rounded border border-hairline">
                                   {step.departmentCode}
                                 </span>
                               )}
                               <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${
-                                isApproved ? 'bg-green-100 text-green-700' :
-                                isRejected ? 'bg-red-100 text-red-700' :
-                                'bg-amber-100 text-amber-700'
+                                isApproved ? 'bg-pos-bg text-pos' :
+                                isRejected ? 'bg-crit-bg text-crit' :
+                                'bg-warn-bg text-warn'
                               }`}>
                                 {isApproved ? t('invoice.stepApproved', 'Approuvé') : isRejected ? t('invoice.stepRejected', 'Rejeté') : t('invoice.stepPending', 'En attente')}
                               </span>
                             </div>
                             {step.actionAt && (
-                              <span className="text-xs text-gray-400 shrink-0">
+                              <span className="text-xs text-ink-faint shrink-0">
                                 {formatDateTime(step.actionAt)}
                               </span>
                             )}
                           </div>
 
                           {step.approverName && (
-                            <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-1">
+                            <div className="flex items-center gap-1.5 text-xs text-ink-faint mb-1">
                               <User className="w-3 h-3" />
                               <span>{step.approverName}{step.approverUsername ? ` (${step.approverUsername})` : ''}</span>
                             </div>
                           )}
 
                           {isPending && step.deadline && (
-                            <div className="flex items-center gap-1.5 text-xs text-amber-600 mt-1">
+                            <div className="flex items-center gap-1.5 text-xs text-warn mt-1">
                               <Clock className="w-3 h-3" />
                               {t('invoice.deadline', 'Délai')}: {formatDate(step.deadline)}
                               {new Date(step.deadline) < new Date() && (
-                                <span className="text-red-600 font-semibold ml-1">— {t('invoice.overdue', 'DÉPASSÉ')}</span>
+                                <span className="text-crit font-semibold ml-1">— {t('invoice.overdue', 'DÉPASSÉ')}</span>
                               )}
                             </div>
                           )}
 
                           {step.comments && (
-                            <p className="text-xs text-gray-600 italic mt-1.5 border-l-2 border-gray-300 pl-2">
+                            <p className="text-xs text-ink-soft italic mt-1.5 border-l-2 border-hairline-strong pl-2">
                               "{step.comments}"
                             </p>
                           )}
 
                           {step.rejectionReason && (
-                            <div className="mt-1.5 text-xs text-red-700 bg-red-50 border border-red-200 rounded px-2 py-1.5">
+                            <div className="mt-1.5 text-xs text-crit bg-crit-bg border border-crit/30 rounded px-2 py-1.5">
                               <span className="font-semibold">{t('invoice.rejectionReason', 'Motif du rejet')} : </span>
                               {step.rejectionReason}
                             </div>
@@ -427,66 +428,65 @@ export default function InvoiceDetailPage() {
                   })}
                 </div>
               </div>
-            </div>
+            </Panel>
           )}
 
           {/* Empty approval steps — show placeholder when invoice is past SOUMIS but no steps yet */}
           {(!approvalSteps || approvalSteps.length === 0) && !['BROUILLON', 'SOUMIS'].includes(invoice.status) && (
-            <div className="bg-white rounded-xl border p-6">
-              <h2 className="font-semibold text-gray-800 mb-3">{t('invoice.approvalSteps', 'Historique d\'approbation')}</h2>
-              <p className="text-sm text-gray-400">{t('invoice.noStepsYet', 'Aucune étape d\'approbation enregistrée.')}</p>
-            </div>
+            <Panel title={t('invoice.approvalSteps', 'Historique d\'approbation')}>
+              <p className="text-sm text-ink-faint">{t('invoice.noStepsYet', 'Aucune étape d\'approbation enregistrée.')}</p>
+            </Panel>
           )}
 
           {/* Line Items */}
           {invoice.lineItems && invoice.lineItems.length > 0 && (
-            <div className="bg-white rounded-xl border overflow-hidden">
-              <div className="px-5 py-4 border-b font-semibold text-gray-800">{t('invoice.lineItems')}</div>
+            <Panel className="overflow-hidden" title={t('invoice.lineItems')}>
+              <div className="-m-5">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50">
+                <thead className="bg-ground">
                   <tr>
-                    <th className="text-left px-5 py-2 text-gray-500 font-medium">{t('invoice.description')}</th>
-                    <th className="text-right px-5 py-2 text-gray-500 font-medium">{t('invoice.quantity', 'Qty')}</th>
-                    <th className="text-right px-5 py-2 text-gray-500 font-medium">{t('invoice.unitPrice', 'Unit Price')}</th>
-                    <th className="text-right px-5 py-2 text-gray-500 font-medium">Total</th>
+                    <th className="text-left px-5 py-2 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.description')}</th>
+                    <th className="text-right px-5 py-2 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.quantity', 'Qty')}</th>
+                    <th className="text-right px-5 py-2 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.unitPrice', 'Unit Price')}</th>
+                    <th className="text-right px-5 py-2 text-xs font-medium uppercase tracking-wide text-ink-faint">Total</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y">
+                <tbody className="divide-y divide-hairline">
                   {invoice.lineItems.map((li, i) => (
                     <tr key={i}>
-                      <td className="px-5 py-2">{li.description}</td>
-                      <td className="px-5 py-2 text-right">{li.quantity}</td>
-                      <td className="px-5 py-2 text-right font-mono">{Number(li.unitPrice).toFixed(2)}</td>
-                      <td className="px-5 py-2 text-right font-mono font-medium">{Number(li.totalPrice).toFixed(2)}</td>
+                      <td className="px-5 py-2 text-ink">{li.description}</td>
+                      <td className="num px-5 py-2 text-right text-ink-soft">{li.quantity}</td>
+                      <td className="num px-5 py-2 text-right text-ink-soft">{Number(li.unitPrice).toFixed(2)}</td>
+                      <td className="num px-5 py-2 text-right font-medium text-ink">{Number(li.totalPrice).toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
+              </div>
+            </Panel>
           )}
 
           {/* Documents */}
           {invoice.documents && invoice.documents.length > 0 && (
-            <div className="bg-white rounded-xl border p-5">
-              <h2 className="font-semibold text-gray-800 mb-3">{t('invoice.documents')}</h2>
+            <Panel title={t('invoice.documents')}>
               <ul className="space-y-2">
                 {invoice.documents.map((doc) => (
-                  <li key={doc.id} className="flex items-center justify-between text-sm px-3 py-2.5 bg-gray-50 rounded-lg border">
-                    <span className="font-medium text-gray-700 truncate">
+                  <li key={doc.id} className="flex items-center justify-between text-sm px-3 py-2.5 bg-ground rounded-[4px] border border-hairline">
+                    <span className="font-medium text-ink-soft truncate">
                       {doc.fileName}
                       {doc.version && doc.version > 1 && (
-                        <span className="ml-2 text-xs font-mono bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded">v{doc.version}</span>
+                        <span className="num ml-2 text-xs bg-info-bg text-info px-1.5 py-0.5 rounded">v{doc.version}</span>
                       )}
                     </span>
                     <div className="flex items-center gap-3 ml-2 shrink-0">
-                      <span className="text-xs text-muted-foreground">{(doc.fileSize / 1024).toFixed(1)} KB</span>
+                      <span className="text-xs text-ink-faint">{(doc.fileSize / 1024).toFixed(1)} KB</span>
                       {doc.downloadUrl && (
-                        <button onClick={() => setViewerDoc(doc)} className="text-gray-500 hover:text-primary" title={t('invoice.viewer.view', 'Aperçu')}>
+                        <button onClick={() => setViewerDoc(doc)} className="text-ink-faint hover:text-gold-deep" title={t('invoice.viewer.view', 'Aperçu')}>
                           <Eye className="w-4 h-4" />
                         </button>
                       )}
                       {doc.downloadUrl && (
-                        <a href={doc.downloadUrl} download className="text-primary hover:text-primary/80">
+                        <a href={doc.downloadUrl} download className="text-gold-deep hover:opacity-80">
                           <Download className="w-4 h-4" />
                         </a>
                       )}
@@ -494,7 +494,7 @@ export default function InvoiceDetailPage() {
                   </li>
                 ))}
               </ul>
-            </div>
+            </Panel>
           )}
 
           {/* P11-48: bulk multi-file document upload (Assistant Comptable only) */}

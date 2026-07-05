@@ -6,6 +6,7 @@ import { useAppSelector } from '@/store/hooks'
 import { invoiceService, type InvoiceFilters } from '@/services/invoiceService'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { ExportMenu } from '@/components/ui/ExportMenu'
+import { Panel } from '@/components/ui/Panel'
 import { ImportInvoicesModal } from '@/components/invoice/ImportInvoicesModal'
 import type { InvoiceStatus } from '@/types/invoice'
 import { Plus, Upload, Search, ChevronLeft, ChevronRight, Loader2, Archive, Lock } from 'lucide-react'
@@ -19,11 +20,13 @@ const ALL_STATUSES: InvoiceStatus[] = [
 type TabView = 'active' | 'archive' | 'all'
 
 const matchingBadge: Record<string, string> = {
-  MATCHED:   'bg-green-100 text-green-700',
-  PARTIAL:   'bg-yellow-100 text-yellow-700',
-  MISMATCH:  'bg-red-100 text-red-700',
-  OVERRIDDEN:'bg-orange-100 text-orange-700',
+  MATCHED:   'bg-pos-bg text-pos',
+  PARTIAL:   'bg-warn-bg text-warn',
+  MISMATCH:  'bg-crit-bg text-crit',
+  OVERRIDDEN:'bg-hot-bg text-hot',
 }
+
+const rowHoverTint = 'hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)]'
 
 export default function InvoiceListPage() {
   const { t, i18n } = useTranslation()
@@ -70,14 +73,14 @@ export default function InvoiceListPage() {
 
   const tabClass = (active: boolean) =>
     `flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-      active ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'
+      active ? 'border-gold-deep text-gold-deep' : 'border-transparent text-ink-faint hover:text-ink-soft'
     }`
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 page-enter">
       {/* Page header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t('invoice.title')}</h1>
+        <h1 className="text-2xl font-bold text-ink">{t('invoice.title')}</h1>
         <div className="flex items-center gap-2">
           <ExportMenu endpoint="/invoices/export" filename="invoices" />
           {isAA && (
@@ -85,7 +88,7 @@ export default function InvoiceListPage() {
               id="btn-import-invoices"
               onClick={() => setShowImport(true)}
               title={t('invoice.import.tooltip', 'Importer des factures depuis un fichier CSV ou XML')}
-              className="flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 border border-hairline rounded-[4px] text-sm font-medium text-ink-soft hover:bg-ground transition-colors"
             >
               <Upload className="w-4 h-4" />
               {t('invoice.import.button', 'Importer')}
@@ -96,7 +99,7 @@ export default function InvoiceListPage() {
               id="btn-new-invoice"
               onClick={() => navigate('/invoices/new')}
               title={t('invoice.newTooltip')}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-oct-navy text-white rounded-[4px] text-sm font-medium hover:bg-oct-navy-light transition-colors"
             >
               <Plus className="w-4 h-4" />
               {t('invoice.new')}
@@ -107,13 +110,13 @@ export default function InvoiceListPage() {
 
       {/* Department scope notice for validators */}
       {isValidator && userDeptId && (
-        <div className="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
+        <div className="text-xs text-info bg-info-bg border border-info/30 rounded-[4px] px-4 py-2">
           {t('invoice.deptScopeNote', 'Showing invoices from your department only. Use the All tab to browse without restriction.')}
         </div>
       )}
 
       {/* Tab bar */}
-      <div className="flex border-b bg-white rounded-t-xl px-4 gap-1">
+      <div className="flex border-b border-hairline bg-surface rounded-t-[4px] px-4 gap-1">
         <button className={tabClass(tab === 'active')} onClick={() => setTab('active')}>
           {t('invoice.tabActive', 'Active')}
         </button>
@@ -127,14 +130,14 @@ export default function InvoiceListPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white border border-t-0 rounded-b-xl p-4 flex flex-wrap gap-3 -mt-6 pt-4">
-        <div className="flex items-center gap-2 border rounded-lg px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-primary/30 flex-1 min-w-[200px]">
-          <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+      <div className="bg-surface border border-hairline border-t-0 rounded-b-[4px] p-4 flex flex-wrap gap-3 -mt-6 pt-4">
+        <div className="flex items-center gap-2 border border-hairline rounded-[4px] px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-gold-deep/30 flex-1 min-w-[200px]">
+          <Search className="w-4 h-4 text-ink-faint shrink-0" />
           <input
             id="filter-reference"
             type="text"
             placeholder={t('invoice.reference')}
-            className="outline-none w-full bg-transparent text-sm"
+            className="outline-none w-full bg-transparent text-sm text-ink"
             onChange={(e) => handleFilterChange('reference', e.target.value)}
           />
         </div>
@@ -144,7 +147,7 @@ export default function InvoiceListPage() {
           <select
             id="filter-status"
             aria-label={t('invoice.filterStatus')}
-            className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 min-w-[160px]"
+            className="border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-gold-deep/30 min-w-[160px]"
             onChange={(e) => handleFilterChange('status', e.target.value)}
           >
             <option value="">{t('app.all')}</option>
@@ -158,81 +161,82 @@ export default function InvoiceListPage() {
           id="filter-from-date"
           type="date"
           aria-label={t('invoice.filterFromDate')}
-          className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-gold-deep/30"
           onChange={(e) => handleFilterChange('fromDate', e.target.value)}
         />
         <input
           id="filter-to-date"
           type="date"
           aria-label={t('invoice.filterToDate')}
-          className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-gold-deep/30"
           onChange={(e) => handleFilterChange('toDate', e.target.value)}
         />
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border overflow-hidden">
+      <Panel className="overflow-hidden">
         {isLoading && (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            <Loader2 className="w-6 h-6 animate-spin text-ink-faint" />
           </div>
         )}
 
         {isError && (
-          <div className="text-center py-20 text-red-600 text-sm">{t('app.error')}</div>
+          <div className="text-center py-20 text-crit text-sm">{t('app.error')}</div>
         )}
 
         {!isLoading && !isError && (
           <>
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b">
+              <thead className="bg-ground">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.reference')}</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.supplier')}</th>
-                  <th className="text-right px-4 py-3 font-medium text-gray-600">{t('invoice.amount')}</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.issueDate')}</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.dueDate')}</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.status')}</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('matching.columnHeader', 'Matching')}</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.department')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.reference')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.supplier')}</th>
+                  <th className="text-right px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.amount')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.issueDate')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.dueDate')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.status')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.columnHeader', 'Matching')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.department')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y">
+              <tbody className="divide-y divide-hairline">
                 {invoices.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-16 text-muted-foreground">{t('app.noData')}</td>
+                    <td colSpan={8} className="text-center py-16 text-ink-faint">{t('app.noData')}</td>
                   </tr>
                 ) : (
                   invoices.map((invoice) => (
                     <tr
                       key={invoice.id}
                       id={`invoice-row-${invoice.id}`}
-                      className="hover:bg-gray-50 cursor-pointer transition-colors"
+                      className={`cursor-pointer transition-colors ${rowHoverTint}`}
                       onClick={() => navigate(`/invoices/${invoice.id}`)}
                     >
-                      <td className="px-4 py-3 font-medium text-primary">
-                        <span className="inline-flex items-center gap-1.5">
+                      <td className="px-4 py-3 font-medium text-gold-deep">
+                        <span className="num inline-flex items-center gap-1.5">
                           {invoice.dataSensitivity === 'CONFIDENTIAL' && (
-                            <Lock className="w-3.5 h-3.5 text-red-600" aria-label={t('sensitivity.CONFIDENTIAL', 'Confidential')} />
+                            <Lock className="w-3.5 h-3.5 text-crit" aria-label={t('sensitivity.CONFIDENTIAL', 'Confidential')} />
                           )}
                           {invoice.referenceNumber}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-700">{invoice.supplierName}</td>
-                      <td className="px-4 py-3 text-right font-mono">
-                        {formatAmount(invoice.amount)} {invoice.currency}
+                      <td className="px-4 py-3 text-ink-soft">{invoice.supplierName}</td>
+                      <td className="px-4 py-3 text-right">
+                        <span className="num text-ink">{formatAmount(invoice.amount)}</span>{' '}
+                        <span className="text-ink-faint text-xs">{invoice.currency}</span>
                       </td>
-                      <td className="px-4 py-3 text-gray-500">{invoice.issueDate}</td>
-                      <td className="px-4 py-3 text-gray-500">{invoice.dueDate}</td>
+                      <td className="px-4 py-3 text-ink-soft">{invoice.issueDate}</td>
+                      <td className="px-4 py-3 text-ink-soft">{invoice.dueDate}</td>
                       <td className="px-4 py-3"><StatusBadge status={invoice.status} /></td>
                       <td className="px-4 py-3">
                         {invoice.matchingStatus ? (
-                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${matchingBadge[invoice.matchingStatus] ?? 'bg-gray-100 text-gray-600'}`}>
+                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${matchingBadge[invoice.matchingStatus] ?? 'bg-ground text-ink-soft'}`}>
                             {t(`matching.${invoice.matchingStatus}`, invoice.matchingStatus)}
                           </span>
-                        ) : <span className="text-xs text-gray-400">—</span>}
+                        ) : <span className="text-xs text-ink-faint">—</span>}
                       </td>
-                      <td className="px-4 py-3 text-gray-500">{(i18n.language === 'en' ? invoice.departmentNameEn : invoice.departmentNameFr) ?? invoice.departmentCode ?? '—'}</td>
+                      <td className="px-4 py-3 text-ink-soft">{(i18n.language === 'en' ? invoice.departmentNameEn : invoice.departmentNameFr) ?? invoice.departmentCode ?? '—'}</td>
                     </tr>
                   ))
                 )}
@@ -241,8 +245,8 @@ export default function InvoiceListPage() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
-                <span className="text-sm text-muted-foreground">
+              <div className="flex items-center justify-between px-4 py-3 border-t border-hairline bg-ground">
+                <span className="text-sm text-ink-faint">
                   {t('pagination.page')} {currentPage + 1} {t('pagination.of')} {totalPages}
                 </span>
                 <div className="flex gap-2">
@@ -250,7 +254,7 @@ export default function InvoiceListPage() {
                     id="btn-prev-page"
                     disabled={currentPage === 0}
                     onClick={() => setFilters((p) => ({ ...p, page: currentPage - 1 }))}
-                    className="flex items-center gap-1 px-3 py-1.5 text-sm border rounded-lg disabled:opacity-40 hover:bg-white transition-colors"
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm border border-hairline rounded-[4px] disabled:opacity-40 hover:bg-surface transition-colors text-ink-soft"
                   >
                     <ChevronLeft className="w-4 h-4" />
                     {t('pagination.previous')}
@@ -259,7 +263,7 @@ export default function InvoiceListPage() {
                     id="btn-next-page"
                     disabled={currentPage >= totalPages - 1}
                     onClick={() => setFilters((p) => ({ ...p, page: currentPage + 1 }))}
-                    className="flex items-center gap-1 px-3 py-1.5 text-sm border rounded-lg disabled:opacity-40 hover:bg-white transition-colors"
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm border border-hairline rounded-[4px] disabled:opacity-40 hover:bg-surface transition-colors text-ink-soft"
                   >
                     {t('pagination.next')}
                     <ChevronRight className="w-4 h-4" />
@@ -269,7 +273,7 @@ export default function InvoiceListPage() {
             )}
           </>
         )}
-      </div>
+      </Panel>
 
       {showImport && (
         <ImportInvoicesModal
