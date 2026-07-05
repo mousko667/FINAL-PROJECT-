@@ -11,13 +11,14 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from 'recharts'
 import {
-  TrendingUp, AlertTriangle, Clock, XCircle,
   Users, Building2, ScrollText, FileText, CheckCircle,
   DollarSign, ArrowRight, Plus, GitBranch, Shield, Zap,
   Package, BarChart3, ChevronRight,
 } from 'lucide-react'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { SkeletonCard, SkeletonDashboard, Skeleton } from '@/components/ui/Skeleton'
+import { KpiBand, type KpiBandItem } from '@/components/ui/KpiBand'
+import { Panel } from '@/components/ui/Panel'
 import type { InvoiceStatus } from '@/types/invoice'
 import { formatAmount } from '@/lib/format'
 
@@ -33,37 +34,11 @@ const STATUS_COLORS: Record<string, string> = {
   REJETE:           '#ef4444',
 }
 
-interface KpiCardProps {
-  title: string
-  value: string | number
-  icon: React.ReactNode
-  iconBg: string
-  trend?: string
-  trendUp?: boolean
-}
-
-function KpiCard({ title, value, icon, iconBg, trend, trendUp }: KpiCardProps) {
-  return (
-    <div className="bg-white rounded-xl border border-gray-100 p-5 flex items-start gap-4 hover:shadow-sm transition-shadow">
-      <div className={`p-3 rounded-xl shrink-0 ${iconBg}`}>{icon}</div>
-      <div className="min-w-0 flex-1">
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{title}</p>
-        <p className="text-2xl font-bold text-gray-900 mt-1 leading-none">{value}</p>
-        {trend && (
-          <p className={`text-xs mt-1.5 ${trendUp ? 'text-green-600' : 'text-red-500'}`}>
-            {trendUp ? '↑' : '↓'} {trend}
-          </p>
-        )}
-      </div>
-    </div>
-  )
-}
-
 function QuickLink({ to, icon: Icon, label, sub, color }: { to: string; icon: React.ElementType; label: string; sub?: string; color: string }) {
   return (
     <Link
       to={to}
-      className={`flex items-center gap-3 p-4 rounded-xl border transition-all hover:shadow-sm hover:-translate-y-0.5 ${color}`}
+      className={`flex items-center gap-3 p-4 rounded-[4px] border transition-all hover:shadow-sm hover:-translate-y-0.5 ${color}`}
     >
       <Icon className="w-5 h-5 shrink-0" />
       <div className="min-w-0 flex-1">
@@ -128,8 +103,8 @@ export default function DashboardPage() {
     return (
       <div className="space-y-6 page-enter">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('dashboard.title')}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{t('dashboard.adminNote')}</p>
+          <h1 className="text-2xl font-bold text-ink">{t('dashboard.title')}</h1>
+          <p className="text-sm text-ink-soft mt-0.5">{t('dashboard.adminNote')}</p>
         </div>
 
         {/* Primary admin actions */}
@@ -169,31 +144,31 @@ export default function DashboardPage() {
 
         {/* Secondary admin actions */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Link to="/admin/approval-matrix" className="flex items-center gap-3 p-4 rounded-xl bg-white border hover:bg-purple-50 hover:border-purple-200 transition-all group">
+          <Link to="/admin/approval-matrix" className="flex items-center gap-3 p-4 rounded-[4px] bg-surface border border-hairline hover:bg-purple-50 hover:border-purple-200 transition-all group">
             <div className="w-9 h-9 rounded-lg bg-purple-100 flex items-center justify-center group-hover:bg-purple-200 transition-colors">
               <GitBranch className="w-4 h-4 text-purple-600" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-800">{t('admin.approvalMatrix.title', 'Matrice d\'approbation')}</p>
-              <p className="text-xs text-gray-400">{t('dashboard.validationWorkflows')}</p>
+              <p className="text-sm font-semibold text-ink">{t('admin.approvalMatrix.title', 'Matrice d\'approbation')}</p>
+              <p className="text-xs text-ink-faint">{t('dashboard.validationWorkflows')}</p>
             </div>
           </Link>
-          <Link to="/admin/security" className="flex items-center gap-3 p-4 rounded-xl bg-white border hover:bg-red-50 hover:border-red-200 transition-all group">
+          <Link to="/admin/security" className="flex items-center gap-3 p-4 rounded-[4px] bg-surface border border-hairline hover:bg-red-50 hover:border-red-200 transition-all group">
             <div className="w-9 h-9 rounded-lg bg-red-100 flex items-center justify-center group-hover:bg-red-200 transition-colors">
               <Shield className="w-4 h-4 text-red-600" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-800">{t('admin.security.title', 'Paramètres de sécurité')}</p>
-              <p className="text-xs text-gray-400">{t('dashboard.mfaSessionsAccess')}</p>
+              <p className="text-sm font-semibold text-ink">{t('admin.security.title', 'Paramètres de sécurité')}</p>
+              <p className="text-xs text-ink-faint">{t('dashboard.mfaSessionsAccess')}</p>
             </div>
           </Link>
-          <Link to="/admin/integrations" className="flex items-center gap-3 p-4 rounded-xl bg-white border hover:bg-green-50 hover:border-green-200 transition-all group">
+          <Link to="/admin/integrations" className="flex items-center gap-3 p-4 rounded-[4px] bg-surface border border-hairline hover:bg-green-50 hover:border-green-200 transition-all group">
             <div className="w-9 h-9 rounded-lg bg-green-100 flex items-center justify-center group-hover:bg-green-200 transition-colors">
               <Zap className="w-4 h-4 text-green-600" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-800">{t('admin.integrations.title', 'Intégrations')}</p>
-              <p className="text-xs text-gray-400">{t('dashboard.webhooksApiKeys')}</p>
+              <p className="text-sm font-semibold text-ink">{t('admin.integrations.title', 'Intégrations')}</p>
+              <p className="text-xs text-ink-faint">{t('dashboard.webhooksApiKeys')}</p>
             </div>
           </Link>
         </div>
@@ -204,30 +179,22 @@ export default function DashboardPage() {
   // ── SUPPLIER ───────────────────────────────────────────────────────────────
   if (isSupplier) {
     const sd = supplierDash as Record<string, number> | undefined
-    const kpiItems = [
-      { icon: FileText,    label: t('supplier.portal.submitted'), value: sd?.submittedCount ?? 0,  iconBg: 'bg-blue-100',   iconColor: 'text-blue-600' },
-      { icon: Clock,       label: t('supplier.portal.pending'),   value: sd?.pendingCount   ?? 0,  iconBg: 'bg-amber-100',  iconColor: 'text-amber-600' },
-      { icon: CheckCircle, label: t('supplier.portal.approved'),  value: sd?.approvedCount  ?? 0,  iconBg: 'bg-teal-100',   iconColor: 'text-teal-600' },
-      { icon: DollarSign,  label: t('supplier.portal.paid'),      value: sd?.paidCount      ?? 0,  iconBg: 'bg-green-100',  iconColor: 'text-green-600' },
-      { icon: XCircle,     label: t('supplier.portal.rejected'),  value: sd?.rejectedCount  ?? 0,  iconBg: 'bg-red-100',    iconColor: 'text-red-600' },
+    const kpiItems: KpiBandItem[] = [
+      { label: t('supplier.portal.submitted'), value: sd?.submittedCount ?? 0 },
+      { label: t('supplier.portal.pending'),   value: sd?.pendingCount   ?? 0, tone: 'warn' },
+      { label: t('supplier.portal.approved'),  value: sd?.approvedCount  ?? 0, tone: 'pos' },
+      { label: t('supplier.portal.paid'),      value: sd?.paidCount      ?? 0, tone: 'pos' },
+      { label: t('supplier.portal.rejected'),  value: sd?.rejectedCount  ?? 0, tone: 'crit' },
     ]
     return (
       <div className="space-y-6 page-enter">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('dashboard.title')}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{t('dashboard.supplierRealtimeTracking')}</p>
+          <h1 className="text-2xl font-bold text-ink">{t('dashboard.title')}</h1>
+          <p className="text-sm text-ink-soft mt-0.5">{t('dashboard.supplierRealtimeTracking')}</p>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          {kpiItems.map(({ icon: Icon, label, value, iconBg, iconColor }) => (
-            <div key={label} className="bg-white rounded-xl border p-4 flex flex-col items-center text-center hover:shadow-sm transition-shadow">
-              <div className={`p-3 rounded-full mb-3 ${iconBg}`}><Icon className={`w-5 h-5 ${iconColor}`} /></div>
-              <p className="text-2xl font-bold text-gray-900">{value}</p>
-              <p className="text-xs text-gray-500 mt-1 leading-tight">{label}</p>
-            </div>
-          ))}
-        </div>
+        <KpiBand items={kpiItems} className="grid grid-cols-2 md:grid-cols-5 [&>div]:text-center" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Link to="/supplier/invoices/new" className="flex items-center gap-4 p-5 bg-oct-navy text-white rounded-xl hover:bg-oct-navy-light transition-colors shadow-sm">
+          <Link to="/supplier/invoices/new" className="flex items-center gap-4 p-5 bg-oct-navy text-white rounded-[4px] hover:bg-oct-navy-light transition-colors shadow-sm">
             <div className="w-10 h-10 rounded-lg bg-oct-gold flex items-center justify-center shrink-0">
               <Plus className="w-5 h-5 text-oct-navy" />
             </div>
@@ -237,15 +204,15 @@ export default function DashboardPage() {
             </div>
             <ArrowRight className="w-5 h-5 ml-auto opacity-60" />
           </Link>
-          <Link to="/supplier/invoices" className="flex items-center gap-4 p-5 bg-white border rounded-xl hover:bg-gray-50 transition-colors">
-            <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
-              <FileText className="w-5 h-5 text-gray-600" />
+          <Link to="/supplier/invoices" className="flex items-center gap-4 p-5 bg-surface border border-hairline rounded-[4px] hover:bg-ground transition-colors">
+            <div className="w-10 h-10 rounded-lg bg-ground flex items-center justify-center shrink-0">
+              <FileText className="w-5 h-5 text-ink-soft" />
             </div>
             <div>
-              <p className="font-semibold text-gray-900">{t('supplier.portal.viewInvoices')}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{t('dashboard.statusTracking')}</p>
+              <p className="font-semibold text-ink">{t('supplier.portal.viewInvoices')}</p>
+              <p className="text-xs text-ink-soft mt-0.5">{t('dashboard.statusTracking')}</p>
             </div>
-            <ArrowRight className="w-5 h-5 ml-auto text-gray-300" />
+            <ArrowRight className="w-5 h-5 ml-auto text-ink-faint" />
           </Link>
         </div>
       </div>
@@ -255,59 +222,55 @@ export default function DashboardPage() {
   // ── VALIDATOR (N1/N2) ──────────────────────────────────────────────────────
   if (isValidator) {
     const queue = pendingQueue?.content ?? []
+    const validatorKpis: KpiBandItem[] = [
+      { label: t('dashboard.awaitingMyValidation'), value: queue.length, tone: 'warn' },
+      { label: t('dashboard.processedThisMonth', 'Traitées ce mois'), value: validatorStatsLoading ? '…' : (validatorStats?.processedThisMonth ?? '—') },
+      { label: t('dashboard.approved', 'Approuvées'), value: validatorStatsLoading ? '…' : (validatorStats?.approvedTotal ?? '—'), tone: 'pos' },
+    ]
     return (
       <div className="space-y-6 page-enter">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('dashboard.title')}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{t('dashboard.validatorQueueSub')}</p>
+          <h1 className="text-2xl font-bold text-ink">{t('dashboard.title')}</h1>
+          <p className="text-sm text-ink-soft mt-0.5">{t('dashboard.validatorQueueSub')}</p>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl border p-5 text-center">
-            <p className="text-3xl font-bold text-amber-600">{queue.length}</p>
-            <p className="text-xs text-gray-500 mt-1">{t('dashboard.awaitingMyValidation')}</p>
-          </div>
-          <div className="bg-white rounded-xl border p-5 text-center">
-            <p className="text-3xl font-bold text-gray-900">{validatorStatsLoading ? '…' : (validatorStats?.processedThisMonth ?? '—')}</p>
-            <p className="text-xs text-gray-500 mt-1">{t('dashboard.processedThisMonth', 'Traitées ce mois')}</p>
-          </div>
-          <div className="bg-white rounded-xl border p-5 text-center">
-            <p className="text-3xl font-bold text-green-600">{validatorStatsLoading ? '…' : (validatorStats?.approvedTotal ?? '—')}</p>
-            <p className="text-xs text-gray-500 mt-1">{t('dashboard.approved', 'Approuvées')}</p>
-          </div>
-        </div>
+        <KpiBand items={validatorKpis} className="grid grid-cols-3 [&>div]:text-center" />
 
-        <div className="bg-white rounded-xl border overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b bg-gray-50">
-            <div>
-              <h2 className="font-semibold text-gray-900">{t('dashboard.validatorQueue')}</h2>
-              <p className="text-xs text-gray-500 mt-0.5">{t('dashboard.clickToValidateOrReject')}</p>
+        <Panel
+          className="overflow-hidden"
+          title={
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="font-semibold text-ink">{t('dashboard.validatorQueue')}</h2>
+                <p className="text-xs text-ink-faint mt-0.5">{t('dashboard.clickToValidateOrReject')}</p>
+              </div>
+              <Link to="/approvals" className="flex items-center gap-1 text-sm text-primary font-medium hover:underline">
+                {t('app.view')} <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
-            <Link to="/approvals" className="flex items-center gap-1 text-sm text-primary font-medium hover:underline">
-              {t('app.view')} <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-          <div className="divide-y">
+          }
+        >
+          <div className="divide-y divide-hairline -m-5">
             {queue.slice(0, 6).map((inv) => (
               <Link key={inv.id} to={`/invoices/${inv.id}`}
-                className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50 transition-colors">
-                <span className="font-mono text-xs font-semibold text-primary w-32 shrink-0">{inv.referenceNumber}</span>
-                <span className="text-sm text-gray-700 truncate flex-1">{inv.supplierName}</span>
+                className="flex items-center gap-4 px-5 py-3.5 hover:bg-ground transition-colors">
+                <span className="num text-xs font-semibold text-primary w-32 shrink-0">{inv.referenceNumber}</span>
+                <span className="text-sm text-ink-soft truncate flex-1">{inv.supplierName}</span>
                 <StatusBadge status={inv.status as InvoiceStatus} />
-                <span className="text-sm font-mono text-gray-700 text-right w-28 shrink-0">
-                  {formatAmount(inv.amount)} XOF
+                <span className="num text-sm text-ink-soft text-right w-28 shrink-0">
+                  {formatAmount(inv.amount)} <span className="text-ink-faint">XOF</span>
                 </span>
-                <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
+                <ChevronRight className="w-4 h-4 text-ink-faint shrink-0" />
               </Link>
             ))}
             {queue.length === 0 && (
-              <div className="py-10 text-sm text-center text-gray-400">
-                <CheckCircle className="w-8 h-8 mx-auto mb-2 text-green-300" />
+              <div className="py-10 text-sm text-center text-ink-faint">
+                <CheckCircle className="w-8 h-8 mx-auto mb-2 text-pos" />
                 {t('approvals.empty')}
               </div>
             )}
           </div>
-        </div>
+        </Panel>
       </div>
     )
   }
@@ -323,12 +286,19 @@ export default function DashboardPage() {
         .map(([name, value]) => ({ name: name.length > 15 ? name.slice(0, 15) + '…' : name, value }))
     : []
 
+  const aaKpis: KpiBandItem[] = [
+    { label: t('dashboard.totalInvoices'), value: kpi?.totalInvoices ?? '—' },
+    { label: t('dashboard.overdueInvoices'), value: kpi?.overdueCount ?? '—', tone: 'crit' },
+    { label: t('dashboard.avgProcessingTime'), value: kpi ? `${kpi.averageProcessingTimeDays.toFixed(1)} j.` : '—', tone: 'warn' },
+    { label: t('dashboard.rejectionRate'), value: kpi ? `${(kpi.rejectionRate * 100).toFixed(1)} %` : '—', tone: 'hot' },
+  ]
+
   return (
     <div className="space-y-6 page-enter">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('dashboard.title')}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{t('dashboard.invoiceProcessingOverview')}</p>
+          <h1 className="text-2xl font-bold text-ink">{t('dashboard.title')}</h1>
+          <p className="text-sm text-ink-soft mt-0.5">{t('dashboard.invoiceProcessingOverview')}</p>
         </div>
         {isAA && (
           <Link to="/invoices/new"
@@ -348,84 +318,63 @@ export default function DashboardPage() {
 
       {/* KPI Cards */}
       {canViewKpis && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <KpiCard
-            title={t('dashboard.totalInvoices')}
-            value={kpi?.totalInvoices ?? '—'}
-            icon={<TrendingUp className="w-5 h-5 text-blue-600" />}
-            iconBg="bg-blue-50"
-          />
-          <KpiCard
-            title={t('dashboard.overdueInvoices')}
-            value={kpi?.overdueCount ?? '—'}
-            icon={<AlertTriangle className="w-5 h-5 text-red-500" />}
-            iconBg="bg-red-50"
-          />
-          <KpiCard
-            title={t('dashboard.avgProcessingTime')}
-            value={kpi ? `${kpi.averageProcessingTimeDays.toFixed(1)} j.` : '—'}
-            icon={<Clock className="w-5 h-5 text-amber-500" />}
-            iconBg="bg-amber-50"
-          />
-          <KpiCard
-            title={t('dashboard.rejectionRate')}
-            value={kpi ? `${(kpi.rejectionRate * 100).toFixed(1)} %` : '—'}
-            icon={<XCircle className="w-5 h-5 text-orange-500" />}
-            iconBg="bg-orange-50"
-          />
-        </div>
+        <KpiBand items={aaKpis} className="grid grid-cols-2 lg:grid-cols-4" />
       )}
 
       {/* Quick Actions for AA */}
       {isAA && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <QuickLink to="/invoices/new" icon={Plus} label={t('breadcrumb.newInvoice')} sub={t('dashboard.enterSupplierInvoice')} color="bg-oct-navy text-white border-transparent hover:bg-oct-navy-light" />
-          <QuickLink to="/admin/suppliers" icon={Users} label={t('nav.suppliers')} sub={t('dashboard.manageRegistry')} color="bg-white text-gray-800 border-gray-200 hover:bg-gray-50" />
-          <QuickLink to="/purchase-orders" icon={FileText} label={t('nav.purchaseOrders', 'Bons de commande')} sub={t('dashboard.viewPurchaseOrders')} color="bg-white text-gray-800 border-gray-200 hover:bg-gray-50" />
+          <QuickLink to="/admin/suppliers" icon={Users} label={t('nav.suppliers')} sub={t('dashboard.manageRegistry')} color="bg-surface text-ink border-hairline hover:bg-ground" />
+          <QuickLink to="/purchase-orders" icon={FileText} label={t('nav.purchaseOrders', 'Bons de commande')} sub={t('dashboard.viewPurchaseOrders')} color="bg-surface text-ink border-hairline hover:bg-ground" />
         </div>
       )}
 
       {/* Processing queue */}
       {(isAA || isDaf) && (
-        <div className="bg-white rounded-xl border overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b bg-gray-50">
-            <div>
-              <h2 className="font-semibold text-gray-900">{t('dashboard.processingQueue')}</h2>
-              <p className="text-xs text-gray-500 mt-0.5">{t('dashboard.processingQueueSub')}</p>
+        <Panel
+          className="overflow-hidden"
+          title={
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="font-semibold text-ink">{t('dashboard.processingQueue')}</h2>
+                <p className="text-xs text-ink-faint mt-0.5">{t('dashboard.processingQueueSub')}</p>
+              </div>
+              <Link to="/invoices" className="flex items-center gap-1 text-sm text-primary font-medium hover:underline">
+                {t('app.view')} <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
-            <Link to="/invoices" className="flex items-center gap-1 text-sm text-primary font-medium hover:underline">
-              {t('app.view')} <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-          <div className="divide-y">
+          }
+        >
+          <div className="divide-y divide-hairline -m-5">
             {(pendingQueue?.content ?? []).map((invoice) => (
               <Link key={invoice.id} to={`/invoices/${invoice.id}`}
-                className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50 transition-colors">
-                <span className="font-mono text-xs font-semibold text-primary w-32 shrink-0">{invoice.referenceNumber}</span>
-                <span className="text-sm text-gray-700 truncate flex-1">{invoice.supplierName}</span>
+                className="flex items-center gap-4 px-5 py-3.5 hover:bg-ground transition-colors">
+                <span className="num text-xs font-semibold text-primary w-32 shrink-0">{invoice.referenceNumber}</span>
+                <span className="text-sm text-ink-soft truncate flex-1">{invoice.supplierName}</span>
                 <StatusBadge status={invoice.status as InvoiceStatus} />
-                <span className="text-sm font-mono text-gray-700 text-right w-28 shrink-0">
-                  {formatAmount(invoice.amount)} XOF
+                <span className="num text-sm text-ink-soft text-right w-28 shrink-0">
+                  {formatAmount(invoice.amount)} <span className="text-ink-faint">XOF</span>
                 </span>
-                <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
+                <ChevronRight className="w-4 h-4 text-ink-faint shrink-0" />
               </Link>
             ))}
             {(!pendingQueue?.content || pendingQueue.content.length === 0) && (
-              <div className="py-10 text-sm text-center text-gray-400">
-                <CheckCircle className="w-8 h-8 mx-auto mb-2 text-green-300" />
+              <div className="py-10 text-sm text-center text-ink-faint">
+                <CheckCircle className="w-8 h-8 mx-auto mb-2 text-pos" />
                 {t('dashboard.noPendingItems')}
               </div>
             )}
           </div>
-        </div>
+        </Panel>
       )}
 
       {/* Charts */}
       {canViewKpis && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl border p-5">
-            <h2 className="font-semibold text-gray-800 mb-1">{t('dashboard.invoicesByStatus')}</h2>
-            <p className="text-xs text-gray-400 mb-4">{t('dashboard.statusDistribution')}</p>
+          <Panel className="p-5">
+            <h2 className="font-semibold text-ink mb-1">{t('dashboard.invoicesByStatus')}</h2>
+            <p className="text-xs text-ink-faint mb-4">{t('dashboard.statusDistribution')}</p>
             {pieData.length > 0 ? (
               <ResponsiveContainer width="100%" height={220}>
                 <PieChart>
@@ -439,13 +388,13 @@ export default function DashboardPage() {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-[220px] text-gray-400 text-sm">{t('app.noData')}</div>
+              <div className="flex items-center justify-center h-[220px] text-ink-faint text-sm">{t('app.noData')}</div>
             )}
-          </div>
+          </Panel>
 
-          <div className="bg-white rounded-xl border p-5">
-            <h2 className="font-semibold text-gray-800 mb-1">{t('dashboard.topSuppliers')}</h2>
-            <p className="text-xs text-gray-400 mb-4">{t('dashboard.topSuppliersSubtitle')}</p>
+          <Panel className="p-5">
+            <h2 className="font-semibold text-ink mb-1">{t('dashboard.topSuppliers')}</h2>
+            <p className="text-xs text-ink-faint mb-4">{t('dashboard.topSuppliersSubtitle')}</p>
             {supplierData.length > 0 ? (
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={supplierData} layout="vertical">
@@ -460,18 +409,18 @@ export default function DashboardPage() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-[220px] text-gray-400 text-sm">{t('app.noData')}</div>
+              <div className="flex items-center justify-center h-[220px] text-ink-faint text-sm">{t('app.noData')}</div>
             )}
-          </div>
+          </Panel>
         </div>
       )}
 
       {/* DAF shortcuts */}
       {isDaf && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <QuickLink to="/payments" icon={DollarSign} label={t('nav.payments')} sub={t('dashboard.paymentsPendingSub')} color="bg-white text-gray-800 border-gray-200 hover:bg-gray-50" />
-          <QuickLink to="/reports" icon={BarChart3} label={t('nav.reports')} sub={t('dashboard.reportsStatsSub')} color="bg-white text-gray-800 border-gray-200 hover:bg-gray-50" />
-          <QuickLink to="/financial-audit" icon={ScrollText} label={t('nav.financialAudit')} sub={t('dashboard.operationsLogSub')} color="bg-white text-gray-800 border-gray-200 hover:bg-gray-50" />
+          <QuickLink to="/payments" icon={DollarSign} label={t('nav.payments')} sub={t('dashboard.paymentsPendingSub')} color="bg-surface text-ink border-hairline hover:bg-ground" />
+          <QuickLink to="/reports" icon={BarChart3} label={t('nav.reports')} sub={t('dashboard.reportsStatsSub')} color="bg-surface text-ink border-hairline hover:bg-ground" />
+          <QuickLink to="/financial-audit" icon={ScrollText} label={t('nav.financialAudit')} sub={t('dashboard.operationsLogSub')} color="bg-surface text-ink border-hairline hover:bg-ground" />
         </div>
       )}
     </div>
