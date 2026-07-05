@@ -109,17 +109,17 @@ export default function DashboardPage() {
 
         {/* Primary admin actions */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Link to="/admin/users" className="group flex flex-col items-center p-5 rounded-xl bg-primary/10 hover:bg-blue-100 border border-blue-100 transition-all hover:shadow-sm text-center">
+          <Link to="/admin/users" className="group flex flex-col items-center p-5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-100 transition-all hover:shadow-sm text-center">
             <div className="w-12 h-12 rounded-xl bg-blue-100 group-hover:bg-blue-200 flex items-center justify-center mb-3 transition-colors">
-              <Users className="w-6 h-6 text-primary" />
+              <Users className="w-6 h-6 text-blue-600" />
             </div>
             <span className="text-sm font-semibold text-blue-800">{t('nav.users')}</span>
             <span className="text-xs text-blue-500 mt-0.5">{t('dashboard.manageAccounts', 'Gérer les comptes')}</span>
           </Link>
 
-          <Link to="/admin/departments" className="group flex flex-col items-center p-5 rounded-xl bg-primary/10 hover:bg-indigo-100 border border-indigo-100 transition-all hover:shadow-sm text-center">
+          <Link to="/admin/departments" className="group flex flex-col items-center p-5 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 transition-all hover:shadow-sm text-center">
             <div className="w-12 h-12 rounded-xl bg-indigo-100 group-hover:bg-indigo-200 flex items-center justify-center mb-3 transition-colors">
-              <Building2 className="w-6 h-6 text-primary" />
+              <Building2 className="w-6 h-6 text-indigo-600" />
             </div>
             <span className="text-sm font-semibold text-indigo-800">{t('nav.departments')}</span>
             <span className="text-xs text-indigo-500 mt-0.5">{t('dashboard.deptMatrix', 'Départements & matrice')}</span>
@@ -153,18 +153,18 @@ export default function DashboardPage() {
               <p className="text-xs text-ink-faint">{t('dashboard.validationWorkflows')}</p>
             </div>
           </Link>
-          <Link to="/admin/security" className="flex items-center gap-3 p-4 rounded-[4px] bg-surface border border-hairline hover:bg-crit/10 hover:border-red-200 transition-all group">
-            <div className="w-9 h-9 rounded-lg bg-crit/10 flex items-center justify-center group-hover:bg-red-200 transition-colors">
-              <Shield className="w-4 h-4 text-crit" />
+          <Link to="/admin/security" className="flex items-center gap-3 p-4 rounded-[4px] bg-surface border border-hairline hover:bg-red-50 hover:border-red-200 transition-all group">
+            <div className="w-9 h-9 rounded-lg bg-red-100 flex items-center justify-center group-hover:bg-red-200 transition-colors">
+              <Shield className="w-4 h-4 text-red-600" />
             </div>
             <div>
               <p className="text-sm font-semibold text-ink">{t('admin.security.title', 'Paramètres de sécurité')}</p>
               <p className="text-xs text-ink-faint">{t('dashboard.mfaSessionsAccess')}</p>
             </div>
           </Link>
-          <Link to="/admin/integrations" className="flex items-center gap-3 p-4 rounded-[4px] bg-surface border border-hairline hover:bg-pos/10 hover:border-green-200 transition-all group">
-            <div className="w-9 h-9 rounded-lg bg-pos/10 flex items-center justify-center group-hover:bg-green-200 transition-colors">
-              <Zap className="w-4 h-4 text-pos" />
+          <Link to="/admin/integrations" className="flex items-center gap-3 p-4 rounded-[4px] bg-surface border border-hairline hover:bg-green-50 hover:border-green-200 transition-all group">
+            <div className="w-9 h-9 rounded-lg bg-green-100 flex items-center justify-center group-hover:bg-green-200 transition-colors">
+              <Zap className="w-4 h-4 text-green-600" />
             </div>
             <div>
               <p className="text-sm font-semibold text-ink">{t('admin.integrations.title', 'Intégrations')}</p>

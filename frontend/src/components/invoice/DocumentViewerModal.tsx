@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Panel } from "@/components/ui/Panel"
-import {  Download  } from 'lucide-react'
+import { Download } from 'lucide-react'
 import { ViewerToolbar } from './ViewerToolbar'
 import { PdfDocument } from './PdfDocument'
 
@@ -42,14 +41,14 @@ export function DocumentViewerModal({ url, filename, fileType, onClose }: Docume
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-surface rounded-2xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 py-3 border-b">
-          <h2 className="text-sm font-semibold text-ink truncate">{filename}</h2>
+          <h2 className="text-sm font-semibold text-gray-800 truncate">{filename}</h2>
           <div className="flex items-center gap-3">
-            <a href={url} download className="text-ink-faint hover:text-primary" title={t('app.download', 'Télécharger')}>
+            <a href={url} download className="text-gray-500 hover:text-primary" title={t('app.download', 'Télécharger')}>
               <Download className="w-4 h-4" />
             </a>
-            <button onClick={onClose} className="text-ink-faint hover:text-ink-soft text-xl leading-none">×</button>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
           </div>
         </div>
 
@@ -70,7 +69,7 @@ export function DocumentViewerModal({ url, filename, fileType, onClose }: Docume
           />
         )}
 
-        <div className="flex-1 overflow-auto bg-ground flex items-center justify-center">
+        <div className="flex-1 overflow-auto bg-gray-100 flex items-center justify-center">
           {isPdf && !pdfError ? (
             <PdfDocument
               url={url}
@@ -89,7 +88,7 @@ export function DocumentViewerModal({ url, filename, fileType, onClose }: Docume
               onError={() => setPdfError(true)}
             />
           ) : (
-            <div className="text-center text-sm text-ink-faint p-8">
+            <div className="text-center text-sm text-gray-500 p-8">
               <p>{pdfError ? t('invoice.viewer.loadError', 'Impossible de charger le document.') : t('invoice.viewer.noPreview', 'Aperçu non disponible pour ce type de fichier.')}</p>
               <a href={url} download className="inline-flex items-center gap-1.5 mt-3 text-primary hover:underline">
                 <Download className="w-4 h-4" /> {t('app.download', 'Télécharger')}

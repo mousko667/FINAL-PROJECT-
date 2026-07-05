@@ -8,7 +8,6 @@ import { ExportMenu } from '@/components/ui/ExportMenu'
 import AuditSummary from '@/components/audit/AuditSummary'
 import RetentionComplianceCard from '@/components/audit/RetentionComplianceCard'
 import { formatDateTime } from '@/lib/format'
-import { Panel } from '@/components/ui/Panel'
 
 interface AuditLog {
   id: string
@@ -66,39 +65,39 @@ function RecentActivityPanel() {
   const recent = data?.content ?? []
 
   return (
-    <Panel className="p-4">
+    <div className="bg-white rounded-xl border p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Activity className="w-5 h-5 text-primary" />
-          <h2 className="font-semibold text-ink">{t('admin.audit.recent.title')}</h2>
+          <h2 className="font-semibold text-gray-800">{t('admin.audit.recent.title')}</h2>
         </div>
-        <span className="flex items-center gap-1.5 text-xs text-ink-faint">
-          <span className={`w-2 h-2 rounded-full ${isFetching ? 'bg-pos animate-pulse' : 'bg-pos'}`} />
+        <span className="flex items-center gap-1.5 text-xs text-gray-400">
+          <span className={`w-2 h-2 rounded-full ${isFetching ? 'bg-green-500 animate-pulse' : 'bg-green-400'}`} />
           {t('admin.audit.recent.live')}
         </span>
       </div>
       {recent.length === 0 ? (
-        <p className="text-sm text-ink-faint py-2">{t('app.noData')}</p>
+        <p className="text-sm text-gray-400 py-2">{t('app.noData')}</p>
       ) : (
-        <ul className="divide-y divide-hairline">
+        <ul className="divide-y">
           {recent.map((log) => (
             <li key={log.id} className="flex items-center justify-between gap-3 py-2 text-sm">
               <div className="flex items-center gap-2 min-w-0">
-                <span className="num text-xs bg-warn-bg text-warn px-2 py-0.5 rounded-[4px] border border-warn/30 shrink-0">
+                <span className="text-xs font-mono bg-amber-50 text-amber-700 px-2 py-0.5 rounded border border-amber-100 shrink-0">
                   {log.action}
                 </span>
-                <span className="text-ink-soft truncate">
+                <span className="text-gray-600 truncate">
                   {log.performedBy?.username ?? '—'} · {log.entityType}
                 </span>
               </div>
-              <span className="text-xs text-ink-faint whitespace-nowrap shrink-0">
+              <span className="text-xs text-gray-400 whitespace-nowrap shrink-0">
                 {relativeTime(log.createdAt ?? log.performedAt, t)}
               </span>
             </li>
           ))}
         </ul>
       )}
-    </Panel>
+    </div>
   )
 }
 
@@ -124,25 +123,25 @@ function AnomalyPanel() {
   if (anomalies.length === 0) return null
 
   return (
-    <Panel className="p-4 border-crit/30">
+    <div className="bg-white rounded-xl border border-red-200 p-4">
       <div className="flex items-center gap-2 mb-3">
-        <Activity className="w-5 h-5 text-crit" />
-        <h2 className="font-semibold text-ink">{t('admin.audit.anomalies.title', 'Anomalies détectées')}</h2>
+        <Activity className="w-5 h-5 text-red-600" />
+        <h2 className="font-semibold text-gray-800">{t('admin.audit.anomalies.title', 'Anomalies détectées')}</h2>
       </div>
-      <ul className="divide-y divide-hairline">
+      <ul className="divide-y">
         {anomalies.map((a, i) => (
           <li key={i} className="flex items-center justify-between gap-3 py-2 text-sm">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="num text-xs bg-crit-bg text-crit px-2 py-0.5 rounded-[4px] border border-crit/30 shrink-0">
+              <span className="text-xs font-mono bg-red-50 text-red-700 px-2 py-0.5 rounded border border-red-100 shrink-0">
                 {t(`admin.audit.anomalies.${a.type}`, a.type)}
               </span>
-              <span className="text-ink-soft truncate">{a.username}</span>
+              <span className="text-gray-700 truncate">{a.username}</span>
             </div>
-            <span className="text-xs text-ink-faint text-right">{a.detail}</span>
+            <span className="text-xs text-gray-500 text-right">{a.detail}</span>
           </li>
         ))}
       </ul>
-    </Panel>
+    </div>
   )
 }
 
@@ -172,7 +171,7 @@ export default function AdminAuditPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-ink">{t('admin.audit.title')}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('admin.audit.title')}</h1>
         {tab === 'journal' && (
           <ExportMenu endpoint="/audit-logs/export" filename="audit"
             params={{ entityType: filters.entityType, action: filters.action }} />
@@ -180,13 +179,13 @@ export default function AdminAuditPage() {
       </div>
 
       {/* M10 #12: Journal / Synthèse tabs */}
-      <div className="flex gap-2 border-b border-hairline">
+      <div className="flex gap-2 border-b">
         <button onClick={() => setTab('journal')}
-          className={`px-4 py-2 text-sm font-medium border-b-2 ${tab === 'journal' ? 'border-primary text-primary' : 'border-transparent text-ink-soft'}`}>
+          className={`px-4 py-2 text-sm font-medium border-b-2 ${tab === 'journal' ? 'border-primary text-primary' : 'border-transparent text-gray-500'}`}>
           {t('admin.audit.summary.tabJournal')}
         </button>
         <button onClick={() => setTab('summary')}
-          className={`px-4 py-2 text-sm font-medium border-b-2 ${tab === 'summary' ? 'border-primary text-primary' : 'border-transparent text-ink-soft'}`}>
+          className={`px-4 py-2 text-sm font-medium border-b-2 ${tab === 'summary' ? 'border-primary text-primary' : 'border-transparent text-gray-500'}`}>
           {t('admin.audit.summary.tabSummary')}
         </button>
       </div>
@@ -205,9 +204,9 @@ export default function AdminAuditPage() {
       <RecentActivityPanel />
 
       {/* Filters */}
-      <Panel className="p-4 flex flex-wrap gap-3">
-        <div className="flex items-center gap-2 border border-hairline rounded-[4px] px-3 py-2 text-sm flex-1 min-w-[180px]">
-          <Search className="w-4 h-4 text-ink-faint shrink-0" />
+      <div className="bg-white rounded-xl border p-4 flex flex-wrap gap-3">
+        <div className="flex items-center gap-2 border rounded-lg px-3 py-2 text-sm flex-1 min-w-[180px]">
+          <Search className="w-4 h-4 text-muted-foreground shrink-0" />
           <input
             id="audit-filter-user"
             className="outline-none w-full bg-transparent"
@@ -217,47 +216,47 @@ export default function AdminAuditPage() {
         </div>
         <input
           id="audit-filter-entity"
-          className="border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-surface"
+          className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           placeholder={t('admin.audit.entity')}
           onChange={(e) => handleFilter('entityType', e.target.value)}
         />
         <input
           id="audit-filter-action"
-          className="border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-surface"
+          className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           placeholder={t('admin.audit.action')}
           onChange={(e) => handleFilter('action', e.target.value)}
         />
-      </Panel>
+      </div>
 
       {/* Table */}
-      <Panel>
+      <div className="bg-white rounded-xl border overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-6 h-6 animate-spin text-ink-faint" />
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
         ) : (
           <>
             <table className="w-full text-sm">
-              <thead className="bg-ground">
+              <thead className="bg-gray-50 border-b">
                 <tr>
-                  <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.audit.date')}</th>
-                  <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.audit.user')}</th>
-                  <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.audit.action')}</th>
-                  <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.audit.entity')}</th>
-                  <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.audit.details')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.audit.date')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.audit.user')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.audit.action')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.audit.entity')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.audit.details')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-hairline">
+              <tbody className="divide-y">
                 {logs.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="text-center py-16 text-ink-faint">
+                    <td colSpan={5} className="text-center py-16 text-muted-foreground">
                       {t('app.noData')}
                     </td>
                   </tr>
                 ) : (
                   logs.map((log) => (
-                    <tr key={log.id} className="hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)]">
-                      <td className="px-4 py-3 text-xs text-ink-faint whitespace-nowrap num">
+                    <tr key={log.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
                         {(() => {
                           const raw = log.createdAt ?? log.performedAt
                           if (!raw) return '—'
@@ -265,22 +264,22 @@ export default function AdminAuditPage() {
                           return isNaN(d.getTime()) ? raw : formatDateTime(d)
                         })()}
                       </td>
-                      <td className="px-4 py-3 font-medium text-ink-soft text-xs">
+                      <td className="px-4 py-3 font-medium text-gray-700 text-xs">
                         <div>{log.performedBy?.username ?? '—'}</div>
-                        {log.ipAddress && <div className="text-ink-faint num">{log.ipAddress}</div>}
+                        {log.ipAddress && <div className="text-gray-400 font-mono">{log.ipAddress}</div>}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="num text-xs bg-warn-bg text-warn px-2 py-0.5 rounded-[4px] border border-warn/30 break-all">
+                        <span className="text-xs font-mono bg-amber-50 text-amber-700 px-2 py-0.5 rounded border border-amber-100 break-all">
                           {log.action}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-ink-soft text-xs">
+                      <td className="px-4 py-3 text-gray-600 text-xs">
                         <div>{log.entityType}</div>
                         {log.entityId && (
-                          <span className="text-ink-faint num">{log.entityId.slice(0, 40)}</span>
+                          <span className="text-muted-foreground font-mono">{log.entityId.slice(0, 40)}</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-xs text-ink-faint max-w-xs truncate">
+                      <td className="px-4 py-3 text-xs text-gray-500 max-w-xs truncate">
                         {log.details ?? log.newValue ?? '—'}
                       </td>
                     </tr>
@@ -291,8 +290,8 @@ export default function AdminAuditPage() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-hairline bg-ground">
-                <span className="text-sm text-ink-faint">
+              <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
+                <span className="text-sm text-muted-foreground">
                   {t('pagination.page')} {currentPage + 1} {t('pagination.of')} {totalPages}
                 </span>
                 <div className="flex gap-2">
@@ -300,7 +299,7 @@ export default function AdminAuditPage() {
                     id="audit-btn-prev"
                     disabled={currentPage === 0}
                     onClick={() => setFilters((p) => ({ ...p, page: p.page - 1 }))}
-                    className="flex items-center gap-1 px-3 py-1.5 text-sm border border-hairline rounded-[4px] disabled:opacity-40 hover:bg-surface transition-colors"
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm border rounded-lg disabled:opacity-40 hover:bg-white transition-colors"
                   >
                     <ChevronLeft className="w-4 h-4" /> {t('pagination.previous')}
                   </button>
@@ -308,7 +307,7 @@ export default function AdminAuditPage() {
                     id="audit-btn-next"
                     disabled={currentPage >= totalPages - 1}
                     onClick={() => setFilters((p) => ({ ...p, page: p.page + 1 }))}
-                    className="flex items-center gap-1 px-3 py-1.5 text-sm border border-hairline rounded-[4px] disabled:opacity-40 hover:bg-surface transition-colors"
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm border rounded-lg disabled:opacity-40 hover:bg-white transition-colors"
                   >
                     {t('pagination.next')} <ChevronRight className="w-4 h-4" />
                   </button>
@@ -317,7 +316,7 @@ export default function AdminAuditPage() {
             )}
           </>
         )}
-      </Panel>
+      </div>
       </>
       )}
     </div>

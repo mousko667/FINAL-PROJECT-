@@ -13,10 +13,10 @@ interface RoleGuardProps {
 const DefaultFallback = () => {
   const { t } = useTranslation()
   return (
-    <div className="flex flex-col items-center justify-center h-64 gap-3 text-ink-faint">
+    <div className="flex flex-col items-center justify-center h-64 gap-3 text-gray-400">
       <ShieldOff className="w-10 h-10" />
       <p className="text-sm font-medium">{t('roleGuard.unauthorized')}</p>
-      <p className="text-xs text-ink-faint">{t('roleGuard.unauthorizedDetail')}</p>
+      <p className="text-xs text-gray-400">{t('roleGuard.unauthorizedDetail')}</p>
     </div>
   )
 }

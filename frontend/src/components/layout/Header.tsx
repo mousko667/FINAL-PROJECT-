@@ -119,7 +119,7 @@ export default function Header() {
           <button
             id="btn-logout"
             onClick={handleLogout}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-ink-faint hover:text-crit hover:bg-crit/10 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-ink-faint hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             aria-label={t('auth.logout')}
             title={t('auth.logout')}
           >

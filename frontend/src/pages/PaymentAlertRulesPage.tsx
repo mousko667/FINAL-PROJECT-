@@ -4,8 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import apiClient from '@/services/apiClient'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
-import { Panel } from "@/components/ui/Panel"
-import {  Loader2, Plus, Trash2, Save, X, ArrowLeft, BellRing  } from 'lucide-react'
+import { Loader2, Plus, Trash2, Save, X, ArrowLeft, BellRing } from 'lucide-react'
 
 interface AlertRule {
   id: string
@@ -59,12 +58,12 @@ export default function PaymentAlertRulesPage() {
       <div className="max-w-3xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link to="/payments" className="p-2 hover:bg-ground rounded-full transition-colors">
-              <ArrowLeft className="w-5 h-5 text-ink-soft" />
+            <Link to="/payments" className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+              <ArrowLeft className="w-5 h-5 text-gray-600" />
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-ink">{t('paymentAlerts.title', 'Payment Alert Rules')}</h1>
-              <p className="text-sm text-ink-faint mt-0.5">{t('paymentAlerts.subtitle', 'Configure when payment due-date reminders are sent (J-N).')}</p>
+              <h1 className="text-2xl font-bold text-gray-900">{t('paymentAlerts.title', 'Payment Alert Rules')}</h1>
+              <p className="text-sm text-gray-500 mt-0.5">{t('paymentAlerts.subtitle', 'Configure when payment due-date reminders are sent (J-N).')}</p>
             </div>
           </div>
           {!editor && (
@@ -79,10 +78,10 @@ export default function PaymentAlertRulesPage() {
         </div>
 
         {editor ? (
-          <div className="bg-surface rounded-xl border border-hairline p-6 space-y-5">
+          <div className="bg-white rounded-xl border p-6 space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <label className="block text-sm font-medium text-ink-soft mb-1">{t('paymentAlerts.daysBeforeDue', 'Days before due date')} *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('paymentAlerts.daysBeforeDue', 'Days before due date')} *</label>
                 <input
                   type="number"
                   min={0}
@@ -91,10 +90,10 @@ export default function PaymentAlertRulesPage() {
                   onChange={e => setEditor({ ...editor, daysBeforeDue: Number(e.target.value) })}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
-                <p className="text-xs text-ink-faint mt-1">{t('paymentAlerts.daysHint', 'Alert is sent when an invoice is this many days from its due date.')}</p>
+                <p className="text-xs text-gray-400 mt-1">{t('paymentAlerts.daysHint', 'Alert is sent when an invoice is this many days from its due date.')}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink-soft mb-1">{t('paymentAlerts.label', 'Label')}</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('paymentAlerts.label', 'Label')}</label>
                 <input
                   value={editor.label}
                   onChange={e => setEditor({ ...editor, label: e.target.value })}
@@ -104,19 +103,19 @@ export default function PaymentAlertRulesPage() {
               </div>
             </div>
 
-            <label className="flex items-center gap-2 text-sm text-ink-soft">
+            <label className="flex items-center gap-2 text-sm text-gray-700">
               <input type="checkbox" checked={editor.active} onChange={e => setEditor({ ...editor, active: e.target.checked })} />
               {t('paymentAlerts.active', 'Active')}
             </label>
 
             {saveMutation.isError && (
-              <p className="text-sm text-crit bg-crit/10 p-3 rounded-md border border-red-200">
+              <p className="text-sm text-red-600 bg-red-50 p-3 rounded-md border border-red-200">
                 {t('paymentAlerts.saveError', 'Failed to save the rule (a rule for this number of days may already exist).')}
               </p>
             )}
 
             <div className="flex items-center justify-end gap-3 pt-2 border-t">
-              <button onClick={() => setEditor(null)} className="flex items-center gap-2 px-4 py-2 border rounded-lg text-sm hover:bg-ground">
+              <button onClick={() => setEditor(null)} className="flex items-center gap-2 px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">
                 <X className="w-4 h-4" /> {t('app.cancel', 'Cancel')}
               </button>
               <button
@@ -132,28 +131,28 @@ export default function PaymentAlertRulesPage() {
         ) : isLoading ? (
           <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
         ) : (
-          <div className="bg-surface rounded-xl border border-hairline overflow-hidden">
+          <div className="bg-white rounded-xl border overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-ground border-b">
+              <thead className="bg-gray-50 border-b">
                 <tr>
-                  <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('paymentAlerts.daysBeforeDue', 'Days before due')}</th>
-                  <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('paymentAlerts.label', 'Label')}</th>
-                  <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('paymentAlerts.active', 'Active')}</th>
-                  <th className="text-right px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('app.actions', 'Actions')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('paymentAlerts.daysBeforeDue', 'Days before due')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('paymentAlerts.label', 'Label')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('paymentAlerts.active', 'Active')}</th>
+                  <th className="text-right px-4 py-3 font-medium text-gray-600">{t('app.actions', 'Actions')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-hairline">
+              <tbody className="divide-y">
                 {(!rules || rules.length === 0) ? (
                   <tr><td colSpan={4} className="text-center py-16 text-muted-foreground">
                     <BellRing className="w-8 h-8 mx-auto mb-2 text-gray-300" />
                     {t('paymentAlerts.empty', 'No rules — the default 7-day reminder applies.')}
                   </td></tr>
                 ) : rules.map(rule => (
-                  <tr key={rule.id} className="group hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)]">
+                  <tr key={rule.id} className="hover:bg-gray-50 group">
                     <td className="px-4 py-3 font-medium">J-{rule.daysBeforeDue}</td>
-                    <td className="px-4 py-3 text-ink-faint">{rule.label || '—'}</td>
+                    <td className="px-4 py-3 text-gray-500">{rule.label || '—'}</td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs px-2 py-0.5 rounded ${rule.active ? 'bg-pos/10 text-pos' : 'bg-ground text-ink-faint'}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded ${rule.active ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                         {rule.active ? t('paymentAlerts.active', 'Active') : t('paymentAlerts.inactive', 'Inactive')}
                       </span>
                     </td>
@@ -163,7 +162,7 @@ export default function PaymentAlertRulesPage() {
                           className="text-sm text-primary hover:underline">{t('app.edit', 'Edit')}</button>
                         <button
                           onClick={() => { if (confirm(t('paymentAlerts.deleteConfirm', 'Delete this rule?'))) deleteMutation.mutate(rule.id) }}
-                          className="p-1 text-ink-faint hover:text-crit" title={t('app.delete', 'Delete')}>
+                          className="p-1 text-gray-400 hover:text-red-600" title={t('app.delete', 'Delete')}>
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>

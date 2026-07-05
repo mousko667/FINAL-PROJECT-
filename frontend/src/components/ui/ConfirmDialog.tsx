@@ -62,14 +62,14 @@ export function ConfirmDialog({
         aria-describedby="confirm-dialog-message"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
-        className="bg-surface rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-5"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-5"
       >
         <div>
-          <h2 id="confirm-dialog-title" className="text-lg font-bold text-ink">{title}</h2>
-          <p id="confirm-dialog-message" className="text-sm text-ink-soft mt-2">{message}</p>
+          <h2 id="confirm-dialog-title" className="text-lg font-bold text-gray-900">{title}</h2>
+          <p id="confirm-dialog-message" className="text-sm text-gray-600 mt-2">{message}</p>
         </div>
         <div className="flex justify-end gap-3">
-          <button type="button" onClick={onCancel} className="px-4 py-2 border rounded-lg text-sm hover:bg-ground transition-colors">
+          <button type="button" onClick={onCancel} className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50 transition-colors">
             {cancelLabel ?? t('app.cancel')}
           </button>
           <button type="button" ref={confirmBtnRef} onClick={onConfirm} className={confirmBtnClass}>

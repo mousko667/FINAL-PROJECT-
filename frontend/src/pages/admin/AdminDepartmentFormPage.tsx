@@ -7,7 +7,6 @@ import apiClient from '@/services/apiClient'
 import { Loader2, ArrowLeft } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
 import { ROLE_OPTIONS } from '@/constants/roles'
-import { Panel } from '@/components/ui/Panel'
 
 // Matches the backend DepartmentCreateRequest: code, nameFr, nameEn, requiresN2, n1Role, n2Role (+ optional budget via update).
 const departmentSchema = z.object({
@@ -61,58 +60,57 @@ export default function AdminDepartmentFormPage() {
   }
 
   const inputCls =
-    'w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-surface'
+    'w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
         <button
           onClick={() => navigate('/admin/departments')}
-          className="p-2 hover:bg-ground rounded-full transition-colors"
+          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
         >
-          <ArrowLeft className="w-5 h-5 text-ink-soft" />
+          <ArrowLeft className="w-5 h-5 text-gray-600" />
         </button>
-        <h1 className="text-2xl font-bold text-ink">
+        <h1 className="text-2xl font-bold text-gray-900">
           {t('admin.departments.create', 'Créer un département')}
         </h1>
       </div>
 
-      <Panel className="p-6">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-xl border p-6 space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               {t('admin.departments.code', 'Code')} *
             </label>
             <input {...register('code')} placeholder="ex. FIN" className={inputCls} />
-            {errors.code && <p className="text-xs text-crit mt-1">{t('validation.required', 'Requis')}</p>}
+            {errors.code && <p className="text-xs text-red-500 mt-1">{t('validation.required', 'Requis')}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               {t('admin.departments.budget', 'Budget annuel')}
             </label>
             <input type="number" step="0.01" {...register('budget')} placeholder="0" className={inputCls} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               {t('admin.departments.nameFr', 'Nom (FR)')} *
             </label>
             <input {...register('nameFr')} className={inputCls} />
-            {errors.nameFr && <p className="text-xs text-crit mt-1">{t('validation.required', 'Requis')}</p>}
+            {errors.nameFr && <p className="text-xs text-red-500 mt-1">{t('validation.required', 'Requis')}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               {t('admin.departments.nameEn', 'Nom (EN)')} *
             </label>
             <input {...register('nameEn')} className={inputCls} />
-            {errors.nameEn && <p className="text-xs text-crit mt-1">{t('validation.required', 'Requis')}</p>}
+            {errors.nameEn && <p className="text-xs text-red-500 mt-1">{t('validation.required', 'Requis')}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               {t('admin.departments.n1Role', 'Rôle Validateur N1')} *
             </label>
             <select {...register('n1Role')} className={inputCls}>
@@ -121,19 +119,19 @@ export default function AdminDepartmentFormPage() {
                 <option key={r.value} value={r.value}>{r.label}</option>
               ))}
             </select>
-            {errors.n1Role && <p className="text-xs text-crit mt-1">{t('validation.required', 'Requis')}</p>}
+            {errors.n1Role && <p className="text-xs text-red-500 mt-1">{t('validation.required', 'Requis')}</p>}
           </div>
 
           <div className="flex items-center gap-2 pt-7">
             <input id="requiresN2" type="checkbox" {...register('requiresN2')} className="w-4 h-4 accent-primary" />
-            <label htmlFor="requiresN2" className="text-sm font-medium text-ink-soft">
+            <label htmlFor="requiresN2" className="text-sm font-medium text-gray-700">
               {t('admin.departments.requiresN2', 'Nécessite un Niveau 2')}
             </label>
           </div>
 
           {requiresN2 && (
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-ink-soft mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 {t('admin.departments.n2Role', 'Rôle Validateur N2')}
               </label>
               <select {...register('n2Role')} className={inputCls}>
@@ -147,30 +145,29 @@ export default function AdminDepartmentFormPage() {
         </div>
 
         {createDeptMutation.isError && (
-          <p className="text-sm text-crit bg-crit-bg p-3 rounded-[4px] border border-crit/30">
+          <p className="text-sm text-red-600 bg-red-50 p-3 rounded-md border border-red-200">
             {t('admin.departments.createError', 'Échec de la création. Vérifiez les champs (le code doit être unique).')}
           </p>
         )}
 
-        <div className="flex items-center justify-end gap-3 pt-2 border-t border-hairline">
+        <div className="flex items-center justify-end gap-3 pt-2 border-t">
           <button
             type="button"
             onClick={() => navigate('/admin/departments')}
-            className="px-4 py-2 border border-hairline rounded-[4px] text-sm hover:bg-ground transition-colors"
+            className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50 transition-colors"
           >
             {t('app.cancel', 'Annuler')}
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="flex items-center gap-2 px-5 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90 disabled:opacity-60 transition-colors"
+            className="flex items-center gap-2 px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-60 transition-colors"
           >
             {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
             {t('admin.departments.create', 'Créer le département')}
           </button>
         </div>
-        </form>
-      </Panel>
+      </form>
     </div>
   )
 }

@@ -1,8 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import apiClient from '@/services/apiClient'
-import { Panel } from "@/components/ui/Panel"
-import {  Loader2  } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'

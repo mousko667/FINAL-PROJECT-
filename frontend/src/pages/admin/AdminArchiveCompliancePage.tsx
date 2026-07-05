@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query'
 import apiClient from '@/services/apiClient'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { Loader2, ShieldCheck } from 'lucide-react'
-import { Panel } from '@/components/ui/Panel'
 
 interface CoverageSection {
   archivedInvoices: number
@@ -42,18 +41,18 @@ const pct = (rate: number) => `${Math.round(rate * 1000) / 10}%`
 function Row({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="flex items-center justify-between text-sm py-1">
-      <span className="text-ink-soft">{label}</span>
-      <span className="num font-medium text-ink">{value}</span>
+      <span className="text-gray-500">{label}</span>
+      <span className="font-medium text-gray-800">{value}</span>
     </div>
   )
 }
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <Panel className="p-5 space-y-1">
-      <h2 className="text-sm font-semibold text-ink mb-2">{title}</h2>
+    <div className="bg-white rounded-xl border p-5 space-y-1">
+      <h2 className="text-sm font-semibold text-gray-900 mb-2">{title}</h2>
       {children}
-    </Panel>
+    </div>
   )
 }
 
@@ -72,17 +71,17 @@ export default function AdminArchiveCompliancePage() {
     <PageRoleGuard allowedRoles={['ROLE_ADMIN']}>
       <div className="max-w-4xl mx-auto space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-ink">{t('archiveCompliance.title', 'Conformité des archives')}</h1>
-          <p className="text-sm text-ink-soft mt-0.5">
+          <h1 className="text-2xl font-bold text-gray-900">{t('archiveCompliance.title', 'Conformité des archives')}</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
             {t('archiveCompliance.subtitle', "État de conformité du dépôt d'archives documentaires. Aucune donnée financière.")}
           </p>
         </div>
 
         {isLoading || !report ? (
-          <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-ink-faint" /></div>
+          <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
         ) : (
           <>
-            <p className="flex items-center gap-1.5 text-xs text-ink-faint">
+            <p className="flex items-center gap-1.5 text-xs text-gray-400">
               <ShieldCheck className="w-3.5 h-3.5" />
               {t('archiveCompliance.generatedAt', 'Généré le')} {new Date(report.generatedAt).toLocaleString(i18n.language)}
             </p>

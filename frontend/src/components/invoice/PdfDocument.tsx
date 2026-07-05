@@ -15,7 +15,7 @@ export function PdfDocument({ url, zoom, rotation, pageNumber, onLoadSuccess, on
       file={url}
       onLoadSuccess={(pdf: { numPages: number }) => onLoadSuccess(pdf.numPages)}
       onLoadError={onLoadError}
-      loading={<div className="text-sm text-ink-faint p-8">…</div>}
+      loading={<div className="text-sm text-gray-500 p-8">…</div>}
     >
       <Page pageNumber={pageNumber} scale={zoom} rotate={rotation} />
     </Document>

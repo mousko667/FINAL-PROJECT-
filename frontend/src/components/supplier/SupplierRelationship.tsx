@@ -2,8 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
-import { Panel } from "@/components/ui/Panel"
-import {  FileText, MessageSquare, Plus, Trash2, Loader2  } from 'lucide-react'
+import { FileText, MessageSquare, Plus, Trash2, Loader2 } from 'lucide-react'
 import { formatDateTime } from '@/lib/format'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
@@ -55,10 +54,10 @@ export function SupplierRelationship({ supplierId, canEdit }: { supplierId: stri
   return (
     <div className="space-y-6">
       {/* Contracts */}
-      <div className="bg-surface rounded-xl border border-hairline p-5">
+      <div className="bg-white rounded-xl border p-5">
         <div className="flex items-center gap-2 mb-3">
           <FileText className="w-5 h-5 text-primary" />
-          <h3 className="font-semibold text-ink">{t('supplier.contracts.title', 'Contrats & accords')}</h3>
+          <h3 className="font-semibold text-gray-800">{t('supplier.contracts.title', 'Contrats & accords')}</h3>
         </div>
         {canEdit && (
           <div className="grid grid-cols-1 md:grid-cols-5 gap-2 mb-4">
@@ -73,14 +72,14 @@ export function SupplierRelationship({ supplierId, canEdit }: { supplierId: stri
           </div>
         )}
         {contracts.length === 0 ? (
-          <p className="text-sm text-ink-faint py-2">{t('supplier.contracts.none', 'Aucun contrat.')}</p>
+          <p className="text-sm text-gray-400 py-2">{t('supplier.contracts.none', 'Aucun contrat.')}</p>
         ) : (
           <ul className="divide-y">
             {contracts.map(c => (
               <li key={c.id} className="flex items-center justify-between py-2 text-sm">
-                <div><span className="font-medium text-ink">{c.reference}</span> — {c.title}
-                  <span className="text-ink-faint ml-2">{c.startDate ?? '?'} → {c.endDate ?? '?'} · {c.status}</span></div>
-                {canEdit && <button onClick={() => setDeleteTargetId(c.id)} className="text-ink-faint hover:text-red-500"><Trash2 className="w-4 h-4" /></button>}
+                <div><span className="font-medium text-gray-900">{c.reference}</span> — {c.title}
+                  <span className="text-gray-400 ml-2">{c.startDate ?? '?'} → {c.endDate ?? '?'} · {c.status}</span></div>
+                {canEdit && <button onClick={() => setDeleteTargetId(c.id)} className="text-gray-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>}
               </li>
             ))}
           </ul>
@@ -88,10 +87,10 @@ export function SupplierRelationship({ supplierId, canEdit }: { supplierId: stri
       </div>
 
       {/* Communication log */}
-      <div className="bg-surface rounded-xl border border-hairline p-5">
+      <div className="bg-white rounded-xl border p-5">
         <div className="flex items-center gap-2 mb-3">
           <MessageSquare className="w-5 h-5 text-primary" />
-          <h3 className="font-semibold text-ink">{t('supplier.comms.title', 'Journal de communication')}</h3>
+          <h3 className="font-semibold text-gray-800">{t('supplier.comms.title', 'Journal de communication')}</h3>
         </div>
         {canEdit && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-4">
@@ -108,17 +107,17 @@ export function SupplierRelationship({ supplierId, canEdit }: { supplierId: stri
           </div>
         )}
         {comms.length === 0 ? (
-          <p className="text-sm text-ink-faint py-2">{t('supplier.comms.none', 'Aucune communication.')}</p>
+          <p className="text-sm text-gray-400 py-2">{t('supplier.comms.none', 'Aucune communication.')}</p>
         ) : (
           <ul className="divide-y">
             {comms.map(c => (
               <li key={c.id} className="py-2 text-sm">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono bg-ground text-ink-soft px-1.5 py-0.5 rounded">{c.channel}</span>
-                  <span className="font-medium text-ink">{c.subject}</span>
-                  <span className="text-ink-faint ml-auto text-xs">{formatDateTime(c.loggedAt)}</span>
+                  <span className="text-xs font-mono bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{c.channel}</span>
+                  <span className="font-medium text-gray-900">{c.subject}</span>
+                  <span className="text-gray-400 ml-auto text-xs">{formatDateTime(c.loggedAt)}</span>
                 </div>
-                {c.body && <p className="text-ink-soft mt-0.5">{c.body}</p>}
+                {c.body && <p className="text-gray-600 mt-0.5">{c.body}</p>}
               </li>
             ))}
           </ul>

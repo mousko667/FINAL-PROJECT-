@@ -99,16 +99,16 @@ export default function MatchingDetailPage() {
               <table className="w-full text-sm">
                 <thead className="bg-ground">
                   <tr>
-                    <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.description')}</th>
-                    <th className="text-right px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.poQty')}</th>
-                    <th className="text-right px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.poPrice')}</th>
-                    <th className="text-right px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.received')}</th>
-                    <th className="text-right px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.invQty')}</th>
-                    <th className="text-right px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.invPrice')}</th>
-                    <th className="text-right px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.qtyVariance')}</th>
-                    <th className="text-right px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.priceVariance')}</th>
-                    <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.verdict')}</th>
-                    <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('app.actions')}</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.description')}</th>
+                    <th className="text-right px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.poQty')}</th>
+                    <th className="text-right px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.poPrice')}</th>
+                    <th className="text-right px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.received')}</th>
+                    <th className="text-right px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.invQty')}</th>
+                    <th className="text-right px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.invPrice')}</th>
+                    <th className="text-right px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.qtyVariance')}</th>
+                    <th className="text-right px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.priceVariance')}</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.verdict')}</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('app.actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-hairline">

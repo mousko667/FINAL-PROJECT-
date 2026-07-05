@@ -190,14 +190,14 @@ export default function InvoiceListPage() {
             <table className="w-full text-sm">
               <thead className="bg-ground">
                 <tr>
-                  <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.reference')}</th>
-                  <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.supplier')}</th>
-                  <th className="text-right px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.amount')}</th>
-                  <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.issueDate')}</th>
-                  <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.dueDate')}</th>
-                  <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.status')}</th>
-                  <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.columnHeader', 'Matching')}</th>
-                  <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.department')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.reference')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.supplier')}</th>
+                  <th className="text-right px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.amount')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.issueDate')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.dueDate')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.status')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.columnHeader', 'Matching')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.department')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-hairline">

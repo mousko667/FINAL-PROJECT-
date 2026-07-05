@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import apiClient from '@/services/apiClient'
 import { Loader2, Plus, Trash2, Save, X, GripVertical } from 'lucide-react'
-import { Panel } from '@/components/ui/Panel'
 
 interface Department { id: string; code: string; nameEn: string; nameFr: string }
 
@@ -92,13 +91,13 @@ export default function AdminChecklistTemplatesPage() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-ink">{t('checklist.title', 'Validation Checklist Templates')}</h1>
-          <p className="text-sm text-ink-soft mt-1">{t('checklist.subtitle', 'Reusable checklists shown to validators during invoice review.')}</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('checklist.title', 'Validation Checklist Templates')}</h1>
+          <p className="text-sm text-gray-500 mt-1">{t('checklist.subtitle', 'Reusable checklists shown to validators during invoice review.')}</p>
         </div>
         {!editor && (
           <button
             onClick={() => setEditor(emptyEditor())}
-            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-[4px] hover:bg-primary/90 text-sm font-medium"
+            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 text-sm font-medium"
           >
             <Plus className="w-4 h-4" />
             {t('checklist.new', 'New template')}
@@ -107,22 +106,22 @@ export default function AdminChecklistTemplatesPage() {
       </div>
 
       {editor ? (
-        <Panel className="p-6 space-y-5">
+        <div className="bg-white rounded-xl border p-6 space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
-              <label className="block text-sm font-medium text-ink-soft mb-1">{t('checklist.name', 'Name')} *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('checklist.name', 'Name')} *</label>
               <input
                 value={editor.name}
                 onChange={e => setEditor({ ...editor, name: e.target.value })}
-                className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-surface"
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-ink-soft mb-1">{t('checklist.department', 'Department')}</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('checklist.department', 'Department')}</label>
               <select
                 value={editor.departmentId}
                 onChange={e => setEditor({ ...editor, departmentId: e.target.value })}
-                className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-surface"
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               >
                 <option value="">{t('checklist.global', 'Global (all departments)')}</option>
                 {(departments ?? []).map(d => (
@@ -132,14 +131,14 @@ export default function AdminChecklistTemplatesPage() {
             </div>
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-ink-soft">
+          <label className="flex items-center gap-2 text-sm text-gray-700">
             <input type="checkbox" checked={editor.active} onChange={e => setEditor({ ...editor, active: e.target.checked })} />
             {t('checklist.active', 'Active')}
           </label>
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-ink-soft">{t('checklist.items', 'Checklist items')}</label>
+              <label className="text-sm font-medium text-gray-700">{t('checklist.items', 'Checklist items')}</label>
               <button
                 onClick={() => setEditor({ ...editor, items: [...editor.items, { label: '', required: false, displayOrder: editor.items.length }] })}
                 className="text-sm text-primary hover:underline flex items-center gap-1"
@@ -149,23 +148,23 @@ export default function AdminChecklistTemplatesPage() {
             </div>
             <div className="space-y-2">
               {editor.items.length === 0 && (
-                <p className="text-sm text-ink-faint">{t('checklist.noItems', 'No items yet. Add at least one.')}</p>
+                <p className="text-sm text-gray-400">{t('checklist.noItems', 'No items yet. Add at least one.')}</p>
               )}
               {editor.items.map((it, idx) => (
-                <div key={idx} className="flex items-center gap-2 bg-ground rounded-[4px] p-2 border border-hairline">
-                  <GripVertical className="w-4 h-4 text-ink-faint" />
+                <div key={idx} className="flex items-center gap-2 bg-gray-50 rounded-lg p-2 border">
+                  <GripVertical className="w-4 h-4 text-gray-300" />
                   <input
                     value={it.label}
                     onChange={e => updateItem(idx, { label: e.target.value })}
                     placeholder={t('checklist.itemPlaceholder', 'e.g. Amount matches the purchase order')}
-                    className="flex-1 border border-hairline rounded-[4px] px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 bg-surface"
+                    className="flex-1 border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                   />
-                  <label className="flex items-center gap-1 text-xs text-ink-soft whitespace-nowrap">
+                  <label className="flex items-center gap-1 text-xs text-gray-600 whitespace-nowrap">
                     <input type="checkbox" checked={it.required} onChange={e => updateItem(idx, { required: e.target.checked })} />
                     {t('checklist.required', 'Required')}
                   </label>
                   <button onClick={() => setEditor({ ...editor, items: editor.items.filter((_, i) => i !== idx) })}
-                    className="p-1 text-ink-faint hover:text-crit">
+                    className="p-1 text-gray-400 hover:text-red-600">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -174,49 +173,49 @@ export default function AdminChecklistTemplatesPage() {
           </div>
 
           {saveMutation.isError && (
-            <p className="text-sm text-crit bg-crit-bg p-3 rounded-[4px] border border-crit/30">
+            <p className="text-sm text-red-600 bg-red-50 p-3 rounded-md border border-red-200">
               {t('checklist.saveError', 'Failed to save the template. Check the inputs and try again.')}
             </p>
           )}
 
-          <div className="flex items-center justify-end gap-3 pt-2 border-t border-hairline">
-            <button onClick={() => setEditor(null)} className="flex items-center gap-2 px-4 py-2 border border-hairline rounded-[4px] text-sm hover:bg-ground">
+          <div className="flex items-center justify-end gap-3 pt-2 border-t">
+            <button onClick={() => setEditor(null)} className="flex items-center gap-2 px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">
               <X className="w-4 h-4" /> {t('app.cancel', 'Cancel')}
             </button>
             <button
               onClick={() => saveMutation.mutate(editor)}
               disabled={!editor.name.trim() || editor.items.length === 0 || editor.items.some(i => !i.label.trim()) || saveMutation.isPending}
-              className="flex items-center gap-2 px-5 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90 disabled:opacity-60"
+              className="flex items-center gap-2 px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-60"
             >
               {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               {t('app.save', 'Save')}
             </button>
           </div>
-        </Panel>
+        </div>
       ) : isLoading ? (
-        <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-ink-faint" /></div>
+        <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
-        <Panel>
+        <div className="bg-white rounded-xl border overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-ground">
+            <thead className="bg-gray-50 border-b">
               <tr>
-                <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('checklist.name', 'Name')}</th>
-                <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('checklist.department', 'Department')}</th>
-                <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('checklist.items', 'Items')}</th>
-                <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('checklist.active', 'Active')}</th>
-                <th className="text-right px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('app.actions', 'Actions')}</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('checklist.name', 'Name')}</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('checklist.department', 'Department')}</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('checklist.items', 'Items')}</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('checklist.active', 'Active')}</th>
+                <th className="text-right px-4 py-3 font-medium text-gray-600">{t('app.actions', 'Actions')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-hairline">
+            <tbody className="divide-y">
               {(!templates || templates.length === 0) ? (
-                <tr><td colSpan={5} className="text-center py-16 text-ink-faint">{t('checklist.empty', 'No templates yet.')}</td></tr>
+                <tr><td colSpan={5} className="text-center py-16 text-muted-foreground">{t('checklist.empty', 'No templates yet.')}</td></tr>
               ) : templates.map(tpl => (
-                <tr key={tpl.id} className="group hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)]">
-                  <td className="px-4 py-3 font-medium text-ink">{tpl.name}</td>
-                  <td className="px-4 py-3 text-ink-soft">{deptLabel(tpl.departmentId)}</td>
-                  <td className="px-4 py-3 text-ink-soft num">{tpl.items.length}</td>
+                <tr key={tpl.id} className="hover:bg-gray-50 group">
+                  <td className="px-4 py-3 font-medium">{tpl.name}</td>
+                  <td className="px-4 py-3 text-gray-500">{deptLabel(tpl.departmentId)}</td>
+                  <td className="px-4 py-3 text-gray-500">{tpl.items.length}</td>
                   <td className="px-4 py-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-[4px] ${tpl.active ? 'bg-pos-bg text-pos' : 'bg-ground text-ink-soft border border-hairline'}`}>
+                    <span className={`text-xs px-2 py-0.5 rounded ${tpl.active ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                       {tpl.active ? t('checklist.active', 'Active') : t('checklist.inactive', 'Inactive')}
                     </span>
                   </td>
@@ -225,7 +224,7 @@ export default function AdminChecklistTemplatesPage() {
                       <button onClick={() => startEdit(tpl)} className="text-sm text-primary hover:underline">{t('app.edit', 'Edit')}</button>
                       <button
                         onClick={() => { if (confirm(t('checklist.deleteConfirm', 'Delete this template?'))) deleteMutation.mutate(tpl.id) }}
-                        className="p-1 text-ink-faint hover:text-crit" title={t('app.delete', 'Delete')}>
+                        className="p-1 text-gray-400 hover:text-red-600" title={t('app.delete', 'Delete')}>
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -234,7 +233,7 @@ export default function AdminChecklistTemplatesPage() {
               ))}
             </tbody>
           </table>
-        </Panel>
+        </div>
       )}
     </div>
   )

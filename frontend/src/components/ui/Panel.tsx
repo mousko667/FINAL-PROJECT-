@@ -9,7 +9,7 @@ interface PanelProps extends HTMLAttributes<HTMLDivElement> {
 
 /**
  * Generic panel/card wrapper (Track B / Lot B2) — replaces the repeated
- * `bg-surface rounded-xl border border-hairline` pattern across pages. Thin hairline border,
+ * `bg-white rounded-xl border` pattern across pages. Thin hairline border,
  * 4px radius, near-flat shadow. Uses the dedicated `--surface` token (see
  * index.css) rather than shadcn's `--card`, since `--card` has no dark-mode
  * override. Adoption across pages happens in B4/B5 — this lot only creates

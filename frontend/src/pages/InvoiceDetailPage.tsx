@@ -445,10 +445,10 @@ export default function InvoiceDetailPage() {
               <table className="w-full text-sm">
                 <thead className="bg-ground">
                   <tr>
-                    <th className="text-left px-5 py-2 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.description')}</th>
-                    <th className="text-right px-5 py-2 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.quantity', 'Qty')}</th>
-                    <th className="text-right px-5 py-2 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.unitPrice', 'Unit Price')}</th>
-                    <th className="text-right px-5 py-2 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">Total</th>
+                    <th className="text-left px-5 py-2 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.description')}</th>
+                    <th className="text-right px-5 py-2 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.quantity', 'Qty')}</th>
+                    <th className="text-right px-5 py-2 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.unitPrice', 'Unit Price')}</th>
+                    <th className="text-right px-5 py-2 text-xs font-medium uppercase tracking-wide text-ink-faint">Total</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-hairline">

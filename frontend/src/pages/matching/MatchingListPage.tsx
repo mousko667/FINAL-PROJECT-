@@ -79,10 +79,10 @@ export default function MatchingListPage() {
             <table className="w-full text-sm">
               <thead className="bg-ground">
                 <tr>
-                  <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.invoiceNumber')}</th>
-                  <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.supplier')}</th>
-                  <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.poNumber')}</th>
-                  <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.status')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.invoiceNumber')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.supplier')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.poNumber')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('matching.status')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-hairline">

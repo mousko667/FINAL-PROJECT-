@@ -14,8 +14,7 @@ import { useAppSelector } from '@/store/hooks'
 import { SupplierStatusBadge } from '@/components/SupplierStatusBadge'
 import { SupplierRelationship } from '@/components/supplier/SupplierRelationship'
 import { formatDate } from '@/lib/format'
-import { Panel } from "@/components/ui/Panel"
-import {  Loader2, ArrowLeft, CheckCircle, Ban, Trash2, Building, Mail, Phone, MapPin, Calendar, FileText, Activity, Upload  } from 'lucide-react'
+import { Loader2, ArrowLeft, CheckCircle, Ban, Trash2, Building, Mail, Phone, MapPin, Calendar, FileText, Activity, Upload } from 'lucide-react'
 
 export default function SupplierDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -50,7 +49,7 @@ export default function SupplierDetailPage() {
   if (!supplier) {
     return (
       <div className="text-center py-20">
-        <h2 className="text-2xl font-bold text-ink">{t('app.notFound', 'Not Found')}</h2>
+        <h2 className="text-2xl font-bold text-gray-900">{t('app.notFound', 'Not Found')}</h2>
         <button onClick={() => navigate(-1)} className="text-primary hover:underline mt-4">
           {t('app.back', 'Go back')}
         </button>
@@ -61,20 +60,20 @@ export default function SupplierDetailPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <button onClick={() => navigate('/admin/suppliers')} className="p-2 hover:bg-ground rounded-full transition-colors">
-          <ArrowLeft className="w-5 h-5 text-ink-soft" />
+        <button onClick={() => navigate('/admin/suppliers')} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+          <ArrowLeft className="w-5 h-5 text-gray-600" />
         </button>
-        <h1 className="text-2xl font-bold text-ink flex-1">{supplier.companyName}</h1>
+        <h1 className="text-2xl font-bold text-gray-900 flex-1">{supplier.companyName}</h1>
         <SupplierStatusBadge status={supplier.status} className="text-sm px-3 py-1" />
       </div>
 
       {canManageSupplier && (
-        <div className="flex items-center gap-3 bg-surface p-4 rounded-lg border">
+        <div className="flex items-center gap-3 bg-white p-4 rounded-xl border">
           {supplier.status !== 'ACTIVE' && (
             <button
               onClick={() => activate(supplier.id)}
               disabled={activating}
-              className="flex items-center gap-2 px-4 py-2 bg-pos/10 text-pos hover:bg-pos/10 rounded-[4px] text-sm font-medium transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
             >
               <CheckCircle className="w-4 h-4" />
               {t('supplier.actions.activate', 'Activate')}
@@ -87,7 +86,7 @@ export default function SupplierDetailPage() {
                 if (reason) suspend({ id: supplier.id, reason })
               }}
               disabled={suspending}
-              className="flex items-center gap-2 px-4 py-2 bg-orange-50 text-orange-700 hover:bg-orange-100 rounded-[4px] text-sm font-medium transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 bg-orange-50 text-orange-700 hover:bg-orange-100 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
             >
               <Ban className="w-4 h-4" />
               {t('supplier.actions.suspend', 'Suspend')}
@@ -104,7 +103,7 @@ export default function SupplierDetailPage() {
                 }
               }}
               disabled={deleting}
-              className="flex items-center gap-2 px-4 py-2 bg-crit/10 text-crit hover:bg-crit/10 rounded-[4px] text-sm font-medium transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-700 hover:bg-red-100 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
             >
               <Trash2 className="w-4 h-4" />
               {t('supplier.actions.delete', 'Delete')}
@@ -114,11 +113,11 @@ export default function SupplierDetailPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex items-center gap-6 border-b border-hairline">
+      <div className="flex items-center gap-6 border-b border-gray-200">
         <button
           onClick={() => setActiveTab('DETAILS')}
           className={`pb-4 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'DETAILS' ? 'border-primary text-primary' : 'border-transparent text-ink-faint hover:text-ink-soft'
+            activeTab === 'DETAILS' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
           {t('supplier.tabs.details', 'Details')}
@@ -126,7 +125,7 @@ export default function SupplierDetailPage() {
         <button
           onClick={() => setActiveTab('DOCUMENTS')}
           className={`pb-4 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'DOCUMENTS' ? 'border-primary text-primary' : 'border-transparent text-ink-faint hover:text-ink-soft'
+            activeTab === 'DOCUMENTS' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
           {t('supplier.tabs.documents', 'Documents')}
@@ -134,7 +133,7 @@ export default function SupplierDetailPage() {
         <button
           onClick={() => setActiveTab('PERFORMANCE')}
           className={`pb-4 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'PERFORMANCE' ? 'border-primary text-primary' : 'border-transparent text-ink-faint hover:text-ink-soft'
+            activeTab === 'PERFORMANCE' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
           {t('supplier.tabs.performance', 'Performance')}
@@ -142,7 +141,7 @@ export default function SupplierDetailPage() {
         <button
           onClick={() => setActiveTab('RELATIONSHIP')}
           className={`pb-4 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'RELATIONSHIP' ? 'border-primary text-primary' : 'border-transparent text-ink-faint hover:text-ink-soft'
+            activeTab === 'RELATIONSHIP' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
           {t('supplier.tabs.relationship', 'Contrats & communications')}
@@ -154,51 +153,51 @@ export default function SupplierDetailPage() {
       )}
 
       {activeTab === 'DETAILS' && (
-        <div className="bg-surface rounded-lg border border-hairline p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="bg-white rounded-xl border p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-6">
             <div>
-              <label className="flex items-center gap-2 text-sm text-ink-faint mb-1">
+              <label className="flex items-center gap-2 text-sm text-gray-500 mb-1">
                 <Building className="w-4 h-4" />
                 {t('supplier.fields.companyName', 'Company Name')}
               </label>
-              <p className="font-medium text-ink">{supplier.companyName}</p>
+              <p className="font-medium text-gray-900">{supplier.companyName}</p>
             </div>
             <div>
-              <label className="flex items-center gap-2 text-sm text-ink-faint mb-1">
+              <label className="flex items-center gap-2 text-sm text-gray-500 mb-1">
                 <FileText className="w-4 h-4" />
                 {t('supplier.fields.taxId', 'Tax ID')}
               </label>
-              <p className="font-medium text-ink">{supplier.taxId}</p>
+              <p className="font-medium text-gray-900">{supplier.taxId}</p>
             </div>
           </div>
           <div className="space-y-6">
             <div>
-              <label className="flex items-center gap-2 text-sm text-ink-faint mb-1">
+              <label className="flex items-center gap-2 text-sm text-gray-500 mb-1">
                 <Mail className="w-4 h-4" />
                 {t('supplier.fields.contactEmail', 'Email')}
               </label>
-              <p className="font-medium text-ink">{supplier.contactEmail}</p>
+              <p className="font-medium text-gray-900">{supplier.contactEmail}</p>
             </div>
             <div>
-              <label className="flex items-center gap-2 text-sm text-ink-faint mb-1">
+              <label className="flex items-center gap-2 text-sm text-gray-500 mb-1">
                 <Phone className="w-4 h-4" />
                 {t('supplier.fields.contactPhone', 'Phone')}
               </label>
-              <p className="font-medium text-ink">{supplier.contactPhone || '—'}</p>
+              <p className="font-medium text-gray-900">{supplier.contactPhone || '—'}</p>
             </div>
             <div>
-              <label className="flex items-center gap-2 text-sm text-ink-faint mb-1">
+              <label className="flex items-center gap-2 text-sm text-gray-500 mb-1">
                 <MapPin className="w-4 h-4" />
                 {t('supplier.fields.address', 'Address')}
               </label>
-              <p className="font-medium text-ink">{supplier.address || '—'}</p>
+              <p className="font-medium text-gray-900">{supplier.address || '—'}</p>
             </div>
             <div>
-              <label className="flex items-center gap-2 text-sm text-ink-faint mb-1">
+              <label className="flex items-center gap-2 text-sm text-gray-500 mb-1">
                 <Calendar className="w-4 h-4" />
                 {t('supplier.fields.onboardingDate', 'Created Date')}
               </label>
-              <p className="font-medium text-ink">
+              <p className="font-medium text-gray-900">
                 {supplier.createdAt ? formatDate(supplier.createdAt) : '—'}
               </p>
             </div>
@@ -208,15 +207,15 @@ export default function SupplierDetailPage() {
 
       {activeTab === 'DOCUMENTS' && (
         <div className="space-y-4">
-          <div className="bg-surface rounded-lg border border-hairline p-5 flex flex-col sm:flex-row items-start sm:items-end gap-4">
+          <div className="bg-white rounded-xl border p-5 flex flex-col sm:flex-row items-start sm:items-end gap-4">
             <div className="flex-1 w-full">
-              <label className="block text-sm font-medium text-ink-soft mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 {t('supplier.document.type.label', 'Document Type')}
               </label>
               <select
                 value={docType}
                 onChange={(e) => setDocType(e.target.value as typeof docType)}
-                className="w-full border rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
               >
                 <option value="TAX_CERTIFICATE">{t('supplier.document.type.TAX_CERTIFICATE', 'Tax Certificate')}</option>
                 <option value="CONTRACT">{t('supplier.document.type.CONTRACT', 'Contract')}</option>
@@ -242,7 +241,7 @@ export default function SupplierDetailPage() {
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
               >
                 {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                 {t('supplier.document.upload', 'Upload Document')}
@@ -250,7 +249,7 @@ export default function SupplierDetailPage() {
             </div>
           </div>
 
-          <div className="bg-surface rounded-lg border border-hairline">
+          <div className="bg-white rounded-xl border">
             {loadingDocs ? (
               <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin" /></div>
             ) : !documents?.length ? (
@@ -260,13 +259,13 @@ export default function SupplierDetailPage() {
                 {documents.map((doc) => (
                   <li key={doc.id} className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <FileText className="w-5 h-5 text-ink-faint" />
+                      <FileText className="w-5 h-5 text-gray-400" />
                       <div>
-                        <p className="font-medium text-ink">{doc.originalFilename}</p>
-                        <p className="text-sm text-ink-faint">{t(`supplier.document.type.${doc.documentType}`, doc.documentType)}</p>
+                        <p className="font-medium text-gray-900">{doc.originalFilename}</p>
+                        <p className="text-sm text-gray-500">{t(`supplier.document.type.${doc.documentType}`, doc.documentType)}</p>
                       </div>
                     </div>
-                    <div className="text-sm text-ink-faint">
+                    <div className="text-sm text-gray-400">
                       {formatDate(doc.uploadedAt)}
                     </div>
                   </li>
@@ -278,27 +277,27 @@ export default function SupplierDetailPage() {
       )}
 
       {activeTab === 'PERFORMANCE' && (
-        <div className="bg-surface rounded-lg border border-hairline p-6">
+        <div className="bg-white rounded-xl border p-6">
           {loadingPerf ? (
             <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin" /></div>
           ) : !perf ? (
             <div className="text-center py-16 text-muted-foreground">{t('app.noData', 'No performance data limit.')}</div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="p-6 bg-primary/10/50 rounded-lg border border-blue-100 flex flex-col items-center justify-center text-center">
+              <div className="p-6 bg-blue-50/50 rounded-xl border border-blue-100 flex flex-col items-center justify-center text-center">
                 <Activity className="w-8 h-8 text-blue-500 mb-3" />
-                <h3 className="text-sm font-medium text-ink-faint">{t('supplier.performance.accuracyRate', 'Accuracy Rate')}</h3>
-                <p className="text-2xl font-bold text-ink mt-1">{(perf.accuracyRate * 100).toFixed(1)}%</p>
+                <h3 className="text-sm font-medium text-gray-500">{t('supplier.performance.accuracyRate', 'Accuracy Rate')}</h3>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{(perf.accuracyRate * 100).toFixed(1)}%</p>
               </div>
-              <div className="p-6 bg-crit/10/50 rounded-lg border border-red-100 flex flex-col items-center justify-center text-center">
+              <div className="p-6 bg-red-50/50 rounded-xl border border-red-100 flex flex-col items-center justify-center text-center">
                 <Ban className="w-8 h-8 text-red-500 mb-3" />
-                <h3 className="text-sm font-medium text-ink-faint">{t('supplier.performance.rejectionRate', 'Rejection Rate')}</h3>
-                <p className="text-2xl font-bold text-ink mt-1">{(perf.rejectionRate * 100).toFixed(1)}%</p>
+                <h3 className="text-sm font-medium text-gray-500">{t('supplier.performance.rejectionRate', 'Rejection Rate')}</h3>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{(perf.rejectionRate * 100).toFixed(1)}%</p>
               </div>
-              <div className="p-6 bg-pos/10/50 rounded-lg border border-green-100 flex flex-col items-center justify-center text-center">
+              <div className="p-6 bg-green-50/50 rounded-xl border border-green-100 flex flex-col items-center justify-center text-center">
                 <Calendar className="w-8 h-8 text-green-500 mb-3" />
-                <h3 className="text-sm font-medium text-ink-faint">{t('supplier.performance.averagePaymentTime', 'Avg. Payment Time')}</h3>
-                <p className="text-2xl font-bold text-ink mt-1">{perf.averagePaymentTimeDays.toFixed(1)} {t('app.days', 'days')}</p>
+                <h3 className="text-sm font-medium text-gray-500">{t('supplier.performance.averagePaymentTime', 'Avg. Payment Time')}</h3>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{perf.averagePaymentTimeDays.toFixed(1)} {t('app.days', 'days')}</p>
               </div>
             </div>
           )}

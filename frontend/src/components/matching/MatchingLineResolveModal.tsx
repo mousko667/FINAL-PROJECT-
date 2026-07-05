@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Panel } from "@/components/ui/Panel"
-import {  Loader2  } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 
 interface Props {
   isOpen: boolean
@@ -40,9 +39,9 @@ export default function MatchingLineResolveModal({ isOpen, onClose, onResolve, p
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-surface rounded-lg shadow-lg w-full max-w-md p-6">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
         <h2 className="text-lg font-semibold mb-4">{t('matching.resolve.title')}</h2>
-        <p className="text-sm text-ink-soft mb-4">
+        <p className="text-sm text-gray-600 mb-4">
           {t('matching.resolve.description', { item: description })}
         </p>
 
@@ -69,7 +68,7 @@ export default function MatchingLineResolveModal({ isOpen, onClose, onResolve, p
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2 text-sm border rounded hover:bg-ground"
+              className="px-4 py-2 text-sm border rounded hover:bg-gray-50"
             >
               {t('app.cancel')}
             </button>

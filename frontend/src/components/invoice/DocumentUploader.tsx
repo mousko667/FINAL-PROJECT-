@@ -15,8 +15,8 @@ const MIME_ICONS: Record<string, React.ReactNode> = {
   'application/pdf': <FileText className="w-5 h-5 text-red-500" />,
   'image/png': <Image className="w-5 h-5 text-blue-500" />,
   'image/jpeg': <Image className="w-5 h-5 text-blue-500" />,
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': <FileSpreadsheet className="w-5 h-5 text-pos" />,
-  'application/vnd.ms-excel': <FileSpreadsheet className="w-5 h-5 text-pos" />,
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': <FileSpreadsheet className="w-5 h-5 text-green-600" />,
+  'application/vnd.ms-excel': <FileSpreadsheet className="w-5 h-5 text-green-600" />,
 }
 
 export function DocumentUploader({
@@ -75,7 +75,7 @@ export function DocumentUploader({
   }
 
   const getIcon = (file: File) =>
-    MIME_ICONS[file.type] ?? <FileText className="w-5 h-5 text-ink-faint" />
+    MIME_ICONS[file.type] ?? <FileText className="w-5 h-5 text-gray-400" />
 
   return (
     <div className="space-y-3">
@@ -88,12 +88,12 @@ export function DocumentUploader({
         onDrop={handleDrop}
         className={cn(
           'flex flex-col items-center justify-center w-full h-44 border-2 border-dashed rounded-xl cursor-pointer transition-colors',
-          dragOver ? 'border-primary bg-primary/5' : 'border-hairline hover:bg-ground',
+          dragOver ? 'border-primary bg-primary/5' : 'border-gray-300 hover:bg-gray-50',
           disabled && 'opacity-50 cursor-not-allowed'
         )}
       >
         <Upload className={cn('w-10 h-10 mb-2', dragOver ? 'text-primary' : 'text-gray-300')} />
-        <p className="text-sm font-medium text-ink-soft">
+        <p className="text-sm font-medium text-gray-600">
           {dragOver ? t('documentUploader.dropHere') : t('documentUploader.dragOrClick')}
         </p>
         <p className="text-xs text-muted-foreground mt-1">
@@ -114,7 +114,7 @@ export function DocumentUploader({
       {errors.length > 0 && (
         <ul className="space-y-1">
           {errors.map((e, i) => (
-            <li key={i} className="text-xs text-crit bg-crit/10 px-3 py-1.5 rounded-lg">
+            <li key={i} className="text-xs text-red-600 bg-red-50 px-3 py-1.5 rounded-lg">
               {e}
             </li>
           ))}
@@ -128,23 +128,23 @@ export function DocumentUploader({
             <li
               key={i}
               id={`doc-item-${i}`}
-              className="flex items-center gap-3 px-3 py-2.5 bg-ground border rounded-xl"
+              className="flex items-center gap-3 px-3 py-2.5 bg-gray-50 border rounded-xl"
             >
               {getIcon(f)}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-ink-soft truncate">{f.name}</p>
+                <p className="text-sm font-medium text-gray-700 truncate">{f.name}</p>
                 <p className="text-xs text-muted-foreground">{(f.size / 1024).toFixed(1)} KB</p>
               </div>
               {/* Progress bar placeholder — in real use, track upload progress via axios onUploadProgress */}
-              <div className="w-16 h-1.5 bg-pos/10 rounded-full overflow-hidden">
-                <div className="h-full w-full bg-pos/100 rounded-full" />
+              <div className="w-16 h-1.5 bg-green-100 rounded-full overflow-hidden">
+                <div className="h-full w-full bg-green-500 rounded-full" />
               </div>
               {!disabled && (
                 <button
                   id={`btn-remove-doc-${i}`}
                   type="button"
                   onClick={() => removeFile(i)}
-                  className="p-1 text-ink-faint hover:text-red-500 transition-colors"
+                  className="p-1 text-gray-400 hover:text-red-500 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>

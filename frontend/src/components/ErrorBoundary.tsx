@@ -28,13 +28,13 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center h-64 gap-4 text-ink-faint">
+        <div className="flex flex-col items-center justify-center h-64 gap-4 text-gray-500">
           <AlertTriangle className="w-10 h-10 text-amber-500" />
           <div className="text-center">
-            <p className="font-semibold text-ink-soft">
+            <p className="font-semibold text-gray-700">
               {this.props.fallbackTitle ?? 'Une erreur est survenue sur cette page'}
             </p>
-            <p className="text-sm text-ink-faint mt-1">
+            <p className="text-sm text-gray-400 mt-1">
               {this.state.error?.message ?? 'Erreur inattendue'}
             </p>
           </div>

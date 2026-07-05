@@ -2,8 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
-import { Panel } from "@/components/ui/Panel"
-import {  Loader2, CheckCircle, Save  } from 'lucide-react'
+import { Loader2, CheckCircle, Save } from 'lucide-react'
 
 interface Department {
   id: string
@@ -65,44 +64,44 @@ export default function ApprovalMatrixPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-ink">{t('admin.approvalMatrix.title')}</h1>
-        <p className="text-sm text-ink-faint mt-1">{t('admin.approvalMatrix.subtitle')}</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('admin.approvalMatrix.title')}</h1>
+        <p className="text-sm text-gray-500 mt-1">{t('admin.approvalMatrix.subtitle')}</p>
       </div>
 
       {saved && (
-        <div className="flex items-center gap-2 text-sm text-pos bg-pos/10 border border-green-200 rounded-[4px] px-4 py-3">
+        <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3">
           <CheckCircle className="w-4 h-4" />
           {t('admin.approvalMatrix.saved')}
         </div>
       )}
 
-      <div className="bg-surface rounded-lg border border-hairline overflow-hidden">
+      <div className="bg-white rounded-xl border overflow-hidden">
         {isLoading ? (
           <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-ground border-b">
+            <thead className="bg-gray-50 border-b">
               <tr>
-                <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.approvalMatrix.dept')}</th>
-                <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.approvalMatrix.n1Role')}</th>
-                <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.approvalMatrix.requiresN2')}</th>
-                <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.approvalMatrix.n2Role')}</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.approvalMatrix.dept')}</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.approvalMatrix.n1Role')}</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.approvalMatrix.requiresN2')}</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.approvalMatrix.n2Role')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-hairline">
+            <tbody className="divide-y">
               {(departments ?? []).map(dept => (
-                <tr key={dept.id} className="hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)]">
+                <tr key={dept.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3">
-                    <div className="font-medium text-ink">
+                    <div className="font-medium text-gray-900">
                       {i18n.language === 'fr' ? dept.nameFr : dept.nameEn}
                     </div>
-                    <div className="text-xs text-ink-faint font-mono">{dept.code}</div>
+                    <div className="text-xs text-gray-400 font-mono">{dept.code}</div>
                   </td>
                   <td className="px-4 py-3">
                     <select
                       value={dept.n1Role}
                       onChange={e => handleUpdate(dept, 'n1Role', e.target.value)}
-                      className="border rounded-[4px] px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 w-full max-w-[220px]"
+                      className="border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 w-full max-w-[220px]"
                     >
                       {ROLE_OPTIONS_N1.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
@@ -120,12 +119,12 @@ export default function ApprovalMatrixPage() {
                       <select
                         value={dept.n2Role ?? ''}
                         onChange={e => handleUpdate(dept, 'n2Role', e.target.value)}
-                        className="border rounded-[4px] px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 w-full max-w-[220px]"
+                        className="border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 w-full max-w-[220px]"
                       >
                         {ROLE_OPTIONS_N2.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                       </select>
                     ) : (
-                      <span className="text-ink-faint text-xs">—</span>
+                      <span className="text-gray-400 text-xs">—</span>
                     )}
                   </td>
                 </tr>
@@ -135,7 +134,7 @@ export default function ApprovalMatrixPage() {
         )}
       </div>
 
-      <p className="text-xs text-ink-faint">
+      <p className="text-xs text-gray-400">
         Changes take effect immediately. The routing engine reads this matrix on every invoice submission.
       </p>
     </div>

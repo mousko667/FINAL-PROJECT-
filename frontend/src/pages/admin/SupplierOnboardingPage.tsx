@@ -4,8 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Panel } from "@/components/ui/Panel"
-import {  CheckCircle2, ChevronLeft, ChevronRight, Loader2  } from 'lucide-react'
+import { CheckCircle2, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { useCreateSupplier } from '@/api/suppliers'
 
 const SUPPLIER_CATEGORIES = ['GOODS', 'SERVICES', 'WORKS', 'CONSULTING'] as const
@@ -82,22 +81,22 @@ export default function SupplierOnboardingPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold text-ink">{t('supplier.onboarding.title', 'Supplier onboarding')}</h1>
-        <p className="text-sm text-ink-faint">
+        <h1 className="text-2xl font-bold text-gray-900">{t('supplier.onboarding.title', 'Supplier onboarding')}</h1>
+        <p className="text-sm text-gray-500">
           {t('supplier.onboarding.subtitle', 'Guide a supplier through creation, verification, and activation readiness.')}
         </p>
       </div>
 
-      <div className="bg-surface rounded-lg border border-hairline p-5">
+      <div className="bg-white rounded-xl border p-5">
         <div className="flex items-center gap-3">
           {[1, 2, 3].map((item) => (
             <div
               key={item}
-              className={`flex items-center gap-2 px-3 py-2 rounded-[4px] border text-sm ${
-                step === item ? 'border-primary bg-primary/5 text-primary' : 'border-hairline text-ink-faint'
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm ${
+                step === item ? 'border-primary bg-primary/5 text-primary' : 'border-gray-200 text-gray-500'
               }`}
             >
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-surface border-hairline text-xs font-semibold">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white border text-xs font-semibold">
                 {item}
               </span>
               {t(`supplier.onboarding.step${item}`, `Step ${item}`)}
@@ -106,29 +105,29 @@ export default function SupplierOnboardingPage() {
         </div>
       </div>
 
-      <form onSubmit={onSubmit} className="bg-surface rounded-lg border border-hairline p-6 space-y-6">
+      <form onSubmit={onSubmit} className="bg-white rounded-xl border p-6 space-y-6">
         {step === 1 && (
           <section className="space-y-4" data-testid="supplier-onboarding-step-1">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="md:col-span-2">
-                <label htmlFor="supplier-companyName" className="block text-sm font-medium text-ink-soft mb-1">
+                <label htmlFor="supplier-companyName" className="block text-sm font-medium text-gray-700 mb-1">
                   {t('supplier.fields.companyName', 'Company Name')} *
                 </label>
-                <input id="supplier-companyName" {...register('companyName')} className="w-full border rounded-[4px] px-3 py-2 text-sm" />
+                <input id="supplier-companyName" {...register('companyName')} className="w-full border rounded-lg px-3 py-2 text-sm" />
                 {errors.companyName && <p className="text-xs text-red-500 mt-1">{t('validation.required')}</p>}
               </div>
               <div>
-                <label htmlFor="supplier-taxId" className="block text-sm font-medium text-ink-soft mb-1">
+                <label htmlFor="supplier-taxId" className="block text-sm font-medium text-gray-700 mb-1">
                   {t('supplier.fields.taxId', 'Tax ID')} *
                 </label>
-                <input id="supplier-taxId" {...register('taxId')} className="w-full border rounded-[4px] px-3 py-2 text-sm" />
+                <input id="supplier-taxId" {...register('taxId')} className="w-full border rounded-lg px-3 py-2 text-sm" />
                 {errors.taxId && <p className="text-xs text-red-500 mt-1">{t('validation.required')}</p>}
               </div>
               <div>
-                <label htmlFor="supplier-category" className="block text-sm font-medium text-ink-soft mb-1">
+                <label htmlFor="supplier-category" className="block text-sm font-medium text-gray-700 mb-1">
                   {t('supplier.fields.category', 'Category')}
                 </label>
-                <select id="supplier-category" {...register('category')} className="w-full border rounded-[4px] px-3 py-2 text-sm bg-surface">
+                <select id="supplier-category" {...register('category')} className="w-full border rounded-lg px-3 py-2 text-sm bg-white">
                   <option value="">{t('supplier.category.none', 'Uncategorized')}</option>
                   {SUPPLIER_CATEGORIES.map((category) => (
                     <option key={category} value={category}>
@@ -145,23 +144,23 @@ export default function SupplierOnboardingPage() {
           <section className="space-y-4" data-testid="supplier-onboarding-step-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <label htmlFor="supplier-contactEmail" className="block text-sm font-medium text-ink-soft mb-1">
+                <label htmlFor="supplier-contactEmail" className="block text-sm font-medium text-gray-700 mb-1">
                   {t('supplier.fields.contactEmail', 'Contact Email')} *
                 </label>
-                <input id="supplier-contactEmail" type="email" {...register('contactEmail')} className="w-full border rounded-[4px] px-3 py-2 text-sm" />
+                <input id="supplier-contactEmail" type="email" {...register('contactEmail')} className="w-full border rounded-lg px-3 py-2 text-sm" />
                 {errors.contactEmail && <p className="text-xs text-red-500 mt-1">{t('validation.invalidEmail')}</p>}
               </div>
               <div>
-                <label htmlFor="supplier-contactPhone" className="block text-sm font-medium text-ink-soft mb-1">
+                <label htmlFor="supplier-contactPhone" className="block text-sm font-medium text-gray-700 mb-1">
                   {t('supplier.fields.contactPhone', 'Phone')}
                 </label>
-                <input id="supplier-contactPhone" {...register('contactPhone')} className="w-full border rounded-[4px] px-3 py-2 text-sm" />
+                <input id="supplier-contactPhone" {...register('contactPhone')} className="w-full border rounded-lg px-3 py-2 text-sm" />
               </div>
               <div className="md:col-span-2">
-                <label htmlFor="supplier-address" className="block text-sm font-medium text-ink-soft mb-1">
+                <label htmlFor="supplier-address" className="block text-sm font-medium text-gray-700 mb-1">
                   {t('supplier.fields.address', 'Address')}
                 </label>
-                <input id="supplier-address" {...register('address')} className="w-full border rounded-[4px] px-3 py-2 text-sm" />
+                <input id="supplier-address" {...register('address')} className="w-full border rounded-lg px-3 py-2 text-sm" />
               </div>
             </div>
           </section>
@@ -171,7 +170,7 @@ export default function SupplierOnboardingPage() {
           <section className="grid grid-cols-1 lg:grid-cols-[1.3fr_0.7fr] gap-5" data-testid="supplier-onboarding-step-3">
             <div className="space-y-4">
               <div>
-                <label htmlFor="supplier-bankDetails" className="block text-sm font-medium text-ink-soft mb-1">
+                <label htmlFor="supplier-bankDetails" className="block text-sm font-medium text-gray-700 mb-1">
                   {t('supplier.fields.bankDetails', 'Bank Details')} *
                 </label>
                 <input
@@ -179,38 +178,38 @@ export default function SupplierOnboardingPage() {
                   type="password"
                   autoComplete="new-password"
                   {...register('bankDetails')}
-                  className="w-full border rounded-[4px] px-3 py-2 text-sm"
+                  className="w-full border rounded-lg px-3 py-2 text-sm"
                 />
                 {errors.bankDetails && <p className="text-xs text-red-500 mt-1">{t('validation.required')}</p>}
               </div>
-              <p className="text-sm text-ink-faint">
+              <p className="text-sm text-gray-500">
                 {t('supplier.onboarding.summaryHelp', 'Review the collected information before creating the supplier record.')}
               </p>
             </div>
 
-            <aside className="rounded-lg border bg-ground p-4 space-y-3">
-              <h2 className="text-sm font-semibold text-ink">
+            <aside className="rounded-xl border bg-gray-50 p-4 space-y-3">
+              <h2 className="text-sm font-semibold text-gray-900">
                 {t('supplier.onboarding.summaryTitle', 'Onboarding summary')}
               </h2>
               <dl className="space-y-2 text-sm">
                 <div className="flex items-start justify-between gap-4">
-                  <dt className="text-ink-faint">{t('supplier.fields.companyName', 'Company Name')}</dt>
-                  <dd className="text-right font-medium text-ink">{summary.companyName || '—'}</dd>
+                  <dt className="text-gray-500">{t('supplier.fields.companyName', 'Company Name')}</dt>
+                  <dd className="text-right font-medium text-gray-900">{summary.companyName || '—'}</dd>
                 </div>
                 <div className="flex items-start justify-between gap-4">
-                  <dt className="text-ink-faint">{t('supplier.fields.taxId', 'Tax ID')}</dt>
-                  <dd className="text-right font-medium text-ink">{summary.taxId || '—'}</dd>
+                  <dt className="text-gray-500">{t('supplier.fields.taxId', 'Tax ID')}</dt>
+                  <dd className="text-right font-medium text-gray-900">{summary.taxId || '—'}</dd>
                 </div>
                 <div className="flex items-start justify-between gap-4">
-                  <dt className="text-ink-faint">{t('supplier.fields.contactEmail', 'Contact Email')}</dt>
-                  <dd className="text-right font-medium text-ink">{summary.contactEmail || '—'}</dd>
+                  <dt className="text-gray-500">{t('supplier.fields.contactEmail', 'Contact Email')}</dt>
+                  <dd className="text-right font-medium text-gray-900">{summary.contactEmail || '—'}</dd>
                 </div>
                 <div className="flex items-start justify-between gap-4">
-                  <dt className="text-ink-faint">{t('supplier.fields.category', 'Category')}</dt>
-                  <dd className="text-right font-medium text-ink">{summary.category || t('supplier.category.none', 'Uncategorized')}</dd>
+                  <dt className="text-gray-500">{t('supplier.fields.category', 'Category')}</dt>
+                  <dd className="text-right font-medium text-gray-900">{summary.category || t('supplier.category.none', 'Uncategorized')}</dd>
                 </div>
               </dl>
-              <div className="rounded-[4px] border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900 flex items-start gap-2">
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900 flex items-start gap-2">
                 <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
                 <span>{t('supplier.onboarding.ready', 'The supplier can be created once the banking details are confirmed.')}</span>
               </div>
@@ -222,7 +221,7 @@ export default function SupplierOnboardingPage() {
           <button
             type="button"
             onClick={() => navigate('/admin/suppliers')}
-            className="px-4 py-2 border rounded-[4px] text-sm hover:bg-ground"
+            className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50"
           >
             {t('app.cancel', 'Cancel')}
           </button>
@@ -232,7 +231,7 @@ export default function SupplierOnboardingPage() {
               type="button"
               onClick={previousStep}
               disabled={step === 1}
-              className="flex items-center gap-2 px-4 py-2 border rounded-[4px] text-sm hover:bg-ground disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 border rounded-lg text-sm hover:bg-gray-50 disabled:opacity-50"
             >
               <ChevronLeft className="w-4 h-4" />
               {t('supplier.onboarding.previous', 'Previous')}
@@ -242,7 +241,7 @@ export default function SupplierOnboardingPage() {
               <button
                 type="button"
                 onClick={nextStep}
-                className="flex items-center gap-2 px-5 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90"
+                className="flex items-center gap-2 px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90"
               >
                 {t('supplier.onboarding.next', 'Next')}
                 <ChevronRight className="w-4 h-4" />
@@ -251,7 +250,7 @@ export default function SupplierOnboardingPage() {
               <button
                 type="submit"
                 disabled={isPending}
-                className="flex items-center gap-2 px-5 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90 disabled:opacity-60"
+                className="flex items-center gap-2 px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-60"
               >
                 {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                 {t('supplier.onboarding.finish', 'Create supplier')}

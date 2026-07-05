@@ -4,8 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import apiClient from '@/services/apiClient'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
-import { Panel } from "@/components/ui/Panel"
-import {  Loader2, Archive, Search, Download, Filter, ExternalLink, FileText, FolderPlus  } from 'lucide-react'
+import { Loader2, Archive, Search, Download, Filter, ExternalLink, FileText, FolderPlus } from 'lucide-react'
 import ArchiveFolderTree from '@/components/archive/ArchiveFolderTree'
 import AssignFolderModal from '@/components/archive/AssignFolderModal'
 import { formatAmount, formatDate } from '@/lib/format'
@@ -85,18 +84,18 @@ export default function ArchivePage() {
         {/* Main Content */}
         <div className="flex-1 space-y-6 p-6 overflow-y-auto">
           <div>
-            <h1 className="text-2xl font-bold text-ink">{t('archive.title', 'Archive Numérique')}</h1>
-            <p className="text-sm text-ink-faint mt-0.5">
+            <h1 className="text-2xl font-bold text-gray-900">{t('archive.title', 'Archive Numérique')}</h1>
+            <p className="text-sm text-gray-500 mt-0.5">
               {t('archive.subtitle', 'Toutes les factures archivées — recherche et téléchargement')}
-              {data && <span className="ml-2 font-medium text-ink-soft">{data.totalElements} documents</span>}
+              {data && <span className="ml-2 font-medium text-gray-700">{data.totalElements} documents</span>}
             </p>
           </div>
 
           {/* Search & Filters */}
-          <div className="bg-surface rounded-xl border border-hairline p-4 space-y-3">
+          <div className="bg-white rounded-xl border p-4 space-y-3">
           <div className="flex items-center gap-3">
             <div className="flex-1 flex items-center gap-2 border rounded-lg px-3 py-2">
-              <Search className="w-4 h-4 text-ink-faint shrink-0" />
+              <Search className="w-4 h-4 text-gray-400 shrink-0" />
               <input
                 className="flex-1 text-sm outline-none bg-transparent"
                 placeholder={t('archive.searchPlaceholder', 'Rechercher par référence, fournisseur, description...')}
@@ -107,9 +106,9 @@ export default function ArchivePage() {
           </div>
           <div className="flex flex-wrap gap-3">
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-ink-faint" />
+              <Filter className="w-4 h-4 text-gray-400" />
               <select value={deptFilter} onChange={e => { setDeptFilter(e.target.value); setPage(0) }}
-                className="text-sm border rounded-lg px-3 py-1.5 bg-surface focus:outline-none focus:ring-2 focus:ring-primary/20">
+                className="text-sm border rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20">
                 <option value="">{t('archive.allDepartments')}</option>
                 {['DRH','DG','FIN','INFO','TERM','COM','QHSSE','INFRA','TECH'].map(d => (
                   <option key={d} value={d}>{d}</option>
@@ -117,10 +116,10 @@ export default function ArchivePage() {
               </select>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-ink-faint">Du</span>
+              <span className="text-xs text-gray-500">Du</span>
               <input type="date" value={fromDate} onChange={e => { setFromDate(e.target.value); setPage(0) }}
                 className="text-sm border rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/20" />
-              <span className="text-xs text-ink-faint">au</span>
+              <span className="text-xs text-gray-500">au</span>
               <input type="date" value={toDate} onChange={e => { setToDate(e.target.value); setPage(0) }}
                 className="text-sm border rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/20" />
             </div>
@@ -134,11 +133,11 @@ export default function ArchivePage() {
         </div>
 
         {/* Results */}
-        <div className="bg-surface rounded-xl border border-hairline overflow-hidden">
+        <div className="bg-white rounded-xl border overflow-hidden">
           {isLoading ? (
             <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
           ) : invoices.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-3 text-ink-faint">
+            <div className="flex flex-col items-center justify-center py-16 gap-3 text-gray-400">
               <Archive className="w-10 h-10" />
               <p className="text-sm font-medium">
                 {search || deptFilter
@@ -149,32 +148,32 @@ export default function ArchivePage() {
           ) : (
             <>
               <table className="w-full text-sm">
-                <thead className="bg-ground border-b">
+                <thead className="bg-gray-50 border-b">
                   <tr>
-                    <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.reference')}</th>
-                    <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.supplier')}</th>
-                    <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.department')}</th>
-                    <th className="text-right px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.amount')}</th>
-                    <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.issueDate')}</th>
-                    <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.audit.date', 'Archivé le')}</th>
-                    <th className="px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint" />
+                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.reference')}</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.supplier')}</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.department')}</th>
+                    <th className="text-right px-4 py-3 font-medium text-gray-600">{t('invoice.amount')}</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.issueDate')}</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.audit.date', 'Archivé le')}</th>
+                    <th className="px-4 py-3" />
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-hairline">
+                <tbody className="divide-y">
                   {invoices.map(inv => (
-                    <tr key={inv.id} className="hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)]">
-                      <td className="px-4 py-3 font-mono text-xs font-semibold text-ink">{inv.referenceNumber}</td>
-                      <td className="px-4 py-3 text-ink-soft truncate max-w-[160px]">{inv.supplierName}</td>
+                    <tr key={inv.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 font-mono text-xs font-semibold text-gray-900">{inv.referenceNumber}</td>
+                      <td className="px-4 py-3 text-gray-700 truncate max-w-[160px]">{inv.supplierName}</td>
                       <td className="px-4 py-3">
                         {inv.departmentCode
-                          ? <span className="text-xs font-mono bg-ground text-ink-soft px-2 py-0.5 rounded">{inv.departmentCode}</span>
-                          : <span className="text-ink-faint">—</span>}
+                          ? <span className="text-xs font-mono bg-gray-100 text-gray-700 px-2 py-0.5 rounded">{inv.departmentCode}</span>
+                          : <span className="text-gray-400">—</span>}
                       </td>
-                      <td className="px-4 py-3 text-right font-medium text-ink">
+                      <td className="px-4 py-3 text-right font-medium text-gray-900">
                         {formatAmount(inv.amount)} {inv.currency}
                       </td>
-                      <td className="px-4 py-3 text-ink-faint text-xs">{formatDate(inv.issueDate)}</td>
-                      <td className="px-4 py-3 text-ink-faint text-xs">{formatDate(inv.createdAt)}</td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">{formatDate(inv.issueDate)}</td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">{formatDate(inv.createdAt)}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2 justify-end">
                           <button
@@ -182,7 +181,7 @@ export default function ArchivePage() {
                               setAssignModalInvoiceId(inv.id)
                               setAssignModalCurrentFolderId(inv.folderId)
                             }}
-                            className="flex items-center gap-1 text-xs text-ink-faint hover:text-primary transition-colors"
+                            className="flex items-center gap-1 text-xs text-gray-500 hover:text-primary transition-colors"
                             title={t('archiveFolders.assign')}
                           >
                             <FolderPlus className="w-3.5 h-3.5" />
@@ -194,7 +193,7 @@ export default function ArchivePage() {
                           <button
                             onClick={() => downloadPdf(inv)}
                             disabled={downloadingId === inv.id}
-                            className="flex items-center gap-1 text-xs text-ink-faint hover:text-primary transition-colors disabled:opacity-50">
+                            className="flex items-center gap-1 text-xs text-gray-500 hover:text-primary transition-colors disabled:opacity-50">
                             {downloadingId === inv.id
                               ? <Loader2 className="w-3 h-3 animate-spin" />
                               : <Download className="w-3 h-3" />} PDF
@@ -207,11 +206,11 @@ export default function ArchivePage() {
               </table>
 
               {data && data.totalPages > 1 && (
-                <div className="flex items-center justify-between px-4 py-3 border-t bg-ground">
-                  <span className="text-sm text-ink-faint">{t('pagination.page')} {page + 1} / {data.totalPages} — {data.totalElements} documents</span>
+                <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
+                  <span className="text-sm text-gray-500">{t('pagination.page')} {page + 1} / {data.totalPages} — {data.totalElements} documents</span>
                   <div className="flex gap-2">
-                    <button disabled={page === 0} onClick={() => setPage(p => p - 1)} className="px-3 py-1.5 bg-surface border-hairline rounded-lg text-sm disabled:opacity-40 hover:bg-ground">{t('app.previous')}</button>
-                    <button disabled={page >= data.totalPages - 1} onClick={() => setPage(p => p + 1)} className="px-3 py-1.5 bg-surface border-hairline rounded-lg text-sm disabled:opacity-40 hover:bg-ground">{t('app.next')}</button>
+                    <button disabled={page === 0} onClick={() => setPage(p => p - 1)} className="px-3 py-1.5 bg-white border rounded-lg text-sm disabled:opacity-40 hover:bg-gray-50">{t('app.previous')}</button>
+                    <button disabled={page >= data.totalPages - 1} onClick={() => setPage(p => p + 1)} className="px-3 py-1.5 bg-white border rounded-lg text-sm disabled:opacity-40 hover:bg-gray-50">{t('app.next')}</button>
                   </div>
                 </div>
               )}
@@ -219,7 +218,7 @@ export default function ArchivePage() {
           )}
         </div>
 
-          <p className="text-xs text-ink-faint">
+          <p className="text-xs text-gray-400">
             <FileText className="w-3.5 h-3.5 inline mr-1" />
             {t('archive.retentionNote', 'Une empreinte SHA-256 est calculée et enregistrée au téléversement de chaque document (référence d\'intégrité). La politique de rétention OCT vise une conservation de 10 ans.')}
           </p>

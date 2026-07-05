@@ -5,8 +5,7 @@ import apiClient from '@/services/apiClient'
 import type { ApiResponse, PagedResponse } from '@/types/invoice'
 import { useAppSelector } from '@/store/hooks'
 import { ROLE_OPTIONS } from '@/constants/roles'
-import { Panel } from "@/components/ui/Panel"
-import {  KeyRound, Loader2, AlertCircle, Send  } from 'lucide-react'
+import { KeyRound, Loader2, AlertCircle, Send } from 'lucide-react'
 
 export interface AccessRequest {
   id: string
@@ -27,8 +26,8 @@ export function StatusBadge({ status }: { status: AccessRequest['status'] }) {
   const { t } = useTranslation()
   const styles: Record<AccessRequest['status'], string> = {
     PENDING: 'bg-amber-100 text-amber-800',
-    APPROVED: 'bg-pos/10 text-pos',
-    REJECTED: 'bg-crit/10 text-red-800',
+    APPROVED: 'bg-green-100 text-green-800',
+    REJECTED: 'bg-red-100 text-red-800',
   }
   return (
     <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${styles[status]}`}>
@@ -91,15 +90,15 @@ export default function MyAccessRequestsPage() {
       <div className="flex items-start gap-3">
         <KeyRound className="w-6 h-6 text-primary mt-0.5" />
         <div>
-          <h1 className="text-2xl font-bold text-ink">{t('accessRequests.myTitle')}</h1>
-          <p className="text-sm text-ink-faint mt-1">{t('accessRequests.mySubtitle')}</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('accessRequests.myTitle')}</h1>
+          <p className="text-sm text-gray-500 mt-1">{t('accessRequests.mySubtitle')}</p>
         </div>
       </div>
 
       {/* Request form */}
-      <form onSubmit={onSubmit} className="bg-surface rounded-xl border border-hairline p-5 space-y-4 max-w-2xl">
+      <form onSubmit={onSubmit} className="bg-white rounded-xl border p-5 space-y-4 max-w-2xl">
         <div>
-          <label htmlFor="ar-role" className="block text-sm font-medium text-ink-soft mb-1">
+          <label htmlFor="ar-role" className="block text-sm font-medium text-gray-700 mb-1">
             {t('accessRequests.role')}
           </label>
           <select
@@ -116,7 +115,7 @@ export default function MyAccessRequestsPage() {
         </div>
 
         <div>
-          <label htmlFor="ar-reason" className="block text-sm font-medium text-ink-soft mb-1">
+          <label htmlFor="ar-reason" className="block text-sm font-medium text-gray-700 mb-1">
             {t('accessRequests.reason')}
           </label>
           <textarea
@@ -131,7 +130,7 @@ export default function MyAccessRequestsPage() {
         </div>
 
         {formError && (
-          <p className="flex items-center gap-1.5 text-sm text-crit">
+          <p className="flex items-center gap-1.5 text-sm text-red-600">
             <AlertCircle className="w-4 h-4" /> {formError}
           </p>
         )}
@@ -148,29 +147,29 @@ export default function MyAccessRequestsPage() {
 
       {/* My requests */}
       <div>
-        <h2 className="text-sm font-semibold text-ink-soft mb-2">{t('accessRequests.myRequests')}</h2>
+        <h2 className="text-sm font-semibold text-gray-700 mb-2">{t('accessRequests.myRequests')}</h2>
         {isLoading ? (
-          <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-ink-faint" /></div>
+          <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>
         ) : requests.length === 0 ? (
-          <p className="text-sm text-ink-faint py-6">{t('accessRequests.noneMine')}</p>
+          <p className="text-sm text-gray-400 py-6">{t('accessRequests.noneMine')}</p>
         ) : (
-          <div className="bg-surface rounded-xl border border-hairline overflow-x-auto">
+          <div className="bg-white rounded-xl border overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-ink-faint hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)]">
-                  <th className="px-4 py-2.5 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('accessRequests.role')}</th>
-                  <th className="px-4 py-2.5 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('accessRequests.reason')}</th>
-                  <th className="px-4 py-2.5 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('accessRequests.statusCol')}</th>
-                  <th className="px-4 py-2.5 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('accessRequests.reviewComment')}</th>
+                <tr className="border-b text-left text-gray-500">
+                  <th className="px-4 py-2.5 font-medium">{t('accessRequests.role')}</th>
+                  <th className="px-4 py-2.5 font-medium">{t('accessRequests.reason')}</th>
+                  <th className="px-4 py-2.5 font-medium">{t('accessRequests.statusCol')}</th>
+                  <th className="px-4 py-2.5 font-medium">{t('accessRequests.reviewComment')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-hairline">
+              <tbody>
                 {requests.map((r) => (
-                  <tr key={r.id} className="hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)]">
-                    <td className="px-4 py-2.5 font-medium text-ink">{t(`roles.${r.requestedRole}`, r.requestedRole)}</td>
-                    <td className="px-4 py-2.5 text-ink-soft max-w-xs truncate" title={r.reason}>{r.reason}</td>
+                  <tr key={r.id} className="border-b last:border-0">
+                    <td className="px-4 py-2.5 font-medium text-gray-900">{t(`roles.${r.requestedRole}`, r.requestedRole)}</td>
+                    <td className="px-4 py-2.5 text-gray-600 max-w-xs truncate" title={r.reason}>{r.reason}</td>
                     <td className="px-4 py-2.5"><StatusBadge status={r.status} /></td>
-                    <td className="px-4 py-2.5 text-ink-faint">{r.reviewComment || '—'}</td>
+                    <td className="px-4 py-2.5 text-gray-500">{r.reviewComment || '—'}</td>
                   </tr>
                 ))}
               </tbody>
