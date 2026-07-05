@@ -10,16 +10,25 @@ interface StatusConfig {
   border: string
 }
 
+/**
+ * Registre semantic mapping (Track B / Lot B2) — 5 semantics + 2 neutrals.
+ * N1 (warn) vs N2 (hot) are intentionally distinct hues (escalation reads at
+ * a glance). VALIDE / BON_A_PAYER / PAYE are all "pos" but graduated in
+ * strength: VALIDE and BON_A_PAYER share the light bg-pos-bg/text-pos tint
+ * (still-in-flight positive states), while PAYE — the terminal, fully
+ * settled state — gets the saturated solid `bg-pos` fill with light text,
+ * so the eye can tell "paid" apart from "on the way to being paid".
+ */
 const statusConfig: Record<InvoiceStatus, StatusConfig> = {
-  BROUILLON:        { dot: 'bg-slate-400',    bg: 'bg-slate-50',   text: 'text-slate-700',  border: 'border-slate-300' },
-  SOUMIS:           { dot: 'bg-blue-500',     bg: 'bg-blue-50',    text: 'text-blue-700',   border: 'border-blue-300' },
-  EN_VALIDATION_N1: { dot: 'bg-amber-500',    bg: 'bg-amber-50',   text: 'text-amber-800',  border: 'border-amber-300' },
-  EN_VALIDATION_N2: { dot: 'bg-orange-500',   bg: 'bg-orange-50',  text: 'text-orange-800', border: 'border-orange-300' },
-  VALIDE:           { dot: 'bg-teal-500',     bg: 'bg-teal-50',    text: 'text-teal-800',   border: 'border-teal-300' },
-  BON_A_PAYER:      { dot: 'bg-green-500',    bg: 'bg-green-50',   text: 'text-green-800',  border: 'border-green-300' },
-  PAYE:             { dot: 'bg-emerald-600',  bg: 'bg-emerald-50', text: 'text-emerald-800',border: 'border-emerald-300' },
-  ARCHIVE:          { dot: 'bg-gray-400',     bg: 'bg-gray-50',    text: 'text-gray-600',   border: 'border-gray-300' },
-  REJETE:           { dot: 'bg-red-500',      bg: 'bg-red-50',     text: 'text-red-700',    border: 'border-red-300' },
+  BROUILLON:        { dot: 'bg-ink-faint',  bg: 'bg-ground',   text: 'text-ink-soft',    border: 'border-hairline' },
+  SOUMIS:           { dot: 'bg-info',       bg: 'bg-info-bg',  text: 'text-info',        border: 'border-info/30' },
+  EN_VALIDATION_N1: { dot: 'bg-warn',       bg: 'bg-warn-bg',  text: 'text-warn',        border: 'border-warn/30' },
+  EN_VALIDATION_N2: { dot: 'bg-hot',        bg: 'bg-hot-bg',   text: 'text-hot',         border: 'border-hot/30' },
+  VALIDE:           { dot: 'bg-pos',        bg: 'bg-pos-bg',   text: 'text-pos',         border: 'border-pos/30' },
+  BON_A_PAYER:      { dot: 'bg-pos',        bg: 'bg-pos-bg',   text: 'text-pos',         border: 'border-pos/40' },
+  PAYE:             { dot: 'bg-pos',        bg: 'bg-pos',      text: 'text-pos-bg',      border: 'border-pos' },
+  ARCHIVE:          { dot: 'bg-ink-faint',  bg: 'bg-ground',   text: 'text-ink-faint',   border: 'border-hairline' },
+  REJETE:           { dot: 'bg-crit',       bg: 'bg-crit-bg',  text: 'text-crit',        border: 'border-crit/30' },
 }
 
 interface StatusBadgeProps extends HTMLAttributes<HTMLSpanElement> {
@@ -30,7 +39,7 @@ interface StatusBadgeProps extends HTMLAttributes<HTMLSpanElement> {
 
 export function StatusBadge({ status, className, variant = 'pill', ...props }: StatusBadgeProps) {
   const { t } = useTranslation()
-  const cfg = statusConfig[status] ?? { dot: 'bg-gray-400', bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200' }
+  const cfg = statusConfig[status] ?? { dot: 'bg-ink-faint', bg: 'bg-ground', text: 'text-ink-faint', border: 'border-hairline' }
 
   if (variant === 'dot-only') {
     return (

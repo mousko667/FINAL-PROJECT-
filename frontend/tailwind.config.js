@@ -63,6 +63,7 @@ module.exports = {
         /* Registre design-system tokens (Track B / Lot B1) — warm neutrals +
          * semantic states, remapped per-theme via :root / .dark in index.css. */
         ground: "hsl(var(--ground))",
+        surface: "hsl(var(--surface))",
         hairline: "hsl(var(--hairline))",
         "hairline-strong": "hsl(var(--hairline-strong))",
         ink: {

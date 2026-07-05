@@ -70,8 +70,17 @@
      *   Gold
      *   --gold-deep #9A7E2E -> 44 54% 39%  (disciplined gold: brand + CTA only;
      *                                       distinct from the existing --oct-gold)
+     *
+     *   Surface (Lot B2) — the existing shadcn --card is #FFFFFF with no
+     *   .dark override (would render white-on-white in dark mode), so we add
+     *   a dedicated --surface token for the generic Panel component instead
+     *   of reusing --card. Light = a hair lighter than --ground (subtle lift
+     *   off the page); dark value below matches the surface hex from the B1
+     *   dark-mode spec (used for card/panel dark, see .dark block below).
+     *   --surface (light) #FFFFFF -> 0 0% 100%
      * =================================================================== */
     --ground: 45 33% 98%;
+    --surface: 0 0% 100%;
     --hairline: 41 28% 89%;
     --hairline-strong: 41 23% 81%;
     --ink: 40 15% 12%;
@@ -124,6 +133,7 @@
    * =================================================================== */
   .dark {
     --ground: 218 18% 9%;
+    --surface: 218 19% 11%;
     --hairline: 219 16% 18%;
     --hairline-strong: 217 15% 24%;
     --ink: 43 13% 90%;
@@ -162,15 +172,28 @@
 }
 
 .skeleton {
+  /* Warm neutrals (Track B / Lot B2) — same hue family as --hairline instead
+   * of the old cool slate gray. Values sit between --ground and
+   * --hairline-strong on the warm 41deg hue. */
   background: linear-gradient(
     90deg,
-    hsl(210 15% 92%) 25%,
-    hsl(210 15% 87%) 50%,
-    hsl(210 15% 92%) 75%
+    hsl(41 25% 91%) 25%,
+    hsl(41 23% 85%) 50%,
+    hsl(41 25% 91%) 75%
   );
   background-size: 800px 100%;
   animation: skeleton-shimmer 1.4s ease-in-out infinite;
   border-radius: 0.375rem;
+}
+
+.dark .skeleton {
+  background: linear-gradient(
+    90deg,
+    hsl(219 16% 16%) 25%,
+    hsl(219 16% 21%) 50%,
+    hsl(219 16% 16%) 75%
+  );
+  background-size: 800px 100%;
 }
 
 /* OCT sidebar nav active state override */

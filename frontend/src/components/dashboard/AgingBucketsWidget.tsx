@@ -30,11 +30,18 @@ interface BucketedAging {
 }
 
 const BUCKET_ORDER = ['0_30', '31_60', '61_90', '90_plus'] as const
+/**
+ * Recharts renders literal CSS colors (SVG fill), it cannot read Tailwind
+ * utility classes — so these are the resolved hex values of the Registre
+ * semantic tokens (Track B / Lot B1, index.css :root), aligned bucket by
+ * bucket with escalating severity: 0-30 = pos, 31-60 = warn, 61-90 = hot,
+ * 90+ = crit.
+ */
 const BUCKET_COLORS: Record<string, string> = {
-  '0_30': '#22c55e',
-  '31_60': '#f59e0b',
-  '61_90': '#f97316',
-  '90_plus': '#ef4444',
+  '0_30': '#3E7C5A',   // --pos
+  '31_60': '#B5852A',  // --warn
+  '61_90': '#C4622E',  // --hot
+  '90_plus': '#A6432E', // --crit
 }
 
 export default function AgingBucketsWidget() {
@@ -64,33 +71,33 @@ export default function AgingBucketsWidget() {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl border p-5 flex justify-center py-8">
-        <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+      <div className="bg-surface rounded-[4px] border border-hairline shadow-sm p-5 flex justify-center py-8">
+        <Loader2 className="w-5 h-5 animate-spin text-ink-faint" />
       </div>
     )
   }
 
   return (
-    <div className="bg-white rounded-xl border overflow-hidden" data-testid="aging-buckets-widget">
-      <div className="px-5 py-4 border-b bg-gray-50">
-        <h2 className="font-semibold text-gray-900">{t('dashboard.agingBuckets.title')}</h2>
-        <p className="text-xs text-gray-500 mt-0.5">{t('dashboard.agingBuckets.desc')}</p>
+    <div className="bg-surface rounded-[4px] border border-hairline shadow-sm overflow-hidden" data-testid="aging-buckets-widget">
+      <div className="px-5 py-4 border-b border-hairline bg-ground">
+        <h2 className="font-semibold text-ink">{t('dashboard.agingBuckets.title')}</h2>
+        <p className="text-xs text-ink-soft mt-0.5">{t('dashboard.agingBuckets.desc')}</p>
       </div>
       <div className="p-5">
         {isEmpty ? (
-          <p data-testid="aging-buckets-empty" className="text-sm text-center text-gray-500 py-6">
+          <p data-testid="aging-buckets-empty" className="text-sm text-center text-ink-soft py-6">
             {t('dashboard.agingBuckets.empty')}
           </p>
         ) : (
           <>
             <div className="flex flex-wrap gap-4 mb-4 text-sm">
-              <span className="text-gray-600">
+              <span className="text-ink-soft">
                 {t('dashboard.agingBuckets.totalOverdue')}:{' '}
-                <strong className="text-gray-900">{data.totalOverdueInvoiceCount}</strong>
+                <strong className="text-ink">{data.totalOverdueInvoiceCount}</strong>
               </span>
-              <span className="text-gray-600">
+              <span className="text-ink-soft">
                 {t('dashboard.agingBuckets.totalAmount')}:{' '}
-                <strong className="text-gray-900 font-mono">
+                <strong className="num text-ink">
                   {formatAmount(data.totalOverdueAmount)} XOF
                 </strong>
               </span>
@@ -111,15 +118,15 @@ export default function AgingBucketsWidget() {
               </BarChart>
             </ResponsiveContainer>
             {data.supplierRollup.length > 0 && (
-              <div className="mt-5 border-t pt-4">
-                <h3 className="text-sm font-semibold text-gray-800 mb-2">
+              <div className="mt-5 border-t border-hairline pt-4">
+                <h3 className="text-sm font-semibold text-ink mb-2">
                   {t('dashboard.agingBuckets.supplierRollup')}
                 </h3>
-                <div className="divide-y max-h-40 overflow-y-auto">
+                <div className="divide-y divide-hairline max-h-40 overflow-y-auto">
                   {data.supplierRollup.slice(0, 5).map((row) => (
                     <div key={row.supplierId ?? row.supplierName} className="flex justify-between py-2 text-sm">
-                      <span className="text-gray-700 truncate pr-4">{row.supplierName}</span>
-                      <span className="font-mono text-gray-900 shrink-0">
+                      <span className="text-ink-soft truncate pr-4">{row.supplierName}</span>
+                      <span className="num text-ink shrink-0">
                         {formatAmount(row.totalOverdueAmount)} XOF
                       </span>
                     </div>
