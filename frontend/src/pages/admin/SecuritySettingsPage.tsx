@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { Shield, CheckCircle, Clock, Lock, Key, Users, Trash2, Loader2, AlertCircle } from 'lucide-react'
+import { Panel } from "@/components/ui/Panel"
+import {  Shield, CheckCircle, Clock, Lock, Key, Users, Trash2, Loader2, AlertCircle  } from 'lucide-react'
 import apiClient from '@/services/apiClient'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
@@ -105,91 +106,91 @@ export default function SecuritySettingsPage() {
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">{t('admin.security.title')}</h1>
-        <p className="text-sm text-gray-500 mt-1">{t('admin.security.subtitle', 'Configure system-wide security policies.')}</p>
+        <h1 className="text-2xl font-bold text-ink">{t('admin.security.title')}</h1>
+        <p className="text-sm text-ink-faint mt-1">{t('admin.security.subtitle', 'Configure system-wide security policies.')}</p>
       </div>
 
       {/* P11-53: security-health dashboard */}
       {health && (
-        <div className="bg-white rounded-xl border p-5">
+        <div className="bg-surface rounded-lg border border-hairline p-5">
           <div className="flex items-center gap-2 mb-4">
             <Shield className="w-5 h-5 text-primary" />
-            <h2 className="font-semibold text-gray-800">{t('admin.security.health.title')}</h2>
+            <h2 className="font-semibold text-ink">{t('admin.security.health.title')}</h2>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="rounded-lg border p-4">
-              <div className="flex items-center gap-2 text-xs text-gray-500"><Lock className="w-4 h-4" />{t('admin.security.health.encryption')}</div>
-              <div className="mt-1 text-lg font-bold text-gray-900">
+            <div className="rounded-[4px] border p-4">
+              <div className="flex items-center gap-2 text-xs text-ink-faint"><Lock className="w-4 h-4" />{t('admin.security.health.encryption')}</div>
+              <div className="mt-1 text-lg font-bold text-ink">
                 {health.atRestEncryptionEnabled ? t('admin.security.health.enabled') : t('admin.security.health.disabled')}
               </div>
-              <div className="text-xs text-gray-400">{t('admin.security.health.encryptedRecords', { count: health.encryptedBankDetailRecords })}</div>
+              <div className="text-xs text-ink-faint">{t('admin.security.health.encryptedRecords', { count: health.encryptedBankDetailRecords })}</div>
             </div>
-            <div className="rounded-lg border p-4">
-              <div className="flex items-center gap-2 text-xs text-gray-500"><Key className="w-4 h-4" />{t('admin.security.health.mfaAdoption')}</div>
-              <div className="mt-1 text-lg font-bold text-gray-900">{health.mfaAdoptionPercent.toFixed(0)}%</div>
-              <div className="text-xs text-gray-400">{health.mfaEnabledUsers} / {health.totalActiveUsers}</div>
+            <div className="rounded-[4px] border p-4">
+              <div className="flex items-center gap-2 text-xs text-ink-faint"><Key className="w-4 h-4" />{t('admin.security.health.mfaAdoption')}</div>
+              <div className="mt-1 text-lg font-bold text-ink">{health.mfaAdoptionPercent.toFixed(0)}%</div>
+              <div className="text-xs text-ink-faint">{health.mfaEnabledUsers} / {health.totalActiveUsers}</div>
             </div>
-            <div className="rounded-lg border p-4">
-              <div className="flex items-center gap-2 text-xs text-gray-500"><Users className="w-4 h-4" />{t('admin.security.health.loginFailures')}</div>
-              <div className={`mt-1 text-lg font-bold ${health.lockedAccounts > 0 ? 'text-red-600' : 'text-gray-900'}`}>{health.lockedAccounts}</div>
-              <div className="text-xs text-gray-400">{t('admin.security.health.failedAttempts', { count: health.totalFailedLoginAttempts })}</div>
+            <div className="rounded-[4px] border p-4">
+              <div className="flex items-center gap-2 text-xs text-ink-faint"><Users className="w-4 h-4" />{t('admin.security.health.loginFailures')}</div>
+              <div className={`mt-1 text-lg font-bold ${health.lockedAccounts > 0 ? 'text-crit' : 'text-ink'}`}>{health.lockedAccounts}</div>
+              <div className="text-xs text-ink-faint">{t('admin.security.health.failedAttempts', { count: health.totalFailedLoginAttempts })}</div>
             </div>
-            <div className="rounded-lg border p-4">
-              <div className="flex items-center gap-2 text-xs text-gray-500"><CheckCircle className="w-4 h-4" />{t('admin.security.health.webhookSuccess')}</div>
-              <div className="mt-1 text-lg font-bold text-gray-900">{(health.webhookDeliverySuccessRate * 100).toFixed(0)}%</div>
-              <div className="text-xs text-gray-400">{t('admin.security.health.last7Days')}</div>
+            <div className="rounded-[4px] border p-4">
+              <div className="flex items-center gap-2 text-xs text-ink-faint"><CheckCircle className="w-4 h-4" />{t('admin.security.health.webhookSuccess')}</div>
+              <div className="mt-1 text-lg font-bold text-ink">{(health.webhookDeliverySuccessRate * 100).toFixed(0)}%</div>
+              <div className="text-xs text-ink-faint">{t('admin.security.health.last7Days')}</div>
             </div>
           </div>
         </div>
       )}
 
       {saved && (
-        <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+        <div className="flex items-center gap-2 text-sm text-pos bg-pos/10 border border-green-200 rounded-[4px] px-4 py-3">
           <CheckCircle className="w-4 h-4" />
           {t('admin.security.saved', 'Security policy saved.')}
         </div>
       )}
       {formError && (
-        <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+        <div className="flex items-center gap-2 text-sm text-crit bg-crit/10 border border-red-200 rounded-[4px] px-4 py-3">
           <AlertCircle className="w-4 h-4" /> {formError}
         </div>
       )}
       {policyLoading && (
-        <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-gray-400" /></div>
+        <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-ink-faint" /></div>
       )}
 
       <form onSubmit={handleSave} className="space-y-4">
         {/* MFA */}
-        <div className="bg-white rounded-xl border p-5">
+        <div className="bg-surface rounded-lg border border-hairline p-5">
           <div className="flex items-start gap-3">
             <Shield className="w-5 h-5 text-primary mt-0.5" />
             <div className="flex-1">
-              <h2 className="font-semibold text-gray-900">{t('admin.security.mfaPolicy')}</h2>
-              <p className="text-sm text-gray-500 mt-0.5">{t('admin.security.mfaDesc', 'TOTP-based two-factor authentication for all staff accounts.')}</p>
+              <h2 className="font-semibold text-ink">{t('admin.security.mfaPolicy')}</h2>
+              <p className="text-sm text-ink-faint mt-0.5">{t('admin.security.mfaDesc', 'TOTP-based two-factor authentication for all staff accounts.')}</p>
               <label className="flex items-center gap-3 mt-3 cursor-pointer">
                 <input type="checkbox" checked={mfaRequired} onChange={e => setMfaRequired(e.target.checked)} className="w-4 h-4 accent-primary" />
-                <span className="text-sm font-medium text-gray-700">{t('admin.security.mfaRequired')}</span>
+                <span className="text-sm font-medium text-ink-soft">{t('admin.security.mfaRequired')}</span>
               </label>
             </div>
           </div>
         </div>
 
         {/* Session Timeout */}
-        <div className="bg-white rounded-xl border p-5">
+        <div className="bg-surface rounded-lg border border-hairline p-5">
           <div className="flex items-start gap-3">
             <Clock className="w-5 h-5 text-primary mt-0.5" />
             <div className="flex-1">
-              <h2 className="font-semibold text-gray-900">{t('admin.security.sessionTimeout')}</h2>
-              <p className="text-sm text-gray-500 mt-0.5">{t('admin.security.sessionTimeoutDesc', 'Idle sessions are terminated after this many minutes.')}</p>
+              <h2 className="font-semibold text-ink">{t('admin.security.sessionTimeout')}</h2>
+              <p className="text-sm text-ink-faint mt-0.5">{t('admin.security.sessionTimeoutDesc', 'Idle sessions are terminated after this many minutes.')}</p>
               <input
                 type="number"
                 value={sessionTimeout}
                 onChange={e => setSessionTimeout(Number(e.target.value))}
                 min={5} max={480}
-                className="mt-2 w-32 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="mt-2 w-32 border rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
-              <span className="ml-2 text-sm text-gray-500">{t('admin.security.minutes', 'minutes')}</span>
-              <p className="text-xs text-gray-400 mt-1">
+              <span className="ml-2 text-sm text-ink-faint">{t('admin.security.minutes', 'minutes')}</span>
+              <p className="text-xs text-ink-faint mt-1">
                 {t('admin.security.sessionTimeoutNote', 'Applies to new sign-ins (access-token lifetime). Tokens already issued keep their current expiry.')}
               </p>
             </div>
@@ -197,39 +198,39 @@ export default function SecuritySettingsPage() {
         </div>
 
         {/* Login Attempts */}
-        <div className="bg-white rounded-xl border p-5">
+        <div className="bg-surface rounded-lg border border-hairline p-5">
           <div className="flex items-start gap-3">
             <Lock className="w-5 h-5 text-primary mt-0.5" />
             <div className="flex-1">
-              <h2 className="font-semibold text-gray-900">{t('admin.security.maxLoginAttempts')}</h2>
-              <p className="text-sm text-gray-500 mt-0.5">{t('admin.security.maxLoginAttemptsDesc', 'Account is locked after this many consecutive failures.')}</p>
+              <h2 className="font-semibold text-ink">{t('admin.security.maxLoginAttempts')}</h2>
+              <p className="text-sm text-ink-faint mt-0.5">{t('admin.security.maxLoginAttemptsDesc', 'Account is locked after this many consecutive failures.')}</p>
               <input
                 type="number"
                 value={maxAttempts}
                 onChange={e => setMaxAttempts(Number(e.target.value))}
                 min={3} max={10}
-                className="mt-2 w-24 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="mt-2 w-24 border rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
-              <span className="ml-2 text-sm text-gray-500">{t('admin.security.attempts', 'attempts')}</span>
+              <span className="ml-2 text-sm text-ink-faint">{t('admin.security.attempts', 'attempts')}</span>
             </div>
           </div>
         </div>
 
         {/* Password Policy */}
-        <div className="bg-white rounded-xl border p-5">
+        <div className="bg-surface rounded-lg border border-hairline p-5">
           <div className="flex items-start gap-3">
             <Key className="w-5 h-5 text-primary mt-0.5" />
             <div className="flex-1">
-              <h2 className="font-semibold text-gray-900">{t('admin.security.passwordMinLength')}</h2>
-              <p className="text-sm text-gray-500 mt-0.5">{t('admin.security.passwordMinLengthDesc', 'Minimum number of characters required for all passwords.')}</p>
+              <h2 className="font-semibold text-ink">{t('admin.security.passwordMinLength')}</h2>
+              <p className="text-sm text-ink-faint mt-0.5">{t('admin.security.passwordMinLengthDesc', 'Minimum number of characters required for all passwords.')}</p>
               <input
                 type="number"
                 value={minPassword}
                 onChange={e => setMinPassword(Number(e.target.value))}
                 min={8} max={32}
-                className="mt-2 w-24 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="mt-2 w-24 border rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
-              <span className="ml-2 text-sm text-gray-500">{t('admin.security.characters', 'characters')}</span>
+              <span className="ml-2 text-sm text-ink-faint">{t('admin.security.characters', 'characters')}</span>
             </div>
           </div>
         </div>
@@ -238,7 +239,7 @@ export default function SecuritySettingsPage() {
           <button
             type="submit"
             disabled={savePolicy.isPending}
-            className="inline-flex items-center gap-1.5 px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-5 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
           >
             {savePolicy.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
             {t('admin.security.save')}
@@ -247,39 +248,39 @@ export default function SecuritySettingsPage() {
       </form>
 
       {/* Active Sessions */}
-      <div className="bg-white rounded-xl border p-5">
+      <div className="bg-surface rounded-lg border border-hairline p-5">
         <div className="flex items-center gap-3 mb-4">
           <Users className="w-5 h-5 text-primary" />
-          <h2 className="font-semibold text-gray-900">{t('admin.security.activeSessions', 'Active sessions')}</h2>
+          <h2 className="font-semibold text-ink">{t('admin.security.activeSessions', 'Active sessions')}</h2>
         </div>
         {sessionsLoading ? (
-          <p className="text-sm text-gray-500">{t('app.loading')}</p>
+          <p className="text-sm text-ink-faint">{t('app.loading')}</p>
         ) : sessions.length === 0 ? (
-          <p className="text-sm text-gray-500">{t('admin.security.noActiveSessions', 'No active sessions.')}</p>
+          <p className="text-sm text-ink-faint">{t('admin.security.noActiveSessions', 'No active sessions.')}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-xs text-gray-500 border-b">
-                  <th className="pb-2 pr-4">{t('admin.security.sessionUser', 'User')}</th>
-                  <th className="pb-2 pr-4">{t('admin.security.sessionIp', 'IP')}</th>
-                  <th className="pb-2 pr-4">{t('admin.security.sessionCreated', 'Created')}</th>
-                  <th className="pb-2 pr-4">{t('admin.security.sessionExpires', 'Expires')}</th>
-                  <th className="pb-2">{t('admin.security.sessionAction', 'Action')}</th>
+                <tr className="text-left text-xs text-ink-faint hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)]">
+                  <th className="pb-2 pr-4 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.security.sessionUser', 'User')}</th>
+                  <th className="pb-2 pr-4 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.security.sessionIp', 'IP')}</th>
+                  <th className="pb-2 pr-4 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.security.sessionCreated', 'Created')}</th>
+                  <th className="pb-2 pr-4 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.security.sessionExpires', 'Expires')}</th>
+                  <th className="pb-2 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.security.sessionAction', 'Action')}</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-hairline">
                 {sessions.map(s => (
-                  <tr key={s.id} className="border-b last:border-0">
-                    <td className="py-2 pr-4 font-medium text-gray-900">{s.username}</td>
-                    <td className="py-2 pr-4 text-gray-500">{s.ipAddress ?? '—'}</td>
-                    <td className="py-2 pr-4 text-gray-500">{new Date(s.createdAt).toLocaleString(dateLocale)}</td>
-                    <td className="py-2 pr-4 text-gray-500">{new Date(s.expiresAt).toLocaleString(dateLocale)}</td>
+                  <tr key={s.id} className="hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)]">
+                    <td className="py-2 pr-4 font-medium text-ink">{s.username}</td>
+                    <td className="py-2 pr-4 text-ink-faint">{s.ipAddress ?? '—'}</td>
+                    <td className="py-2 pr-4 text-ink-faint">{new Date(s.createdAt).toLocaleString(dateLocale)}</td>
+                    <td className="py-2 pr-4 text-ink-faint">{new Date(s.expiresAt).toLocaleString(dateLocale)}</td>
                     <td className="py-2">
                       <button
                         onClick={() => setRevokeTargetUserId(s.userId)}
                         disabled={revokeSession.isPending}
-                        className="flex items-center gap-1 text-xs text-red-600 hover:text-red-800 disabled:opacity-50"
+                        className="flex items-center gap-1 text-xs text-crit hover:text-red-800 disabled:opacity-50"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         {t('admin.security.revoke', 'Log out all sessions')}

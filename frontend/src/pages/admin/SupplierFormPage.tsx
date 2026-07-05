@@ -5,7 +5,8 @@ import { z } from 'zod'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useSupplier, useCreateSupplier, useUpdateSupplier } from '@/api/suppliers'
-import { Loader2, ArrowLeft } from 'lucide-react'
+import { Panel } from "@/components/ui/Panel"
+import {  Loader2, ArrowLeft  } from 'lucide-react'
 
 const SUPPLIER_CATEGORIES = ['GOODS', 'SERVICES', 'WORKS', 'CONSULTING'] as const
 
@@ -77,78 +78,78 @@ export default function SupplierFormPage() {
       <div className="flex items-center gap-4">
         <button
           onClick={() => navigate(isEdit ? `/admin/suppliers/${id}` : '/admin/suppliers')}
-          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          className="p-2 hover:bg-ground rounded-full transition-colors"
         >
-          <ArrowLeft className="w-5 h-5 text-gray-600" />
+          <ArrowLeft className="w-5 h-5 text-ink-soft" />
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-ink">
           {isEdit ? t('supplier.edit', 'Edit Supplier') : t('supplier.create', 'Add Supplier')}
         </h1>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-xl border p-6 space-y-5">
+      <form onSubmit={handleSubmit(onSubmit)} className="bg-surface rounded-lg border border-hairline p-6 space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-ink-soft mb-1">
               {t('supplier.fields.companyName', 'Company Name')} *
             </label>
             <input
               {...register('companyName')}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full border rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
             {errors.companyName && <p className="text-xs text-red-500 mt-1">{t('validation.required')}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-ink-soft mb-1">
               {t('supplier.fields.taxId', 'Tax ID')} *
             </label>
             <input
               {...register('taxId')}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full border rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
             {errors.taxId && <p className="text-xs text-red-500 mt-1">{t('validation.required')}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-ink-soft mb-1">
               {t('supplier.fields.contactEmail', 'Contact Email')} *
             </label>
             <input
               type="email"
               {...register('contactEmail')}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full border rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
             {errors.contactEmail && <p className="text-xs text-red-500 mt-1">{t('validation.invalidEmail')}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-ink-soft mb-1">
               {t('supplier.fields.contactPhone', 'Phone')}
             </label>
             <input
               {...register('contactPhone')}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full border rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-ink-soft mb-1">
               {t('supplier.fields.address', 'Address')}
             </label>
             <input
               {...register('address')}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full border rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-ink-soft mb-1">
               {t('supplier.fields.category', 'Category')}
             </label>
             <select
               {...register('category')}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full border rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             >
               <option value="">{t('supplier.category.none', 'Uncategorized')}</option>
               {SUPPLIER_CATEGORIES.map(c => (
@@ -158,16 +159,16 @@ export default function SupplierFormPage() {
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-ink-soft mb-1">
               {t('supplier.fields.bankDetails', 'Bank Details')}
-              <span className="ml-2 text-xs text-gray-400 font-normal">({t('supplier.fields.bankDetailsHint', 'write-only, stored encrypted')})</span>
+              <span className="ml-2 text-xs text-ink-faint font-normal">({t('supplier.fields.bankDetailsHint', 'write-only, stored encrypted')})</span>
             </label>
             <input
               type="password"
               autoComplete="new-password"
               {...register('bankDetails')}
               placeholder={isEdit ? '••••••••' : ''}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full border rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
         </div>
@@ -176,14 +177,14 @@ export default function SupplierFormPage() {
           <button
             type="button"
             onClick={() => navigate(isEdit ? `/admin/suppliers/${id}` : '/admin/suppliers')}
-            className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50 transition-colors"
+            className="px-4 py-2 border rounded-[4px] text-sm hover:bg-ground transition-colors"
           >
             {t('app.cancel', 'Cancel')}
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="flex items-center gap-2 px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-60 transition-colors"
+            className="flex items-center gap-2 px-5 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90 disabled:opacity-60 transition-colors"
           >
             {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
             {isEdit ? t('app.save', 'Save') : t('supplier.create', 'Create Supplier')}
