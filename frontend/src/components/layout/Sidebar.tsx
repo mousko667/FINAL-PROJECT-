@@ -54,7 +54,7 @@ function NavItem({
         cn(
           'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group',
           isActive
-            ? 'bg-oct-navy-light text-white border-l-[3px] border-oct-gold pl-[9px]'
+            ? 'oct-nav-active pl-[9px]'
             : 'text-slate-300 hover:bg-white/10 hover:text-white'
         )
       }

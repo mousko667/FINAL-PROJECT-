@@ -69,19 +69,19 @@ export default function Header() {
     : '??'
 
   return (
-    <header className="h-14 border-b bg-white flex items-center justify-between px-6 shrink-0">
+    <header className="h-14 border-b border-hairline bg-surface flex items-center justify-between px-6 shrink-0">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-        <Link to="/dashboard" className="hover:text-foreground transition-colors">
+      <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+        <Link to="/dashboard" className="hover:text-ink transition-colors">
           {t('nav.dashboard')}
         </Link>
         {breadcrumbs.map((crumb, i) => (
           <span key={crumb.href} className="flex items-center gap-1.5">
-            <ChevronRight className="w-3.5 h-3.5 text-gray-300" />
+            <ChevronRight className="w-3.5 h-3.5 text-ink-faint/60" />
             {i === breadcrumbs.length - 1 ? (
-              <span className="text-foreground font-medium">{crumb.label}</span>
+              <span className="text-ink font-semibold">{crumb.label}</span>
             ) : (
-              <Link to={crumb.href} className="hover:text-foreground transition-colors">
+              <Link to={crumb.href} className="hover:text-ink transition-colors">
                 {crumb.label}
               </Link>
             )}
@@ -94,7 +94,7 @@ export default function Header() {
         <button
           id="btn-language-switcher"
           onClick={toggleLanguage}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-500 hover:bg-gray-100 rounded-lg transition-colors border border-transparent hover:border-gray-200"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-ink-soft hover:bg-ground rounded-lg transition-colors border border-transparent hover:border-hairline"
           aria-label="Switch language"
         >
           <Globe className="w-3.5 h-3.5" />
@@ -103,23 +103,23 @@ export default function Header() {
 
         <NotificationDropdown />
 
-        <div className="flex items-center gap-2 pl-3 ml-1 border-l">
+        <div className="flex items-center gap-2 pl-3 ml-1 border-l border-hairline">
           <button
             onClick={() => navigate('/profile')}
-            className="flex items-center gap-2 hover:bg-gray-100 rounded-lg px-2 py-1.5 transition-colors group"
+            className="flex items-center gap-2 hover:bg-ground rounded-lg px-2 py-1.5 transition-colors group"
             aria-label="Profile"
           >
             <div className="w-7 h-7 rounded-full bg-oct-navy flex items-center justify-center shrink-0">
               <span className="text-[10px] font-bold text-oct-gold">{initials}</span>
             </div>
-            <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900 hidden sm:block">
+            <span className="text-sm font-medium text-ink-soft group-hover:text-ink hidden sm:block">
               {user?.username}
             </span>
           </button>
           <button
             id="btn-logout"
             onClick={handleLogout}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-ink-faint hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             aria-label={t('auth.logout')}
             title={t('auth.logout')}
           >
