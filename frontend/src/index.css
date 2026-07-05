@@ -45,6 +45,103 @@
     /* Skeleton animation */
     --skeleton-from: 210 15% 92%;
     --skeleton-to: 210 15% 86%;
+
+    /* ===================================================================
+     * Registre design-system tokens (Track B / Lot B1)
+     * Hex -> HSL-triplet conversion table (source of truth = spec B0/B1).
+     * Format: shadcn HSL-triplet "H S% L%" (no hsl() wrapper), computed via
+     * standard sRGB->HSL (colorsys), rounded to the nearest integer.
+     *
+     *   Warm neutrals (light)
+     *   --ground          #FBFAF7 -> 45 33% 98%
+     *   --hairline        #EAE5DA -> 41 28% 89%
+     *   --hairline-strong #DAD3C4 -> 41 23% 81%
+     *   --ink             #23201A -> 40 15% 12%
+     *   --ink-soft        #6B6456 -> 40 11% 38%
+     *   --ink-faint       #98917F -> 43 11% 55%
+     *
+     *   Semantic states (light) + *-bg
+     *   --pos      #3E7C5A -> 147 33% 36%   --pos-bg  #EAF2EC -> 135 24% 93%
+     *   --warn     #B5852A -> 39 62% 44%    --warn-bg #F6EEDC -> 42 59% 91%
+     *   --hot      #C4622E -> 21 62% 47%    --hot-bg  #F7EADF -> 27 60% 92%
+     *   --crit     #A6432E -> 10 57% 42%    --crit-bg #F6E6E1 -> 14 54% 92%
+     *   --info     #2F6690 -> 206 51% 37%   --info-bg #E4EDF3 -> 204 38% 92%
+     *
+     *   Gold
+     *   --gold-deep #9A7E2E -> 44 54% 39%  (disciplined gold: brand + CTA only;
+     *                                       distinct from the existing --oct-gold)
+     * =================================================================== */
+    --ground: 45 33% 98%;
+    --hairline: 41 28% 89%;
+    --hairline-strong: 41 23% 81%;
+    --ink: 40 15% 12%;
+    --ink-soft: 40 11% 38%;
+    --ink-faint: 43 11% 55%;
+
+    --pos: 147 33% 36%;
+    --pos-bg: 135 24% 93%;
+    --warn: 39 62% 44%;
+    --warn-bg: 42 59% 91%;
+    --hot: 21 62% 47%;
+    --hot-bg: 27 60% 92%;
+    --crit: 10 57% 42%;
+    --crit-bg: 14 54% 92%;
+    --info: 206 51% 37%;
+    --info-bg: 204 38% 92%;
+
+    --gold-deep: 44 54% 39%;
+  }
+
+  /* ===================================================================
+   * Dark mode (Track B / Lot B1) — a DESIGNED palette, not an inversion.
+   * Ground/surface and hairlines come straight from spec B0. Ink and the
+   * semantic hues are independently re-picked (raised/lightened) so they
+   * hit WCAG AA against the dark ground; *-bg pairs are near-black
+   * desaturated tints of each hue rather than the light *-bg lightened.
+   * Gold is "raised" (lighter/more saturated) since on dark grounds the
+   * light-mode gold reads muddy; ranking bars / accents lean into this.
+   *
+   *   Ground / surface / hairlines (spec B0, verbatim)
+   *   ground (--ground dark)      #12151A -> 218 18% 9%
+   *   surface (card/panel dark)   #171B22 -> 218 19% 11%
+   *   --hairline dark             #262B34 -> 219 16% 18%
+   *   --hairline-strong dark      #333A45 -> 217 15% 24%
+   *
+   *   Ink (raised for AA on #12151A; contrast checked against ground)
+   *   --ink       #E8E6E1 -> 43 13% 90%   (14.7:1 AA)
+   *   --ink-soft  #A9A499 -> 41 9%  63%   (7.4:1 AA)
+   *   --ink-faint #767065 -> 39 8%  43%   (3.7:1 AA-large, tertiary/decorative use)
+   *
+   *   Semantics (raised text) + *-bg (desaturated near-black tints)
+   *   --pos  #6FBE93 -> 147 38% 59%  (8.2:1)   --pos-bg  #182620 -> 154 23% 12%
+   *   --warn #E0AC55 -> 38 69% 61%   (8.9:1)   --warn-bg #2A2118 -> 30 27% 13%
+   *   --hot  #E38F5C -> 23 71% 63%   (7.3:1)   --hot-bg  #2B1E16 -> 23 32% 13%
+   *   --crit #E37764 -> 9 69% 64%    (6.2:1)   --crit-bg #2B1917 -> 6 30% 13%
+   *   --info #6FA8D6 -> 207 56% 64%  (7.2:1)   --info-bg #161F28 -> 210 29% 12%
+   *
+   *   Gold (raised)
+   *   --gold-deep #D9B65E -> 43 62% 61% (9.4:1)
+   * =================================================================== */
+  .dark {
+    --ground: 218 18% 9%;
+    --hairline: 219 16% 18%;
+    --hairline-strong: 217 15% 24%;
+    --ink: 43 13% 90%;
+    --ink-soft: 41 9% 63%;
+    --ink-faint: 39 8% 43%;
+
+    --pos: 147 38% 59%;
+    --pos-bg: 154 23% 12%;
+    --warn: 38 69% 61%;
+    --warn-bg: 30 27% 13%;
+    --hot: 23 71% 63%;
+    --hot-bg: 23 32% 13%;
+    --crit: 9 69% 64%;
+    --crit-bg: 6 30% 13%;
+    --info: 207 56% 64%;
+    --info-bg: 210 29% 12%;
+
+    --gold-deep: 43 62% 61%;
   }
 }
 
@@ -91,4 +188,10 @@
 @keyframes page-in {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Tabular-figure utility for monetary amounts and references (Registre) */
+.num {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
 }

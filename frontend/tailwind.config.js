@@ -60,6 +60,37 @@ module.exports = {
           "gold-light": "#D4BC74",
           "gold-muted": "#8A7535",
         },
+        /* Registre design-system tokens (Track B / Lot B1) — warm neutrals +
+         * semantic states, remapped per-theme via :root / .dark in index.css. */
+        ground: "hsl(var(--ground))",
+        hairline: "hsl(var(--hairline))",
+        "hairline-strong": "hsl(var(--hairline-strong))",
+        ink: {
+          DEFAULT: "hsl(var(--ink))",
+          soft: "hsl(var(--ink-soft))",
+          faint: "hsl(var(--ink-faint))",
+        },
+        pos: {
+          DEFAULT: "hsl(var(--pos))",
+          bg: "hsl(var(--pos-bg))",
+        },
+        warn: {
+          DEFAULT: "hsl(var(--warn))",
+          bg: "hsl(var(--warn-bg))",
+        },
+        hot: {
+          DEFAULT: "hsl(var(--hot))",
+          bg: "hsl(var(--hot-bg))",
+        },
+        crit: {
+          DEFAULT: "hsl(var(--crit))",
+          bg: "hsl(var(--crit-bg))",
+        },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          bg: "hsl(var(--info-bg))",
+        },
+        "gold-deep": "hsl(var(--gold-deep))",
       },
       borderRadius: {
         lg: "var(--radius)",
