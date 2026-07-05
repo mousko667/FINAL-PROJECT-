@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import apiClient from '@/services/apiClient'
 import type { ApiResponse, PagedResponse } from '@/types/invoice'
 import { Loader2, CheckCircle, XCircle, GitBranch, Plus } from 'lucide-react'
+import { Panel } from '@/components/ui/Panel'
 
 interface Department {
   id: string
@@ -17,10 +18,10 @@ interface Department {
 }
 
 function RoleLabel({ role }: { role?: string }) {
-  if (!role) return <span className="text-gray-400 text-xs">—</span>
+  if (!role) return <span className="text-ink-faint text-xs">—</span>
   const { t } = useTranslation()
   return (
-    <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+    <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-[4px]">
       {t(`roles.${role}`, role.replace('ROLE_', '').replace(/_/g, ' '))}
     </span>
   )
@@ -41,22 +42,22 @@ export default function AdminDepartmentsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('admin.departments.title')}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-2xl font-bold text-ink">{t('admin.departments.title')}</h1>
+          <p className="text-sm text-ink-soft mt-0.5">
             {t('admin.departments.subtitle', 'Départements OCT et chaînes d\'approbation BAP')}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Link
             to="/admin/departments/new"
-            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 text-sm font-medium"
+            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-[4px] hover:bg-primary/90 text-sm font-medium"
           >
             <Plus className="w-4 h-4" />
             {t('admin.departments.create', 'Créer un département')}
           </Link>
           <Link
             to="/admin/approval-matrix"
-            className="flex items-center gap-2 border px-4 py-2 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700"
+            className="flex items-center gap-2 border border-hairline px-4 py-2 rounded-[4px] hover:bg-ground text-sm font-medium text-ink-soft"
           >
             <GitBranch className="w-4 h-4" />
             {t('admin.approvalMatrix.title', 'Matrice d\'approbation')}
@@ -64,43 +65,43 @@ export default function AdminDepartmentsPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border overflow-hidden">
+      <Panel>
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            <Loader2 className="w-6 h-6 animate-spin text-ink-faint" />
           </div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-ground">
               <tr>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.departments.name', 'Département')}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.departments.code', 'Code')}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.approvalMatrix.n1Role', 'Approbateur N1')}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.approvalMatrix.n2Role', 'Approbateur N2')}</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-600">{t('admin.approvalMatrix.requiresN2', '2 niveaux')}</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-600">{t('admin.users.active', 'Actif')}</th>
+                <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.departments.name', 'Département')}</th>
+                <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.departments.code', 'Code')}</th>
+                <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.approvalMatrix.n1Role', 'Approbateur N1')}</th>
+                <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.approvalMatrix.n2Role', 'Approbateur N2')}</th>
+                <th className="text-center px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.approvalMatrix.requiresN2', '2 niveaux')}</th>
+                <th className="text-center px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.users.active', 'Actif')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-hairline">
               {(!data?.content || data.content.length === 0) ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-16 text-muted-foreground">
+                  <td colSpan={6} className="text-center py-16 text-ink-faint">
                     {t('app.noData')}
                   </td>
                 </tr>
               ) : (
                 data.content.map((dept) => (
-                  <tr key={dept.id} className="hover:bg-gray-50">
+                  <tr key={dept.id} className="hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)]">
                     <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900">
+                      <div className="font-medium text-ink">
                         {i18n.language === 'fr' ? dept.nameFr : dept.nameEn}
                       </div>
-                      <div className="text-xs text-gray-400">
+                      <div className="text-xs text-ink-faint">
                         {i18n.language === 'fr' ? dept.nameEn : dept.nameFr}
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-xs font-mono bg-gray-100 text-gray-700 px-2 py-0.5 rounded">
+                      <span className="num text-xs bg-ground text-ink-soft border border-hairline px-2 py-0.5 rounded-[4px]">
                         {dept.code}
                       </span>
                     </td>
@@ -108,15 +109,15 @@ export default function AdminDepartmentsPage() {
                     <td className="px-4 py-3">
                       {dept.requiresN2
                         ? <RoleLabel role={dept.n2Role} />
-                        : <span className="text-gray-300 text-xs">—</span>}
+                        : <span className="text-ink-faint text-xs">—</span>}
                     </td>
                     <td className="px-4 py-3 text-center">
                       {dept.requiresN2
-                        ? <CheckCircle className="w-4 h-4 text-green-500 mx-auto" />
-                        : <XCircle className="w-4 h-4 text-gray-300 mx-auto" />}
+                        ? <CheckCircle className="w-4 h-4 text-pos mx-auto" />
+                        : <XCircle className="w-4 h-4 text-ink-faint mx-auto" />}
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`inline-block w-2 h-2 rounded-full ${dept.isActive ? 'bg-green-500' : 'bg-red-400'}`} />
+                      <span className={`inline-block w-2 h-2 rounded-full ${dept.isActive ? 'bg-pos' : 'bg-crit'}`} />
                     </td>
                   </tr>
                 ))
@@ -124,9 +125,9 @@ export default function AdminDepartmentsPage() {
             </tbody>
           </table>
         )}
-      </div>
+      </Panel>
 
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-ink-faint">
         {t('admin.departments.matrixNote', 'Pour modifier les chaînes d\'approbation, utilisez la Matrice d\'approbation.')}
       </p>
     </div>

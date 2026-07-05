@@ -6,6 +6,7 @@ import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Loader2, UserCheck, Trash2, Plus, ArrowRight, AlertCircle } from 'lucide-react'
 import { formatDate } from '@/lib/format'
+import { Panel } from '@/components/ui/Panel'
 
 interface Department {
   id: string
@@ -130,69 +131,65 @@ export default function AdminDelegationsPage() {
     <PageRoleGuard allowedRoles={['ROLE_ADMIN']}>
       <div className="space-y-6 page-enter">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-ink flex items-center gap-2">
             <UserCheck className="w-6 h-6 text-primary" />
             {t('admin.delegations.title', 'Approval Delegations')}
           </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <p className="text-sm text-ink-soft mt-0.5">
             {t('admin.delegations.subtitle', 'Reassign a validator’s approval authority during an absence.')}
           </p>
         </div>
 
         {/* Department selector */}
-        <div className="bg-white rounded-xl border p-5">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+        <Panel className="p-5">
+          <label className="block text-sm font-medium text-ink-soft mb-1">
             {t('admin.delegations.department', 'Department')}
           </label>
           <select
             value={dept}
             onChange={(e) => setDept(e.target.value)}
-            className="w-full sm:w-80 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full sm:w-80 border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-surface"
           >
             <option value="">{t('admin.delegations.selectDepartment', '— Select a department —')}</option>
             {(departments ?? []).map((d) => (
               <option key={d.id} value={d.code}>{d.code} — {i18n.language === 'fr' ? d.nameFr : d.nameEn}</option>
             ))}
           </select>
-        </div>
+        </Panel>
 
         {dept && (
           <>
             {/* Active delegations list */}
-            <div className="bg-white rounded-xl border overflow-hidden">
-              <div className="px-5 py-4 border-b bg-gray-50">
-                <h2 className="font-semibold text-gray-900">
-                  {t('admin.delegations.activeTitle', 'Active delegations')} — {dept}
-                </h2>
-              </div>
+            <Panel title={t('admin.delegations.activeTitle', 'Active delegations') + ' — ' + dept}>
+              <div className="-m-5">
               {delegationsLoading ? (
-                <div className="p-8 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-gray-400" /></div>
+                <div className="p-8 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-ink-faint" /></div>
               ) : (delegations ?? []).length === 0 ? (
-                <div className="p-8 text-center text-sm text-gray-400">
+                <div className="p-8 text-center text-sm text-ink-faint">
                   {t('admin.delegations.empty', 'No active delegations for this department.')}
                 </div>
               ) : (
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-gray-600 bg-gray-50/50">
-                      <th className="text-left px-4 py-3 font-medium">{t('admin.delegations.delegator', 'Delegator')}</th>
-                      <th className="px-2 py-3" />
-                      <th className="text-left px-4 py-3 font-medium">{t('admin.delegations.delegatee', 'Delegatee')}</th>
-                      <th className="text-left px-4 py-3 font-medium">{t('admin.delegations.period', 'Period')}</th>
-                      <th className="text-left px-4 py-3 font-medium">{t('admin.delegations.reason', 'Reason')}</th>
-                      <th className="px-4 py-3" />
+                    <tr className="text-ink-faint text-xs font-medium uppercase tracking-wide bg-ground hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)]">
+                      <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.delegations.delegator', 'Delegator')}</th>
+                      <th className="px-2 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint" />
+                      <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.delegations.delegatee', 'Delegatee')}</th>
+                      <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.delegations.period', 'Period')}</th>
+                      <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.delegations.reason', 'Reason')}</th>
+                      <th className="px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint" />
                     </tr>
                   </thead>
-                  <tbody className="divide-y">
+                  <tbody className="divide-y divide-hairline">
                     {(delegations ?? []).map((d) => (
-                      <tr key={d.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 font-medium text-gray-900">{d.delegatorUsername}</td>
-                        <td className="px-2 py-3 text-gray-400"><ArrowRight className="w-4 h-4" /></td>
-                        <td className="px-4 py-3 text-gray-900">{d.delegateeUsername}</td>
-                        <td className="px-4 py-3 text-gray-500 text-xs">
+                      <tr key={d.id} className="hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)]">
+                        <td className="px-4 py-3 font-medium text-ink">{d.delegatorUsername}</td>
+                        <td className="px-2 py-3 text-ink-faint"><ArrowRight className="w-4 h-4" /></td>
+                        <td className="px-4 py-3 text-ink">{d.delegateeUsername}</td>
+                        <td className="px-4 py-3 text-ink-faint text-xs num">
                           {formatDate(d.fromDate)} – {formatDate(d.toDate)}
                         </td>
-                        <td className="px-4 py-3 text-gray-500 truncate max-w-[200px]">{d.reason || '—'}</td>
+                        <td className="px-4 py-3 text-ink-soft truncate max-w-[200px]">{d.reason || '—'}</td>
                         <td className="px-4 py-3 text-right">
                           <button
                             onClick={() => setRevokeTargetId(d.id)}
@@ -207,48 +204,49 @@ export default function AdminDelegationsPage() {
                   </tbody>
                 </table>
               )}
-            </div>
+              </div>
+            </Panel>
 
             {/* Create form */}
-            <div className="bg-white rounded-xl border p-5 space-y-4">
-              <h2 className="font-semibold text-gray-900">{t('admin.delegations.createTitle', 'Create a delegation')}</h2>
+            <Panel className="p-5 space-y-4">
+              <h2 className="font-semibold text-ink">{t('admin.delegations.createTitle', 'Create a delegation')}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('admin.delegations.delegator', 'Delegator')} *</label>
+                  <label className="block text-sm font-medium text-ink-soft mb-1">{t('admin.delegations.delegator', 'Delegator')} *</label>
                   <select value={delegatorId} onChange={(e) => setDelegatorId(e.target.value)}
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+                    className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-surface">
                     <option value="">{t('admin.delegations.selectUser', '— Select a user —')}</option>
                     {(users ?? []).map((u) => <option key={u.id} value={u.id}>{userLabel(u)}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('admin.delegations.delegatee', 'Delegatee')} *</label>
+                  <label className="block text-sm font-medium text-ink-soft mb-1">{t('admin.delegations.delegatee', 'Delegatee')} *</label>
                   <select value={delegateeId} onChange={(e) => setDelegateeId(e.target.value)}
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+                    className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-surface">
                     <option value="">{t('admin.delegations.selectUser', '— Select a user —')}</option>
                     {(users ?? []).map((u) => <option key={u.id} value={u.id}>{userLabel(u)}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('admin.delegations.fromDate', 'From')} *</label>
+                  <label className="block text-sm font-medium text-ink-soft mb-1">{t('admin.delegations.fromDate', 'From')} *</label>
                   <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)}
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                    className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-surface" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('admin.delegations.toDate', 'To')} *</label>
+                  <label className="block text-sm font-medium text-ink-soft mb-1">{t('admin.delegations.toDate', 'To')} *</label>
                   <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)}
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                    className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-surface" />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('admin.delegations.reason', 'Reason')}</label>
+                  <label className="block text-sm font-medium text-ink-soft mb-1">{t('admin.delegations.reason', 'Reason')}</label>
                   <input type="text" value={reason} onChange={(e) => setReason(e.target.value)}
                     placeholder={t('admin.delegations.reasonPlaceholder', 'e.g. annual leave')}
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                    className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-surface" />
                 </div>
               </div>
 
               {formError && (
-                <p className="flex items-center gap-1.5 text-sm text-red-600">
+                <p className="flex items-center gap-1.5 text-sm text-crit">
                   <AlertCircle className="w-4 h-4 shrink-0" /> {formError}
                 </p>
               )}
@@ -256,12 +254,12 @@ export default function AdminDelegationsPage() {
               <button
                 onClick={submit}
                 disabled={createMutation.isPending}
-                className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground rounded-[4px] px-4 py-2 text-sm font-medium disabled:opacity-50"
               >
                 {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                 {t('admin.delegations.create', 'Create delegation')}
               </button>
-            </div>
+            </Panel>
           </>
         )}
 
