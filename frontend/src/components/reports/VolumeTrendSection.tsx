@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import apiClient from '@/services/apiClient'
-import { Loader2 } from 'lucide-react'
+import { Panel } from "@/components/ui/Panel"
+import {  Loader2  } from 'lucide-react'
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts'
@@ -37,7 +38,7 @@ export default function VolumeTrendSection() {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl border overflow-hidden">
+      <div className="bg-surface rounded-xl border border-hairline overflow-hidden">
         <div className="px-5 py-4">
           <div className="flex justify-center py-4">
             <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
@@ -48,12 +49,12 @@ export default function VolumeTrendSection() {
   }
 
   return (
-    <div className="bg-white rounded-xl border overflow-hidden">
-      <div className="px-5 py-4 font-semibold text-gray-900">{t('reports.trends.title', 'Tendances volume / valeur')}</div>
+    <div className="bg-surface rounded-xl border border-hairline overflow-hidden">
+      <div className="px-5 py-4 font-semibold text-ink">{t('reports.trends.title', 'Tendances volume / valeur')}</div>
       <div className="border-t px-5 py-4">
-        <p className="text-sm text-gray-500 mb-4">{t('reports.trends.desc', 'Nombre de factures et montant total par mois sur les 12 derniers mois (par date de facture).')}</p>
+        <p className="text-sm text-ink-faint mb-4">{t('reports.trends.desc', 'Nombre de factures et montant total par mois sur les 12 derniers mois (par date de facture).')}</p>
         {isEmpty ? (
-          <p data-testid="volume-trend-empty" className="text-sm text-center text-gray-400 py-4">{t('reports.noData', 'Aucune donnée')}</p>
+          <p data-testid="volume-trend-empty" className="text-sm text-center text-ink-faint py-4">{t('reports.noData', 'Aucune donnée')}</p>
         ) : (
           <ResponsiveContainer width="100%" height={260}>
             <ComposedChart data={trend!.points}>

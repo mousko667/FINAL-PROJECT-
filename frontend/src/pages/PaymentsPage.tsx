@@ -328,7 +328,7 @@ export default function PaymentsPage() {
               <table className="w-full text-sm">
                 <thead className="bg-ground">
                   <tr>
-                    <th className="px-4 py-3 w-10">
+                    <th className="px-4 py-3 w-10 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">
                       <input
                         type="checkbox"
                         aria-label={t('payments.selectAll', 'Select all')}
@@ -336,10 +336,10 @@ export default function PaymentsPage() {
                         onChange={toggleSelectAll}
                       />
                     </th>
-                    <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.reference')}</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.supplier')}</th>
-                    <th className="text-right px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.amount')}</th>
-                    <th className="text-right px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('app.actions')}</th>
+                    <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.reference')}</th>
+                    <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.supplier')}</th>
+                    <th className="text-right px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.amount')}</th>
+                    <th className="text-right px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('app.actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-hairline">
@@ -415,13 +415,13 @@ export default function PaymentsPage() {
               <table className="w-full text-sm">
                 <thead className="bg-ground">
                   <tr>
-                    <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.reference')}</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.paymentMethod')}</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.paymentReference')}</th>
-                    <th className="text-right px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.amount')}</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.paymentDate')}</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('payments.colStatus', 'Statut')}</th>
-                    <th className="px-4 py-3" />
+                    <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.reference')}</th>
+                    <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.paymentMethod')}</th>
+                    <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.paymentReference')}</th>
+                    <th className="text-right px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.amount')}</th>
+                    <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.paymentDate')}</th>
+                    <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('payments.colStatus', 'Statut')}</th>
+                    <th className="px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint" />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-hairline">

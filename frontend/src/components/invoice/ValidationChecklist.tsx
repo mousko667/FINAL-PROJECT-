@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import apiClient from '@/services/apiClient'
-import { Loader2, ListChecks, Save, CheckCircle } from 'lucide-react'
+import { Panel } from "@/components/ui/Panel"
+import {  Loader2, ListChecks, Save, CheckCircle  } from 'lucide-react'
 
 interface ChecklistItem {
   templateItemId: string
@@ -57,7 +58,7 @@ export function ValidationChecklist({ invoiceId }: { invoiceId: string }) {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl border p-6 flex items-center justify-center">
+      <div className="bg-surface rounded-xl border border-hairline p-6 flex items-center justify-center">
         <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
       </div>
     )
@@ -72,13 +73,13 @@ export function ValidationChecklist({ invoiceId }: { invoiceId: string }) {
   const requiredDone = items.filter(i => i.required).every(i => i.checked)
 
   return (
-    <div className="bg-white rounded-xl border p-6">
+    <div className="bg-surface rounded-xl border border-hairline p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <ListChecks className="w-5 h-5 text-gray-500" />
-          <h2 className="font-semibold text-gray-800">{t('checklist.validationTitle', 'Validation Checklist')}</h2>
+          <ListChecks className="w-5 h-5 text-ink-faint" />
+          <h2 className="font-semibold text-ink">{t('checklist.validationTitle', 'Validation Checklist')}</h2>
         </div>
-        {data.templateName && <span className="text-xs text-gray-400">{data.templateName}</span>}
+        {data.templateName && <span className="text-xs text-ink-faint">{data.templateName}</span>}
       </div>
 
       <div className="space-y-3">
@@ -91,7 +92,7 @@ export function ValidationChecklist({ invoiceId }: { invoiceId: string }) {
               className="mt-1"
             />
             <div className="flex-1">
-              <label className="text-sm text-gray-800">
+              <label className="text-sm text-ink">
                 {it.label}
                 {it.required && <span className="ml-1 text-red-500" title={t('checklist.required', 'Required')}>*</span>}
               </label>
@@ -112,7 +113,7 @@ export function ValidationChecklist({ invoiceId }: { invoiceId: string }) {
 
       <div className="flex items-center justify-end gap-3 mt-4 pt-3 border-t">
         {justSaved && (
-          <span className="text-xs text-green-600 flex items-center gap-1">
+          <span className="text-xs text-pos flex items-center gap-1">
             <CheckCircle className="w-3.5 h-3.5" /> {t('checklist.saved', 'Saved')}
           </span>
         )}

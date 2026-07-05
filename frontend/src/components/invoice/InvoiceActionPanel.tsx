@@ -4,7 +4,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAppSelector } from '@/store/hooks'
 import apiClient from '@/services/apiClient'
 import type { Invoice, InvoiceStatus } from '@/types/invoice'
-import { Loader2 } from 'lucide-react'
+import { Panel } from "@/components/ui/Panel"
+import {  Loader2  } from 'lucide-react'
 
 interface InvoiceActionPanelProps {
   invoice: Invoice
@@ -14,7 +15,7 @@ const variantClasses: Record<string, string> = {
   primary:   'bg-primary text-primary-foreground hover:bg-primary/90',
   success:   'bg-green-600 text-white hover:bg-green-700',
   danger:    'bg-red-600 text-white hover:bg-red-700',
-  secondary: 'border border-gray-300 text-gray-700 hover:bg-gray-50',
+  secondary: 'border border-hairline text-ink-soft hover:bg-ground',
 }
 
 export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
@@ -131,8 +132,8 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
   }
 
   return (
-    <div className="bg-white rounded-xl border p-5">
-      <h2 className="font-semibold text-gray-800 mb-4">{t('invoice.actions')}</h2>
+    <div className="bg-surface rounded-xl border border-hairline p-5">
+      <h2 className="font-semibold text-ink mb-4">{t('invoice.actions')}</h2>
 
       {/* Department mismatch warning */}
       {(isN1 || isN2) && invDeptId && deptId && deptId !== invDeptId && !isAdmin && (
@@ -157,7 +158,7 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
       </div>
 
       {mutation.isError && (
-        <p className="mt-2 text-xs text-red-600">
+        <p className="mt-2 text-xs text-crit">
           {(() => {
             const key = (mutation.error as any)?.response?.data?.message
             if (!key) return t('app.error', 'Action failed. Please try again.')
@@ -171,10 +172,10 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
       {/* Reject reason modal */}
       {pendingAction && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl p-6 shadow-2xl w-full max-w-md space-y-4">
-            <h3 className="font-semibold text-gray-900">{t('invoice.confirmReject', 'Confirm rejection')}</h3>
+          <div className="bg-surface rounded-xl p-6 shadow-2xl w-full max-w-md space-y-4">
+            <h3 className="font-semibold text-ink">{t('invoice.confirmReject', 'Confirm rejection')}</h3>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">
+              <label className="block text-sm text-ink-soft mb-1">
                 {t('invoice.rejectReasonCode', 'Rejection reason')} *
               </label>
               <select
@@ -190,7 +191,7 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
               </select>
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">
+              <label className="block text-sm text-ink-soft mb-1">
                 {t('invoice.rejectReasonDetail', 'Detail (optional)')}{reasonCode === 'AUTRE' ? ' *' : ''}
               </label>
               <textarea
@@ -205,7 +206,7 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => { setPendingAction(null); setRejectReason(''); setReasonCode('') }}
-                className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50"
+                className="px-4 py-2 border rounded-lg text-sm hover:bg-ground"
               >
                 {t('app.cancel')}
               </button>

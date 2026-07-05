@@ -84,7 +84,7 @@ export default function ArchiveFolderTree({ selectedFolderId, onSelectFolder }: 
   }
 
   const renderFolderForm = (isEdit: boolean, parentId?: string) => (
-    <div className="pl-6 pr-2 py-2 border-l-2 border-primary ml-2 my-1 bg-gray-50 rounded-r-lg">
+    <div className="pl-6 pr-2 py-2 border-l-2 border-primary ml-2 my-1 bg-ground rounded-r-lg">
       <input
         autoFocus
         type="text"
@@ -102,7 +102,7 @@ export default function ArchiveFolderTree({ selectedFolderId, onSelectFolder }: 
       <div className="flex gap-2 justify-end">
         <button
           onClick={() => isEdit ? setEditingFolderId(null) : setIsCreating(false)}
-          className="text-xs text-gray-500 hover:text-gray-700"
+          className="text-xs text-ink-faint hover:text-ink-soft"
         >
           {t('app.cancel', 'Annuler')}
         </button>
@@ -136,12 +136,12 @@ export default function ArchiveFolderTree({ selectedFolderId, onSelectFolder }: 
               ) : (
                 <div
                   onClick={() => onSelectFolder(folder.id)}
-                  className={`group flex items-center justify-between py-1.5 px-2 rounded-lg cursor-pointer transition-colors ${isSelected ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-gray-100 text-gray-700'}`}
+                  className={`group flex items-center justify-between py-1.5 px-2 rounded-lg cursor-pointer transition-colors ${isSelected ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-ground text-ink-soft'}`}
                   style={{ paddingLeft: `${depth * 12 + 8}px` }}
                 >
                   <div className="flex items-center gap-1.5 flex-1 min-w-0">
                     {hasChildren ? (
-                      <button onClick={e => toggleExpand(folder.id, e)} className="p-0.5 hover:bg-gray-200 rounded text-gray-400">
+                      <button onClick={e => toggleExpand(folder.id, e)} className="p-0.5 hover:bg-surface-hover rounded text-ink-faint">
                         {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                       </button>
                     ) : (
@@ -149,7 +149,7 @@ export default function ArchiveFolderTree({ selectedFolderId, onSelectFolder }: 
                     )}
                     {isSelected ? <FolderOpen className="w-4 h-4 shrink-0" /> : <Folder className="w-4 h-4 shrink-0" />}
                     <span className="truncate text-sm">{folder.name}</span>
-                    <span className="text-[10px] bg-white border px-1.5 py-0.5 rounded-full text-gray-500 ml-1">
+                    <span className="text-[10px] bg-surface border-hairline px-1.5 py-0.5 rounded-full text-ink-faint ml-1">
                       {folder.invoiceCount}
                     </span>
                   </div>
@@ -163,7 +163,7 @@ export default function ArchiveFolderTree({ selectedFolderId, onSelectFolder }: 
                             setFormData({ name: '', description: '', parentId: folder.id })
                             setIsCreating(true)
                           }}
-                          className="p-1 text-gray-400 hover:text-primary hover:bg-primary/10 rounded"
+                          className="p-1 text-ink-faint hover:text-primary hover:bg-primary/10 rounded"
                           title={t('archiveFolders.new')}
                         >
                           <Plus className="w-3.5 h-3.5" />
@@ -171,14 +171,14 @@ export default function ArchiveFolderTree({ selectedFolderId, onSelectFolder }: 
                       )}
                       <button
                         onClick={(e) => startEdit(folder, e)}
-                        className="p-1 text-gray-400 hover:text-primary hover:bg-primary/10 rounded"
+                        className="p-1 text-ink-faint hover:text-primary hover:bg-primary/10 rounded"
                       >
                         <Edit2 className="w-3 h-3" />
                       </button>
                       <button
                         onClick={(e) => handleDelete(folder.id, e)}
                         disabled={deleteMutation.isPending}
-                        className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded"
+                        className="p-1 text-ink-faint hover:text-red-500 hover:bg-crit/10 rounded"
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>
@@ -197,13 +197,13 @@ export default function ArchiveFolderTree({ selectedFolderId, onSelectFolder }: 
   }
 
   if (isLoading) {
-    return <div className="flex justify-center p-4"><Loader2 className="w-5 h-5 animate-spin text-gray-400" /></div>
+    return <div className="flex justify-center p-4"><Loader2 className="w-5 h-5 animate-spin text-ink-faint" /></div>
   }
 
   return (
-    <div className="w-64 shrink-0 border-r bg-gray-50/50 flex flex-col h-full min-h-[500px]">
-      <div className="p-4 border-b flex items-center justify-between bg-white">
-        <h2 className="font-semibold text-gray-900">{t('archiveFolders.title')}</h2>
+    <div className="w-64 shrink-0 border-r bg-ground/50 flex flex-col h-full min-h-[500px]">
+      <div className="p-4 border-b flex items-center justify-between bg-surface">
+        <h2 className="font-semibold text-ink">{t('archiveFolders.title')}</h2>
         {isAdmin && !isCreating && (
           <button
             onClick={() => {
@@ -223,14 +223,14 @@ export default function ArchiveFolderTree({ selectedFolderId, onSelectFolder }: 
         <div className="space-y-0.5 mb-4">
           <button
             onClick={() => onSelectFolder(null)}
-            className={`w-full flex items-center gap-2 py-1.5 px-2 rounded-lg text-sm transition-colors ${selectedFolderId === null ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-gray-100 text-gray-700'}`}
+            className={`w-full flex items-center gap-2 py-1.5 px-2 rounded-lg text-sm transition-colors ${selectedFolderId === null ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-ground text-ink-soft'}`}
           >
             <ArchiveFolderIcon />
             {t('archiveFolders.all')}
           </button>
           <button
             onClick={() => onSelectFolder('NONE')}
-            className={`w-full flex items-center gap-2 py-1.5 px-2 rounded-lg text-sm transition-colors ${selectedFolderId === 'NONE' ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-gray-100 text-gray-700'}`}
+            className={`w-full flex items-center gap-2 py-1.5 px-2 rounded-lg text-sm transition-colors ${selectedFolderId === 'NONE' ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-ground text-ink-soft'}`}
           >
             <ArchiveFolderIcon unclassified />
             {t('archiveFolders.unclassified')}
@@ -249,7 +249,7 @@ export default function ArchiveFolderTree({ selectedFolderId, onSelectFolder }: 
 
 function ArchiveFolderIcon({ unclassified }: { unclassified?: boolean }) {
   return (
-    <svg className={`w-4 h-4 ${unclassified ? 'text-gray-400' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg className={`w-4 h-4 ${unclassified ? 'text-ink-faint' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
     </svg>
   )

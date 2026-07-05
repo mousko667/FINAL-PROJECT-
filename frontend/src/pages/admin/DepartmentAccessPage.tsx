@@ -33,7 +33,7 @@ export default function DepartmentAccessPage() {
       ) : (
         <div className="space-y-3">
           {data.map((d) => (
-            <details key={d.departmentId} className="rounded-[4px] border border-hairline bg-white">
+            <details key={d.departmentId} className="rounded-[4px] border border-hairline bg-surface">
               <summary className="cursor-pointer px-4 py-3 flex items-center justify-between">
                 <span className="font-medium text-ink">
                   <span>{d.code}</span>

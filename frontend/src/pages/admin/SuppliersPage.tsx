@@ -51,7 +51,7 @@ export default function SuppliersPage() {
         </div>
       </div>
 
-      <div className="flex items-center gap-4 bg-white p-4 rounded-lg border">
+      <div className="flex items-center gap-4 bg-surface p-4 rounded-lg border">
         <div className="relative flex-1">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
           <input
@@ -67,7 +67,7 @@ export default function SuppliersPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm border rounded-[4px] focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none bg-white"
+            className="w-full pl-9 pr-4 py-2 text-sm border rounded-[4px] focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none bg-surface"
           >
             <option value="">{t('app.allStatus', 'All Statuses')}</option>
             <option value="PENDING_VERIFICATION">{t('supplier.status.PENDING_VERIFICATION', 'Pending')}</option>
@@ -80,7 +80,7 @@ export default function SuppliersPage() {
           <select
             value={categoryFilter}
             onChange={(e) => { setCategoryFilter(e.target.value); setPage(0) }}
-            className="w-full pl-9 pr-4 py-2 text-sm border rounded-[4px] focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none bg-white"
+            className="w-full pl-9 pr-4 py-2 text-sm border rounded-[4px] focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none bg-surface"
           >
             <option value="">{t('supplier.category.all', 'All Categories')}</option>
             {SUPPLIER_CATEGORIES.map(c => (
@@ -187,14 +187,14 @@ export default function SuppliersPage() {
                   <button
                     disabled={page === 0}
                     onClick={() => setPage(p => p - 1)}
-                    className="px-3 py-1 bg-white border rounded text-sm disabled:opacity-50"
+                    className="px-3 py-1 bg-surface border-hairline rounded text-sm disabled:opacity-50"
                   >
                     {t('app.previous', 'Previous')}
                   </button>
                   <button
                     disabled={page >= data.totalPages - 1}
                     onClick={() => setPage(p => p + 1)}
-                    className="px-3 py-1 bg-white border rounded text-sm disabled:opacity-50"
+                    className="px-3 py-1 bg-surface border-hairline rounded text-sm disabled:opacity-50"
                   >
                     {t('app.next', 'Next')}
                   </button>

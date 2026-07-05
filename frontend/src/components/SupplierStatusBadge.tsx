@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next'
 import type { Supplier } from '@/api/suppliers'
 
 const supplierStatusStyles: Record<Supplier['status'], string> = {
-  PENDING_VERIFICATION: 'bg-yellow-100 text-yellow-800',
-  ACTIVE: 'bg-green-100 text-green-800',
-  SUSPENDED: 'bg-red-100 text-red-800',
+  PENDING_VERIFICATION: 'bg-warn/10 text-warn',
+  ACTIVE: 'bg-pos/10 text-pos',
+  SUSPENDED: 'bg-crit/10 text-red-800',
 }
 
 interface SupplierStatusBadgeProps extends HTMLAttributes<HTMLSpanElement> {
@@ -21,7 +21,7 @@ export function SupplierStatusBadge({ status, className, ...props }: SupplierSta
       data-status={status}
       className={cn(
         'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
-        supplierStatusStyles[status] || 'bg-gray-100 text-gray-800',
+        supplierStatusStyles[status] || 'bg-ground text-ink',
         className
       )}
       {...props}

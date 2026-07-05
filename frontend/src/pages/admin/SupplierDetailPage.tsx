@@ -69,7 +69,7 @@ export default function SupplierDetailPage() {
       </div>
 
       {canManageSupplier && (
-        <div className="flex items-center gap-3 bg-white p-4 rounded-lg border">
+        <div className="flex items-center gap-3 bg-surface p-4 rounded-lg border">
           {supplier.status !== 'ACTIVE' && (
             <button
               onClick={() => activate(supplier.id)}

@@ -23,10 +23,10 @@ interface PendingInvoice {
 
 function statusColor(status: string) {
   if (status === 'SOUMIS') return 'bg-blue-100 text-blue-800'
-  if (status === 'EN_VALIDATION_N1') return 'bg-yellow-100 text-yellow-800'
+  if (status === 'EN_VALIDATION_N1') return 'bg-warn/10 text-warn'
   if (status === 'EN_VALIDATION_N2') return 'bg-orange-100 text-orange-800'
   if (status === 'VALIDE') return 'bg-teal-100 text-teal-800'
-  return 'bg-gray-100 text-gray-700'
+  return 'bg-ground text-ink-soft'
 }
 
 /** Returns days elapsed since the invoice entered its current status (approx. from createdAt as fallback) */
@@ -118,13 +118,13 @@ export default function ApprovalQueuePage() {
           <table className="w-full text-sm">
             <thead className="bg-ground">
               <tr>
-                <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.reference')}</th>
-                <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.supplier')}</th>
-                <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.department')}</th>
-                <th className="text-right px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.amount')}</th>
-                <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('approvals.waiting', 'Waiting')}</th>
-                <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.dueDate')}</th>
-                <th className="px-4 py-3" />
+                <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.reference')}</th>
+                <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.supplier')}</th>
+                <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.department')}</th>
+                <th className="text-right px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.amount')}</th>
+                <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('approvals.waiting', 'Waiting')}</th>
+                <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.dueDate')}</th>
+                <th className="px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint" />
               </tr>
             </thead>
             <tbody className="divide-y divide-hairline">

@@ -4,10 +4,11 @@ import { Link } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { markAllAsRead, markAsRead } from '@/store/slices/notificationSlice'
 import apiClient from '@/services/apiClient'
-import {
+import { Panel } from "@/components/ui/Panel"
+import { 
   Bell, CheckCheck, Info, AlertTriangle, CheckCircle, XCircle,
   FileText, Loader2, BellOff,
-} from 'lucide-react'
+ } from 'lucide-react'
 import { formatDateTime } from '@/lib/format'
 
 interface ApiNotification {
@@ -83,9 +84,9 @@ export default function NotificationsPage() {
     <div className="space-y-6 max-w-3xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('notifications.title', 'Notifications')}</h1>
+          <h1 className="text-2xl font-bold text-ink">{t('notifications.title', 'Notifications')}</h1>
           {unread > 0 && (
-            <p className="text-sm text-gray-500 mt-0.5">
+            <p className="text-sm text-ink-faint mt-0.5">
               <span className="font-semibold text-primary">{unread}</span> {t('notifications.unread', 'non lu(s)')}
             </p>
           )}
@@ -94,7 +95,7 @@ export default function NotificationsPage() {
           <button
             onClick={() => markAllMutation.mutate()}
             disabled={markAllMutation.isPending}
-            className="flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-60"
+            className="flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium hover:bg-ground transition-colors disabled:opacity-60"
           >
             {markAllMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCheck className="w-4 h-4" />}
             {t('notifications.markAllRead', 'Tout marquer comme lu')}
@@ -102,13 +103,13 @@ export default function NotificationsPage() {
         )}
       </div>
 
-      <div className="bg-white rounded-xl border overflow-hidden">
+      <div className="bg-surface rounded-xl border border-hairline overflow-hidden">
         {isLoading ? (
           <div className="flex justify-center py-16">
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
         ) : allNotifs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-3 text-gray-400">
+          <div className="flex flex-col items-center justify-center py-16 gap-3 text-ink-faint">
             <BellOff className="w-10 h-10" />
             <p className="text-sm font-medium">{t('notifications.noNotifications', 'Aucune notification')}</p>
           </div>
@@ -117,8 +118,8 @@ export default function NotificationsPage() {
             {allNotifs.map(notif => (
               <div
                 key={notif.id}
-                className={`flex items-start gap-4 px-5 py-4 cursor-pointer hover:bg-gray-50 transition-colors ${
-                  !notif.read ? 'bg-blue-50/40' : ''
+                className={`flex items-start gap-4 px-5 py-4 cursor-pointer hover:bg-ground transition-colors ${
+                  !notif.read ? 'bg-primary/10/40' : ''
                 }`}
                 onClick={() => handleMarkRead(notif)}
               >
@@ -127,11 +128,11 @@ export default function NotificationsPage() {
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm ${!notif.read ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
+                  <p className={`text-sm ${!notif.read ? 'font-semibold text-ink' : 'text-ink-soft'}`}>
                     {notif.message}
                   </p>
                   <div className="flex items-center gap-3 mt-1">
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-ink-faint">
                       {formatDateTime(notif.createdAt)}
                     </span>
                     {notif.invoiceId && (
@@ -156,7 +157,7 @@ export default function NotificationsPage() {
         )}
       </div>
 
-      <p className="text-xs text-gray-400 text-center">
+      <p className="text-xs text-ink-faint text-center">
         {t('notifications.hint', 'Cliquez sur une notification pour la marquer comme lue.')}
       </p>
     </div>

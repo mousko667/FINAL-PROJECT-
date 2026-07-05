@@ -97,7 +97,7 @@ export default function SupplierOnboardingPage() {
                 step === item ? 'border-primary bg-primary/5 text-primary' : 'border-hairline text-ink-faint'
               }`}
             >
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white border text-xs font-semibold">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-surface border-hairline text-xs font-semibold">
                 {item}
               </span>
               {t(`supplier.onboarding.step${item}`, `Step ${item}`)}
@@ -128,7 +128,7 @@ export default function SupplierOnboardingPage() {
                 <label htmlFor="supplier-category" className="block text-sm font-medium text-ink-soft mb-1">
                   {t('supplier.fields.category', 'Category')}
                 </label>
-                <select id="supplier-category" {...register('category')} className="w-full border rounded-[4px] px-3 py-2 text-sm bg-white">
+                <select id="supplier-category" {...register('category')} className="w-full border rounded-[4px] px-3 py-2 text-sm bg-surface">
                   <option value="">{t('supplier.category.none', 'Uncategorized')}</option>
                   {SUPPLIER_CATEGORIES.map((category) => (
                     <option key={category} value={category}>

@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import { useAppSelector } from '@/store/hooks'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
-import { Loader2, Plus, ChevronLeft, ChevronRight, Upload, FileSpreadsheet } from 'lucide-react'
+import { Panel } from "@/components/ui/Panel"
+import {  Loader2, Plus, ChevronLeft, ChevronRight, Upload, FileSpreadsheet  } from 'lucide-react'
 import { formatAmount, formatDate } from '@/lib/format'
 
 interface PurchaseOrder {
@@ -67,12 +68,12 @@ export default function PurchaseOrdersPage() {
 
   const statusBadge = (s: string) => {
     const map: Record<string, string> = {
-      OPEN: 'bg-green-100 text-green-700',
-      PARTIALLY_RECEIVED: 'bg-yellow-100 text-yellow-700',
-      CLOSED: 'bg-gray-100 text-gray-500',
-      CANCELLED: 'bg-red-100 text-red-700',
+      OPEN: 'bg-pos/10 text-pos',
+      PARTIALLY_RECEIVED: 'bg-warn/10 text-warn',
+      CLOSED: 'bg-ground text-ink-faint',
+      CANCELLED: 'bg-crit/10 text-crit',
     }
-    return map[s] ?? 'bg-gray-100 text-gray-600'
+    return map[s] ?? 'bg-ground text-ink-soft'
   }
 
   return (
@@ -80,8 +81,8 @@ export default function PurchaseOrdersPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{t('po.title', 'Purchase Orders')}</h1>
-            <p className="text-sm text-gray-500">{t('po.subtitle', 'Manage purchase orders linked to supplier invoices')}</p>
+            <h1 className="text-2xl font-bold text-ink">{t('po.title', 'Purchase Orders')}</h1>
+            <p className="text-sm text-ink-faint">{t('po.subtitle', 'Manage purchase orders linked to supplier invoices')}</p>
           </div>
           {isAA && (
             <div className="flex items-center gap-2">
@@ -92,7 +93,7 @@ export default function PurchaseOrdersPage() {
                 disabled
                 title={t('po.importUnavailable', 'ERP import unavailable — enter manually')}
                 aria-disabled="true"
-                className="flex items-center gap-2 px-3 py-2 border rounded-lg text-sm font-medium text-gray-400 cursor-not-allowed"
+                className="flex items-center gap-2 px-3 py-2 border rounded-lg text-sm font-medium text-ink-faint cursor-not-allowed"
               >
                 <FileSpreadsheet className="w-4 h-4" />
                 {t('po.importFile', 'Import')}
@@ -109,25 +110,25 @@ export default function PurchaseOrdersPage() {
 
         {/* Honest note: bulk import is unavailable, manual entry works below */}
         {isAA && (
-          <div className="flex items-start gap-3 bg-gray-50 border border-gray-200 rounded-xl p-4">
-            <FileSpreadsheet className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" />
-            <p className="text-sm font-medium text-gray-600">{t('po.importUnavailable', 'ERP import unavailable — enter manually')}</p>
+          <div className="flex items-start gap-3 bg-ground border border-hairline rounded-xl p-4">
+            <FileSpreadsheet className="w-5 h-5 text-ink-faint shrink-0 mt-0.5" />
+            <p className="text-sm font-medium text-ink-soft">{t('po.importUnavailable', 'ERP import unavailable — enter manually')}</p>
           </div>
         )}
 
         {/* Create form */}
         {showCreate && (
-          <div className="bg-white rounded-xl border p-6 space-y-4">
-            <h2 className="font-semibold text-gray-800">{t('po.create', 'New Purchase Order')}</h2>
+          <div className="bg-surface rounded-xl border border-hairline p-6 space-y-4">
+            <h2 className="font-semibold text-ink">{t('po.create', 'New Purchase Order')}</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('po.poNumber', 'PO Number')} *</label>
+                <label className="block text-sm font-medium text-ink-soft mb-1">{t('po.poNumber', 'PO Number')} *</label>
                 <input value={form.poNumber} onChange={e => setForm(p => ({ ...p, poNumber: e.target.value }))}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                   placeholder="BC-2026-001" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoice.supplier', 'Supplier')}</label>
+                <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.supplier', 'Supplier')}</label>
                 <select value={form.supplierId} onChange={e => setForm(p => ({ ...p, supplierId: e.target.value }))}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
                   <option value="">{t('invoice.selectSupplier', '— Select supplier —')}</option>
@@ -135,12 +136,12 @@ export default function PurchaseOrdersPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoice.amount', 'Total Amount')} *</label>
+                <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.amount', 'Total Amount')} *</label>
                 <input type="number" step="0.01" value={form.totalAmount} onChange={e => setForm(p => ({ ...p, totalAmount: e.target.value }))}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoice.currency', 'Currency')}</label>
+                <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.currency', 'Currency')}</label>
                 <select value={form.currency} onChange={e => setForm(p => ({ ...p, currency: e.target.value }))}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
                   <option value="XOF">XOF</option>
@@ -150,7 +151,7 @@ export default function PurchaseOrdersPage() {
               </div>
             </div>
             <div className="flex justify-end gap-3 pt-2 border-t">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">{t('app.cancel')}</button>
+              <button onClick={() => setShowCreate(false)} className="px-4 py-2 border rounded-lg text-sm hover:bg-ground">{t('app.cancel')}</button>
               <button onClick={() => createMutation.mutate()} disabled={!form.poNumber || !form.totalAmount || createMutation.isPending}
                 className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium disabled:opacity-50">
                 {createMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -161,50 +162,50 @@ export default function PurchaseOrdersPage() {
         )}
 
         {/* List */}
-        <div className="bg-white rounded-xl border overflow-hidden">
+        <div className="bg-surface rounded-xl border border-hairline overflow-hidden">
           {isLoading ? (
             <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
           ) : isError ? (
             <div className="text-center py-20 space-y-3">
               <p className="text-red-500 text-sm">{t('app.error')}</p>
-              <button onClick={() => refetch()} className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50">{t('app.retry')}</button>
+              <button onClick={() => refetch()} className="px-4 py-2 text-sm border rounded-lg hover:bg-ground">{t('app.retry')}</button>
             </div>
           ) : (
             <>
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b">
+                <thead className="bg-ground border-b">
                   <tr>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t('po.poNumber', 'PO Number')}</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.supplier', 'Supplier')}</th>
-                    <th className="text-right px-4 py-3 font-medium text-gray-600">{t('invoice.amount', 'Total')}</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t('invoice.status', 'Status')}</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.audit.date', 'Created')}</th>
+                    <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('po.poNumber', 'PO Number')}</th>
+                    <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.supplier', 'Supplier')}</th>
+                    <th className="text-right px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.amount', 'Total')}</th>
+                    <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.status', 'Status')}</th>
+                    <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.audit.date', 'Created')}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y">
+                <tbody className="divide-y divide-hairline">
                   {orders.length === 0 ? (
                     <tr><td colSpan={5} className="text-center py-16 text-muted-foreground">{t('app.noData')}</td></tr>
                   ) : orders.map(po => (
-                    <tr key={po.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-mono text-xs font-medium text-gray-900">{po.poNumber}</td>
-                      <td className="px-4 py-3 text-gray-700">{po.supplierName ?? '—'}</td>
+                    <tr key={po.id} className="hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)]">
+                      <td className="px-4 py-3 font-mono text-xs font-medium text-ink">{po.poNumber}</td>
+                      <td className="px-4 py-3 text-ink-soft">{po.supplierName ?? '—'}</td>
                       <td className="px-4 py-3 text-right font-mono">{formatAmount(po.totalAmount)} {po.currency ?? 'XOF'}</td>
                       <td className="px-4 py-3">
                         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusBadge(po.status)}`}>{po.status}</span>
                       </td>
-                      <td className="px-4 py-3 text-gray-500 text-xs">{formatDate(po.createdAt)}</td>
+                      <td className="px-4 py-3 text-ink-faint text-xs">{formatDate(po.createdAt)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
               {totalPages > 1 && (
-                <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
+                <div className="flex items-center justify-between px-4 py-3 border-t bg-ground">
                   <span className="text-sm text-muted-foreground">{t('pagination.page')} {page + 1} {t('pagination.of')} {totalPages}</span>
                   <div className="flex gap-2">
-                    <button disabled={page === 0} onClick={() => setPage(p => p - 1)} className="flex items-center gap-1 px-3 py-1.5 text-sm border rounded-lg disabled:opacity-40 hover:bg-white">
+                    <button disabled={page === 0} onClick={() => setPage(p => p - 1)} className="flex items-center gap-1 px-3 py-1.5 text-sm border rounded-lg disabled:opacity-40 hover:bg-surface">
                       <ChevronLeft className="w-4 h-4" />{t('pagination.previous')}
                     </button>
-                    <button disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)} className="flex items-center gap-1 px-3 py-1.5 text-sm border rounded-lg disabled:opacity-40 hover:bg-white">
+                    <button disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)} className="flex items-center gap-1 px-3 py-1.5 text-sm border rounded-lg disabled:opacity-40 hover:bg-surface">
                       {t('pagination.next')}<ChevronRight className="w-4 h-4" />
                     </button>
                   </div>

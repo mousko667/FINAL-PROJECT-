@@ -3,7 +3,8 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import type { ApiResponse, PagedResponse } from '@/types/invoice'
-import { Loader2, Search, ChevronLeft, ChevronRight, FileDown } from 'lucide-react'
+import { Panel } from "@/components/ui/Panel"
+import {  Loader2, Search, ChevronLeft, ChevronRight, FileDown  } from 'lucide-react'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { reportService } from '@/services/reportService'
 import AuditSummary from '@/components/audit/AuditSummary'
@@ -70,8 +71,8 @@ export default function FinancialAuditPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{t('audit.financial.title', 'Financial Audit Trail')}</h1>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <h1 className="text-2xl font-bold text-ink">{t('audit.financial.title', 'Financial Audit Trail')}</h1>
+            <p className="text-sm text-ink-faint mt-0.5">
               {t('audit.financial.subtitle', 'Immutable record of all financial events — invoice submissions, approvals, rejections, payments.')}
             </p>
           </div>
@@ -79,7 +80,7 @@ export default function FinancialAuditPage() {
             <button
               onClick={() => exportMutation.mutate()}
               disabled={exportMutation.isPending}
-              className="flex items-center gap-2 px-4 py-2 border rounded-lg text-sm hover:bg-gray-50 disabled:opacity-60"
+              className="flex items-center gap-2 px-4 py-2 border rounded-lg text-sm hover:bg-ground disabled:opacity-60"
             >
               {exportMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
               {t('audit.financial.exportPdf', 'Export PDF')}
@@ -90,11 +91,11 @@ export default function FinancialAuditPage() {
         {/* M10 #12: Journal / Synthèse tabs */}
         <div className="flex gap-2 border-b">
           <button onClick={() => setTab('journal')}
-            className={`px-4 py-2 text-sm font-medium border-b-2 ${tab === 'journal' ? 'border-primary text-primary' : 'border-transparent text-gray-500'}`}>
+            className={`px-4 py-2 text-sm font-medium border-b-2 ${tab === 'journal' ? 'border-primary text-primary' : 'border-transparent text-ink-faint'}`}>
             {t('admin.audit.summary.tabJournal')}
           </button>
           <button onClick={() => setTab('summary')}
-            className={`px-4 py-2 text-sm font-medium border-b-2 ${tab === 'summary' ? 'border-primary text-primary' : 'border-transparent text-gray-500'}`}>
+            className={`px-4 py-2 text-sm font-medium border-b-2 ${tab === 'summary' ? 'border-primary text-primary' : 'border-transparent text-ink-faint'}`}>
             {t('admin.audit.summary.tabSummary')}
           </button>
         </div>
@@ -104,7 +105,7 @@ export default function FinancialAuditPage() {
         {tab === 'journal' && (
         <>
         {/* Filters */}
-        <div className="bg-white rounded-xl border p-4 flex flex-wrap gap-3">
+        <div className="bg-surface rounded-xl border border-hairline p-4 flex flex-wrap gap-3">
           <div className="flex items-center gap-2 border rounded-lg px-3 py-2 text-sm flex-1 min-w-[180px]">
             <Search className="w-4 h-4 text-muted-foreground shrink-0" />
             <input
@@ -126,7 +127,7 @@ export default function FinancialAuditPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-xl border overflow-hidden">
+        <div className="bg-surface rounded-xl border border-hairline overflow-hidden">
           {isLoading ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -134,30 +135,30 @@ export default function FinancialAuditPage() {
           ) : isError ? (
             <div className="text-center py-20 space-y-3">
               <p className="text-red-500 text-sm">{t('app.error')}</p>
-              <button onClick={() => refetch()} className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50">
+              <button onClick={() => refetch()} className="px-4 py-2 text-sm border rounded-lg hover:bg-ground">
                 {t('app.retry')}
               </button>
             </div>
           ) : (
             <>
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b">
+                <thead className="bg-ground border-b">
                   <tr>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.audit.date')}</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.audit.user')}</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.audit.action')}</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.audit.entity')}</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.audit.details')}</th>
+                    <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.audit.date')}</th>
+                    <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.audit.user')}</th>
+                    <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.audit.action')}</th>
+                    <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.audit.entity')}</th>
+                    <th className="text-left px-4 py-3 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('admin.audit.details')}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y">
+                <tbody className="divide-y divide-hairline">
                   {logs.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="text-center py-16 text-muted-foreground">{t('app.noData')}</td>
                     </tr>
                   ) : logs.map((log) => (
-                    <tr key={log.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
+                    <tr key={log.id} className="hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)]">
+                      <td className="px-4 py-3 text-xs text-ink-faint whitespace-nowrap">
                         {(() => {
                           const raw = log.createdAt ?? log.performedAt
                           if (!raw) return '—'
@@ -165,27 +166,27 @@ export default function FinancialAuditPage() {
                           return isNaN(d.getTime()) ? raw : formatDateTime(d)
                         })()}
                       </td>
-                      <td className="px-4 py-3 font-medium text-gray-700 text-xs">
+                      <td className="px-4 py-3 font-medium text-ink-soft text-xs">
                         <div>{log.performedBy?.username ?? '—'}</div>
-                        {log.ipAddress && <div className="text-gray-400 font-mono">{log.ipAddress}</div>}
+                        {log.ipAddress && <div className="text-ink-faint font-mono">{log.ipAddress}</div>}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-xs font-mono bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-100">
+                        <span className="text-xs font-mono bg-primary/10 text-primary px-2 py-0.5 rounded border border-blue-100">
                           {log.action}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-600">
+                      <td className="px-4 py-3 text-ink-soft">
                         {log.entityType}
                         {log.entityId && <span className="ml-1 text-xs text-muted-foreground">#{log.entityId.slice(0, 8)}</span>}
                       </td>
-                      <td className="px-4 py-3 text-xs text-gray-500 max-w-xs truncate">{log.details ?? log.newValue ?? '—'}</td>
+                      <td className="px-4 py-3 text-xs text-ink-faint max-w-xs truncate">{log.details ?? log.newValue ?? '—'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
 
               {totalPages > 1 && (
-                <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
+                <div className="flex items-center justify-between px-4 py-3 border-t bg-ground">
                   <span className="text-sm text-muted-foreground">
                     {t('pagination.page')} {currentPage + 1} {t('pagination.of')} {totalPages}
                   </span>
@@ -193,14 +194,14 @@ export default function FinancialAuditPage() {
                     <button
                       disabled={currentPage === 0}
                       onClick={() => setFilters((p) => ({ ...p, page: p.page - 1 }))}
-                      className="flex items-center gap-1 px-3 py-1.5 text-sm border rounded-lg disabled:opacity-40 hover:bg-white"
+                      className="flex items-center gap-1 px-3 py-1.5 text-sm border rounded-lg disabled:opacity-40 hover:bg-surface"
                     >
                       <ChevronLeft className="w-4 h-4" /> {t('pagination.previous')}
                     </button>
                     <button
                       disabled={currentPage >= totalPages - 1}
                       onClick={() => setFilters((p) => ({ ...p, page: p.page + 1 }))}
-                      className="flex items-center gap-1 px-3 py-1.5 text-sm border rounded-lg disabled:opacity-40 hover:bg-white"
+                      className="flex items-center gap-1 px-3 py-1.5 text-sm border rounded-lg disabled:opacity-40 hover:bg-surface"
                     >
                       {t('pagination.next')} <ChevronRight className="w-4 h-4" />
                     </button>
@@ -211,7 +212,7 @@ export default function FinancialAuditPage() {
           )}
         </div>
 
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-ink-faint">
           {t('audit.financial.immutableNote', 'This audit trail is immutable — records cannot be modified or deleted.')}
         </p>
         </>

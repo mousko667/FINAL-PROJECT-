@@ -2,7 +2,8 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Megaphone, AlertTriangle, Info, AlertOctagon, ShieldCheck } from 'lucide-react'
+import { Panel } from "@/components/ui/Panel"
+import {  Megaphone, AlertTriangle, Info, AlertOctagon, ShieldCheck  } from 'lucide-react'
 
 interface Announcement {
   id: string
@@ -21,9 +22,9 @@ interface BudgetAlert {
 }
 
 const SEVERITY_STYLE: Record<string, { cls: string; icon: React.ReactNode }> = {
-  INFO: { cls: 'bg-blue-50 border-blue-200 text-blue-800', icon: <Info className="w-4 h-4" /> },
+  INFO: { cls: 'bg-primary/10 border-blue-200 text-blue-800', icon: <Info className="w-4 h-4" /> },
   WARNING: { cls: 'bg-amber-50 border-amber-200 text-amber-800', icon: <AlertTriangle className="w-4 h-4" /> },
-  CRITICAL: { cls: 'bg-red-50 border-red-200 text-red-800', icon: <AlertOctagon className="w-4 h-4" /> },
+  CRITICAL: { cls: 'bg-crit/10 border-red-200 text-red-800', icon: <AlertOctagon className="w-4 h-4" /> },
 }
 
 /** Active system announcements — shown to every authenticated user (M2). */
@@ -76,7 +77,7 @@ export function PrivacyPolicyBanner() {
   if (!data || data.accepted) return null
 
   return (
-    <div className="flex items-center justify-between gap-3 border border-blue-200 bg-blue-50 text-blue-800 rounded-lg px-4 py-3">
+    <div className="flex items-center justify-between gap-3 border border-blue-200 bg-primary/10 text-blue-800 rounded-lg px-4 py-3">
       <span className="flex items-center gap-2 text-sm">
         <ShieldCheck className="w-4 h-4 shrink-0" />
         {t('privacy.prompt', 'Veuillez accepter la politique de confidentialité (v{{version}}).', { version: data.policyVersion })}
@@ -104,20 +105,20 @@ export function BudgetAlerts() {
   if (alerts.length === 0) return null
 
   return (
-    <div className="bg-white rounded-xl border p-5">
+    <div className="bg-surface rounded-xl border border-hairline p-5">
       <div className="flex items-center gap-2 mb-3">
         <AlertTriangle className="w-5 h-5 text-amber-600" />
-        <h2 className="font-semibold text-gray-800">{t('dashboard.budgetAlerts.title')}</h2>
+        <h2 className="font-semibold text-ink">{t('dashboard.budgetAlerts.title')}</h2>
       </div>
       <ul className="space-y-2">
         {alerts.map(a => {
           const over = (a.utilizationPercent ?? 0) >= 100
           return (
             <li key={a.departmentCode} className="flex items-center justify-between text-sm">
-              <span className="font-medium text-gray-700">
+              <span className="font-medium text-ink-soft">
                 {a.departmentCode} — {i18n.language === 'en' ? a.nameEn : a.nameFr}
               </span>
-              <span className={over ? 'text-red-600 font-semibold' : 'text-amber-600 font-medium'}>
+              <span className={over ? 'text-crit font-semibold' : 'text-amber-600 font-medium'}>
                 {(a.utilizationPercent ?? 0).toFixed(0)}%
                 {over ? ` · ${t('dashboard.budgetAlerts.overBudget')}` : ''}
               </span>

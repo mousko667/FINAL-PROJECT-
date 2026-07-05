@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useMutation } from '@tanstack/react-query'
-import { UploadCloud, Loader2, CheckCircle2, XCircle, FileText } from 'lucide-react'
+import { Panel } from "@/components/ui/Panel"
+import {  UploadCloud, Loader2, CheckCircle2, XCircle, FileText  } from 'lucide-react'
 import { invoiceService, type ImportResult } from '@/services/invoiceService'
 
 interface ImportInvoicesModalProps {
@@ -37,18 +38,18 @@ export function ImportInvoicesModal({ onClose, onImported }: ImportInvoicesModal
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col"
+        className="bg-surface rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-3 border-b">
-          <h2 className="text-sm font-semibold text-gray-800">
+          <h2 className="text-sm font-semibold text-ink">
             {t('invoice.import.title', 'Importer des factures')}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+          <button onClick={onClose} className="text-ink-faint hover:text-ink-soft text-xl leading-none">×</button>
         </div>
 
         <div className="flex-1 overflow-auto p-5 space-y-4">
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-ink-faint">
             {t('invoice.import.hint', 'Fichier CSV (une facture par ligne) ou XML (plusieurs éléments <invoice>). Chaque ligne est traitée indépendamment.')}
           </p>
 
@@ -57,7 +58,7 @@ export function ImportInvoicesModal({ onClose, onImported }: ImportInvoicesModal
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full border-2 border-dashed rounded-xl py-8 flex flex-col items-center gap-2 text-gray-500 hover:border-primary hover:text-primary transition-colors"
+                className="w-full border-2 border-dashed rounded-xl py-8 flex flex-col items-center gap-2 text-ink-faint hover:border-primary hover:text-primary transition-colors"
               >
                 <UploadCloud className="w-8 h-8" />
                 <span className="text-sm font-medium">
@@ -76,7 +77,7 @@ export function ImportInvoicesModal({ onClose, onImported }: ImportInvoicesModal
               />
 
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
+                <label className="block text-xs font-medium text-ink-soft mb-1">
                   {t('invoice.import.department_code', 'Code département (optionnel)')}
                 </label>
                 <input
@@ -89,7 +90,7 @@ export function ImportInvoicesModal({ onClose, onImported }: ImportInvoicesModal
               </div>
 
               {errorMessage && (
-                <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                <div className="text-sm text-crit bg-crit/10 border border-red-200 rounded-lg px-3 py-2">
                   {errorMessage}
                 </div>
               )}
@@ -99,37 +100,37 @@ export function ImportInvoicesModal({ onClose, onImported }: ImportInvoicesModal
           {result && (
             <div className="space-y-3">
               <div className="flex gap-3 text-sm">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-100 text-gray-700">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-ground text-ink-soft">
                   <FileText className="w-4 h-4" /> {t('invoice.import.total', 'Total')}: {result.total}
                 </span>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-100 text-green-700">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-pos/10 text-pos">
                   <CheckCircle2 className="w-4 h-4" /> {t('invoice.import.created', 'Créées')}: {result.created}
                 </span>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-100 text-red-700">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-crit/10 text-crit">
                   <XCircle className="w-4 h-4" /> {t('invoice.import.failed', 'Échecs')}: {result.failed}
                 </span>
               </div>
 
               <div className="border rounded-lg overflow-hidden">
                 <table className="w-full text-xs">
-                  <thead className="bg-gray-50 border-b text-gray-600">
+                  <thead className="bg-ground border-b text-ink-soft">
                     <tr>
-                      <th className="text-left px-3 py-2 font-medium">{t('invoice.import.line', 'Ligne')}</th>
-                      <th className="text-left px-3 py-2 font-medium">{t('invoice.import.outcome', 'Résultat')}</th>
+                      <th className="text-left px-3 py-2 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.import.line', 'Ligne')}</th>
+                      <th className="text-left px-3 py-2 bg-ground text-xs font-medium uppercase tracking-wide text-ink-faint">{t('invoice.import.outcome', 'Résultat')}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y">
+                  <tbody className="divide-y divide-hairline">
                     {result.results.map((r) => (
                       <tr key={r.line}>
-                        <td className="px-3 py-2 text-gray-500">{r.line}</td>
+                        <td className="px-3 py-2 text-ink-faint">{r.line}</td>
                         <td className="px-3 py-2">
                           {r.success ? (
-                            <span className="inline-flex items-center gap-1.5 text-green-700">
+                            <span className="inline-flex items-center gap-1.5 text-pos">
                               <CheckCircle2 className="w-3.5 h-3.5" />
                               {r.reference ?? t('invoice.import.ok', 'Créée')}
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 text-red-700">
+                            <span className="inline-flex items-center gap-1.5 text-crit">
                               <XCircle className="w-3.5 h-3.5" />
                               {r.error ?? t('app.error', 'Erreur')}
                             </span>
@@ -149,7 +150,7 @@ export function ImportInvoicesModal({ onClose, onImported }: ImportInvoicesModal
             <>
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-sm border rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 text-sm border rounded-lg text-ink-soft hover:bg-ground transition-colors"
               >
                 {t('app.cancel', 'Annuler')}
               </button>

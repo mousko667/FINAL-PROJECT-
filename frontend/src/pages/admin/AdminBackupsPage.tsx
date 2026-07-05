@@ -126,7 +126,7 @@ export default function AdminBackupsPage() {
                     <td className="px-6 py-4 text-right">
                       <button
                         onClick={() => setRestoringFile(filename)}
-                        className="text-red-600 hover:text-red-800 font-medium flex items-center gap-1 justify-end w-full"
+                        className="text-crit hover:text-red-800 font-medium flex items-center gap-1 justify-end w-full"
                       >
                         <RotateCcw className="w-4 h-4" />
                         {t('admin.backups.restoreBtn')}

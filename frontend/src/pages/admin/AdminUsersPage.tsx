@@ -55,7 +55,7 @@ function CsvToolbar() {
 
       {report && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-          <div className="bg-white rounded-lg shadow-lg max-w-lg w-full max-h-[80vh] overflow-auto">
+          <div className="bg-surface rounded-lg shadow-lg max-w-lg w-full max-h-[80vh] overflow-auto">
             <div className="flex items-center justify-between px-5 py-3 border-b">
               <h2 className="font-semibold text-ink">{t('admin.users.importReportTitle')}</h2>
               <button onClick={() => setReport(null)} className="text-ink-faint hover:text-ink-soft">
@@ -170,7 +170,7 @@ function EditUserModal({ user, onClose }: EditUserModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-5" onClick={e => e.stopPropagation()}>
+      <div className="bg-surface rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-5" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-ink">{t('admin.users.edit')}</h2>
           <button onClick={onClose} className="text-ink-faint hover:text-ink-soft text-xl leading-none">×</button>

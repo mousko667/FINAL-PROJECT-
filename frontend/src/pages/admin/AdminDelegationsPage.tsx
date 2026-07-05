@@ -194,7 +194,7 @@ export default function AdminDelegationsPage() {
                           <button
                             onClick={() => setRevokeTargetId(d.id)}
                             disabled={revokeMutation.isPending}
-                            className="inline-flex items-center gap-1 text-xs text-red-600 hover:text-red-700 disabled:opacity-50"
+                            className="inline-flex items-center gap-1 text-xs text-crit hover:text-crit disabled:opacity-50"
                           >
                             <Trash2 className="w-3.5 h-3.5" /> {t('admin.delegations.revoke', 'Revoke')}
                           </button>

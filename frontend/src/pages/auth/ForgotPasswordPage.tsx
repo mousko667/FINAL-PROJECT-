@@ -22,11 +22,11 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <form onSubmit={submit} className="w-full max-w-md bg-white border rounded-xl p-6 space-y-4">
+    <div className="min-h-screen flex items-center justify-center bg-ground px-4">
+      <form onSubmit={submit} className="w-full max-w-md bg-surface border-hairline rounded-xl p-6 space-y-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('auth.forgotPassword.title', 'Reset password')}</h1>
-          <p className="text-sm text-gray-500 mt-1">{t('auth.forgotPassword.subtitle', 'Enter your account email to receive a reset link.')}</p>
+          <h1 className="text-2xl font-bold text-ink">{t('auth.forgotPassword.title', 'Reset password')}</h1>
+          <p className="text-sm text-ink-faint mt-1">{t('auth.forgotPassword.subtitle', 'Enter your account email to receive a reset link.')}</p>
         </div>
         {submitted ? (
           <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg p-3">
@@ -34,7 +34,7 @@ export default function ForgotPasswordPage() {
           </div>
         ) : (
           <>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-ink-soft">
               {t('auth.email', 'Email')}
               <input
                 type="email"
@@ -44,7 +44,7 @@ export default function ForgotPasswordPage() {
                 className="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </label>
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <p className="text-sm text-crit">{error}</p>}
             <button className="w-full bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium">
               {t('auth.forgotPassword.submit', 'Send reset link')}
             </button>
