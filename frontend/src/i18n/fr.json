@@ -33,7 +33,8 @@
     "active": "Actif",
     "inactive": "Inactif",
     "pageNotFound": "Page introuvable",
-    "backHome": "Retour à l'accueil"
+    "backHome": "Retour à l'accueil",
+    "system": "Système"
   },
   "auth": {
     "login": "Connexion",
@@ -402,7 +403,8 @@
     "overdue": "DÉPASSÉ",
     "stepApproved": "Approuvé",
     "stepPending": "En attente",
-    "stepRejected": "Rejeté"
+    "stepRejected": "Rejeté",
+    "timelineTo": "vers"
   },
   "status": {
     "BROUILLON": "Brouillon",

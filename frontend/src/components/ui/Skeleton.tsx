@@ -12,7 +12,7 @@ export function Skeleton({ className }: SkeletonProps) {
 export function SkeletonCard() {
   return (
     <Panel className="p-5 flex items-start gap-4">
-      <Skeleton className="w-12 h-12 rounded-xl shrink-0" />
+      <Skeleton className="w-12 h-12 rounded-[4px] shrink-0" />
       <div className="flex-1 space-y-2">
         <Skeleton className="h-3.5 w-24" />
         <Skeleton className="h-7 w-16" />
@@ -52,11 +52,11 @@ export function SkeletonDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Panel className="p-5 space-y-3">
           <Skeleton className="h-5 w-40" />
-          <Skeleton className="h-[220px] w-full rounded-lg" />
+          <Skeleton className="h-[220px] w-full rounded-[4px]" />
         </Panel>
         <Panel className="p-5 space-y-3">
           <Skeleton className="h-5 w-40" />
-          <Skeleton className="h-[220px] w-full rounded-lg" />
+          <Skeleton className="h-[220px] w-full rounded-[4px]" />
         </Panel>
       </div>
     </div>

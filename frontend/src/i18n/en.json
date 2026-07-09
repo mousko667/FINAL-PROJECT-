@@ -33,7 +33,8 @@
     "active": "Active",
     "inactive": "Inactive",
     "pageNotFound": "Page not found",
-    "backHome": "Back to home"
+    "backHome": "Back to home",
+    "system": "System"
   },
   "auth": {
     "login": "Login",
@@ -402,7 +403,8 @@
     "overdue": "OVERDUE",
     "stepApproved": "Approved",
     "stepPending": "Pending",
-    "stepRejected": "Rejected"
+    "stepRejected": "Rejected",
+    "timelineTo": "to"
   },
   "status": {
     "BROUILLON": "Draft",

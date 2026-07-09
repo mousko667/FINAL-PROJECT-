@@ -43,12 +43,12 @@ export function BulkDocumentUpload({ invoiceId }: { invoiceId: string }) {
   })
 
   return (
-    <div className="bg-white rounded-xl border p-5">
+    <div className="bg-surface rounded-[4px] border border-hairline p-5">
       <div className="flex items-center gap-2 mb-3">
         <UploadCloud className="w-5 h-5 text-primary" />
-        <h2 className="font-semibold text-gray-800">{t('invoice.bulkUpload.title')}</h2>
+        <h2 className="font-semibold text-ink">{t('invoice.bulkUpload.title')}</h2>
       </div>
-      <p className="text-sm text-gray-500 mb-3">{t('invoice.bulkUpload.subtitle')}</p>
+      <p className="text-sm text-ink-soft mb-3">{t('invoice.bulkUpload.subtitle')}</p>
 
       <DocumentUploader onFilesChange={setFiles} disabled={upload.isPending} />
 
@@ -56,19 +56,19 @@ export function BulkDocumentUpload({ invoiceId }: { invoiceId: string }) {
         type="button"
         onClick={() => upload.mutate()}
         disabled={files.length === 0 || upload.isPending}
-        className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
+        className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
       >
         {upload.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
         {t('invoice.bulkUpload.submit', { count: files.length })}
       </button>
 
       {upload.isError && (
-        <p className="mt-3 text-sm text-red-600">{t('invoice.bulkUpload.error')}</p>
+        <p className="mt-3 text-sm text-crit">{t('invoice.bulkUpload.error')}</p>
       )}
 
       {result && (
         <div className="mt-4 space-y-2">
-          <p className="text-sm font-medium text-gray-700">
+          <p className="text-sm font-medium text-ink-soft">
             {t('invoice.bulkUpload.report', {
               uploaded: result.uploaded,
               failed: result.failed,
@@ -76,12 +76,12 @@ export function BulkDocumentUpload({ invoiceId }: { invoiceId: string }) {
             })}
           </p>
           {result.documents.map((d) => (
-            <div key={d.id} className="flex items-center gap-2 text-xs text-green-700">
+            <div key={d.id} className="flex items-center gap-2 text-xs text-pos">
               <CheckCircle2 className="w-3.5 h-3.5" /> {d.originalFilename}
             </div>
           ))}
           {result.errors.map((e, i) => (
-            <div key={i} className="flex items-center gap-2 text-xs text-red-600">
+            <div key={i} className="flex items-center gap-2 text-xs text-crit">
               <XCircle className="w-3.5 h-3.5" /> {e.filename} — {e.message}
             </div>
           ))}

@@ -47,8 +47,8 @@ export function ConfirmDialog({
   }
 
   const confirmBtnClass = variant === 'danger'
-    ? 'flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors'
-    : 'flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors'
+    ? 'flex items-center gap-2 px-4 py-2 bg-crit text-white rounded-[4px] text-sm font-medium hover:bg-crit/90 transition-colors'
+    : 'flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90 transition-colors'
 
   const dialog = (
     <div
@@ -62,14 +62,14 @@ export function ConfirmDialog({
         aria-describedby="confirm-dialog-message"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-5"
+        className="bg-surface rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-5"
       >
         <div>
-          <h2 id="confirm-dialog-title" className="text-lg font-bold text-gray-900">{title}</h2>
-          <p id="confirm-dialog-message" className="text-sm text-gray-600 mt-2">{message}</p>
+          <h2 id="confirm-dialog-title" className="text-lg font-bold text-ink">{title}</h2>
+          <p id="confirm-dialog-message" className="text-sm text-ink-soft mt-2">{message}</p>
         </div>
         <div className="flex justify-end gap-3">
-          <button type="button" onClick={onCancel} className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50 transition-colors">
+          <button type="button" onClick={onCancel} className="px-4 py-2 border border-hairline rounded-[4px] text-sm hover:bg-ground transition-colors">
             {cancelLabel ?? t('app.cancel')}
           </button>
           <button type="button" ref={confirmBtnRef} onClick={onConfirm} className={confirmBtnClass}>

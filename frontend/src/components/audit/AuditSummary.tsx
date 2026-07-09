@@ -17,16 +17,16 @@ function isoDaysAgo(n: number): string {
 
 function CountPanel({ title, entries }: { title: string; entries: CountEntry[] }) {
   return (
-    <div className="bg-white rounded-xl border p-4">
-      <h3 className="font-semibold text-gray-800 mb-3">{title}</h3>
+    <div className="bg-surface rounded-[4px] border border-hairline p-4">
+      <h3 className="font-semibold text-ink mb-3">{title}</h3>
       {entries.length === 0 ? (
-        <p className="text-sm text-gray-400">—</p>
+        <p className="text-sm text-ink-faint">—</p>
       ) : (
         <ul className="divide-y">
           {entries.map((e, i) => (
             <li key={i} className="flex items-center justify-between py-1.5 text-sm">
-              <span className="text-gray-700 truncate">{e.label || '—'}</span>
-              <span className="text-xs font-mono bg-amber-50 text-amber-700 px-2 py-0.5 rounded border border-amber-100">{e.count}</span>
+              <span className="text-ink-soft truncate">{e.label || '—'}</span>
+              <span className="text-xs num bg-warn-bg text-warn px-2 py-0.5 rounded border border-warn/30">{e.count}</span>
             </li>
           ))}
         </ul>
@@ -38,15 +38,15 @@ function CountPanel({ title, entries }: { title: string; entries: CountEntry[] }
 function DayBars({ title, entries }: { title: string; entries: CountEntry[] }) {
   const max = Math.max(1, ...entries.map((e) => e.count))
   return (
-    <div className="bg-white rounded-xl border p-4">
-      <h3 className="font-semibold text-gray-800 mb-3">{title}</h3>
-      {entries.length === 0 ? <p className="text-sm text-gray-400">—</p> : (
+    <div className="bg-surface rounded-[4px] border border-hairline p-4">
+      <h3 className="font-semibold text-ink mb-3">{title}</h3>
+      {entries.length === 0 ? <p className="text-sm text-ink-faint">—</p> : (
         <ul className="space-y-1.5">
           {entries.map((e, i) => (
             <li key={i} className="flex items-center gap-2 text-xs">
-              <span className="w-24 shrink-0 text-gray-500">{e.label}</span>
+              <span className="w-24 shrink-0 text-ink-soft">{e.label}</span>
               <span className="h-3 bg-primary/70 rounded" style={{ width: `${(e.count / max) * 100}%` }} />
-              <span className="text-gray-600">{e.count}</span>
+              <span className="text-ink-soft">{e.count}</span>
             </li>
           ))}
         </ul>
@@ -70,14 +70,14 @@ export default function AuditSummary({ scope }: { scope: 'system' | 'financial' 
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-xl border p-4 flex flex-wrap items-end gap-3">
-        <label className="text-sm text-gray-600">{t('admin.audit.summary.from')}
+      <div className="bg-surface rounded-[4px] border border-hairline p-4 flex flex-wrap items-end gap-3">
+        <label className="text-sm text-ink-soft">{t('admin.audit.summary.from')}
           <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
-            className="block border rounded-lg px-3 py-1.5 mt-1 text-sm" />
+            className="block border border-hairline rounded-[4px] px-3 py-1.5 mt-1 text-sm" />
         </label>
-        <label className="text-sm text-gray-600">{t('admin.audit.summary.to')}
+        <label className="text-sm text-ink-soft">{t('admin.audit.summary.to')}
           <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
-            className="block border rounded-lg px-3 py-1.5 mt-1 text-sm" />
+            className="block border border-hairline rounded-[4px] px-3 py-1.5 mt-1 text-sm" />
         </label>
         <div className="ml-auto">
           <ExportMenu endpoint="/audit-logs/summary/export" filename="audit_summary"
@@ -89,10 +89,10 @@ export default function AuditSummary({ scope }: { scope: 'system' | 'financial' 
         <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
         <>
-          <div className="bg-white rounded-xl border p-4 flex items-center gap-3">
+          <div className="bg-surface rounded-[4px] border border-hairline p-4 flex items-center gap-3">
             <BarChart3 className="w-5 h-5 text-primary" />
-            <span className="text-sm text-gray-600">{t('admin.audit.summary.total')}</span>
-            <span className="text-2xl font-bold text-gray-900">{data.totalEvents}</span>
+            <span className="text-sm text-ink-soft">{t('admin.audit.summary.total')}</span>
+            <span className="text-2xl font-bold text-ink">{data.totalEvents}</span>
           </div>
           <div className="grid gap-6 md:grid-cols-2">
             <CountPanel title={t('admin.audit.summary.byAction')} entries={data.byAction} />

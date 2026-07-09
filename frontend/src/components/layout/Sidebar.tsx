@@ -52,7 +52,7 @@ function NavItem({
       end={end}
       className={({ isActive }) =>
         cn(
-          'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group',
+          'flex items-center gap-3 px-3 py-2.5 rounded-[4px] text-sm font-medium transition-all duration-150 group',
           isActive
             ? 'oct-nav-active pl-[9px]'
             : 'text-slate-300 hover:bg-white/10 hover:text-white'
@@ -94,7 +94,7 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="px-5 py-5 border-b border-white/10">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-oct-gold flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-[4px] bg-oct-gold flex items-center justify-center shrink-0">
             <Container className="w-4 h-4 text-oct-navy" />
           </div>
           <div className="min-w-0">
@@ -103,7 +103,7 @@ export default function Sidebar() {
           </div>
         </div>
         {user && (
-          <div className="mt-3.5 px-2 py-2 rounded-lg bg-white/5 border border-white/10">
+          <div className="mt-3.5 px-2 py-2 rounded-[4px] bg-white/5 border border-white/10">
             <p className="text-xs font-semibold text-white truncate">{user.username}</p>
             {roleLabel && <p className="text-[10px] text-slate-400 mt-0.5 truncate">{roleLabel}</p>}
           </div>
@@ -223,7 +223,7 @@ export default function Sidebar() {
       {/* Footer */}
       <div className="px-4 py-3 border-t border-white/10 flex items-center justify-between">
         <span className="text-[10px] text-slate-400">v1.0.0 · OCT</span>
-        <div className="w-1.5 h-1.5 rounded-full bg-green-400" title={t('sidebar.systemOperational')} />
+        <div className="w-1.5 h-1.5 rounded-full bg-pos" title={t('sidebar.systemOperational')} />
       </div>
     </aside>
   )

@@ -57,7 +57,7 @@ export function ValidationChecklist({ invoiceId }: { invoiceId: string }) {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl border p-6 flex items-center justify-center">
+      <div className="bg-surface rounded-[4px] border border-hairline p-6 flex items-center justify-center">
         <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
       </div>
     )
@@ -72,13 +72,13 @@ export function ValidationChecklist({ invoiceId }: { invoiceId: string }) {
   const requiredDone = items.filter(i => i.required).every(i => i.checked)
 
   return (
-    <div className="bg-white rounded-xl border p-6">
+    <div className="bg-surface rounded-[4px] border border-hairline p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <ListChecks className="w-5 h-5 text-gray-500" />
-          <h2 className="font-semibold text-gray-800">{t('checklist.validationTitle', 'Validation Checklist')}</h2>
+          <ListChecks className="w-5 h-5 text-ink-soft" />
+          <h2 className="font-semibold text-ink">{t('checklist.validationTitle', 'Validation Checklist')}</h2>
         </div>
-        {data.templateName && <span className="text-xs text-gray-400">{data.templateName}</span>}
+        {data.templateName && <span className="text-xs text-ink-faint">{data.templateName}</span>}
       </div>
 
       <div className="space-y-3">
@@ -91,15 +91,15 @@ export function ValidationChecklist({ invoiceId }: { invoiceId: string }) {
               className="mt-1"
             />
             <div className="flex-1">
-              <label className="text-sm text-gray-800">
+              <label className="text-sm text-ink">
                 {it.label}
-                {it.required && <span className="ml-1 text-red-500" title={t('checklist.required', 'Required')}>*</span>}
+                {it.required && <span className="ml-1 text-crit" title={t('checklist.required', 'Required')}>*</span>}
               </label>
               <input
                 value={it.note ?? ''}
                 onChange={e => setItem(idx, { note: e.target.value })}
                 placeholder={t('checklist.notePlaceholder', 'Optional note…')}
-                className="mt-1 w-full border rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="mt-1 w-full border border-hairline rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
             </div>
           </div>
@@ -107,19 +107,19 @@ export function ValidationChecklist({ invoiceId }: { invoiceId: string }) {
       </div>
 
       {!requiredDone && (
-        <p className="text-xs text-amber-600 mt-3">{t('checklist.requiredHint', 'Some required items are not yet checked (informational — does not block validation).')}</p>
+        <p className="text-xs text-warn mt-3">{t('checklist.requiredHint', 'Some required items are not yet checked (informational — does not block validation).')}</p>
       )}
 
       <div className="flex items-center justify-end gap-3 mt-4 pt-3 border-t">
         {justSaved && (
-          <span className="text-xs text-green-600 flex items-center gap-1">
+          <span className="text-xs text-pos flex items-center gap-1">
             <CheckCircle className="w-3.5 h-3.5" /> {t('checklist.saved', 'Saved')}
           </span>
         )}
         <button
           onClick={() => saveMutation.mutate()}
           disabled={saveMutation.isPending}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-60"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90 disabled:opacity-60"
         >
           {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           {t('checklist.saveAnswers', 'Save checklist')}

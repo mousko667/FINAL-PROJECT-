@@ -72,7 +72,7 @@ describe('ConfirmDialog', () => {
   it('applies danger styling when variant="danger"', () => {
     renderDialog({ variant: 'danger' })
     const confirmBtn = screen.getByText(i18n.t('app.confirm'))
-    expect(confirmBtn.className).toMatch(/red/)
+    expect(confirmBtn.className).toMatch(/crit/)
   })
 
   it('backdrop click cancels without bubbling to an outer handler', () => {

@@ -21,9 +21,9 @@ interface BudgetAlert {
 }
 
 const SEVERITY_STYLE: Record<string, { cls: string; icon: React.ReactNode }> = {
-  INFO: { cls: 'bg-blue-50 border-blue-200 text-blue-800', icon: <Info className="w-4 h-4" /> },
-  WARNING: { cls: 'bg-amber-50 border-amber-200 text-amber-800', icon: <AlertTriangle className="w-4 h-4" /> },
-  CRITICAL: { cls: 'bg-red-50 border-red-200 text-red-800', icon: <AlertOctagon className="w-4 h-4" /> },
+  INFO: { cls: 'bg-info-bg border-info/30 text-info', icon: <Info className="w-4 h-4" /> },
+  WARNING: { cls: 'bg-warn-bg border-warn/30 text-warn', icon: <AlertTriangle className="w-4 h-4" /> },
+  CRITICAL: { cls: 'bg-crit-bg border-crit/30 text-crit', icon: <AlertOctagon className="w-4 h-4" /> },
 }
 
 /** Active system announcements — shown to every authenticated user (M2). */
@@ -44,7 +44,7 @@ export function DashboardAnnouncements() {
       {announcements.map(a => {
         const s = SEVERITY_STYLE[a.severity] ?? SEVERITY_STYLE.INFO
         return (
-          <div key={a.id} className={`flex items-start gap-2 border rounded-lg px-4 py-3 ${s.cls}`}>
+          <div key={a.id} className={`flex items-start gap-2 border rounded-[4px] px-4 py-3 ${s.cls}`}>
             <span className="mt-0.5 shrink-0">{s.icon}</span>
             <div>
               <p className="text-sm font-semibold flex items-center gap-1.5">
@@ -76,13 +76,13 @@ export function PrivacyPolicyBanner() {
   if (!data || data.accepted) return null
 
   return (
-    <div className="flex items-center justify-between gap-3 border border-blue-200 bg-blue-50 text-blue-800 rounded-lg px-4 py-3">
+    <div className="flex items-center justify-between gap-3 border border-info/30 bg-info-bg text-info rounded-[4px] px-4 py-3">
       <span className="flex items-center gap-2 text-sm">
         <ShieldCheck className="w-4 h-4 shrink-0" />
         {t('privacy.prompt', 'Veuillez accepter la politique de confidentialité (v{{version}}).', { version: data.policyVersion })}
       </span>
       <button onClick={() => accept.mutate()} disabled={accept.isPending}
-        className="text-sm bg-primary text-primary-foreground px-3 py-1.5 rounded-lg hover:bg-primary/90 disabled:opacity-50 shrink-0">
+        className="text-sm bg-primary text-primary-foreground px-3 py-1.5 rounded-[4px] hover:bg-primary/90 disabled:opacity-50 shrink-0">
         {t('privacy.accept', 'Accepter')}
       </button>
     </div>
@@ -104,20 +104,20 @@ export function BudgetAlerts() {
   if (alerts.length === 0) return null
 
   return (
-    <div className="bg-white rounded-xl border p-5">
+    <div className="bg-surface rounded-[4px] border border-hairline p-5">
       <div className="flex items-center gap-2 mb-3">
-        <AlertTriangle className="w-5 h-5 text-amber-600" />
-        <h2 className="font-semibold text-gray-800">{t('dashboard.budgetAlerts.title')}</h2>
+        <AlertTriangle className="w-5 h-5 text-warn" />
+        <h2 className="font-semibold text-ink">{t('dashboard.budgetAlerts.title')}</h2>
       </div>
       <ul className="space-y-2">
         {alerts.map(a => {
           const over = (a.utilizationPercent ?? 0) >= 100
           return (
             <li key={a.departmentCode} className="flex items-center justify-between text-sm">
-              <span className="font-medium text-gray-700">
+              <span className="font-medium text-ink-soft">
                 {a.departmentCode} — {i18n.language === 'en' ? a.nameEn : a.nameFr}
               </span>
-              <span className={over ? 'text-red-600 font-semibold' : 'text-amber-600 font-medium'}>
+              <span className={over ? 'text-crit font-semibold' : 'text-warn font-medium'}>
                 {(a.utilizationPercent ?? 0).toFixed(0)}%
                 {over ? ` · ${t('dashboard.budgetAlerts.overBudget')}` : ''}
               </span>

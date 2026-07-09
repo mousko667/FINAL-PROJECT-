@@ -94,7 +94,7 @@ export default function Header() {
         <button
           id="btn-language-switcher"
           onClick={toggleLanguage}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-ink-soft hover:bg-ground rounded-lg transition-colors border border-transparent hover:border-hairline"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-ink-soft hover:bg-ground rounded-[4px] transition-colors border border-transparent hover:border-hairline"
           aria-label="Switch language"
         >
           <Globe className="w-3.5 h-3.5" />
@@ -106,7 +106,7 @@ export default function Header() {
         <div className="flex items-center gap-2 pl-3 ml-1 border-l border-hairline">
           <button
             onClick={() => navigate('/profile')}
-            className="flex items-center gap-2 hover:bg-ground rounded-lg px-2 py-1.5 transition-colors group"
+            className="flex items-center gap-2 hover:bg-ground rounded-[4px] px-2 py-1.5 transition-colors group"
             aria-label="Profile"
           >
             <div className="w-7 h-7 rounded-full bg-oct-navy flex items-center justify-center shrink-0">
@@ -119,7 +119,7 @@ export default function Header() {
           <button
             id="btn-logout"
             onClick={handleLogout}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-ink-faint hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-ink-faint hover:text-crit hover:bg-crit-bg rounded-[4px] transition-colors"
             aria-label={t('auth.logout')}
             title={t('auth.logout')}
           >

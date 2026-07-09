@@ -39,9 +39,9 @@ export default function MatchingLineResolveModal({ isOpen, onClose, onResolve, p
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+      <div className="bg-surface rounded-[4px] shadow-lg w-full max-w-md p-6">
         <h2 className="text-lg font-semibold mb-4">{t('matching.resolve.title')}</h2>
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-ink-soft mb-4">
           {t('matching.resolve.description', { item: description })}
         </p>
 
@@ -53,7 +53,7 @@ export default function MatchingLineResolveModal({ isOpen, onClose, onResolve, p
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="w-full border rounded p-2 text-sm"
+              className="w-full border border-hairline rounded p-2 text-sm"
               rows={3}
               placeholder={t('matching.resolve.reasonPlaceholder')}
               required
@@ -61,21 +61,21 @@ export default function MatchingLineResolveModal({ isOpen, onClose, onResolve, p
             />
           </div>
 
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {error && <p className="text-sm text-crit">{error}</p>}
 
           <div className="flex justify-end gap-2 pt-2">
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2 text-sm border rounded hover:bg-gray-50"
+              className="px-4 py-2 text-sm border border-hairline rounded hover:bg-ground"
             >
               {t('app.cancel')}
             </button>
             <button
               type="submit"
               disabled={loading || reason.length < 5}
-              className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2"
+              className="px-4 py-2 text-sm bg-info text-white rounded hover:bg-info/90 flex items-center gap-2"
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               {t('matching.resolve.submit')}

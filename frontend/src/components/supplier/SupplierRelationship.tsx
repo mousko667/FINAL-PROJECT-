@@ -18,7 +18,7 @@ interface Communication {
 export function SupplierRelationship({ supplierId, canEdit }: { supplierId: string; canEdit: boolean }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const inputCls = 'w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
+  const inputCls = 'w-full border rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
 
   const { data: contracts = [] } = useQuery<Contract[]>({
     queryKey: ['supplier-contracts', supplierId],
@@ -54,10 +54,10 @@ export function SupplierRelationship({ supplierId, canEdit }: { supplierId: stri
   return (
     <div className="space-y-6">
       {/* Contracts */}
-      <div className="bg-white rounded-xl border p-5">
+      <div className="bg-surface rounded-[4px] border border-hairline p-5">
         <div className="flex items-center gap-2 mb-3">
           <FileText className="w-5 h-5 text-primary" />
-          <h3 className="font-semibold text-gray-800">{t('supplier.contracts.title', 'Contrats & accords')}</h3>
+          <h3 className="font-semibold text-ink">{t('supplier.contracts.title', 'Contrats & accords')}</h3>
         </div>
         {canEdit && (
           <div className="grid grid-cols-1 md:grid-cols-5 gap-2 mb-4">
@@ -66,20 +66,20 @@ export function SupplierRelationship({ supplierId, canEdit }: { supplierId: stri
             <input type="date" value={cStart} onChange={e => setCStart(e.target.value)} className={inputCls} />
             <input type="date" value={cEnd} onChange={e => setCEnd(e.target.value)} className={inputCls} />
             <button onClick={() => addContract.mutate()} disabled={!cRef || !cTitle || addContract.isPending}
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
               {addContract.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}{t('app.add', 'Ajouter')}
             </button>
           </div>
         )}
         {contracts.length === 0 ? (
-          <p className="text-sm text-gray-400 py-2">{t('supplier.contracts.none', 'Aucun contrat.')}</p>
+          <p className="text-sm text-ink-faint py-2">{t('supplier.contracts.none', 'Aucun contrat.')}</p>
         ) : (
           <ul className="divide-y">
             {contracts.map(c => (
               <li key={c.id} className="flex items-center justify-between py-2 text-sm">
-                <div><span className="font-medium text-gray-900">{c.reference}</span> — {c.title}
-                  <span className="text-gray-400 ml-2">{c.startDate ?? '?'} → {c.endDate ?? '?'} · {c.status}</span></div>
-                {canEdit && <button onClick={() => setDeleteTargetId(c.id)} className="text-gray-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>}
+                <div><span className="font-medium text-ink">{c.reference}</span> — {c.title}
+                  <span className="text-ink-faint ml-2">{c.startDate ?? '?'} → {c.endDate ?? '?'} · {c.status}</span></div>
+                {canEdit && <button onClick={() => setDeleteTargetId(c.id)} className="text-ink-faint hover:text-crit"><Trash2 className="w-4 h-4" /></button>}
               </li>
             ))}
           </ul>
@@ -87,10 +87,10 @@ export function SupplierRelationship({ supplierId, canEdit }: { supplierId: stri
       </div>
 
       {/* Communication log */}
-      <div className="bg-white rounded-xl border p-5">
+      <div className="bg-surface rounded-[4px] border border-hairline p-5">
         <div className="flex items-center gap-2 mb-3">
           <MessageSquare className="w-5 h-5 text-primary" />
-          <h3 className="font-semibold text-gray-800">{t('supplier.comms.title', 'Journal de communication')}</h3>
+          <h3 className="font-semibold text-ink">{t('supplier.comms.title', 'Journal de communication')}</h3>
         </div>
         {canEdit && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-4">
@@ -100,24 +100,24 @@ export function SupplierRelationship({ supplierId, canEdit }: { supplierId: stri
             </select>
             <input value={mSubject} onChange={e => setMSubject(e.target.value)} placeholder={t('supplier.comms.subject', 'Sujet')} className={`${inputCls} md:col-span-2`} />
             <button onClick={() => addComm.mutate()} disabled={!mSubject || addComm.isPending}
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
               {addComm.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}{t('app.add', 'Ajouter')}
             </button>
             <textarea value={mBody} onChange={e => setMBody(e.target.value)} placeholder={t('supplier.comms.body', 'Détails (facultatif)')} rows={2} className={`${inputCls} md:col-span-4`} />
           </div>
         )}
         {comms.length === 0 ? (
-          <p className="text-sm text-gray-400 py-2">{t('supplier.comms.none', 'Aucune communication.')}</p>
+          <p className="text-sm text-ink-faint py-2">{t('supplier.comms.none', 'Aucune communication.')}</p>
         ) : (
           <ul className="divide-y">
             {comms.map(c => (
               <li key={c.id} className="py-2 text-sm">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{c.channel}</span>
-                  <span className="font-medium text-gray-900">{c.subject}</span>
-                  <span className="text-gray-400 ml-auto text-xs">{formatDateTime(c.loggedAt)}</span>
+                  <span className="text-xs num bg-ground text-ink-soft px-1.5 py-0.5 rounded">{c.channel}</span>
+                  <span className="font-medium text-ink">{c.subject}</span>
+                  <span className="text-ink-faint ml-auto text-xs">{formatDateTime(c.loggedAt)}</span>
                 </div>
-                {c.body && <p className="text-gray-600 mt-0.5">{c.body}</p>}
+                {c.body && <p className="text-ink-soft mt-0.5">{c.body}</p>}
               </li>
             ))}
           </ul>

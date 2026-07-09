@@ -39,29 +39,29 @@ export default function AssignFolderModal({ invoiceId, currentFolderId, onClose 
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md flex flex-col max-h-[80vh]">
+      <div className="bg-surface rounded-[4px] shadow-xl w-full max-w-md flex flex-col max-h-[80vh]">
         <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-semibold text-gray-900">{t('archiveFolders.assign')}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-500 transition-colors">
+          <h2 className="text-lg font-semibold text-ink">{t('archiveFolders.assign')}</h2>
+          <button onClick={onClose} className="text-ink-faint hover:text-ink-soft transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="p-4 overflow-y-auto flex-1">
           {isLoading ? (
-            <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>
+            <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin text-ink-faint" /></div>
           ) : (
             <div className="space-y-1">
               {/* Option to unassign */}
               <button
                 onClick={() => setSelectedFolderId(null)}
-                className={`w-full flex items-center justify-between p-3 rounded-lg border transition-colors ${selectedFolderId === null ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-gray-200 hover:border-primary/30'}`}
+                className={`w-full flex items-center justify-between p-3 rounded-[4px] border transition-colors ${selectedFolderId === null ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-hairline hover:border-primary/30'}`}
               >
                 <div className="flex items-center gap-3 text-sm">
-                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                    <Folder className="w-4 h-4 text-gray-500" />
+                  <div className="w-8 h-8 rounded-full bg-ground flex items-center justify-center">
+                    <Folder className="w-4 h-4 text-ink-soft" />
                   </div>
-                  <span className="font-medium text-gray-700">{t('archiveFolders.unclassified')}</span>
+                  <span className="font-medium text-ink-soft">{t('archiveFolders.unclassified')}</span>
                 </div>
                 {selectedFolderId === null && <Check className="w-5 h-5 text-primary" />}
               </button>
@@ -76,13 +76,13 @@ export default function AssignFolderModal({ invoiceId, currentFolderId, onClose 
                   <button
                     key={folder.id}
                     onClick={() => setSelectedFolderId(folder.id)}
-                    className={`w-full flex items-center justify-between p-3 rounded-lg border transition-colors ${isSelected ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-gray-200 hover:border-primary/30'}`}
+                    className={`w-full flex items-center justify-between p-3 rounded-[4px] border transition-colors ${isSelected ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-hairline hover:border-primary/30'}`}
                   >
                     <div className="flex items-center gap-3 text-sm" style={{ paddingLeft: isChild ? '2rem' : '0' }}>
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isSelected ? 'bg-primary/20 text-primary' : 'bg-primary/10 text-primary/80'}`}>
                         <Folder className="w-4 h-4" />
                       </div>
-                      <span className={`font-medium ${isSelected ? 'text-primary' : 'text-gray-900'}`}>
+                      <span className={`font-medium ${isSelected ? 'text-primary' : 'text-ink'}`}>
                         {folder.name}
                       </span>
                     </div>
@@ -94,17 +94,17 @@ export default function AssignFolderModal({ invoiceId, currentFolderId, onClose 
           )}
         </div>
 
-        <div className="p-4 border-t bg-gray-50 rounded-b-xl flex justify-end gap-3">
+        <div className="p-4 border-t bg-ground rounded-b-xl flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+            className="px-4 py-2 text-sm font-medium text-ink-soft bg-surface border border-hairline-strong rounded-[4px] hover:bg-ground"
           >
             {t('app.cancel', 'Annuler')}
           </button>
           <button
             onClick={handleSave}
             disabled={assignMutation.isPending}
-            className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-[4px] hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2"
           >
             {assignMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
             {t('app.save', 'Enregistrer')}

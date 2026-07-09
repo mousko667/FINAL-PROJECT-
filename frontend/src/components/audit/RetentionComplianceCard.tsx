@@ -18,9 +18,9 @@ interface RetentionCompliance {
 }
 
 const STATUS_STYLE: Record<RetentionStatus, { badge: string; key: string }> = {
-  CONFORME: { badge: 'bg-green-50 text-green-700 border-green-200', key: 'admin.audit.retention.statusConforme' },
-  ATTENTION: { badge: 'bg-amber-50 text-amber-700 border-amber-200', key: 'admin.audit.retention.statusAttention' },
-  NON_CONFORME: { badge: 'bg-red-50 text-red-700 border-red-200', key: 'admin.audit.retention.statusNonConforme' },
+  CONFORME: { badge: 'bg-pos-bg text-pos border-pos/30', key: 'admin.audit.retention.statusConforme' },
+  ATTENTION: { badge: 'bg-warn-bg text-warn border-warn/30', key: 'admin.audit.retention.statusAttention' },
+  NON_CONFORME: { badge: 'bg-crit-bg text-crit border-crit/30', key: 'admin.audit.retention.statusNonConforme' },
 }
 
 /**
@@ -45,11 +45,11 @@ export default function RetentionComplianceCard() {
   if (!style) return null
 
   return (
-    <div className="bg-white rounded-xl border p-4">
+    <div className="bg-surface rounded-[4px] border border-hairline p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-5 h-5 text-primary" />
-          <h2 className="font-semibold text-gray-800">{t('admin.audit.retention.title')}</h2>
+          <h2 className="font-semibold text-ink">{t('admin.audit.retention.title')}</h2>
         </div>
         <span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${style.badge}`}>
           {t(style.key)}
@@ -57,26 +57,26 @@ export default function RetentionComplianceCard() {
       </div>
       <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4">
         <div>
-          <dt className="text-gray-400 text-xs">{t('admin.audit.retention.period')}</dt>
-          <dd className="text-gray-700">{t('admin.audit.retention.years', { count: data.retentionYears })}</dd>
+          <dt className="text-ink-faint text-xs">{t('admin.audit.retention.period')}</dt>
+          <dd className="text-ink-soft">{t('admin.audit.retention.years', { count: data.retentionYears })}</dd>
         </div>
         <div>
-          <dt className="text-gray-400 text-xs">{t('admin.audit.retention.active')}</dt>
-          <dd className="text-gray-700">{data.active ? t('admin.audit.retention.yes') : t('admin.audit.retention.no')}</dd>
+          <dt className="text-ink-faint text-xs">{t('admin.audit.retention.active')}</dt>
+          <dd className="text-ink-soft">{data.active ? t('admin.audit.retention.yes') : t('admin.audit.retention.no')}</dd>
         </div>
         <div>
-          <dt className="text-gray-400 text-xs">{t('admin.audit.retention.lastSweep')}</dt>
-          <dd className="text-gray-700">
+          <dt className="text-ink-faint text-xs">{t('admin.audit.retention.lastSweep')}</dt>
+          <dd className="text-ink-soft">
             {data.lastSweepAt ? formatDateTime(data.lastSweepAt) : t('admin.audit.retention.never')}
           </dd>
         </div>
         <div>
-          <dt className="text-gray-400 text-xs">{t('admin.audit.retention.flagged')}</dt>
-          <dd className="text-gray-700">{data.lastFlaggedCount ?? 0}</dd>
+          <dt className="text-ink-faint text-xs">{t('admin.audit.retention.flagged')}</dt>
+          <dd className="text-ink-soft">{data.lastFlaggedCount ?? 0}</dd>
         </div>
       </dl>
       {data.sweepOverdue && (
-        <p className="mt-3 text-xs text-amber-700">{t('admin.audit.retention.sweepOverdue')}</p>
+        <p className="mt-3 text-xs text-warn">{t('admin.audit.retention.sweepOverdue')}</p>
       )}
     </div>
   )

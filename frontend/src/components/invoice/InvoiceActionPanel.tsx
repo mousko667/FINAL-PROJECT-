@@ -12,9 +12,9 @@ interface InvoiceActionPanelProps {
 
 const variantClasses: Record<string, string> = {
   primary:   'bg-primary text-primary-foreground hover:bg-primary/90',
-  success:   'bg-green-600 text-white hover:bg-green-700',
-  danger:    'bg-red-600 text-white hover:bg-red-700',
-  secondary: 'border border-gray-300 text-gray-700 hover:bg-gray-50',
+  success:   'bg-pos text-white hover:bg-pos/90',
+  danger:    'bg-crit text-white hover:bg-crit/90',
+  secondary: 'border border-hairline-strong text-ink-soft hover:bg-ground',
 }
 
 export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
@@ -131,12 +131,12 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
   }
 
   return (
-    <div className="bg-white rounded-xl border p-5">
-      <h2 className="font-semibold text-gray-800 mb-4">{t('invoice.actions')}</h2>
+    <div className="bg-surface rounded-[4px] border border-hairline p-5">
+      <h2 className="font-semibold text-ink mb-4">{t('invoice.actions')}</h2>
 
       {/* Department mismatch warning */}
       {(isN1 || isN2) && invDeptId && deptId && deptId !== invDeptId && !isAdmin && (
-        <div className="mb-3 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+        <div className="mb-3 text-xs text-warn bg-warn-bg border border-warn/30 rounded-[4px] px-3 py-2">
           {t('invoice.wrongDept', 'This invoice belongs to a different department. You cannot approve it.')}
         </div>
       )}
@@ -148,7 +148,7 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
             id={`btn-action-${btn.action.toLowerCase()}`}
             disabled={mutation.isPending}
             onClick={() => execute(btn)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${variantClasses[btn.variant]}`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-[4px] text-sm font-medium transition-colors disabled:opacity-50 ${variantClasses[btn.variant]}`}
           >
             {mutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             {btn.label}
@@ -157,7 +157,7 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
       </div>
 
       {mutation.isError && (
-        <p className="mt-2 text-xs text-red-600">
+        <p className="mt-2 text-xs text-crit">
           {(() => {
             const key = (mutation.error as any)?.response?.data?.message
             if (!key) return t('app.error', 'Action failed. Please try again.')
@@ -171,17 +171,17 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
       {/* Reject reason modal */}
       {pendingAction && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl p-6 shadow-2xl w-full max-w-md space-y-4">
-            <h3 className="font-semibold text-gray-900">{t('invoice.confirmReject', 'Confirm rejection')}</h3>
+          <div className="bg-surface rounded-[4px] p-6 shadow-2xl w-full max-w-md space-y-4">
+            <h3 className="font-semibold text-ink">{t('invoice.confirmReject', 'Confirm rejection')}</h3>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">
+              <label className="block text-sm text-ink-soft mb-1">
                 {t('invoice.rejectReasonCode', 'Rejection reason')} *
               </label>
               <select
                 id="reject-reason-code"
                 value={reasonCode}
                 onChange={(e) => setReasonCode(e.target.value)}
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
               >
                 <option value="">{t('invoice.selectReason', 'Select a reason...')}</option>
                 {(rejectionReasons ?? []).map((r) => (
@@ -190,7 +190,7 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
               </select>
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">
+              <label className="block text-sm text-ink-soft mb-1">
                 {t('invoice.rejectReasonDetail', 'Detail (optional)')}{reasonCode === 'AUTRE' ? ' *' : ''}
               </label>
               <textarea
@@ -198,14 +198,14 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
                 rows={3}
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
-                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
                 placeholder={t('invoice.rejectReasonPlaceholder', 'Explain why this invoice is being rejected...')}
               />
             </div>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => { setPendingAction(null); setRejectReason(''); setReasonCode('') }}
-                className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50"
+                className="px-4 py-2 border border-hairline rounded-[4px] text-sm hover:bg-ground"
               >
                 {t('app.cancel')}
               </button>
@@ -217,7 +217,7 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
                   mutation.isPending
                 }
                 onClick={() => mutation.mutate({ action: pendingAction, reason: rejectReason, code: reasonCode })}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50"
+                className="px-4 py-2 bg-crit text-white rounded-[4px] text-sm font-medium hover:bg-crit/90 disabled:opacity-50"
               >
                 {t('app.confirm')}
               </button>

@@ -37,18 +37,18 @@ export function ImportInvoicesModal({ onClose, onImported }: ImportInvoicesModal
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col"
+        className="bg-surface rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-3 border-b">
-          <h2 className="text-sm font-semibold text-gray-800">
+          <h2 className="text-sm font-semibold text-ink">
             {t('invoice.import.title', 'Importer des factures')}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+          <button onClick={onClose} className="text-ink-faint hover:text-ink-soft text-xl leading-none">×</button>
         </div>
 
         <div className="flex-1 overflow-auto p-5 space-y-4">
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-ink-soft">
             {t('invoice.import.hint', 'Fichier CSV (une facture par ligne) ou XML (plusieurs éléments <invoice>). Chaque ligne est traitée indépendamment.')}
           </p>
 
@@ -57,7 +57,7 @@ export function ImportInvoicesModal({ onClose, onImported }: ImportInvoicesModal
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full border-2 border-dashed rounded-xl py-8 flex flex-col items-center gap-2 text-gray-500 hover:border-primary hover:text-primary transition-colors"
+                className="w-full border-2 border-dashed rounded-[4px] py-8 flex flex-col items-center gap-2 text-ink-soft hover:border-primary hover:text-primary transition-colors"
               >
                 <UploadCloud className="w-8 h-8" />
                 <span className="text-sm font-medium">
@@ -76,7 +76,7 @@ export function ImportInvoicesModal({ onClose, onImported }: ImportInvoicesModal
               />
 
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
+                <label className="block text-xs font-medium text-ink-soft mb-1">
                   {t('invoice.import.department_code', 'Code département (optionnel)')}
                 </label>
                 <input
@@ -84,12 +84,12 @@ export function ImportInvoicesModal({ onClose, onImported }: ImportInvoicesModal
                   value={departmentCode}
                   onChange={(e) => setDepartmentCode(e.target.value)}
                   placeholder={t('invoice.import.department_code_placeholder', 'ex. INFO')}
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
 
               {errorMessage && (
-                <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                <div className="text-sm text-crit bg-crit-bg border border-crit/30 rounded-[4px] px-3 py-2">
                   {errorMessage}
                 </div>
               )}
@@ -99,20 +99,20 @@ export function ImportInvoicesModal({ onClose, onImported }: ImportInvoicesModal
           {result && (
             <div className="space-y-3">
               <div className="flex gap-3 text-sm">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-100 text-gray-700">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-ground text-ink-soft">
                   <FileText className="w-4 h-4" /> {t('invoice.import.total', 'Total')}: {result.total}
                 </span>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-100 text-green-700">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-pos-bg text-pos">
                   <CheckCircle2 className="w-4 h-4" /> {t('invoice.import.created', 'Créées')}: {result.created}
                 </span>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-100 text-red-700">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-crit-bg text-crit">
                   <XCircle className="w-4 h-4" /> {t('invoice.import.failed', 'Échecs')}: {result.failed}
                 </span>
               </div>
 
-              <div className="border rounded-lg overflow-hidden">
+              <div className="border border-hairline rounded-[4px] overflow-hidden">
                 <table className="w-full text-xs">
-                  <thead className="bg-gray-50 border-b text-gray-600">
+                  <thead className="bg-ground border-b text-ink-soft">
                     <tr>
                       <th className="text-left px-3 py-2 font-medium">{t('invoice.import.line', 'Ligne')}</th>
                       <th className="text-left px-3 py-2 font-medium">{t('invoice.import.outcome', 'Résultat')}</th>
@@ -121,15 +121,15 @@ export function ImportInvoicesModal({ onClose, onImported }: ImportInvoicesModal
                   <tbody className="divide-y">
                     {result.results.map((r) => (
                       <tr key={r.line}>
-                        <td className="px-3 py-2 text-gray-500">{r.line}</td>
+                        <td className="px-3 py-2 text-ink-soft">{r.line}</td>
                         <td className="px-3 py-2">
                           {r.success ? (
-                            <span className="inline-flex items-center gap-1.5 text-green-700">
+                            <span className="inline-flex items-center gap-1.5 text-pos">
                               <CheckCircle2 className="w-3.5 h-3.5" />
                               {r.reference ?? t('invoice.import.ok', 'Créée')}
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 text-red-700">
+                            <span className="inline-flex items-center gap-1.5 text-crit">
                               <XCircle className="w-3.5 h-3.5" />
                               {r.error ?? t('app.error', 'Erreur')}
                             </span>
@@ -149,14 +149,14 @@ export function ImportInvoicesModal({ onClose, onImported }: ImportInvoicesModal
             <>
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-sm border rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 text-sm border border-hairline rounded-[4px] text-ink-soft hover:bg-ground transition-colors"
               >
                 {t('app.cancel', 'Annuler')}
               </button>
               <button
                 onClick={() => mutation.mutate()}
                 disabled={!file || mutation.isPending}
-                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-40 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90 disabled:opacity-40 transition-colors"
               >
                 {mutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                 {t('invoice.import.submit', 'Importer')}
@@ -165,7 +165,7 @@ export function ImportInvoicesModal({ onClose, onImported }: ImportInvoicesModal
           ) : (
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90 transition-colors"
             >
               {t('app.close', 'Fermer')}
             </button>

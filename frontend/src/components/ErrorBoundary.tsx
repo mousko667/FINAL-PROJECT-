@@ -28,19 +28,19 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center h-64 gap-4 text-gray-500">
-          <AlertTriangle className="w-10 h-10 text-amber-500" />
+        <div className="flex flex-col items-center justify-center h-64 gap-4 text-ink-soft">
+          <AlertTriangle className="w-10 h-10 text-warn" />
           <div className="text-center">
-            <p className="font-semibold text-gray-700">
+            <p className="font-semibold text-ink-soft">
               {this.props.fallbackTitle ?? 'Une erreur est survenue sur cette page'}
             </p>
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="text-sm text-ink-faint mt-1">
               {this.state.error?.message ?? 'Erreur inattendue'}
             </p>
           </div>
           <button
             onClick={() => this.setState({ hasError: false, error: null })}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90"
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90"
           >
             <RefreshCw className="w-4 h-4" />
             Réessayer
