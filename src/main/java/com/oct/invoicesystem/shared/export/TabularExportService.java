@@ -52,10 +52,25 @@ public class TabularExportService {
     }
 
     public byte[] export(Format format, String title, List<String> headers, List<List<String>> rows) {
+        return export(format, title, headers, rows, null, null);
+    }
+
+    /** Overload used when a caller has no MessageSource but wants no metadata (meta must be null). */
+    public byte[] export(Format format, String title, List<String> headers, List<List<String>> rows, ReportMetadata meta) {
+        return export(format, title, headers, rows, meta, null);
+    }
+
+    /**
+     * Full export. For PDF, when {@code meta} is non-null a metadata header (generator, date,
+     * optional period) and a signature box are rendered using {@code messageSource}; CSV/EXCEL
+     * ignore {@code meta}. When {@code meta} is null the output is byte-for-byte the legacy layout.
+     */
+    public byte[] export(Format format, String title, List<String> headers, List<List<String>> rows,
+                         ReportMetadata meta, org.springframework.context.MessageSource messageSource) {
         return switch (format) {
             case CSV -> toCsv(headers, rows);
             case EXCEL -> toExcel(title, headers, rows);
-            case PDF -> toPdf(title, headers, rows);
+            case PDF -> toPdf(title, headers, rows, meta, messageSource);
         };
     }
 
@@ -147,7 +162,8 @@ public class TabularExportService {
     }
 
     // ── PDF ──────────────────────────────────────────────────────────────────
-    private byte[] toPdf(String title, List<String> headers, List<List<String>> rows) {
+    private byte[] toPdf(String title, List<String> headers, List<List<String>> rows,
+                         ReportMetadata meta, org.springframework.context.MessageSource messageSource) {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             PdfWriter writer = new PdfWriter(out);
             PdfDocument pdf = new PdfDocument(writer);
@@ -155,6 +171,11 @@ public class TabularExportService {
 
             PdfBranding.addLetterhead(document);
             document.add(new Paragraph(title == null ? "Export" : title).setBold().setFontSize(14));
+
+            if (meta != null && messageSource != null) {
+                PdfMetadata.renderHeader(document, meta, messageSource,
+                        org.springframework.context.i18n.LocaleContextHolder.getLocale());
+            }
 
             float[] widths = new float[headers.size()];
             for (int i = 0; i < widths.length; i++) widths[i] = 1f;
@@ -170,6 +191,12 @@ public class TabularExportService {
             }
 
             document.add(table);
+
+            if (meta != null && messageSource != null) {
+                PdfMetadata.renderSignatureBlock(document, messageSource,
+                        org.springframework.context.i18n.LocaleContextHolder.getLocale());
+            }
+
             document.close();
             return out.toByteArray();
         } catch (Exception e) {

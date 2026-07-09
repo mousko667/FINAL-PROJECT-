@@ -75,4 +75,42 @@ class TabularExportServiceTest {
         assertTrue(content.contains("/XObject"),
                 "PDF export should embed the OCT letterhead logo as an image XObject");
     }
+
+    @Test
+    void pdf_withoutMetadata_stillProducesPdf_backwardCompatible() {
+        byte[] bytes = service.export(TabularExportService.Format.PDF, "Report",
+                List.of("a", "b"), List.of(List.of("1", "2")), null);
+        assertNotNull(bytes);
+        String head = new String(bytes, 0, 4, StandardCharsets.US_ASCII);
+        assertEquals("%PDF", head);
+    }
+
+    @Test
+    void pdf_withMetadata_isLargerThanWithout() {
+        org.springframework.context.support.StaticMessageSource ms =
+                new org.springframework.context.support.StaticMessageSource();
+        java.util.Locale loc = java.util.Locale.FRENCH;
+        ms.addMessage("report.pdf.generated_by", loc, "Genere par : {0} ({1})");
+        ms.addMessage("report.pdf.generated_at", loc, "Genere le : {0}");
+        ms.addMessage("report.pdf.signature", loc, "Signature :");
+        ms.addMessage("report.pdf.signature.date", loc, "Date :");
+
+        java.util.Locale prev = org.springframework.context.i18n.LocaleContextHolder.getLocale();
+        org.springframework.context.i18n.LocaleContextHolder.setLocale(loc);
+        try {
+            com.oct.invoicesystem.shared.export.ReportMetadata meta =
+                    new com.oct.invoicesystem.shared.export.ReportMetadata(
+                            "DUPONT Jean", "DAF", java.time.Instant.now(), null);
+            byte[] withMeta = service.export(TabularExportService.Format.PDF, "Report",
+                    List.of("a", "b"), List.of(List.of("1", "2")), meta, ms);
+            byte[] withoutMeta = service.export(TabularExportService.Format.PDF, "Report",
+                    List.of("a", "b"), List.of(List.of("1", "2")), null);
+            assertNotNull(withMeta);
+            assertEquals("%PDF", new String(withMeta, 0, 4, StandardCharsets.US_ASCII));
+            assertTrue(withMeta.length > withoutMeta.length,
+                    "PDF with metadata block should be larger than the plain one");
+        } finally {
+            org.springframework.context.i18n.LocaleContextHolder.setLocale(prev);
+        }
+    }
 }
