@@ -99,12 +99,12 @@ export default function IntegrationsPage() {
     <div className="space-y-6 max-w-3xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('admin.integrations.title')}</h1>
-          <p className="text-sm text-gray-500 mt-1">{t('admin.integrations.subtitle')}</p>
+          <h1 className="text-2xl font-bold text-ink">{t('admin.integrations.title')}</h1>
+          <p className="text-sm text-ink-soft mt-1">{t('admin.integrations.subtitle')}</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+          className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-[4px] text-sm font-medium hover:bg-primary/90 transition-colors"
         >
           <Plus className="w-4 h-4" /> {t('admin.integrations.addWebhook')}
         </button>
@@ -115,25 +115,25 @@ export default function IntegrationsPage() {
 
       {/* Integration health */}
       {(status?.length ?? 0) > 0 && (
-        <div className="bg-white rounded-xl border p-5">
-          <h2 className="font-semibold text-gray-900 flex items-center gap-2 mb-3">
+        <div className="bg-surface rounded-[4px] border border-hairline p-5">
+          <h2 className="font-semibold text-ink flex items-center gap-2 mb-3">
             <Activity className="w-4 h-4 text-primary" /> {t('admin.integrations.healthTitle', 'Integration Health')}
           </h2>
           <div className="space-y-2">
             {(status ?? []).map(s => (
               <div key={s.id} className="flex items-center gap-3 text-sm">
                 {s.lastDeliverySuccess === undefined || s.lastDeliveredAt == null
-                  ? <span className="w-2.5 h-2.5 rounded-full bg-gray-300 shrink-0" title={t('admin.integrations.neverDelivered', 'No delivery yet')} />
+                  ? <span className="w-2.5 h-2.5 rounded-full bg-hairline-strong shrink-0" title={t('admin.integrations.neverDelivered', 'No delivery yet')} />
                   : s.lastDeliverySuccess
-                    ? <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                    : <XCircle className="w-4 h-4 text-red-500 shrink-0" />}
-                <span className="font-mono text-xs text-gray-700 truncate flex-1">{s.url}</span>
+                    ? <CheckCircle className="w-4 h-4 text-pos shrink-0" />
+                    : <XCircle className="w-4 h-4 text-crit shrink-0" />}
+                <span className="num text-xs text-ink-soft truncate flex-1">{s.url}</span>
                 {s.lastDeliveredAt
-                  ? <span className="text-xs text-gray-400">
+                  ? <span className="text-xs text-ink-faint">
                       {t('admin.integrations.lastDelivery', 'Last')}: {formatDateTime(s.lastDeliveredAt)}
                       {s.lastResponseStatus != null && ` · HTTP ${s.lastResponseStatus}`}
                     </span>
-                  : <span className="text-xs text-gray-400">{t('admin.integrations.neverDelivered', 'No delivery yet')}</span>}
+                  : <span className="text-xs text-ink-faint">{t('admin.integrations.neverDelivered', 'No delivery yet')}</span>}
               </div>
             ))}
           </div>
@@ -142,34 +142,34 @@ export default function IntegrationsPage() {
 
       {/* Add webhook form */}
       {showForm && (
-        <div className="bg-white rounded-xl border p-5 space-y-4">
-          <h2 className="font-semibold text-gray-900">{t('admin.integrations.addWebhook')}</h2>
+        <div className="bg-surface rounded-[4px] border border-hairline p-5 space-y-4">
+          <h2 className="font-semibold text-ink">{t('admin.integrations.addWebhook')}</h2>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('admin.integrations.webhookUrl')}</label>
+            <label className="block text-sm font-medium text-ink-soft mb-1">{t('admin.integrations.webhookUrl')}</label>
             <input
               type="url"
               value={url}
               onChange={e => setUrl(e.target.value)}
               placeholder="https://your-server.com/webhooks/oct"
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('admin.integrations.webhookEvent')}</label>
+            <label className="block text-sm font-medium text-ink-soft mb-1">{t('admin.integrations.webhookEvent')}</label>
             <select
               value={event}
               onChange={e => setEvent(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             >
               {EVENT_TYPES.map(ev => <option key={ev} value={ev}>{ev}</option>)}
             </select>
           </div>
           <div className="flex justify-end gap-3">
-            <button onClick={() => setShowForm(false)} className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">{t('app.cancel')}</button>
+            <button onClick={() => setShowForm(false)} className="px-4 py-2 border border-hairline rounded-[4px] text-sm hover:bg-ground">{t('app.cancel')}</button>
             <button
               onClick={() => createMutation.mutate()}
               disabled={!url || createMutation.isPending}
-              className="flex items-center gap-2 px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-60"
+              className="flex items-center gap-2 px-5 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90 disabled:opacity-60"
             >
               {createMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
               {t('app.save')}
@@ -179,48 +179,48 @@ export default function IntegrationsPage() {
       )}
 
       {/* Webhooks list */}
-      <div className="bg-white rounded-xl border overflow-hidden">
+      <div className="bg-surface rounded-[4px] border border-hairline overflow-hidden">
         {isLoading ? (
           <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
         ) : !webhooks?.length ? (
           <div className="py-16 text-center">
-            <Zap className="w-8 h-8 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm text-gray-500">{t('admin.integrations.noWebhooks')}</p>
+            <Zap className="w-8 h-8 text-ink-faint mx-auto mb-3" />
+            <p className="text-sm text-ink-soft">{t('admin.integrations.noWebhooks')}</p>
           </div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-ground border-b">
               <tr>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.integrations.webhookUrl')}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.integrations.webhookEvent')}</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-600">{t('admin.integrations.webhookActive')}</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-600">{t('app.actions')}</th>
+                <th className="text-left px-4 py-3 font-medium text-ink-soft">{t('admin.integrations.webhookUrl')}</th>
+                <th className="text-left px-4 py-3 font-medium text-ink-soft">{t('admin.integrations.webhookEvent')}</th>
+                <th className="text-center px-4 py-3 font-medium text-ink-soft">{t('admin.integrations.webhookActive')}</th>
+                <th className="text-right px-4 py-3 font-medium text-ink-soft">{t('app.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {webhooks.map(wh => (
-                <tr key={wh.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-mono text-xs text-gray-700 max-w-[240px] truncate">{wh.url}</td>
+                <tr key={wh.id} className="hover:bg-ground">
+                  <td className="px-4 py-3 num text-xs text-ink-soft max-w-[240px] truncate">{wh.url}</td>
                   <td className="px-4 py-3">
-                    <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-100 font-mono">{wh.eventType}</span>
+                    <span className="text-xs bg-info-bg text-info px-2 py-0.5 rounded border border-info/30 num">{wh.eventType}</span>
                   </td>
                   <td className="px-4 py-3 text-center">
                     {wh.isActive
-                      ? <CheckCircle className="w-4 h-4 text-green-500 mx-auto" />
-                      : <span className="w-4 h-4 rounded-full bg-gray-200 inline-block" />}
+                      ? <CheckCircle className="w-4 h-4 text-pos mx-auto" />
+                      : <span className="w-4 h-4 rounded-full bg-ground inline-block" />}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2 justify-end">
                       <button
                         onClick={() => setLogsWebhookId(logsWebhookId === wh.id ? null : wh.id)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 border rounded-lg hover:bg-gray-50 transition-colors"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-ink-soft border border-hairline rounded-[4px] hover:bg-ground transition-colors"
                       >
                         <ScrollText className="w-3.5 h-3.5" /> {t('admin.integrations.viewLogs', 'Logs')}
                       </button>
                       <button
                         onClick={() => setDeleteTargetId(wh.id)}
                         disabled={deleteMutation.isPending}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-crit border border-crit/30 rounded-[4px] hover:bg-crit-bg transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" /> {t('admin.integrations.delete')}
                       </button>
@@ -235,21 +235,21 @@ export default function IntegrationsPage() {
 
       {/* Delivery log for the selected webhook */}
       {logsWebhookId && (
-        <div className="bg-white rounded-xl border overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3 border-b bg-gray-50">
-            <h2 className="font-semibold text-gray-900 flex items-center gap-2 text-sm">
-              <ScrollText className="w-4 h-4 text-gray-500" /> {t('admin.integrations.deliveryLog', 'Delivery log')}
+        <div className="bg-surface rounded-[4px] border border-hairline overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3 border-b bg-ground">
+            <h2 className="font-semibold text-ink flex items-center gap-2 text-sm">
+              <ScrollText className="w-4 h-4 text-ink-soft" /> {t('admin.integrations.deliveryLog', 'Delivery log')}
             </h2>
-            <button onClick={() => setLogsWebhookId(null)} className="text-xs text-gray-400 hover:text-gray-600">{t('app.close')}</button>
+            <button onClick={() => setLogsWebhookId(null)} className="text-xs text-ink-faint hover:text-ink-soft">{t('app.close')}</button>
           </div>
           {deliveriesLoading ? (
-            <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-gray-400" /></div>
+            <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-ink-faint" /></div>
           ) : !deliveries?.length ? (
-            <p className="py-8 text-center text-sm text-gray-400">{t('admin.integrations.noDeliveries', 'No deliveries recorded for this webhook.')}</p>
+            <p className="py-8 text-center text-sm text-ink-faint">{t('admin.integrations.noDeliveries', 'No deliveries recorded for this webhook.')}</p>
           ) : (
             <table className="w-full text-sm">
-              <thead className="bg-gray-50/50">
-                <tr className="text-gray-600">
+              <thead className="bg-ground/50">
+                <tr className="text-ink-soft">
                   <th className="text-left px-4 py-2.5 font-medium">{t('admin.integrations.deliveryEvent', 'Event')}</th>
                   <th className="text-center px-4 py-2.5 font-medium">{t('admin.integrations.deliveryStatus', 'HTTP')}</th>
                   <th className="text-center px-4 py-2.5 font-medium">{t('admin.integrations.deliveryAttempts', 'Attempts')}</th>
@@ -259,16 +259,16 @@ export default function IntegrationsPage() {
               </thead>
               <tbody className="divide-y">
                 {deliveries.map(d => (
-                  <tr key={d.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-2.5 font-mono text-xs text-gray-700">{d.eventType}</td>
-                    <td className="px-4 py-2.5 text-center text-xs text-gray-600">{d.responseStatus ?? '—'}</td>
-                    <td className="px-4 py-2.5 text-center text-xs text-gray-600">{d.attemptCount}</td>
+                  <tr key={d.id} className="hover:bg-ground">
+                    <td className="px-4 py-2.5 num text-xs text-ink-soft">{d.eventType}</td>
+                    <td className="px-4 py-2.5 text-center text-xs text-ink-soft">{d.responseStatus ?? '—'}</td>
+                    <td className="px-4 py-2.5 text-center text-xs text-ink-soft">{d.attemptCount}</td>
                     <td className="px-4 py-2.5 text-center">
                       {d.success
-                        ? <CheckCircle className="w-4 h-4 text-green-500 mx-auto" />
-                        : <XCircle className="w-4 h-4 text-red-500 mx-auto" />}
+                        ? <CheckCircle className="w-4 h-4 text-pos mx-auto" />
+                        : <XCircle className="w-4 h-4 text-crit mx-auto" />}
                     </td>
-                    <td className="px-4 py-2.5 text-xs text-gray-400">
+                    <td className="px-4 py-2.5 text-xs text-ink-faint">
                       {formatDateTime(d.lastAttemptedAt ?? d.createdAt)}
                     </td>
                   </tr>

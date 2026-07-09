@@ -101,7 +101,7 @@ export default function AdminDepartmentsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="num text-xs font-mono bg-ground text-ink-soft px-2 py-0.5 rounded-[4px]">
+                      <span className="num text-xs num bg-ground text-ink-soft px-2 py-0.5 rounded-[4px]">
                         {dept.code}
                       </span>
                     </td>

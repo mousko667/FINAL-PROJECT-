@@ -24,19 +24,19 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <form onSubmit={submit} className="w-full max-w-md bg-white border rounded-xl p-6 space-y-4">
+    <div className="min-h-screen flex items-center justify-center bg-ground px-4">
+      <form onSubmit={submit} className="w-full max-w-md bg-surface border border-hairline rounded-[4px] p-6 space-y-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('auth.resetPassword.title', 'Choose a new password')}</h1>
-          <p className="text-sm text-gray-500 mt-1">{t('auth.resetPassword.subtitle', 'Use at least 8 characters.')}</p>
+          <h1 className="text-2xl font-bold text-ink">{t('auth.resetPassword.title', 'Choose a new password')}</h1>
+          <p className="text-sm text-ink-soft mt-1">{t('auth.resetPassword.subtitle', 'Use at least 8 characters.')}</p>
         </div>
         {submitted ? (
-          <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg p-3">
+          <div className="text-sm text-pos bg-pos-bg border border-pos/30 rounded-[4px] p-3">
             {t('auth.resetPassword.success', 'Password reset successful. You can now sign in.')}
           </div>
         ) : (
           <>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-ink-soft">
               {t('auth.resetPassword.newPassword', 'New password')}
               <input
                 type="password"
@@ -44,11 +44,11 @@ export default function ResetPasswordPage() {
                 minLength={8}
                 value={newPassword}
                 onChange={(event) => setNewPassword(event.target.value)}
-                className="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="mt-1 w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </label>
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            <button disabled={!token} className="w-full bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50">
+            {error && <p className="text-sm text-crit">{error}</p>}
+            <button disabled={!token} className="w-full bg-primary text-primary-foreground rounded-[4px] px-4 py-2 text-sm font-medium disabled:opacity-50">
               {t('auth.resetPassword.submit', 'Reset password')}
             </button>
           </>

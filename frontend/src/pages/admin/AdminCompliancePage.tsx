@@ -142,7 +142,7 @@ export default function AdminCompliancePage() {
               <li key={c.id} className="flex items-center justify-between py-2 text-sm">
                 <label className="flex items-center gap-2">
                   <input type="checkbox" checked={c.completed} onChange={e => toggleChecklist.mutate({ id: c.id, completed: e.target.checked })} className="w-4 h-4 accent-primary" />
-                  <span className="num text-xs font-mono bg-ground px-1.5 py-0.5 rounded-[4px]">{c.framework}</span>
+                  <span className="num text-xs num bg-ground px-1.5 py-0.5 rounded-[4px]">{c.framework}</span>
                   <span className={c.completed ? 'line-through text-ink-faint' : 'text-ink-soft'}>{c.label}</span>
                 </label>
                 <button onClick={() => setDeleteChecklistTargetId(c.id)} className="text-ink-faint hover:text-crit"><Trash2 className="w-4 h-4" /></button>

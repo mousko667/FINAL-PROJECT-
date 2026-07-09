@@ -21,29 +21,29 @@ export default function EmailVerificationPage() {
   }, [token])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-10 max-w-md w-full text-center">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex items-center justify-center p-4">
+      <div className="bg-surface rounded-2xl shadow-xl p-10 max-w-md w-full text-center">
         {state === 'loading' && (
           <>
             <Loader2 className="w-14 h-14 text-primary animate-spin mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-gray-900">{t('supplier.verify.verifying', 'Verifying your email…')}</h2>
+            <h2 className="text-xl font-bold text-ink">{t('supplier.verify.verifying', 'Verifying your email…')}</h2>
           </>
         )}
         {state === 'success' && (
           <>
-            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('supplier.verify.successTitle', 'Email Verified!')}</h2>
-            <p className="text-gray-500 mb-6">{t('supplier.verify.successMessage', 'Your email has been verified. You can now log in.')}</p>
-            <Link to="/login" className="inline-block px-6 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors">
+            <CheckCircle className="w-16 h-16 text-pos mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-ink mb-2">{t('supplier.verify.successTitle', 'Email Verified!')}</h2>
+            <p className="text-ink-soft mb-6">{t('supplier.verify.successMessage', 'Your email has been verified. You can now log in.')}</p>
+            <Link to="/login" className="inline-block px-6 py-2.5 bg-primary text-primary-foreground rounded-[4px] font-medium hover:bg-primary/90 transition-colors">
               {t('auth.login', 'Login')}
             </Link>
           </>
         )}
         {state === 'error' && (
           <>
-            <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('supplier.verify.errorTitle', 'Verification Failed')}</h2>
-            <p className="text-gray-500 mb-6">{t('supplier.verify.errorMessage', 'Invalid or expired token. Please request a new verification email.')}</p>
+            <XCircle className="w-16 h-16 text-crit mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-ink mb-2">{t('supplier.verify.errorTitle', 'Verification Failed')}</h2>
+            <p className="text-ink-soft mb-6">{t('supplier.verify.errorMessage', 'Invalid or expired token. Please request a new verification email.')}</p>
             <Link to="/register/supplier" className="text-primary hover:underline text-sm">
               {t('supplier.verify.retryRegister', 'Register again')}
             </Link>
