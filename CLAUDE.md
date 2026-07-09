@@ -329,6 +329,25 @@ Rules:
 - Commit message must follow: type(scope): TASK-ID — description
 - Push only at phase completion, not after every task
 
+### Branching — one topic per branch (⚠ LESSON LEARNED, 2026-07-09)
+
+> Rule added after `chore/sanitize-docs-migrations` accumulated **236 commits** spanning two
+> unrelated efforts (audit fixes + a full UI redesign). A `chore/`-named branch that ends up
+> carrying features is a lie about its own content and produces an unreviewable history.
+
+- **`main` is the single reference branch.** New work starts from a **short, well-named branch
+  scoped to ONE topic**: `feat/<topic>`, `fix/<topic>`, `chore/<topic>` — and the name must keep
+  matching what the branch actually contains for its whole life.
+- **Do NOT reuse a long-lived catch-all branch** across unrelated features. When a topic is done,
+  merge it back to `main` and start a fresh branch for the next topic.
+- **Prefer fast-forward merges into `main`** (`git merge --ff-only`) when the branch is a linear
+  descendant — no merge commit, clean history. Merging into `main` is an outward-facing action:
+  **only merge/push to `main` with the user's explicit go-ahead** for that session.
+- After a branch is fully merged into `main`, **delete it** (local + remote) so `main` stays the
+  only reference and the topic branch can't silently diverge later.
+- Solo dev: uncommitted tree changes are the user's own prior-session work — keep one-commit-one-topic,
+  don't quarantine them.
+
 
 ### Phase 9 — Supplier, MFA, Matching & Integration Constraints
 
