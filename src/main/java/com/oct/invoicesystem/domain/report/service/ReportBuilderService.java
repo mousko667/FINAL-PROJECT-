@@ -96,32 +96,34 @@ public class ReportBuilderService {
     public Dataset buildDataset(ReportDefinition def) {
         java.util.Locale locale = org.springframework.context.i18n.LocaleContextHolder.getLocale();
         return switch (def.getDataset()) {
+            // INVOICES reuses the single invoice-export source of truth (headers + rows), so the
+            // builder and the direct /reports/export/excel can never diverge (11 columns, translated status).
             case "INVOICES" -> new Dataset("Invoices",
-                    List.of(
-                            messageSource.getMessage("report.excel.header.reference", null, locale),
-                            messageSource.getMessage("report.excel.header.supplier", null, locale),
-                            messageSource.getMessage("report.excel.header.amount", null, locale),
-                            messageSource.getMessage("report.excel.header.currency", null, locale),
-                            messageSource.getMessage("report.excel.header.status", null, locale),
-                            messageSource.getMessage("report.excel.header.issue_date", null, locale),
-                            messageSource.getMessage("report.excel.header.due_date", null, locale),
-                            messageSource.getMessage("report.excel.header.department", null, locale)
-                    ),
-                    invoiceService.buildExportRows(null, null, null, null, null));
+                    invoiceService.invoiceExportHeaders(messageSource, locale),
+                    invoiceService.buildExportRows(null, null, null, null, null, messageSource, locale));
+            // SUPPLIERS matches the SupplierController /suppliers/export layout exactly (7 columns,
+            // incl. address + category), so both supplier exports are identical.
             case "SUPPLIERS" -> new Dataset("Suppliers",
                     List.of(
                             messageSource.getMessage("report.excel.header.company", null, locale),
                             messageSource.getMessage("report.excel.header.tax_id", null, locale),
                             messageSource.getMessage("report.excel.header.email", null, locale),
                             messageSource.getMessage("report.excel.header.phone", null, locale),
-                            messageSource.getMessage("report.excel.header.status", null, locale)
+                            messageSource.getMessage("report.excel.header.address", null, locale),
+                            messageSource.getMessage("report.excel.header.status", null, locale),
+                            messageSource.getMessage("report.excel.header.category", null, locale)
                     ),
                     supplierService.searchSuppliers(null, null, null, null, Pageable.unpaged()).getContent().stream()
                             .map(s -> List.of(ns(s.companyName()), ns(s.taxId()), ns(s.contactEmail()),
-                                    ns(s.contactPhone()), s.status() == null ? "" : s.status().name())).toList());
+                                    ns(s.contactPhone()), ns(s.address()),
+                                    s.status() == null ? "" : s.status().name(),
+                                    s.category() == null ? "" : s.category().name())).toList());
+            // BUDGET adds the department name (localized) next to its code — the data already exists
+            // in BudgetVsActualDTO but was dropped from the export.
             case "BUDGET" -> new Dataset("Budget vs Actual",
                     List.of(
                             messageSource.getMessage("report.excel.header.department", null, locale),
+                            messageSource.getMessage("report.excel.header.name", null, locale),
                             messageSource.getMessage("report.excel.header.budget", null, locale),
                             messageSource.getMessage("report.excel.header.actual", null, locale),
                             messageSource.getMessage("report.excel.header.variance", null, locale),
@@ -129,6 +131,7 @@ public class ReportBuilderService {
                     ),
                     reportService.getBudgetVsActual().lines().stream()
                             .map(l -> List.of(ns(l.departmentCode()),
+                                    ns(locale.getLanguage().startsWith("fr") ? l.nameFr() : l.nameEn()),
                                     l.budget() == null ? "" : l.budget().toPlainString(),
                                     l.actual() == null ? "" : l.actual().toPlainString(),
                                     l.variance() == null ? "" : l.variance().toPlainString(),

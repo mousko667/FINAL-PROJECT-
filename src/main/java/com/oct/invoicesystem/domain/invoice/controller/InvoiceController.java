@@ -106,17 +106,9 @@ public class InvoiceController {
             java.util.Locale locale) {
         var fmt = com.oct.invoicesystem.shared.export.TabularExportService.Format.from(format);
         // Build rows inside the service transaction so the lazy Department association can be read.
-        List<String> headers = List.of(
-                messageSource.getMessage("report.excel.header.reference", null, locale),
-                messageSource.getMessage("report.excel.header.supplier", null, locale),
-                messageSource.getMessage("report.excel.header.amount", null, locale),
-                messageSource.getMessage("report.excel.header.currency", null, locale),
-                messageSource.getMessage("report.excel.header.status", null, locale),
-                messageSource.getMessage("report.excel.header.issue_date", null, locale),
-                messageSource.getMessage("report.excel.header.due_date", null, locale),
-                messageSource.getMessage("report.excel.header.department", null, locale)
-        );
-        List<List<String>> rows = invoiceService.buildExportRows(status, department, from, to, reference);
+        // Headers + rows come from the single invoice-export source of truth (11 columns).
+        List<String> headers = invoiceService.invoiceExportHeaders(messageSource, locale);
+        List<List<String>> rows = invoiceService.buildExportRows(status, department, from, to, reference, messageSource, locale);
         byte[] body = tabularExportService.export(fmt, "Invoices", headers, rows);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=invoices_export." + fmt.extension)

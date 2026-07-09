@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -58,4 +59,21 @@ public interface ThreeWayMatchingResultRepository extends JpaRepository<ThreeWay
     Page<ThreeWayMatchingResult> findLatestPerInvoice(@Param("status") MatchingStatus status,
                                                       @Param("search") String search,
                                                       Pageable pageable);
+
+    /**
+     * Batch lookup of the latest matching status per invoice, for a set of invoice ids. Used by the
+     * export mappers to add a "matching status" column without an N+1 query. Returns one row
+     * {@code [invoiceId, status]} per invoice that has at least one matching result (the most recent,
+     * same tie-break as {@link #findLatestPerInvoice}); invoices with no result are simply absent.
+     */
+    @Query("""
+            SELECT r.invoice.id, r.status FROM ThreeWayMatchingResult r
+            WHERE r.invoice.id IN :invoiceIds
+              AND NOT EXISTS (
+                SELECT 1 FROM ThreeWayMatchingResult r2
+                WHERE r2.invoice.id = r.invoice.id
+                  AND (r2.createdAt > r.createdAt
+                       OR (r2.createdAt = r.createdAt AND r2.id > r.id)))
+            """)
+    List<Object[]> findLatestStatusByInvoiceIds(@Param("invoiceIds") List<UUID> invoiceIds);
 }

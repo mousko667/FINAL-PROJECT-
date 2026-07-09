@@ -38,9 +38,6 @@ import com.oct.invoicesystem.domain.webhook.repository.WebhookDeliveryRepository
 import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.ss.usermodel.Font;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.PageRequest;
@@ -50,7 +47,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
@@ -76,6 +72,8 @@ public class ReportServiceImpl implements ReportService {
     private final WebhookDeliveryRepository webhookDeliveryRepository;
     private final MessageSource messageSource;
     private final DepartmentRepository departmentRepository;
+    private final com.oct.invoicesystem.domain.invoice.service.InvoiceService invoiceService;
+    private final com.oct.invoicesystem.shared.export.TabularExportService tabularExportService;
 
     @Override
     @Transactional(readOnly = true)
@@ -222,67 +220,15 @@ public class ReportServiceImpl implements ReportService {
     @Transactional(readOnly = true)
     public ByteArrayInputStream exportInvoicesToExcel(InvoiceStatus status, UUID departmentId, LocalDate fromDate, LocalDate toDate, String reference) {
         log.info("Generating Excel report for invoices");
-        List<Invoice> invoices = invoiceRepository.findAllWithFilters(
-                status, departmentId, fromDate, toDate, reference, null, Pageable.unpaged()).getContent();
-
         Locale locale = LocaleContextHolder.getLocale();
-
-        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            Sheet sheet = workbook.createSheet(messageSource.getMessage("report.excel.title", null, locale));
-
-            // Header Style
-            CellStyle headerStyle = workbook.createCellStyle();
-            Font headerFont = workbook.createFont();
-            headerFont.setBold(true);
-            headerStyle.setFont(headerFont);
-
-            // Headers
-            Row headerRow = sheet.createRow(0);
-            String[] headerKeys = {
-                    "report.excel.header.reference",
-                    "report.excel.header.supplier",
-                    "report.excel.header.amount",
-                    "report.excel.header.currency",
-                    "report.excel.header.status",
-                    "report.excel.header.issue_date",
-                    "report.excel.header.due_date",
-                    "report.excel.header.department"
-            };
-
-            for (int i = 0; i < headerKeys.length; i++) {
-                org.apache.poi.ss.usermodel.Cell cell = headerRow.createCell(i);
-                cell.setCellValue(messageSource.getMessage(headerKeys[i], null, locale));
-                cell.setCellStyle(headerStyle);
-            }
-
-            // Data
-            int rowIdx = 1;
-            for (Invoice invoice : invoices) {
-                org.apache.poi.ss.usermodel.Row row = sheet.createRow(rowIdx++);
-                row.createCell(0).setCellValue(invoice.getReferenceNumber());
-                row.createCell(1).setCellValue(invoice.getSupplierName());
-                row.createCell(2).setCellValue(invoice.getAmount().doubleValue());
-                row.createCell(3).setCellValue(invoice.getCurrency());
-                
-                // Translated status
-                String statusKey = "invoice.status." + invoice.getStatus().name().toLowerCase();
-                row.createCell(4).setCellValue(messageSource.getMessage(statusKey, null, locale));
-                
-                row.createCell(5).setCellValue(invoice.getIssueDate().toString());
-                row.createCell(6).setCellValue(invoice.getDueDate().toString());
-                row.createCell(7).setCellValue(invoice.getDepartment() != null ? invoice.getDepartment().getCode() : "");
-            }
-
-            for (int i = 0; i < headerKeys.length; i++) {
-                sheet.autoSizeColumn(i);
-            }
-
-            workbook.write(out);
-            return new ByteArrayInputStream(out.toByteArray());
-        } catch (IOException e) {
-            log.error("Error generating Excel report", e);
-            throw new RuntimeException("Fail to export data to Excel file: " + e.getMessage());
-        }
+        // Single source of truth: same 11 columns + translated status as the invoice-list export and
+        // the M11 INVOICES dataset, serialized through the shared TabularExportService (formula-safe).
+        List<String> headers = invoiceService.invoiceExportHeaders(messageSource, locale);
+        List<List<String>> rows = invoiceService.buildExportRows(status, departmentId, fromDate, toDate, reference, messageSource, locale);
+        byte[] xlsx = tabularExportService.export(
+                com.oct.invoicesystem.shared.export.TabularExportService.Format.EXCEL,
+                messageSource.getMessage("report.excel.title", null, locale), headers, rows);
+        return new ByteArrayInputStream(xlsx);
     }
 
     @Override
@@ -324,20 +270,22 @@ public class ReportServiceImpl implements ReportService {
             summary.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.supplier", null, locale)).setBold()));
             summary.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(invoice.getSupplierName())));
             summary.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.amount", null, locale)).setBold()));
-            summary.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(invoice.getAmount().toString() + " " + invoice.getCurrency())));
+            summary.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(
+                    (invoice.getAmount() == null ? "" : invoice.getAmount().toPlainString())
+                            + " " + (invoice.getCurrency() == null ? "" : invoice.getCurrency()))));
             summary.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.status", null, locale)).setBold()));
             summary.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("invoice.status." + invoice.getStatus().name().toLowerCase(), null, locale))));
             document.add(summary);
 
             document.add(new Paragraph("\n"));
-            document.add(new Paragraph("Audit Trail").setBold().setFontSize(14));
+            document.add(new Paragraph(messageSource.getMessage("report.excel.header.audit_trail", null, locale)).setBold().setFontSize(14));
 
-            // Audit Trail Table
+            // Audit Trail Table — localized headers.
             Table auditTable = new Table(UnitValue.createPercentArray(new float[]{20, 20, 20, 40})).useAllAvailableWidth();
-            auditTable.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph("Date").setBold()));
-            auditTable.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph("User").setBold()));
-            auditTable.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph("Transition").setBold()));
-            auditTable.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph("Reason/Comment").setBold()));
+            auditTable.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.date", null, locale)).setBold()));
+            auditTable.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.user", null, locale)).setBold()));
+            auditTable.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.transition", null, locale)).setBold()));
+            auditTable.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.reason", null, locale)).setBold()));
 
             for (InvoiceStatusHistory h : histories) {
                 auditTable.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(formatter.format(h.getChangedAt()))));
@@ -394,18 +342,20 @@ public class ReportServiceImpl implements ReportService {
 
             document.add(new Paragraph("\n"));
 
-            // Compliance Table
-            Table table = new Table(UnitValue.createPercentArray(new float[]{15, 30, 15, 15, 25})).useAllAvailableWidth();
+            // Compliance Table — amount and currency in separate columns (aligned with the Excel export).
+            Table table = new Table(UnitValue.createPercentArray(new float[]{15, 27, 15, 10, 15, 18})).useAllAvailableWidth();
             table.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.reference", null, locale)).setBold()));
             table.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.supplier", null, locale)).setBold()));
             table.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.amount", null, locale)).setBold()));
+            table.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.currency", null, locale)).setBold()));
             table.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.issue_date", null, locale)).setBold()));
             table.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.status", null, locale)).setBold()));
 
             for (Invoice i : invoices) {
                 table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(i.getReferenceNumber())));
                 table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(i.getSupplierName())));
-                table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(i.getAmount().toString() + " " + i.getCurrency())));
+                table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(i.getAmount() == null ? "" : i.getAmount().toPlainString())));
+                table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(i.getCurrency() == null ? "" : i.getCurrency())));
                 table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(i.getIssueDate().toString())));
                 table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("invoice.status." + i.getStatus().name().toLowerCase(), null, locale))));
             }

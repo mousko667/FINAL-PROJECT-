@@ -200,25 +200,68 @@ public class InvoiceService {
     }
 
     /**
-     * Builds tabular rows for the invoice-list export. Runs inside a read-only transaction so the
-     * lazy {@code Invoice.department} association can be safely read while building each row
-     * (avoids LazyInitializationException when the controller iterates outside a session).
+     * The 11 invoice-export column headers, localized, in the exact order produced by
+     * {@link #buildExportRows}. Single source of truth so every export path (direct CSV/Excel/PDF,
+     * the {@code /reports/export/excel} Excel, and the M11 INVOICES dataset) shares one header list.
+     */
+    public List<String> invoiceExportHeaders(org.springframework.context.MessageSource messageSource,
+                                             java.util.Locale locale) {
+        return List.of(
+                messageSource.getMessage("report.excel.header.reference", null, locale),
+                messageSource.getMessage("report.excel.header.supplier", null, locale),
+                messageSource.getMessage("report.excel.header.supplier_email", null, locale),
+                messageSource.getMessage("report.excel.header.amount", null, locale),
+                messageSource.getMessage("report.excel.header.currency", null, locale),
+                messageSource.getMessage("report.excel.header.status", null, locale),
+                messageSource.getMessage("report.excel.header.department", null, locale),
+                messageSource.getMessage("report.excel.header.issue_date", null, locale),
+                messageSource.getMessage("report.excel.header.due_date", null, locale),
+                messageSource.getMessage("report.excel.header.created_at", null, locale),
+                messageSource.getMessage("report.excel.header.matching_status", null, locale));
+    }
+
+    /**
+     * Single source of truth for the invoice-export column layout, shared by the direct Excel export
+     * ({@code /reports/export/excel}) and the M11 report builder's INVOICES dataset so the two never
+     * diverge. Columns (11): reference, supplier, supplier email, amount, currency, translated status,
+     * department code, issue date, due date, created-at, matching status. Runs read-only so the lazy
+     * {@code department} association can be read while building each row.
+     *
+     * <p>The matching status is resolved in a single batch query (no N+1) and rendered as the raw
+     * {@code MatchingStatus} name ({@code MATCHED}/{@code MISMATCH}/…), or "-" when the invoice has no
+     * matching result. The workflow status is localized via {@code invoice.status.<name>} so the export
+     * shows human-readable labels, never the raw enum.</p>
      */
     @Transactional(readOnly = true)
     public List<java.util.List<String>> buildExportRows(
-            InvoiceStatus status, UUID departmentId, LocalDate fromDate, LocalDate toDate, String reference) {
+            InvoiceStatus status, UUID departmentId, LocalDate fromDate, LocalDate toDate, String reference,
+            org.springframework.context.MessageSource messageSource, java.util.Locale locale) {
         List<Invoice> invoices = invoiceRepository.findAllWithFilters(
                 status, departmentId, fromDate, toDate, reference, null,
                 PageRequest.of(0, 10000, Sort.by(Sort.Direction.DESC, "createdAt"))).getContent();
+
+        // Batch-resolve matching status for all invoices in one query (avoids N+1).
+        java.util.Map<UUID, String> matchingByInvoice = new java.util.HashMap<>();
+        List<UUID> ids = invoices.stream().map(Invoice::getId).toList();
+        if (!ids.isEmpty()) {
+            for (Object[] row : matchingResultRepository.findLatestStatusByInvoiceIds(ids)) {
+                matchingByInvoice.put((UUID) row[0], String.valueOf(row[1]));
+            }
+        }
+
         return invoices.stream().map(i -> java.util.List.of(
                 i.getReferenceNumber() == null ? "" : i.getReferenceNumber(),
                 i.getSupplierName() == null ? "" : i.getSupplierName(),
+                i.getSupplierEmail() == null ? "" : i.getSupplierEmail(),
                 i.getAmount() == null ? "" : i.getAmount().toPlainString(),
                 i.getCurrency() == null ? "" : i.getCurrency(),
-                i.getStatus() == null ? "" : i.getStatus().name(),
+                i.getStatus() == null ? "" : messageSource.getMessage(
+                        "invoice.status." + i.getStatus().name().toLowerCase(), null, locale),
+                i.getDepartment() == null ? "" : i.getDepartment().getCode(),
                 i.getIssueDate() == null ? "" : i.getIssueDate().toString(),
                 i.getDueDate() == null ? "" : i.getDueDate().toString(),
-                i.getDepartment() == null ? "" : i.getDepartment().getCode())).toList();
+                i.getCreatedAt() == null ? "" : i.getCreatedAt().toString(),
+                matchingByInvoice.getOrDefault(i.getId(), "-"))).toList();
     }
 
     @Transactional(readOnly = true)

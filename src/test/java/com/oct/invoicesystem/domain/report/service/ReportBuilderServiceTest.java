@@ -50,6 +50,10 @@ class ReportBuilderServiceTest {
                     suffix = suffix.replace("_", " ");
                     return suffix.substring(0, 1).toUpperCase() + suffix.substring(1);
                 });
+        // INVOICES dataset now delegates its header list to the shared invoice-export source of truth.
+        org.mockito.Mockito.lenient().when(invoiceService.invoiceExportHeaders(any(), any()))
+                .thenReturn(List.of("Reference", "Supplier", "Supplier email", "Amount", "Currency",
+                        "Status", "Department", "Issue date", "Due date", "Created at", "Matching status"));
         return new ReportBuilderService(repository, exportService, invoiceService,
                 supplierService, auditLogRepository, reportService, messageSource);
     }
@@ -71,8 +75,8 @@ class ReportBuilderServiceTest {
 
     @Test
     void render_invoicesDataset_producesCsvBytes() {
-        when(invoiceService.buildExportRows(any(), any(), any(), any(), any()))
-                .thenReturn(List.of(List.of("FAC-1", "ACME", "100", "XOF", "VALIDE", "2026-01-01", "2026-02-01", "FIN")));
+        when(invoiceService.buildExportRows(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(List.of(List.of("FAC-1", "ACME", "100", "XAF", "VALIDE", "2026-01-01", "2026-02-01", "FIN")));
         ReportDefinition def = ReportDefinition.builder().name("Inv").dataset("INVOICES").format("CSV").build();
         byte[] bytes = service().render(def);
         assertTrue(bytes.length > 0);
@@ -90,10 +94,10 @@ class ReportBuilderServiceTest {
         UUID id = UUID.randomUUID();
         ReportDefinition def = invoicesDef();
         when(repository.findById(id)).thenReturn(Optional.of(def));
-        when(invoiceService.buildExportRows(any(), any(), any(), any(), any())).thenReturn(List.of(
-                List.of("FAC-1", "ACME", "100", "XOF", "VALIDE", "2026-01-01", "2026-02-01", "FIN"),
-                List.of("FAC-2", "BETA", "200", "XOF", "VALIDE", "2026-01-02", "2026-02-02", "FIN"),
-                List.of("FAC-3", "GAMMA", "300", "XOF", "VALIDE", "2026-01-03", "2026-02-03", "FIN")));
+        when(invoiceService.buildExportRows(any(), any(), any(), any(), any(), any(), any())).thenReturn(List.of(
+                List.of("FAC-1", "ACME", "100", "XAF", "VALIDE", "2026-01-01", "2026-02-01", "FIN"),
+                List.of("FAC-2", "BETA", "200", "XAF", "VALIDE", "2026-01-02", "2026-02-02", "FIN"),
+                List.of("FAC-3", "GAMMA", "300", "XAF", "VALIDE", "2026-01-03", "2026-02-03", "FIN")));
 
         ReportPreviewDTO p = service().preview(id, 2);
 
@@ -108,8 +112,8 @@ class ReportBuilderServiceTest {
     void preview_limitAboveTotal_returnsAllRows() {
         UUID id = UUID.randomUUID();
         when(repository.findById(id)).thenReturn(Optional.of(invoicesDef()));
-        when(invoiceService.buildExportRows(any(), any(), any(), any(), any())).thenReturn(List.of(
-                List.of("FAC-1", "ACME", "100", "XOF", "VALIDE", "2026-01-01", "2026-02-01", "FIN")));
+        when(invoiceService.buildExportRows(any(), any(), any(), any(), any(), any(), any())).thenReturn(List.of(
+                List.of("FAC-1", "ACME", "100", "XAF", "VALIDE", "2026-01-01", "2026-02-01", "FIN")));
 
         ReportPreviewDTO p = service().preview(id, 50);
 
@@ -129,8 +133,8 @@ class ReportBuilderServiceTest {
         UUID id = UUID.randomUUID();
         ReportDefinition def = invoicesDef();
         when(repository.findById(id)).thenReturn(Optional.of(def));
-        when(invoiceService.buildExportRows(any(), any(), any(), any(), any()))
-                .thenReturn(List.of(List.of("FAC-1", "ACME", "100", "XOF", "VALIDE", "2026-01-01", "2026-02-01", "FIN")));
+        when(invoiceService.buildExportRows(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(List.of(List.of("FAC-1", "ACME", "100", "XAF", "VALIDE", "2026-01-01", "2026-02-01", "FIN")));
 
         service().preview(id, 20);
 

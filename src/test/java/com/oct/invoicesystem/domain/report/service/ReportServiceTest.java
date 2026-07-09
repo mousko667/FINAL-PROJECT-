@@ -71,6 +71,12 @@ class ReportServiceTest {
     @Mock
     private com.oct.invoicesystem.domain.department.repository.DepartmentRepository departmentRepository;
 
+    @Mock
+    private com.oct.invoicesystem.domain.invoice.service.InvoiceService invoiceService;
+
+    @Mock
+    private com.oct.invoicesystem.shared.export.TabularExportService tabularExportService;
+
     @InjectMocks
     private ReportServiceImpl reportService;
 
@@ -125,9 +131,12 @@ class ReportServiceTest {
 
     @Test
     void exportInvoicesToExcel_ReturnsStream() {
-        when(invoiceRepository.findAllWithFilters(any(), any(), any(), any(), any(), any(), any()))
-                .thenReturn(new PageImpl<>(Collections.emptyList()));
+        // Now delegates to the shared invoice-export source of truth + TabularExportService.
+        when(invoiceService.invoiceExportHeaders(any(), any())).thenReturn(List.of("Reference", "Supplier"));
+        when(invoiceService.buildExportRows(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(Collections.emptyList());
         when(messageSource.getMessage(anyString(), any(), any())).thenReturn("Label");
+        when(tabularExportService.export(any(), any(), any(), any())).thenReturn(new byte[]{1, 2, 3});
 
         ByteArrayInputStream result = reportService.exportInvoicesToExcel(null, null, null, null, null);
         assertNotNull(result);

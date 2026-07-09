@@ -44,6 +44,8 @@ class InvoiceServiceTest {
     private UserRepository userRepository;
     @Mock
     private ReferenceNumberGenerator referenceNumberGenerator;
+    @Mock
+    private com.oct.invoicesystem.domain.purchasing.repository.ThreeWayMatchingResultRepository matchingResultRepository;
 
     @InjectMocks
     private InvoiceService invoiceService;
@@ -207,5 +209,67 @@ class InvoiceServiceTest {
         assertThat(r1.duplicate()).isFalse();
         assertThat(r2.duplicate()).isFalse();
         verify(invoiceRepository, never()).countDuplicatesBySupplierAndDescription(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("buildExportRows: 11 colonnes enrichies, statut traduit, email + matching résolus")
+    void buildExportRows_producesEnrichedLocalizedColumns() {
+        var department = new Department();
+        department.setCode("FIN");
+        UUID invId = UUID.randomUUID();
+        Invoice inv = Invoice.builder()
+                .department(department)
+                .supplierName("ACME")
+                .supplierEmail("supplier@acme.com")
+                .amount(new BigDecimal("1000.00"))
+                .currency("XAF")
+                .status(InvoiceStatus.VALIDE)
+                .issueDate(LocalDate.of(2026, 1, 1))
+                .dueDate(LocalDate.of(2026, 2, 1))
+                .build();
+        inv.setId(invId);
+
+        when(invoiceRepository.findAllWithFilters(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(java.util.List.of(inv)));
+        // One invoice has a MATCHED result; the batch lookup returns [invoiceId, status].
+        when(matchingResultRepository.findLatestStatusByInvoiceIds(java.util.List.of(invId)))
+                .thenReturn(java.util.List.<Object[]>of(new Object[]{invId, "MATCHED"}));
+        org.springframework.context.MessageSource ms = org.mockito.Mockito.mock(org.springframework.context.MessageSource.class);
+        when(ms.getMessage(org.mockito.ArgumentMatchers.eq("invoice.status.valide"), any(), any())).thenReturn("Validée");
+
+        var rows = invoiceService.buildExportRows(null, null, null, null, null, ms, java.util.Locale.FRENCH);
+
+        assertThat(rows).hasSize(1);
+        var row = rows.get(0);
+        assertThat(row).hasSize(11);
+        assertThat(row.get(1)).isEqualTo("ACME");
+        assertThat(row.get(2)).isEqualTo("supplier@acme.com");   // enriched: supplier email
+        assertThat(row.get(4)).isEqualTo("XAF");                 // currency, own column
+        assertThat(row.get(5)).isEqualTo("Validée");             // translated status, not the raw enum
+        assertThat(row.get(6)).isEqualTo("FIN");                 // department code
+        assertThat(row.get(10)).isEqualTo("MATCHED");            // enriched: matching status
+    }
+
+    @Test
+    @DisplayName("buildExportRows: statut de rapprochement = '-' quand aucun résultat de matching")
+    void buildExportRows_noMatching_rendersDash() {
+        var department = new Department();
+        department.setCode("FIN");
+        UUID invId = UUID.randomUUID();
+        Invoice inv = Invoice.builder().department(department).supplierName("BETA")
+                .amount(new BigDecimal("50")).currency("XAF").status(InvoiceStatus.SOUMIS)
+                .issueDate(LocalDate.of(2026, 3, 1)).dueDate(LocalDate.of(2026, 4, 1)).build();
+        inv.setId(invId);
+
+        when(invoiceRepository.findAllWithFilters(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(java.util.List.of(inv)));
+        when(matchingResultRepository.findLatestStatusByInvoiceIds(java.util.List.of(invId)))
+                .thenReturn(java.util.List.of());   // no matching result
+        org.springframework.context.MessageSource ms = org.mockito.Mockito.mock(org.springframework.context.MessageSource.class);
+        when(ms.getMessage(any(String.class), any(), any())).thenReturn("Soumise");
+
+        var rows = invoiceService.buildExportRows(null, null, null, null, null, ms, java.util.Locale.FRENCH);
+
+        assertThat(rows.get(0).get(10)).isEqualTo("-");
     }
 }
