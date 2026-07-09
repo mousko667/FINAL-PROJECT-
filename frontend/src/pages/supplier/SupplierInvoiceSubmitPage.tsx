@@ -85,7 +85,7 @@ export default function SupplierInvoiceSubmitPage() {
     formState: { errors },
   } = useForm<ConfirmData>({
     resolver: zodResolver(confirmSchema),
-    defaultValues: { currency: 'XOF' },
+    defaultValues: { currency: 'XAF' },
   })
 
   // The duplicate pre-check is keyed by the supplier's own id (resolved from their profile).
@@ -241,7 +241,7 @@ export default function SupplierInvoiceSubmitPage() {
         <div>
           <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.currency')} *</label>
           <select {...register('currency')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-primary/30">
-            <option value="XOF">XOF (FCFA)</option>
+            <option value="XAF">XAF (FCFA)</option>
             <option value="EUR">EUR</option>
             <option value="USD">USD</option>
           </select>

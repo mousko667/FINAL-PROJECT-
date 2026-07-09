@@ -251,7 +251,7 @@
     "invoiceProcessingOverview": "Overview of invoice processing",
     "enterSupplierInvoice": "Enter a supplier invoice",
     "statusDistribution": "Distribution of current statuses",
-    "topSuppliersSubtitle": "Volume processed by supplier (XOF)",
+    "topSuppliersSubtitle": "Volume processed by supplier (XAF)",
     "manageRegistry": "Manage the registry",
     "viewPurchaseOrders": "View purchase orders",
     "paymentsPendingSub": "Invoices awaiting payment",
@@ -461,7 +461,7 @@
     "trends": {
       "title": "Volume / value trends",
       "desc": "Invoice count and total amount per month over the last 12 months (by invoice date).",
-      "amount": "Amount (XOF)",
+      "amount": "Amount (XAF)",
       "count": "Invoice count"
     },
     "dateRangeRequired": "Select a date range to generate the compliance report.",
@@ -470,7 +470,7 @@
     "avgDays": "Avg. Days",
     "invoiceCount": "Invoices",
     "daysOverdue": "Days Overdue",
-    "amountDue": "Amount Due (XOF)",
+    "amountDue": "Amount Due (XAF)",
     "dataExports": "Data Exports",
     "noBottlenecks": "No SLA breaches detected — all approvals are within the 3-day SLA."
   },
@@ -518,7 +518,7 @@
       "deptHint": "Required for department-specific approver roles.",
       "employeeId": "Employee ID",
       "employeeIdPlaceholder": "e.g. EMP-0042",
-      "approvalLimit": "Approval Limit (XOF)",
+      "approvalLimit": "Approval Limit (XAF)",
       "approvalLimitPlaceholder": "e.g. 50000",
       "approvalLimitHint": "Maximum invoice amount this user can approve. Leave blank for no limit.",
       "preferredLang": "Preferred Language",

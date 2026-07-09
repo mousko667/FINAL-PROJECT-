@@ -98,7 +98,7 @@ export default function AgingBucketsWidget() {
               <span className="text-ink-soft">
                 {t('dashboard.agingBuckets.totalAmount')}:{' '}
                 <strong className="num text-ink">
-                  {formatAmount(data.totalOverdueAmount)} XOF
+                  {formatAmount(data.totalOverdueAmount)} XAF
                 </strong>
               </span>
             </div>
@@ -110,7 +110,7 @@ export default function AgingBucketsWidget() {
                 <Tooltip
                   formatter={(value: number, name: string) =>
                     name === 'amount'
-                      ? [`${formatAmount(value)} XOF`, t('dashboard.agingBuckets.amount')]
+                      ? [`${formatAmount(value)} XAF`, t('dashboard.agingBuckets.amount')]
                       : [value, t('dashboard.agingBuckets.invoices')]
                   }
                 />
@@ -127,7 +127,7 @@ export default function AgingBucketsWidget() {
                     <div key={row.supplierId ?? row.supplierName} className="flex justify-between py-2 text-sm">
                       <span className="text-ink-soft truncate pr-4">{row.supplierName}</span>
                       <span className="num text-ink shrink-0">
-                        {formatAmount(row.totalOverdueAmount)} XOF
+                        {formatAmount(row.totalOverdueAmount)} XAF
                       </span>
                     </div>
                   ))}

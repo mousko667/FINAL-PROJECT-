@@ -61,11 +61,11 @@ export default function VolumeTrendSection() {
               <XAxis dataKey="monthLabel" tick={{ fontSize: 11 }} />
               <YAxis yAxisId="left" tick={{ fontSize: 11 }} tickFormatter={v => `${(v / 1000).toFixed(0)}k`} />
               <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} allowDecimals={false} />
-              <Tooltip formatter={(value, name) => name === t('reports.trends.amount', 'Montant (XOF)')
-                ? [`${formatAmount(value)} XOF`, name]
+              <Tooltip formatter={(value, name) => name === t('reports.trends.amount', 'Montant (XAF)')
+                ? [`${formatAmount(value)} XAF`, name]
                 : [value, name]} />
               <Legend />
-              <Bar yAxisId="left" dataKey="totalAmount" name={t('reports.trends.amount', 'Montant (XOF)')} fill="#6366f1" radius={[4, 4, 0, 0]} />
+              <Bar yAxisId="left" dataKey="totalAmount" name={t('reports.trends.amount', 'Montant (XAF)')} fill="#6366f1" radius={[4, 4, 0, 0]} />
               <Line yAxisId="right" dataKey="invoiceCount" name={t('reports.trends.count', 'Nb de factures')} stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
             </ComposedChart>
           </ResponsiveContainer>

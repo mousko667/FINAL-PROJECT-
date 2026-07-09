@@ -184,11 +184,11 @@ export default function ReportsPage() {
                       <tr key={l.departmentCode} className="border-b border-hairline last:border-0">
                         <td className="px-3 py-2 font-medium text-ink">{l.departmentCode}</td>
                         <td className="px-3 py-2 text-right text-ink-soft">
-                          {l.budget != null ? `${formatAmount(l.budget)} XOF` : <span className="text-ink-faint">—</span>}
+                          {l.budget != null ? `${formatAmount(l.budget)} XAF` : <span className="text-ink-faint">—</span>}
                         </td>
-                        <td className="px-3 py-2 text-right text-ink-soft">{formatAmount(l.actual)} XOF</td>
+                        <td className="px-3 py-2 text-right text-ink-soft">{formatAmount(l.actual)} XAF</td>
                         <td className={`px-3 py-2 text-right font-medium ${l.variance == null ? 'text-ink-faint' : over ? 'text-crit' : 'text-pos'}`}>
-                          {l.variance != null ? `${formatAmount(l.variance)} XOF` : '—'}
+                          {l.variance != null ? `${formatAmount(l.variance)} XAF` : '—'}
                         </td>
                         <td className="px-3 py-2 text-right">
                           {l.utilizationPercent != null ? (
@@ -202,8 +202,8 @@ export default function ReportsPage() {
                 <tfoot>
                   <tr className="border-t-2 border-hairline-strong font-semibold text-ink">
                     <td className="px-3 py-2">{t('reports.budgetTotal')}</td>
-                    <td className="px-3 py-2 text-right">{formatAmount(budget.totalBudget)} XOF</td>
-                    <td className="px-3 py-2 text-right">{formatAmount(budget.totalActual)} XOF</td>
+                    <td className="px-3 py-2 text-right">{formatAmount(budget.totalBudget)} XAF</td>
+                    <td className="px-3 py-2 text-right">{formatAmount(budget.totalActual)} XAF</td>
                     <td className="px-3 py-2" colSpan={2}></td>
                   </tr>
                 </tfoot>
@@ -231,7 +231,7 @@ export default function ReportsPage() {
                     />
                   </div>
                   <div className="text-xs text-ink-soft w-20 text-right shrink-0">
-                    {b.count} inv — {formatAmount(b.totalAmount)} XOF
+                    {b.count} inv — {formatAmount(b.totalAmount)} XAF
                   </div>
                 </div>
               ))}
@@ -338,7 +338,7 @@ export default function ReportsPage() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="weekLabel" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `${(v/1000).toFixed(0)}k`} />
-                <Tooltip formatter={(v) => [`${formatAmount(v)} XOF`]} />
+                <Tooltip formatter={(v) => [`${formatAmount(v)} XAF`]} />
                 <Bar dataKey="totalAmount" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>

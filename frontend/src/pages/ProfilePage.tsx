@@ -364,7 +364,7 @@ export default function ProfilePage() {
               {t('profile.approvalLimit')}
               <input
                 value={data?.approvalLimit != null
-                  ? `${formatAmount(data.approvalLimit)} XOF`
+                  ? `${formatAmount(data.approvalLimit)} XAF`
                   : t('profile.approvalLimitNone')}
                 disabled
                 className="mt-1 w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-ground text-ink-soft"

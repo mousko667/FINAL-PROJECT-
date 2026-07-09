@@ -251,7 +251,7 @@
     "invoiceProcessingOverview": "Vue d'ensemble du traitement des factures",
     "enterSupplierInvoice": "Saisir une facture fournisseur",
     "statusDistribution": "Distribution des statuts actuels",
-    "topSuppliersSubtitle": "Volume traité par fournisseur (XOF)",
+    "topSuppliersSubtitle": "Volume traité par fournisseur (XAF)",
     "manageRegistry": "Gérer le registre",
     "viewPurchaseOrders": "Consulter les BDC",
     "paymentsPendingSub": "Factures en attente de paiement",
@@ -461,7 +461,7 @@
     "trends": {
       "title": "Tendances volume / valeur",
       "desc": "Nombre de factures et montant total par mois sur les 12 derniers mois (par date de facture).",
-      "amount": "Montant (XOF)",
+      "amount": "Montant (XAF)",
       "count": "Nb de factures"
     },
     "dateRangeRequired": "Sélectionnez une période pour générer le rapport de conformité.",
@@ -470,7 +470,7 @@
     "avgDays": "Moy. jours",
     "invoiceCount": "Factures",
     "daysOverdue": "Jours de retard",
-    "amountDue": "Montant dû (XOF)",
+    "amountDue": "Montant dû (XAF)",
     "dataExports": "Exports de données",
     "noBottlenecks": "Aucun dépassement de SLA détecté — toutes les approbations respectent le SLA de 3 jours."
   },
@@ -518,7 +518,7 @@
       "deptHint": "Obligatoire pour les rôles de validateur par département.",
       "employeeId": "Matricule",
       "employeeIdPlaceholder": "ex. EMP-0042",
-      "approvalLimit": "Limite d'approbation (XOF)",
+      "approvalLimit": "Limite d'approbation (XAF)",
       "approvalLimitPlaceholder": "ex. 50000",
       "approvalLimitHint": "Montant maximum que cet utilisateur peut approuver. Laisser vide pour aucune limite.",
       "preferredLang": "Langue préférée",

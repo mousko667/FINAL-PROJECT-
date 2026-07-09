@@ -258,7 +258,7 @@ export default function DashboardPage() {
                 <span className="text-sm text-ink-soft truncate flex-1">{inv.supplierName}</span>
                 <StatusBadge status={inv.status as InvoiceStatus} />
                 <span className="num text-sm text-ink-soft text-right w-28 shrink-0">
-                  {formatAmount(inv.amount)} <span className="text-ink-faint">XOF</span>
+                  {formatAmount(inv.amount)} <span className="text-ink-faint">XAF</span>
                 </span>
                 <ChevronRight className="w-4 h-4 text-ink-faint shrink-0" />
               </Link>
@@ -354,7 +354,7 @@ export default function DashboardPage() {
                 <span className="text-sm text-ink-soft truncate flex-1">{invoice.supplierName}</span>
                 <StatusBadge status={invoice.status as InvoiceStatus} />
                 <span className="num text-sm text-ink-soft text-right w-28 shrink-0">
-                  {formatAmount(invoice.amount)} <span className="text-ink-faint">XOF</span>
+                  {formatAmount(invoice.amount)} <span className="text-ink-faint">XAF</span>
                 </span>
                 <ChevronRight className="w-4 h-4 text-ink-faint shrink-0" />
               </Link>
@@ -403,7 +403,7 @@ export default function DashboardPage() {
                   <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 10, fill: '#6b7280' }} axisLine={false} tickLine={false} />
                   <Tooltip
                     contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
-                    formatter={(v) => [`${formatAmount(v)} XOF`]}
+                    formatter={(v) => [`${formatAmount(v)} XAF`]}
                   />
                   <Bar dataKey="value" fill="#0F2540" radius={[0, 4, 4, 0]} />
                 </BarChart>

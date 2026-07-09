@@ -53,6 +53,10 @@ Requirements. They supersede the old "Known Gaps — Must Be Fixed" section form
 > filtrer/marquer ces factures côté liste serait un plus UX. (b) Ajouter un `@DataJpaTest`
 > dédié à `PaymentRepository.findProcessedBetween` (actuellement couvert uniquement par mocks).
 
+> ⚠️ **RÉGRESSION corrigée par PROB-106 (2026-07-09)** : le fix devise XAF→XOF ci-dessous était
+> FAUX (OCT = Gabon = zone CEMAC/BEAC = **XAF**, pas XOF/BCEAO). Tous les XOF ont été re-remplacés
+> par XAF. Ne pas réappliquer XAF→XOF. Le reste du Fix Task 15 (helper `format.ts`, locale fr-FR) reste valide.
+>
 > **Fix (Task 15, RT-4+MAJEUR-F4, 2026-07-04, PROB-102)** — Devise XAF→XOF corrigée partout
 > (code + `fr.json`/`en.json`) y compris `PurchaseOrdersPage.tsx` (le `<select>` ne proposait que
 > XOF/EUR/USD, XAF n'était jamais sélectionnable). Nouveau helper partagé

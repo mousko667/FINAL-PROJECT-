@@ -41,8 +41,8 @@ describe('KpiBand', () => {
   })
 
   it('puts the .num class on the value for tabular figures', () => {
-    render(<KpiBand items={[{ label: 'Montant', value: '1 234 500 XOF' }]} />)
-    const value = screen.getByText('1 234 500 XOF')
+    render(<KpiBand items={[{ label: 'Montant', value: '1 234 500 XAF' }]} />)
+    const value = screen.getByText('1 234 500 XAF')
     expect(value.className).toMatch(/\bnum\b/)
   })
 

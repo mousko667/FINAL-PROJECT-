@@ -213,7 +213,7 @@ export default function InvoiceCreatePage() {
                       <option value="">{t('invoice.noPO', '— No linked PO —')}</option>
                       {(supplierPOs ?? []).map((po) => (
                         <option key={po.id} value={po.id}>
-                          {po.poNumber} — {formatAmount(po.totalAmount)} XOF
+                          {po.poNumber} — {formatAmount(po.totalAmount)} XAF
                         </option>
                       ))}
                     </select>
@@ -256,7 +256,7 @@ export default function InvoiceCreatePage() {
             <div>
               <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.currency', 'Currency')} *</label>
               <select {...register('currency')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-                <option value="XOF">XOF (Franc CFA)</option>
+                <option value="XAF">XAF (Franc CFA)</option>
               </select>
             </div>
 

@@ -28,7 +28,7 @@ export default function PurchaseOrdersPage() {
 
   const [page, setPage] = useState(0)
   const [showCreate, setShowCreate] = useState(false)
-  const [form, setForm] = useState({ poNumber: '', supplierId: '', totalAmount: '', currency: 'XOF', status: 'OPEN' })
+  const [form, setForm] = useState({ poNumber: '', supplierId: '', totalAmount: '', currency: 'XAF', status: 'OPEN' })
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['purchase-orders', page],
@@ -58,7 +58,7 @@ export default function PurchaseOrdersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchase-orders'] })
       setShowCreate(false)
-      setForm({ poNumber: '', supplierId: '', totalAmount: '', currency: 'XOF', status: 'OPEN' })
+      setForm({ poNumber: '', supplierId: '', totalAmount: '', currency: 'XAF', status: 'OPEN' })
     },
   })
 
@@ -143,7 +143,7 @@ export default function PurchaseOrdersPage() {
                 <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.currency', 'Currency')}</label>
                 <select value={form.currency} onChange={e => setForm(p => ({ ...p, currency: e.target.value }))}
                   className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-                  <option value="XOF">XOF</option>
+                  <option value="XAF">XAF</option>
                   <option value="EUR">EUR</option>
                   <option value="USD">USD</option>
                 </select>
@@ -188,7 +188,7 @@ export default function PurchaseOrdersPage() {
                     <tr key={po.id} className="hover:bg-ground">
                       <td className="px-4 py-3 num text-xs font-medium text-ink">{po.poNumber}</td>
                       <td className="px-4 py-3 text-ink-soft">{po.supplierName ?? '—'}</td>
-                      <td className="px-4 py-3 text-right num">{formatAmount(po.totalAmount)} {po.currency ?? 'XOF'}</td>
+                      <td className="px-4 py-3 text-right num">{formatAmount(po.totalAmount)} {po.currency ?? 'XAF'}</td>
                       <td className="px-4 py-3">
                         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusBadge(po.status)}`}>{po.status}</span>
                       </td>
