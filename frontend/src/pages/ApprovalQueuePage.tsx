@@ -22,11 +22,11 @@ interface PendingInvoice {
 }
 
 function statusColor(status: string) {
-  if (status === 'SOUMIS') return 'bg-blue-100 text-blue-800'
-  if (status === 'EN_VALIDATION_N1') return 'bg-yellow-100 text-yellow-800'
-  if (status === 'EN_VALIDATION_N2') return 'bg-orange-100 text-orange-800'
-  if (status === 'VALIDE') return 'bg-teal-100 text-teal-800'
-  return 'bg-gray-100 text-gray-700'
+  if (status === 'SOUMIS') return 'bg-info-bg text-info border border-info/30'
+  if (status === 'EN_VALIDATION_N1') return 'bg-warn-bg text-warn border border-warn/30'
+  if (status === 'EN_VALIDATION_N2') return 'bg-hot-bg text-hot border border-hot/30'
+  if (status === 'VALIDE') return 'bg-pos-bg text-pos border border-pos/30'
+  return 'bg-ground text-ink-soft border border-hairline'
 }
 
 /** Returns days elapsed since the invoice entered its current status (approx. from createdAt as fallback) */

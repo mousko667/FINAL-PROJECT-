@@ -109,62 +109,62 @@ export default function DashboardPage() {
 
         {/* Primary admin actions */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Link to="/admin/users" className="group flex flex-col items-center p-5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-100 transition-all hover:shadow-sm text-center">
-            <div className="w-12 h-12 rounded-xl bg-blue-100 group-hover:bg-blue-200 flex items-center justify-center mb-3 transition-colors">
-              <Users className="w-6 h-6 text-blue-600" />
+          <Link to="/admin/users" className="group flex flex-col items-center p-5 rounded-[4px] bg-surface hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)] border border-hairline hover:border-gold/40 transition-all text-center">
+            <div className="w-12 h-12 rounded-[4px] bg-ground flex items-center justify-center mb-3">
+              <Users className="w-6 h-6 text-ink-soft" />
             </div>
-            <span className="text-sm font-semibold text-blue-800">{t('nav.users')}</span>
-            <span className="text-xs text-blue-500 mt-0.5">{t('dashboard.manageAccounts', 'Gérer les comptes')}</span>
+            <span className="text-sm font-semibold text-ink">{t('nav.users')}</span>
+            <span className="text-xs text-ink-faint mt-0.5">{t('dashboard.manageAccounts', 'Gérer les comptes')}</span>
           </Link>
 
-          <Link to="/admin/departments" className="group flex flex-col items-center p-5 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 transition-all hover:shadow-sm text-center">
-            <div className="w-12 h-12 rounded-xl bg-indigo-100 group-hover:bg-indigo-200 flex items-center justify-center mb-3 transition-colors">
-              <Building2 className="w-6 h-6 text-indigo-600" />
+          <Link to="/admin/departments" className="group flex flex-col items-center p-5 rounded-[4px] bg-surface hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)] border border-hairline hover:border-gold/40 transition-all text-center">
+            <div className="w-12 h-12 rounded-[4px] bg-ground flex items-center justify-center mb-3">
+              <Building2 className="w-6 h-6 text-ink-soft" />
             </div>
-            <span className="text-sm font-semibold text-indigo-800">{t('nav.departments')}</span>
-            <span className="text-xs text-indigo-500 mt-0.5">{t('dashboard.deptMatrix', 'Départements & matrice')}</span>
+            <span className="text-sm font-semibold text-ink">{t('nav.departments')}</span>
+            <span className="text-xs text-ink-faint mt-0.5">{t('dashboard.deptMatrix', 'Départements & matrice')}</span>
           </Link>
 
-          <Link to="/admin/audit" className="group flex flex-col items-center p-5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-100 transition-all hover:shadow-sm text-center">
-            <div className="w-12 h-12 rounded-xl bg-amber-100 group-hover:bg-amber-200 flex items-center justify-center mb-3 transition-colors">
-              <ScrollText className="w-6 h-6 text-amber-600" />
+          <Link to="/admin/audit" className="group flex flex-col items-center p-5 rounded-[4px] bg-surface hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)] border border-hairline hover:border-gold/40 transition-all text-center">
+            <div className="w-12 h-12 rounded-[4px] bg-ground flex items-center justify-center mb-3">
+              <ScrollText className="w-6 h-6 text-ink-soft" />
             </div>
-            <span className="text-sm font-semibold text-amber-800">{t('nav.auditLog')}</span>
-            <span className="text-xs text-amber-500 mt-0.5">{t('dashboard.securityLogs', 'Journaux système')}</span>
+            <span className="text-sm font-semibold text-ink">{t('nav.auditLog')}</span>
+            <span className="text-xs text-ink-faint mt-0.5">{t('dashboard.securityLogs', 'Journaux système')}</span>
           </Link>
 
-          <Link to="/admin/suppliers" className="group flex flex-col items-center p-5 rounded-xl bg-teal-50 hover:bg-teal-100 border border-teal-100 transition-all hover:shadow-sm text-center">
-            <div className="w-12 h-12 rounded-xl bg-teal-100 group-hover:bg-teal-200 flex items-center justify-center mb-3 transition-colors">
-              <Users className="w-6 h-6 text-teal-600" />
+          <Link to="/admin/suppliers" className="group flex flex-col items-center p-5 rounded-[4px] bg-surface hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)] border border-hairline hover:border-gold/40 transition-all text-center">
+            <div className="w-12 h-12 rounded-[4px] bg-ground flex items-center justify-center mb-3">
+              <Users className="w-6 h-6 text-ink-soft" />
             </div>
-            <span className="text-sm font-semibold text-teal-800">{t('nav.suppliers')}</span>
-            <span className="text-xs text-teal-500 mt-0.5">{t('dashboard.supplierRegistry', 'Registre fournisseurs')}</span>
+            <span className="text-sm font-semibold text-ink">{t('nav.suppliers')}</span>
+            <span className="text-xs text-ink-faint mt-0.5">{t('dashboard.supplierRegistry', 'Registre fournisseurs')}</span>
           </Link>
         </div>
 
         {/* Secondary admin actions */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Link to="/admin/approval-matrix" className="flex items-center gap-3 p-4 rounded-[4px] bg-surface border border-hairline hover:bg-purple-50 hover:border-purple-200 transition-all group">
-            <div className="w-9 h-9 rounded-lg bg-purple-100 flex items-center justify-center group-hover:bg-purple-200 transition-colors">
-              <GitBranch className="w-4 h-4 text-purple-600" />
+          <Link to="/admin/approval-matrix" className="flex items-center gap-3 p-4 rounded-[4px] bg-surface border border-hairline hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)] hover:border-gold/40 transition-all group">
+            <div className="w-9 h-9 rounded-[4px] bg-ground flex items-center justify-center">
+              <GitBranch className="w-4 h-4 text-ink-soft" />
             </div>
             <div>
               <p className="text-sm font-semibold text-ink">{t('admin.approvalMatrix.title', 'Matrice d\'approbation')}</p>
               <p className="text-xs text-ink-faint">{t('dashboard.validationWorkflows')}</p>
             </div>
           </Link>
-          <Link to="/admin/security" className="flex items-center gap-3 p-4 rounded-[4px] bg-surface border border-hairline hover:bg-red-50 hover:border-red-200 transition-all group">
-            <div className="w-9 h-9 rounded-lg bg-red-100 flex items-center justify-center group-hover:bg-red-200 transition-colors">
-              <Shield className="w-4 h-4 text-red-600" />
+          <Link to="/admin/security" className="flex items-center gap-3 p-4 rounded-[4px] bg-surface border border-hairline hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)] hover:border-gold/40 transition-all group">
+            <div className="w-9 h-9 rounded-[4px] bg-ground flex items-center justify-center">
+              <Shield className="w-4 h-4 text-ink-soft" />
             </div>
             <div>
               <p className="text-sm font-semibold text-ink">{t('admin.security.title', 'Paramètres de sécurité')}</p>
               <p className="text-xs text-ink-faint">{t('dashboard.mfaSessionsAccess')}</p>
             </div>
           </Link>
-          <Link to="/admin/integrations" className="flex items-center gap-3 p-4 rounded-[4px] bg-surface border border-hairline hover:bg-green-50 hover:border-green-200 transition-all group">
-            <div className="w-9 h-9 rounded-lg bg-green-100 flex items-center justify-center group-hover:bg-green-200 transition-colors">
-              <Zap className="w-4 h-4 text-green-600" />
+          <Link to="/admin/integrations" className="flex items-center gap-3 p-4 rounded-[4px] bg-surface border border-hairline hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)] hover:border-gold/40 transition-all group">
+            <div className="w-9 h-9 rounded-[4px] bg-ground flex items-center justify-center">
+              <Zap className="w-4 h-4 text-ink-soft" />
             </div>
             <div>
               <p className="text-sm font-semibold text-ink">{t('admin.integrations.title', 'Intégrations')}</p>
