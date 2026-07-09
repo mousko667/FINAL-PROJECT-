@@ -21,7 +21,9 @@ const schema = z
     address: z.string().optional(),
   })
   .refine((d) => d.password === d.confirmPassword, {
-    message: 'Passwords do not match',
+    // i18n key, resolved through t() at display time (project pattern PROB-006):
+    // zod runs outside the component so it cannot call t() directly.
+    message: 'validation.passwordMismatch',
     path: ['confirmPassword'],
   })
 
@@ -173,7 +175,7 @@ export default function SupplierRegisterPage() {
             <div>
               <label className="block text-sm font-medium text-ink-soft mb-1">{t('supplier.register.confirmPassword', 'Confirm Password')} *</label>
               <input type="password" autoComplete="new-password" {...register('confirmPassword')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-              {errors.confirmPassword && <p className="text-xs text-crit mt-1">{errors.confirmPassword.message}</p>}
+              {errors.confirmPassword && <p className="text-xs text-crit mt-1">{t(errors.confirmPassword.message ?? 'validation.passwordMismatch')}</p>}
             </div>
           </div>
 

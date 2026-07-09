@@ -615,7 +615,9 @@
       "n2Role": "Approbateur Niveau 2",
       "requiresN2": "Nécessite un Niveau 2",
       "save": "Enregistrer les modifications",
-      "saved": "Matrice d'approbation mise à jour avec succès."
+      "saved": "Matrice d'approbation mise à jour avec succès.",
+      "noneN2": "— Aucun (niveau unique) —",
+      "hint": "Les modifications prennent effet immédiatement. Le moteur de routage lit cette matrice à chaque soumission de facture."
     },
     "security": {
       "title": "Paramètres de sécurité",
@@ -978,7 +980,8 @@
     "minLength": "Minimum {{min}} caractères requis",
     "maxLength": "Maximum {{max}} caractères autorisés",
     "invalidEmail": "Adresse email invalide",
-    "positiveNumber": "Doit être un nombre positif"
+    "positiveNumber": "Doit être un nombre positif",
+    "passwordMismatch": "Les mots de passe ne correspondent pas"
   },
   "pagination": {
     "page": "Page",

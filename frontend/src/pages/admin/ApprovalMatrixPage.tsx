@@ -15,23 +15,25 @@ interface Department {
   isActive: boolean
 }
 
-const ROLE_OPTIONS_N1 = [
-  { value: 'ROLE_DAF',                  label: 'CFO / DAF' },
-  { value: 'ROLE_VALIDATEUR_N1_DRH',    label: 'HR Director (DRH)' },
-  { value: 'ROLE_VALIDATEUR_N1_DG',     label: 'General Manager (DG)' },
-  { value: 'ROLE_VALIDATEUR_N1_INFO',   label: 'IT Manager (RSI)' },
-  { value: 'ROLE_VALIDATEUR_N1_TERM',   label: 'Terminal Manager (DEX)' },
-  { value: 'ROLE_VALIDATEUR_N1_COM',    label: 'Communication Manager' },
-  { value: 'ROLE_VALIDATEUR_N1_QHSSE',  label: 'QHSSE Manager' },
-  { value: 'ROLE_VALIDATEUR_N1_INFRA',  label: 'Infrastructure Manager' },
-  { value: 'ROLE_VALIDATEUR_N1_TECH',   label: 'Workshop Manager' },
+// Role labels are resolved from the shared `roles.*` i18n namespace (FR+EN),
+// never hardcoded here (audit MAJEUR-F7 / §7bis.4). The N2 "none" entry uses a
+// dedicated approval-matrix key since it is not a role.
+const ROLE_VALUES_N1 = [
+  'ROLE_DAF',
+  'ROLE_VALIDATEUR_N1_DRH',
+  'ROLE_VALIDATEUR_N1_DG',
+  'ROLE_VALIDATEUR_N1_INFO',
+  'ROLE_VALIDATEUR_N1_TERM',
+  'ROLE_VALIDATEUR_N1_COM',
+  'ROLE_VALIDATEUR_N1_QHSSE',
+  'ROLE_VALIDATEUR_N1_INFRA',
+  'ROLE_VALIDATEUR_N1_TECH',
 ]
 
-const ROLE_OPTIONS_N2 = [
-  { value: '', label: '— None (single-level) —' },
-  { value: 'ROLE_VALIDATEUR_N2_INFO',   label: 'CIO (DSI)' },
-  { value: 'ROLE_VALIDATEUR_N2_INFRA',  label: 'Infrastructure Director' },
-  { value: 'ROLE_VALIDATEUR_N2_TECH',   label: 'Technical Director' },
+const ROLE_VALUES_N2 = [
+  'ROLE_VALIDATEUR_N2_INFO',
+  'ROLE_VALIDATEUR_N2_INFRA',
+  'ROLE_VALIDATEUR_N2_TECH',
 ]
 
 export default function ApprovalMatrixPage() {
@@ -103,7 +105,7 @@ export default function ApprovalMatrixPage() {
                       onChange={e => handleUpdate(dept, 'n1Role', e.target.value)}
                       className="border border-hairline rounded-[4px] px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 w-full max-w-[220px]"
                     >
-                      {ROLE_OPTIONS_N1.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                      {ROLE_VALUES_N1.map(v => <option key={v} value={v}>{t(`roles.${v}`, v)}</option>)}
                     </select>
                   </td>
                   <td className="px-4 py-3">
@@ -121,7 +123,8 @@ export default function ApprovalMatrixPage() {
                         onChange={e => handleUpdate(dept, 'n2Role', e.target.value)}
                         className="border border-hairline rounded-[4px] px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 w-full max-w-[220px]"
                       >
-                        {ROLE_OPTIONS_N2.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                        <option value="">{t('admin.approvalMatrix.noneN2')}</option>
+                        {ROLE_VALUES_N2.map(v => <option key={v} value={v}>{t(`roles.${v}`, v)}</option>)}
                       </select>
                     ) : (
                       <span className="text-ink-faint text-xs">—</span>
@@ -135,7 +138,7 @@ export default function ApprovalMatrixPage() {
       </div>
 
       <p className="text-xs text-ink-faint">
-        Changes take effect immediately. The routing engine reads this matrix on every invoice submission.
+        {t('admin.approvalMatrix.hint')}
       </p>
     </div>
   )

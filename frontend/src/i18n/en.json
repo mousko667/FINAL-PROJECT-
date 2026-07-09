@@ -615,7 +615,9 @@
       "n2Role": "Level 2 Approver",
       "requiresN2": "Requires Level 2",
       "save": "Save Changes",
-      "saved": "Approval matrix updated successfully."
+      "saved": "Approval matrix updated successfully.",
+      "noneN2": "— None (single-level) —",
+      "hint": "Changes take effect immediately. The routing engine reads this matrix on every invoice submission."
     },
     "security": {
       "title": "Security Settings",
@@ -978,7 +980,8 @@
     "minLength": "Minimum {{min}} characters required",
     "maxLength": "Maximum {{max}} characters allowed",
     "invalidEmail": "Invalid email address",
-    "positiveNumber": "Must be a positive number"
+    "positiveNumber": "Must be a positive number",
+    "passwordMismatch": "Passwords do not match"
   },
   "pagination": {
     "page": "Page",
