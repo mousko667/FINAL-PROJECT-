@@ -5,6 +5,7 @@ import apiClient from '@/services/apiClient'
 import type { ApiResponse, PagedResponse } from '@/types/invoice'
 import { ROLE_OPTIONS } from '@/constants/roles'
 import { Loader2, Check, ShieldCheck, AlertCircle } from 'lucide-react'
+import { Panel } from '@/components/ui/Panel'
 
 interface User {
   id: string
@@ -117,42 +118,42 @@ export default function AdminPermissionMatrixPage() {
       <div className="flex items-start gap-3">
         <ShieldCheck className="w-6 h-6 text-primary mt-0.5" />
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('admin.permissions.title')}</h1>
-          <p className="text-sm text-gray-500 mt-1">{t('admin.permissions.subtitle')}</p>
+          <h1 className="text-2xl font-bold text-ink">{t('admin.permissions.title')}</h1>
+          <p className="text-sm text-ink-soft mt-1">{t('admin.permissions.subtitle')}</p>
         </div>
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>
+        <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-ink-faint" /></div>
       ) : (
-        <div className="bg-white rounded-xl border overflow-x-auto">
+        <Panel className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead>
-              <tr className="border-b">
-                <th className="sticky left-0 z-10 bg-white text-left font-semibold text-gray-700 px-4 py-3 min-w-[180px]">
+              <tr className="bg-ground">
+                <th className="sticky left-0 z-10 bg-ground text-left font-semibold text-ink-faint text-xs uppercase tracking-wide px-4 py-3 min-w-[180px]">
                   {t('admin.permissions.user')}
                 </th>
                 {ROLE_OPTIONS.map(role => (
                   <th key={role.value} className="px-2 py-3 text-center align-bottom" title={role.label}>
-                    <span className="inline-block text-[11px] font-medium text-gray-500 whitespace-nowrap">
+                    <span className="inline-block text-[11px] font-medium text-ink-faint whitespace-nowrap">
                       {t(`roles.${role.value}`, role.short)}
                     </span>
                   </th>
                 ))}
-                <th className="px-4 py-3 text-right font-semibold text-gray-700 min-w-[120px]">
+                <th className="px-4 py-3 text-right font-semibold text-ink-faint text-xs uppercase tracking-wide min-w-[120px]">
                   {t('admin.permissions.action')}
                 </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-hairline">
               {sortedUsers.map(u => {
                 const roles = rolesOf(u)
                 const dirty = isDirty(u)
                 return (
-                  <tr key={u.id} className="border-b last:border-0 hover:bg-gray-50/50">
-                    <td className="sticky left-0 z-10 bg-white px-4 py-2">
-                      <div className="font-medium text-gray-900">{displayName(u)}</div>
-                      <div className="text-xs text-gray-400">{u.username}</div>
+                  <tr key={u.id} className="hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)]">
+                    <td className="sticky left-0 z-10 bg-surface px-4 py-2">
+                      <div className="font-medium text-ink">{displayName(u)}</div>
+                      <div className="text-xs text-ink-faint">{u.username}</div>
                     </td>
                     {ROLE_OPTIONS.map(role => {
                       const checked = roles.has(role.value)
@@ -170,18 +171,18 @@ export default function AdminPermissionMatrixPage() {
                     })}
                     <td className="px-4 py-2 text-right">
                       {savedId === u.id ? (
-                        <span className="inline-flex items-center gap-1 text-xs text-green-700">
+                        <span className="inline-flex items-center gap-1 text-xs text-pos">
                           <Check className="w-3.5 h-3.5" /> {t('admin.permissions.saved')}
                         </span>
                       ) : errorId === u.id ? (
-                        <span className="inline-flex items-center gap-1 text-xs text-red-600">
+                        <span className="inline-flex items-center gap-1 text-xs text-crit">
                           <AlertCircle className="w-3.5 h-3.5" /> {t('admin.permissions.saveError')}
                         </span>
                       ) : (
                         <button
                           onClick={() => saveRoles.mutate({ id: u.id, roleNames: Array.from(roles) })}
                           disabled={!dirty || saveRoles.isPending}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-[4px] text-xs font-medium hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           {saveRoles.isPending && saveRoles.variables?.id === u.id && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                           {t('admin.permissions.save')}
@@ -193,7 +194,7 @@ export default function AdminPermissionMatrixPage() {
               })}
             </tbody>
           </table>
-        </div>
+        </Panel>
       )}
     </div>
   )

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { listBackups, createBackup, restoreBackup, getBackupStatus, getAuditLogs } from '@/api/backups'
 import { Loader2, HardDrive, Download, RotateCcw, Plus, AlertTriangle, Activity, CheckCircle2, XCircle } from 'lucide-react'
+import { Panel } from '@/components/ui/Panel'
 
 export default function AdminBackupsPage() {
   const { t } = useTranslation()
@@ -54,18 +55,18 @@ export default function AdminBackupsPage() {
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <HardDrive className="w-6 h-6 text-blue-600" />
+            <h1 className="text-2xl font-bold text-ink flex items-center gap-2">
+              <HardDrive className="w-6 h-6 text-primary" />
               {t('admin.backups.title')}
             </h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-ink-soft mt-1">
               {t('admin.backups.description')}
             </p>
           </div>
           <button
             onClick={() => createMutation.mutate()}
             disabled={createMutation.isPending}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-[4px] hover:bg-primary/90 disabled:opacity-50"
           >
             {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
             {t('admin.backups.createBtn')}
@@ -74,21 +75,21 @@ export default function AdminBackupsPage() {
 
         {/* Status Card */}
         {status && (
-          <div className={`p-4 rounded-lg border flex items-center justify-between ${
-            status.status === 'OK' ? 'bg-green-50 border-green-200' : 
-            status.status === 'FAILED' ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'
+          <div className={`p-4 rounded-[4px] border flex items-center justify-between ${
+            status.status === 'OK' ? 'bg-pos-bg border-pos/30' :
+            status.status === 'FAILED' ? 'bg-crit-bg border-crit/30' : 'bg-ground border-hairline'
           }`}>
             <div>
               <p className="font-semibold text-sm">
                 {t('admin.backups.lastStatus')} :{' '}
-                <span className={status.status === 'OK' ? 'text-green-700' : status.status === 'FAILED' ? 'text-red-700' : 'text-gray-700'}>
+                <span className={status.status === 'OK' ? 'text-pos' : status.status === 'FAILED' ? 'text-crit' : 'text-ink-soft'}>
                   {status.status}
                 </span>
               </p>
-              <p className="text-xs text-gray-600 mt-1">{status.detail}</p>
+              <p className="text-xs text-ink-soft mt-1">{status.detail}</p>
             </div>
             {status.lastBackupAt && (
-              <div className="text-right text-sm text-gray-500">
+              <div className="text-right text-sm text-ink-soft num">
                 {new Date(status.lastBackupAt).toLocaleString('fr-FR', {
                   day: '2-digit', month: 'short', year: 'numeric',
                   hour: '2-digit', minute: '2-digit'
@@ -98,34 +99,34 @@ export default function AdminBackupsPage() {
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow border overflow-hidden">
+        <Panel className="overflow-hidden">
           {backupsLoading ? (
             <div className="flex justify-center p-8">
-              <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+              <Loader2 className="w-6 h-6 animate-spin text-ink-faint" />
             </div>
           ) : !backups || backups.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
+            <div className="p-8 text-center text-ink-soft">
               {t('admin.backups.empty')}
             </div>
           ) : (
             <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 border-b">
+              <thead className="bg-ground">
                 <tr>
-                  <th className="px-6 py-3 font-medium text-gray-500">{t('admin.backups.filename')}</th>
-                  <th className="px-6 py-3 font-medium text-gray-500 text-right">{t('app.actions')}</th>
+                  <th className="px-6 py-3 font-medium text-ink-faint text-xs uppercase tracking-wide">{t('admin.backups.filename')}</th>
+                  <th className="px-6 py-3 font-medium text-ink-faint text-xs uppercase tracking-wide text-right">{t('app.actions')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-hairline">
                 {backups.map((filename) => (
-                  <tr key={filename} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 font-medium text-gray-900 flex items-center gap-2">
-                      <Download className="w-4 h-4 text-gray-400" />
+                  <tr key={filename} className="hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)]">
+                    <td className="px-6 py-4 font-medium text-ink flex items-center gap-2">
+                      <Download className="w-4 h-4 text-ink-faint" />
                       {filename}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button
                         onClick={() => setRestoringFile(filename)}
-                        className="text-red-600 hover:text-red-800 font-medium flex items-center gap-1 justify-end w-full"
+                        className="text-crit hover:opacity-80 font-medium flex items-center gap-1 justify-end w-full"
                       >
                         <RotateCcw className="w-4 h-4" />
                         {t('admin.backups.restoreBtn')}
@@ -136,70 +137,70 @@ export default function AdminBackupsPage() {
               </tbody>
             </table>
           )}
-        </div>
+        </Panel>
 
         {/* Audit History Card */}
-        <div className="bg-white rounded-lg shadow border overflow-hidden mt-8">
-          <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-2">
-            <Activity className="w-5 h-5 text-gray-500" />
-            <h2 className="text-lg font-semibold text-gray-900">
+        <Panel className="overflow-hidden mt-8">
+          <div className="px-6 py-4 border-b border-hairline flex items-center gap-2">
+            <Activity className="w-5 h-5 text-ink-faint" />
+            <h2 className="text-lg font-semibold text-ink">
               {t('admin.backups.historyTitle')}
             </h2>
           </div>
           {auditLogsLoading ? (
             <div className="flex justify-center p-8">
-              <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+              <Loader2 className="w-6 h-6 animate-spin text-ink-faint" />
             </div>
           ) : !auditLogs || auditLogs.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
+            <div className="p-8 text-center text-ink-soft">
               {t('admin.backups.historyEmpty')}
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm whitespace-nowrap">
-                <thead className="bg-gray-50 border-b">
+                <thead className="bg-ground">
                   <tr>
-                    <th className="px-6 py-3 font-medium text-gray-500">{t('admin.backups.colDate')}</th>
-                    <th className="px-6 py-3 font-medium text-gray-500">{t('admin.backups.colOperation')}</th>
-                    <th className="px-6 py-3 font-medium text-gray-500">{t('admin.backups.colStatus')}</th>
-                    <th className="px-6 py-3 font-medium text-gray-500">{t('admin.backups.colFile')}</th>
-                    <th className="px-6 py-3 font-medium text-gray-500">{t('admin.backups.colTriggeredBy')}</th>
+                    <th className="px-6 py-3 font-medium text-ink-faint text-xs uppercase tracking-wide">{t('admin.backups.colDate')}</th>
+                    <th className="px-6 py-3 font-medium text-ink-faint text-xs uppercase tracking-wide">{t('admin.backups.colOperation')}</th>
+                    <th className="px-6 py-3 font-medium text-ink-faint text-xs uppercase tracking-wide">{t('admin.backups.colStatus')}</th>
+                    <th className="px-6 py-3 font-medium text-ink-faint text-xs uppercase tracking-wide">{t('admin.backups.colFile')}</th>
+                    <th className="px-6 py-3 font-medium text-ink-faint text-xs uppercase tracking-wide">{t('admin.backups.colTriggeredBy')}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-hairline">
                   {auditLogs.map((log) => (
-                    <tr key={log.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-3 text-gray-500">
+                    <tr key={log.id} className="hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)]">
+                      <td className="px-6 py-3 text-ink-soft num">
                         {new Date(log.createdAt).toLocaleString('fr-FR', {
                           day: '2-digit', month: '2-digit', year: 'numeric',
                           hour: '2-digit', minute: '2-digit', second: '2-digit'
                         })}
                       </td>
                       <td className="px-6 py-3">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                          log.operation === 'CREATE' ? 'bg-blue-100 text-blue-800' :
-                          log.operation === 'RESTORE' ? 'bg-purple-100 text-purple-800' :
-                          'bg-gray-100 text-gray-800'
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-[4px] text-xs font-medium ${
+                          log.operation === 'CREATE' ? 'bg-info-bg text-info' :
+                          log.operation === 'RESTORE' ? 'bg-warn-bg text-warn' :
+                          'bg-ground text-ink-soft'
                         }`}>
                           {log.operation}
                         </span>
                       </td>
                       <td className="px-6 py-3 flex items-center gap-1">
                         {log.status === 'OK' ? (
-                          <><CheckCircle2 className="w-4 h-4 text-green-500" /> <span className="text-green-700">OK</span></>
+                          <><CheckCircle2 className="w-4 h-4 text-pos" /> <span className="text-pos">OK</span></>
                         ) : (
-                          <><XCircle className="w-4 h-4 text-red-500" /> <span className="text-red-700">FAILED</span></>
+                          <><XCircle className="w-4 h-4 text-crit" /> <span className="text-crit">FAILED</span></>
                         )}
                         {log.errorMessage && (
-                          <span className="text-xs text-red-500 ml-2 truncate max-w-xs" title={log.errorMessage}>
+                          <span className="text-xs text-crit ml-2 truncate max-w-xs" title={log.errorMessage}>
                             ({log.errorMessage})
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-3 text-gray-900 truncate max-w-xs" title={log.filename || ''}>
+                      <td className="px-6 py-3 text-ink truncate max-w-xs" title={log.filename || ''}>
                         {log.filename || '-'}
                       </td>
-                      <td className="px-6 py-3 text-gray-500">
+                      <td className="px-6 py-3 text-ink-soft">
                         {log.triggeredBy}
                       </td>
                     </tr>
@@ -208,32 +209,32 @@ export default function AdminBackupsPage() {
               </table>
             </div>
           )}
-        </div>
+        </Panel>
       </div>
 
       {/* Restore Modal */}
       {restoringFile && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
-            <div className="flex items-center gap-3 text-red-600 mb-4">
+          <div className="bg-surface rounded-[4px] shadow-lg w-full max-w-md p-6">
+            <div className="flex items-center gap-3 text-crit mb-4">
               <AlertTriangle className="w-6 h-6" />
               <h2 className="text-lg font-semibold">{t('admin.backups.restoreConfirmTitle')}</h2>
             </div>
-            <p className="text-sm text-gray-600 mb-6">
+            <p className="text-sm text-ink-soft mb-6">
               {t('admin.backups.restoreConfirmDesc', { file: restoringFile })}
             </p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setRestoringFile(null)}
                 disabled={restoreMutation.isPending}
-                className="px-4 py-2 text-sm border rounded font-medium hover:bg-gray-50"
+                className="px-4 py-2 text-sm border border-hairline rounded-[4px] font-medium hover:bg-ground"
               >
                 {t('app.cancel')}
               </button>
               <button
                 onClick={handleRestore}
                 disabled={restoreMutation.isPending}
-                className="px-4 py-2 text-sm bg-red-600 text-white rounded font-medium hover:bg-red-700 flex items-center gap-2"
+                className="px-4 py-2 text-sm bg-crit text-crit-bg rounded-[4px] font-medium hover:opacity-90 flex items-center gap-2"
               >
                 {restoreMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                 {t('admin.backups.restoreBtn')}

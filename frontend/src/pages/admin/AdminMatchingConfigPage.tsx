@@ -5,6 +5,7 @@ import apiClient from '@/services/apiClient'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { Loader2, SlidersHorizontal, Save, CheckCircle, AlertCircle } from 'lucide-react'
 import { formatDateTime } from '@/lib/format'
+import { Panel } from '@/components/ui/Panel'
 
 interface MatchingConfig {
   id: string
@@ -78,45 +79,45 @@ export default function AdminMatchingConfigPage() {
     <PageRoleGuard allowedRoles={['ROLE_ADMIN']}>
       <div className="space-y-6 page-enter max-w-2xl">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-ink flex items-center gap-2">
             <SlidersHorizontal className="w-6 h-6 text-primary" />
             {t('admin.matchingConfig.title', 'Three-Way Matching Configuration')}
           </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <p className="text-sm text-ink-soft mt-0.5">
             {t('admin.matchingConfig.subtitle', 'Tolerance thresholds applied when matching invoices against purchase orders and goods receipts.')}
           </p>
         </div>
 
         {isLoading ? (
-          <div className="p-8 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-gray-400" /></div>
+          <div className="p-8 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-ink-faint" /></div>
         ) : (
-          <div className="bg-white rounded-xl border p-5 space-y-5">
+          <Panel className="p-5 space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-ink-soft mb-1">
                 {t('admin.matchingConfig.tolerancePercentage', 'Tolerance (%)')}
               </label>
               <input
                 type="number" min="0" max="100" step="0.01"
                 value={tolerancePercentage}
                 onChange={(e) => setTolerancePercentage(e.target.value)}
-                className="w-full sm:w-48 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="w-full sm:w-48 border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-ink-faint mt-1">
                 {t('admin.matchingConfig.tolerancePercentageHint', 'Maximum percentage difference allowed between invoice and PO amounts.')}
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-ink-soft mb-1">
                 {t('admin.matchingConfig.toleranceAmount', 'Tolerance (amount)')}
               </label>
               <input
                 type="number" min="0" step="0.01"
                 value={toleranceAmount}
                 onChange={(e) => setToleranceAmount(e.target.value)}
-                className="w-full sm:w-48 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="w-full sm:w-48 border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-ink-faint mt-1">
                 {t('admin.matchingConfig.toleranceAmountHint', 'Maximum absolute amount difference allowed, regardless of percentage.')}
               </p>
             </div>
@@ -126,15 +127,15 @@ export default function AdminMatchingConfigPage() {
                 type="checkbox"
                 checked={requireGrn}
                 onChange={(e) => setRequireGrn(e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary/30"
+                className="w-4 h-4 rounded border-hairline text-primary focus:ring-primary/30"
               />
-              <span className="text-sm font-medium text-gray-700">
+              <span className="text-sm font-medium text-ink-soft">
                 {t('admin.matchingConfig.requireGrn', 'Require a Goods Receipt Note (GRN) for matching')}
               </span>
             </label>
 
             {formError && (
-              <p className="flex items-center gap-1.5 text-sm text-red-600">
+              <p className="flex items-center gap-1.5 text-sm text-crit">
                 <AlertCircle className="w-4 h-4 shrink-0" /> {formError}
               </p>
             )}
@@ -143,24 +144,24 @@ export default function AdminMatchingConfigPage() {
               <button
                 onClick={submit}
                 disabled={saveMutation.isPending}
-                className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground rounded-[4px] px-4 py-2 text-sm font-medium disabled:opacity-50"
               >
                 {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 {t('admin.matchingConfig.save', 'Save configuration')}
               </button>
               {saved && (
-                <span className="inline-flex items-center gap-1 text-sm text-green-600">
+                <span className="inline-flex items-center gap-1 text-sm text-pos">
                   <CheckCircle className="w-4 h-4" /> {t('admin.matchingConfig.saved', 'Saved')}
                 </span>
               )}
             </div>
 
             {config?.updatedAt && (
-              <p className="text-xs text-gray-400 border-t pt-3">
+              <p className="text-xs text-ink-faint border-t border-hairline pt-3">
                 {t('admin.matchingConfig.lastUpdated', 'Last updated')}: {formatDateTime(config.updatedAt)}
               </p>
             )}
-          </div>
+          </Panel>
         )}
       </div>
     </PageRoleGuard>
