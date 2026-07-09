@@ -20,7 +20,7 @@ export function ViewerToolbar(props: ViewerToolbarProps) {
   const { t } = useTranslation()
   const { zoom, canZoomIn, canZoomOut, pageNumber, numPages } = props
   const multiPage = (numPages ?? 0) > 1
-  const btn = 'p-1.5 rounded text-ink-soft hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed'
+  const btn = 'p-1.5 rounded text-ink-soft hover:bg-ground disabled:opacity-40 disabled:cursor-not-allowed'
 
   return (
     <div className="flex items-center gap-1 px-3 py-2 border-b bg-ground">

@@ -141,7 +141,7 @@ export default function ArchiveFolderTree({ selectedFolderId, onSelectFolder }: 
                 >
                   <div className="flex items-center gap-1.5 flex-1 min-w-0">
                     {hasChildren ? (
-                      <button onClick={e => toggleExpand(folder.id, e)} className="p-0.5 hover:bg-gray-200 rounded text-ink-faint">
+                      <button onClick={e => toggleExpand(folder.id, e)} className="p-0.5 hover:bg-ground rounded text-ink-faint">
                         {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                       </button>
                     ) : (
