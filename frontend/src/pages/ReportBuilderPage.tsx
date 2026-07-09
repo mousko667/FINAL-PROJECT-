@@ -74,7 +74,7 @@ export default function ReportBuilderPage() {
     document.body.appendChild(a); a.click(); a.remove(); window.URL.revokeObjectURL(url)
   }
 
-  const inputCls = 'w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
+  const inputCls = 'w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-primary/30'
 
   return (
     <PageRoleGuard allowedRoles={['ROLE_DAF', 'ROLE_ASSISTANT_COMPTABLE']}>
@@ -83,17 +83,17 @@ export default function ReportBuilderPage() {
           <div className="flex items-center gap-3">
             <FileBarChart className="w-6 h-6 text-primary" />
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{t('reportBuilder.title', 'Constructeur de rapports')}</h1>
-              <p className="text-sm text-gray-500 mt-1">{t('reportBuilder.subtitle', 'Définissez des rapports personnalisés, exécutez-les à la demande ou planifiez leur envoi par e-mail.')}</p>
+              <h1 className="text-2xl font-bold text-ink">{t('reportBuilder.title', 'Constructeur de rapports')}</h1>
+              <p className="text-sm text-ink-soft mt-1">{t('reportBuilder.subtitle', 'Définissez des rapports personnalisés, exécutez-les à la demande ou planifiez leur envoi par e-mail.')}</p>
             </div>
           </div>
           <button onClick={downloadExecSummary}
-            className="inline-flex items-center gap-2 border px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+            className="inline-flex items-center gap-2 border border-hairline px-3 py-2 rounded-[4px] text-sm font-medium text-ink-soft hover:bg-ground">
             <FileText className="w-4 h-4" /> {t('reportBuilder.execSummary', 'Résumé exécutif (PDF)')}
           </button>
         </div>
 
-        <form onSubmit={e => { e.preventDefault(); if (name.trim()) create.mutate() }} className="bg-white rounded-xl border p-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+        <form onSubmit={e => { e.preventDefault(); if (name.trim()) create.mutate() }} className="bg-surface rounded-[4px] border p-5 grid grid-cols-1 md:grid-cols-2 gap-3">
           <input value={name} onChange={e => setName(e.target.value)} placeholder={t('reportBuilder.name', 'Nom du rapport')} className={`${inputCls} md:col-span-2`} />
           <select value={dataset} onChange={e => setDataset(e.target.value)} className={inputCls}>
             {DATASETS.map(d => <option key={d} value={d}>{t(`reportBuilder.dataset.${d}`, d)}</option>)}
@@ -107,43 +107,43 @@ export default function ReportBuilderPage() {
           <input value={recipients} onChange={e => setRecipients(e.target.value)} placeholder={t('reportBuilder.recipients', 'Destinataires (e-mails séparés par des virgules)')} className={inputCls} />
           <div className="md:col-span-2">
             <button type="submit" disabled={!name.trim() || create.isPending}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
               {create.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
               {t('reportBuilder.create', 'Créer le rapport')}
             </button>
           </div>
         </form>
 
-        <div className="bg-white rounded-xl border overflow-hidden">
+        <div className="bg-surface rounded-[4px] border overflow-hidden">
           {isLoading ? (
-            <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>
+            <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-ink-faint" /></div>
           ) : defs.length === 0 ? (
-            <p className="text-sm text-gray-400 py-8 text-center">{t('reportBuilder.none', 'Aucun rapport défini.')}</p>
+            <p className="text-sm text-ink-faint py-8 text-center">{t('reportBuilder.none', 'Aucun rapport défini.')}</p>
           ) : (
             <table className="w-full text-sm">
-              <thead><tr className="border-b text-left text-gray-500">
+              <thead><tr className="border-b border-hairline text-left text-ink-faint text-xs uppercase tracking-wide">
                 <th className="px-4 py-2.5 font-medium">{t('reportBuilder.name', 'Nom')}</th>
                 <th className="px-4 py-2.5 font-medium">{t('reportBuilder.datasetCol', 'Données')}</th>
                 <th className="px-4 py-2.5 font-medium">{t('reportBuilder.format', 'Format')}</th>
                 <th className="px-4 py-2.5 font-medium">{t('reportBuilder.frequencyCol', 'Fréquence')}</th>
-                <th className="px-4 py-2.5 font-medium text-right">Actions</th>
+                <th className="px-4 py-2.5 font-medium text-right">{t('app.actions')}</th>
               </tr></thead>
               <tbody>
                 {defs.map(d => (
-                  <tr key={d.id} className="border-b last:border-0">
-                    <td className="px-4 py-2.5 font-medium text-gray-900">{d.name}</td>
+                  <tr key={d.id} className="border-b border-hairline last:border-0">
+                    <td className="px-4 py-2.5 font-medium text-ink">{d.name}</td>
                     <td className="px-4 py-2.5">{t(`reportBuilder.dataset.${d.dataset}`, d.dataset)}</td>
                     <td className="px-4 py-2.5">{d.format}</td>
                     <td className="px-4 py-2.5">{t(`reportBuilder.frequency.${d.frequency}`, d.frequency)}</td>
                     <td className="px-4 py-2.5 text-right">
                       <div className="flex items-center gap-3 justify-end">
-                        <button onClick={() => openPreview(d)} disabled={previewing === d.id} className="text-gray-500 hover:text-primary" title={t('reportBuilder.preview', 'Aperçu')}>
+                        <button onClick={() => openPreview(d)} disabled={previewing === d.id} className="text-ink-soft hover:text-primary" title={t('reportBuilder.preview', 'Aperçu')}>
                           {previewing === d.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
                         </button>
                         <button onClick={() => runReport(d)} disabled={running === d.id} className="text-primary hover:text-primary/80" title={t('reportBuilder.run', 'Exécuter')}>
                           {running === d.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
                         </button>
-                        <button onClick={() => setDeleteTargetId(d.id)} className="text-gray-400 hover:text-red-500" title={t('app.delete', 'Supprimer')}>
+                        <button onClick={() => setDeleteTargetId(d.id)} className="text-ink-faint hover:text-crit" title={t('app.delete', 'Supprimer')}>
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -158,43 +158,43 @@ export default function ReportBuilderPage() {
         {preview && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
                onClick={() => setPreview(null)}>
-            <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[80vh] flex flex-col"
+            <div className="bg-surface rounded-[4px] shadow-lg border border-hairline max-w-3xl w-full max-h-[80vh] flex flex-col"
                  onClick={e => e.stopPropagation()}>
-              <div className="flex items-center justify-between px-5 py-4 border-b">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-hairline">
                 <div>
-                  <h2 className="font-semibold text-gray-900">{preview.def.name}</h2>
-                  <span className="text-xs text-gray-500">{preview.data.dataset} · {preview.data.format}</span>
+                  <h2 className="font-semibold text-ink">{preview.def.name}</h2>
+                  <span className="text-xs text-ink-soft">{preview.data.dataset} · {preview.data.format}</span>
                 </div>
-                <button onClick={() => setPreview(null)} className="text-gray-400 hover:text-gray-600" title={t('app.close', 'Fermer')}>
+                <button onClick={() => setPreview(null)} className="text-ink-faint hover:text-ink-soft" title={t('app.close', 'Fermer')}>
                   <X className="w-5 h-5" />
                 </button>
               </div>
               <div className="overflow-auto p-5 flex-1">
                 {preview.data.rows.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-8">{t('reportBuilder.previewEmpty', 'Aucune donnée à afficher.')}</p>
+                  <p className="text-sm text-ink-faint text-center py-8">{t('reportBuilder.previewEmpty', 'Aucune donnée à afficher.')}</p>
                 ) : (
                   <table className="w-full text-sm border-collapse">
-                    <thead><tr className="border-b text-left text-gray-500">
+                    <thead><tr className="border-b border-hairline text-left text-ink-faint text-xs uppercase tracking-wide">
                       {preview.data.columns.map((c, i) => <th key={i} className="px-3 py-2 font-medium whitespace-nowrap">{c}</th>)}
                     </tr></thead>
                     <tbody>
                       {preview.data.rows.map((row, ri) => (
-                        <tr key={ri} className="border-b last:border-0">
-                          {row.map((cell, ci) => <td key={ci} className="px-3 py-2 text-gray-700 whitespace-nowrap">{cell}</td>)}
+                        <tr key={ri} className="border-b border-hairline last:border-0">
+                          {row.map((cell, ci) => <td key={ci} className="px-3 py-2 text-ink-soft whitespace-nowrap">{cell}</td>)}
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 )}
               </div>
-              <div className="flex items-center justify-between px-5 py-4 border-t">
-                <span className="text-xs text-gray-500">
+              <div className="flex items-center justify-between px-5 py-4 border-t border-hairline">
+                <span className="text-xs text-ink-soft">
                   {t('reportBuilder.previewShowing', { shown: preview.data.rows.length, total: preview.data.totalRows })}
                 </span>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => setPreview(null)} className="px-3 py-2 text-sm border rounded-lg hover:bg-gray-50">{t('app.close', 'Fermer')}</button>
+                  <button onClick={() => setPreview(null)} className="px-3 py-2 text-sm border border-hairline rounded-[4px] hover:bg-ground">{t('app.close', 'Fermer')}</button>
                   <button onClick={() => runReport(preview.def)} disabled={running === preview.def.id}
-                    className="inline-flex items-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+                    className="inline-flex items-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
                     {running === preview.def.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                     {t('reportBuilder.download', 'Télécharger')}
                   </button>

@@ -466,7 +466,9 @@
     "avgDays": "Moy. jours",
     "invoiceCount": "Factures",
     "daysOverdue": "Jours de retard",
-    "amountDue": "Montant dû (XOF)"
+    "amountDue": "Montant dû (XOF)",
+    "dataExports": "Exports de données",
+    "noBottlenecks": "Aucun dépassement de SLA détecté — toutes les approbations respectent le SLA de 3 jours."
   },
   "role": {
     "admin": "Administrateur",

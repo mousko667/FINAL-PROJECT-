@@ -466,7 +466,9 @@
     "avgDays": "Avg. Days",
     "invoiceCount": "Invoices",
     "daysOverdue": "Days Overdue",
-    "amountDue": "Amount Due (XOF)"
+    "amountDue": "Amount Due (XOF)",
+    "dataExports": "Data Exports",
+    "noBottlenecks": "No SLA breaches detected — all approvals are within the 3-day SLA."
   },
   "role": {
     "admin": "Administrator",
