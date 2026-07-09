@@ -83,19 +83,19 @@ function MfaSection({ profile }: { profile: StaffProfile }) {
   })
 
   return (
-    <div className="bg-white border rounded-xl p-5 space-y-4">
+    <div className="bg-surface border border-hairline rounded-[4px] p-5 space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Shield className="w-5 h-5 text-gray-600" />
-          <h2 className="font-semibold text-gray-900">{t('mfa.title', 'Authentification à deux facteurs (MFA)')}</h2>
+          <Shield className="w-5 h-5 text-ink-soft" />
+          <h2 className="font-semibold text-ink">{t('mfa.title', 'Authentification à deux facteurs (MFA)')}</h2>
         </div>
         {isMfaActive ? (
-          <span className="flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-100 px-2.5 py-1 rounded-full">
+          <span className="flex items-center gap-1.5 text-xs font-semibold text-pos bg-pos-bg px-2.5 py-1 rounded-full">
             <ShieldCheck className="w-3.5 h-3.5" />
             {t('mfa.active', 'Activé')}
           </span>
         ) : (
-          <span className="flex items-center gap-1.5 text-xs font-semibold text-red-600 bg-red-50 px-2.5 py-1 rounded-full">
+          <span className="flex items-center gap-1.5 text-xs font-semibold text-crit bg-crit-bg px-2.5 py-1 rounded-full">
             <ShieldOff className="w-3.5 h-3.5" />
             {isMfaRequired
               ? t('mfa.requiredNotConfigured', 'Requis — non configuré')
@@ -105,20 +105,20 @@ function MfaSection({ profile }: { profile: StaffProfile }) {
       </div>
 
       {isMfaRequired && !isMfaActive && (
-        <div className="flex items-start gap-2 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
-          <ShieldOff className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
+        <div className="flex items-start gap-2 text-sm text-warn bg-warn-bg border border-warn/30 rounded-[4px] px-3 py-2.5">
+          <ShieldOff className="w-4 h-4 shrink-0 mt-0.5 text-warn" />
           {t('mfa.mandatory', 'La MFA est obligatoire pour votre rôle. Vous devez la configurer avant votre prochaine connexion.')}
         </div>
       )}
 
       {isMfaActive && !setupData && (
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-ink-soft">
           {t('mfa.configuredDesc', 'Votre compte est protégé par un code TOTP généré par votre application d\'authentification (Google Authenticator, Authy…).')}
         </p>
       )}
 
       {confirmSuccess && (
-        <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2.5">
+        <div className="flex items-center gap-2 text-sm text-pos bg-pos-bg border border-pos/30 rounded-[4px] px-3 py-2.5">
           <CheckCircle className="w-4 h-4 shrink-0" />
           {t('mfa.confirmed', 'MFA activée avec succès ! Elle sera requise à votre prochaine connexion.')}
         </div>
@@ -127,14 +127,14 @@ function MfaSection({ profile }: { profile: StaffProfile }) {
       {/* Step 1 — Generate QR code */}
       {!isMfaActive && !setupData && !confirmSuccess && (
         <div className="space-y-3">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-ink-soft">
             {t('mfa.setupDesc', 'Scannez le QR code avec Google Authenticator, Authy ou toute application TOTP compatible.')}
           </p>
           <button
             type="button"
             onClick={() => setupMutation.mutate()}
             disabled={setupMutation.isPending}
-            className="flex items-center gap-2 px-4 py-2 bg-oct-navy text-white text-sm font-medium rounded-lg hover:bg-oct-navy-light transition-colors disabled:opacity-60"
+            className="flex items-center gap-2 px-4 py-2 bg-oct-navy text-white text-sm font-medium rounded-[4px] hover:bg-oct-navy-light transition-colors disabled:opacity-60"
           >
             {setupMutation.isPending
               ? <Loader2 className="w-4 h-4 animate-spin" />
@@ -152,7 +152,7 @@ function MfaSection({ profile }: { profile: StaffProfile }) {
                 never be sent to a third-party QR service. */}
             <div className="flex-shrink-0">
               <div
-                className="border rounded-lg p-2 bg-white inline-block"
+                className="border border-hairline rounded-[4px] p-2 bg-surface inline-block"
                 role="img"
                 aria-label={t('mfa.qrCodeAlt', 'QR code for MFA setup — scan with an authenticator app')}
               >
@@ -161,23 +161,23 @@ function MfaSection({ profile }: { profile: StaffProfile }) {
             </div>
             <div className="space-y-3 flex-1 min-w-0">
               <div>
-                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                <p className="text-xs font-semibold text-ink-soft uppercase tracking-wide mb-1">
                   {t('mfa.scanQr', '1. Scannez le QR code')}
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-ink-soft">
                   {t('mfa.scanQrDesc', 'Ouvrez votre application d\'authentification et scannez ce code.')}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                <p className="text-xs font-semibold text-ink-soft uppercase tracking-wide mb-1">
                   {t('mfa.manualEntry', 'Ou saisissez manuellement la clé :')}
                 </p>
-                <code className="text-xs bg-gray-100 border rounded px-2 py-1 font-mono break-all select-all">
+                <code className="text-xs bg-ground border border-hairline rounded px-2 py-1 num break-all select-all">
                   {setupData.secret}
                 </code>
               </div>
               <div>
-                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                <p className="text-xs font-semibold text-ink-soft uppercase tracking-wide mb-1">
                   {t('mfa.enterCode', '2. Entrez le code à 6 chiffres')}
                 </p>
                 <div className="flex gap-2 items-center">
@@ -191,27 +191,27 @@ function MfaSection({ profile }: { profile: StaffProfile }) {
                       setConfirmError('')
                     }}
                     placeholder="000000"
-                    className="w-32 border rounded-lg px-3 py-2 text-sm font-mono text-center tracking-widest focus:outline-none focus:ring-2 focus:ring-oct-navy/30"
+                    className="w-32 border border-hairline rounded-[4px] px-3 py-2 text-sm num text-center tracking-widest focus:outline-none focus:ring-2 focus:ring-oct-navy/30"
                     onKeyDown={e => e.key === 'Enter' && otpCode.length === 6 && confirmMutation.mutate()}
                   />
                   <button
                     type="button"
                     onClick={() => confirmMutation.mutate()}
                     disabled={otpCode.length !== 6 || confirmMutation.isPending}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-[4px] hover:bg-primary/90 transition-colors disabled:opacity-50"
                   >
                     {confirmMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
                     {t('mfa.confirm', 'Confirmer')}
                   </button>
                 </div>
-                {confirmError && <p className="text-xs text-red-600 mt-1">{confirmError}</p>}
+                {confirmError && <p className="text-xs text-crit mt-1">{confirmError}</p>}
               </div>
             </div>
           </div>
           <button
             type="button"
             onClick={() => { setSetupData(null); setOtpCode(''); setConfirmError('') }}
-            className="text-xs text-gray-400 hover:text-gray-600"
+            className="text-xs text-ink-faint hover:text-ink-soft"
           >
             {t('app.cancel')}
           </button>
@@ -224,7 +224,7 @@ function MfaSection({ profile }: { profile: StaffProfile }) {
           type="button"
           onClick={() => setupMutation.mutate()}
           disabled={setupMutation.isPending}
-          className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+          className="flex items-center gap-2 text-sm text-ink-soft hover:text-ink-soft transition-colors"
         >
           <QrCode className="w-4 h-4" />
           {t('mfa.reconfigure', 'Reconfigurer l\'application d\'authentification')}
@@ -282,66 +282,66 @@ export default function ProfilePage() {
   return (
     <form onSubmit={handleSubmit((values) => mutation.mutate(values))} className="max-w-4xl space-y-5 page-enter">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">{t('profile.title')}</h1>
-        <p className="text-sm text-gray-500">{t('profile.subtitle')}</p>
+        <h1 className="text-2xl font-bold text-ink">{t('profile.title')}</h1>
+        <p className="text-sm text-ink-soft">{t('profile.subtitle')}</p>
       </div>
 
       {mutation.isSuccess && (
-        <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+        <div className="flex items-center gap-2 text-sm text-pos bg-pos-bg border border-pos/30 rounded-[4px] px-4 py-3">
           <CheckCircle className="w-4 h-4 shrink-0" />
           {t('profile.saved')}
         </div>
       )}
 
       {/* Editable fields */}
-      <div className="bg-white border rounded-xl p-5 space-y-1">
-        <h2 className="font-semibold text-gray-800 mb-4">{t('profile.title')}</h2>
+      <div className="bg-surface border border-hairline rounded-[4px] p-5 space-y-1">
+        <h2 className="font-semibold text-ink mb-4">{t('profile.title')}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-ink-soft">
             {t('profile.username')}
             <input
               value={data?.username ?? ''}
               disabled
-              className="mt-1 w-full border rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500"
+              className="mt-1 w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-ground text-ink-soft"
             />
           </label>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-ink-soft">
             {t('profile.email')}
             <input
               {...register('email')}
-              className="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="mt-1 w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </label>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-ink-soft">
             {t('profile.firstName')}
             <input
               {...register('firstName')}
-              className="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="mt-1 w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </label>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-ink-soft">
             {t('profile.lastName')}
             <input
               {...register('lastName')}
-              className="mt-1 w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="mt-1 w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </label>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-ink-soft">
             {t('profile.preferredLanguage')}
             <select
               {...register('preferredLang')}
-              className="mt-1 w-full border rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="mt-1 w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
             >
               <option value="fr">{t('profile.french')}</option>
               <option value="en">{t('profile.english')}</option>
             </select>
           </label>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-ink-soft">
             {t('profile.employeeId')}
             <input
               value={data?.employeeId ?? '—'}
               disabled
-              className="mt-1 w-full border rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500"
+              className="mt-1 w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-ground text-ink-soft"
             />
           </label>
         </div>
@@ -349,25 +349,25 @@ export default function ProfilePage() {
 
       {/* Staff assignment — hidden for suppliers */}
       {!isSupplier && (
-        <div className="bg-white border rounded-xl p-5">
-          <h2 className="font-semibold text-gray-800 mb-4">{t('profile.staffAssignment', 'Affectation')}</h2>
+        <div className="bg-surface border border-hairline rounded-[4px] p-5">
+          <h2 className="font-semibold text-ink mb-4">{t('profile.staffAssignment', 'Affectation')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-ink-soft">
               {t('profile.department')}
               <input
                 value={departmentName}
                 disabled
-                className="mt-1 w-full border rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500"
+                className="mt-1 w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-ground text-ink-soft"
               />
             </label>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-ink-soft">
               {t('profile.approvalLimit')}
               <input
                 value={data?.approvalLimit != null
                   ? `${formatAmount(data.approvalLimit)} XOF`
                   : t('profile.approvalLimitNone')}
                 disabled
-                className="mt-1 w-full border rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500"
+                className="mt-1 w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-ground text-ink-soft"
               />
             </label>
           </div>
@@ -375,8 +375,8 @@ export default function ProfilePage() {
       )}
 
       {/* Roles */}
-      <div className="bg-white border rounded-xl p-5">
-        <h2 className="font-semibold text-gray-900 mb-3">{t('profile.roles')}</h2>
+      <div className="bg-surface border border-hairline rounded-[4px] p-5">
+        <h2 className="font-semibold text-ink mb-3">{t('profile.roles')}</h2>
         <div className="flex flex-wrap gap-2">
           {(data?.roles ?? []).map((role) => (
             <span
@@ -396,7 +396,7 @@ export default function ProfilePage() {
         <button
           type="submit"
           disabled={mutation.isPending}
-          className="bg-oct-navy text-white rounded-lg px-5 py-2 text-sm font-medium hover:bg-oct-navy-light disabled:opacity-60 transition-colors"
+          className="bg-oct-navy text-white rounded-[4px] px-5 py-2 text-sm font-medium hover:bg-oct-navy-light disabled:opacity-60 transition-colors"
         >
           {mutation.isPending ? t('app.loading') : t('profile.save')}
         </button>

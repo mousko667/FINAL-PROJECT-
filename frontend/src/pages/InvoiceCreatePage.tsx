@@ -156,39 +156,39 @@ export default function InvoiceCreatePage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">{t('invoice.new', 'New Invoice')}</h1>
+      <h1 className="text-2xl font-bold text-ink">{t('invoice.new', 'New Invoice')}</h1>
 
       {/* Step indicators */}
       <div className="flex gap-2">
         {STEPS.map((s, i) => (
           <div key={s} className="flex items-center gap-2">
             <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold
-              ${step === s ? 'bg-primary text-white' : STEPS.indexOf(step) > i ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'}`}>
+              ${step === s ? 'bg-primary text-white' : STEPS.indexOf(step) > i ? 'bg-pos text-white' : 'bg-ground text-ink-soft'}`}>
               {i + 1}
             </div>
             <span className={`text-sm ${step === s ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
               {stepLabels[s]}
             </span>
-            {i < STEPS.length - 1 && <ChevronRight className="w-4 h-4 text-gray-300 mx-1" />}
+            {i < STEPS.length - 1 && <ChevronRight className="w-4 h-4 text-ink-faint mx-1" />}
           </div>
         ))}
       </div>
 
       {/* ── STEP 1: Details ── */}
       {step === 'details' && (
-        <form onSubmit={handleSubmit(onDetailsSubmit)} className="bg-white rounded-xl border p-6 space-y-4">
+        <form onSubmit={handleSubmit(onDetailsSubmit)} className="bg-surface rounded-[4px] border border-hairline p-6 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             {/* Supplier dropdown */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-ink-soft mb-1">
                 {t('invoice.supplier', 'Supplier')} *
               </label>
               <Controller
                 name="supplierId"
                 control={control}
                 render={({ field }) => (
-                  <select {...field} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  <select {...field} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
                     <option value="">{t('invoice.selectSupplier', '— Select supplier —')}</option>
                     {(suppliers ?? []).map((s) => (
                       <option key={s.id} value={s.id}>{s.companyName} ({s.taxId})</option>
@@ -196,20 +196,20 @@ export default function InvoiceCreatePage() {
                   </select>
                 )}
               />
-              {errors.supplierId && <p className="text-xs text-red-500 mt-1">{errors.supplierId.message}</p>}
+              {errors.supplierId && <p className="text-xs text-crit mt-1">{errors.supplierId.message}</p>}
             </div>
 
             {/* PO Reference — only shown when supplier selected */}
             {watchedSupplierId && (
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-ink-soft mb-1">
                   {t('invoice.purchaseOrder', 'Purchase Order (optional)')}
                 </label>
                 <Controller
                   name="purchaseOrderId"
                   control={control}
                   render={({ field }) => (
-                    <select {...field} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+                    <select {...field} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
                       <option value="">{t('invoice.noPO', '— No linked PO —')}</option>
                       {(supplierPOs ?? []).map((po) => (
                         <option key={po.id} value={po.id}>
@@ -219,7 +219,7 @@ export default function InvoiceCreatePage() {
                     </select>
                   )}
                 />
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-ink-faint mt-1">
                   {t('invoice.poHint', 'Linking a PO enables automatic three-way matching on submission.')}
                 </p>
               </div>
@@ -227,14 +227,14 @@ export default function InvoiceCreatePage() {
 
             {/* Department */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-ink-soft mb-1">
                 {t('invoice.department', 'Department')} *
               </label>
               <Controller
                 name="departmentId"
                 control={control}
                 render={({ field }) => (
-                  <select {...field} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  <select {...field} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
                     <option value="">{t('invoice.selectDept', '— Select department —')}</option>
                     {(departments ?? []).map((d) => (
                       <option key={d.id} value={d.id}>{i18n.language === 'fr' ? d.nameFr : d.nameEn} ({d.code})</option>
@@ -242,52 +242,52 @@ export default function InvoiceCreatePage() {
                   </select>
                 )}
               />
-              {errors.departmentId && <p className="text-xs text-red-500 mt-1">{errors.departmentId.message}</p>}
+              {errors.departmentId && <p className="text-xs text-crit mt-1">{errors.departmentId.message}</p>}
             </div>
 
             {/* Amount */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoice.amount', 'Amount')} *</label>
-              <input type="number" step="0.01" {...register('amount')} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-              {errors.amount && <p className="text-xs text-red-500 mt-1">{t('validation.positiveNumber')}</p>}
+              <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.amount', 'Amount')} *</label>
+              <input type="number" step="0.01" {...register('amount')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              {errors.amount && <p className="text-xs text-crit mt-1">{t('validation.positiveNumber')}</p>}
             </div>
 
             {/* Currency */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoice.currency', 'Currency')} *</label>
-              <select {...register('currency')} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+              <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.currency', 'Currency')} *</label>
+              <select {...register('currency')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
                 <option value="XOF">XOF (Franc CFA)</option>
               </select>
             </div>
 
             {/* Issue Date */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoice.issueDate', 'Issue Date')} *</label>
-              <input type="date" {...register('issueDate')} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.issueDate', 'Issue Date')} *</label>
+              <input type="date" {...register('issueDate')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
             </div>
 
             {/* Due Date */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoice.dueDate', 'Due Date')} *</label>
-              <input type="date" {...register('dueDate')} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.dueDate', 'Due Date')} *</label>
+              <input type="date" {...register('dueDate')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
             </div>
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoice.description', 'Description')}</label>
-            <textarea {...register('description')} rows={3} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+            <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.description', 'Description')}</label>
+            <textarea {...register('description')} rows={3} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
           </div>
 
           {duplicateCheck?.duplicate && (
-            <div role="status" className="flex items-start gap-2 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3">
-              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-amber-500" />
+            <div role="status" className="flex items-start gap-2 text-sm text-warn bg-warn-bg border border-warn/30 rounded-[4px] p-3">
+              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warn" />
               <span>{t('invoice.duplicateWarning', { count: duplicateCheck.count })}</span>
             </div>
           )}
 
           <div className="flex justify-end">
-            <button type="submit" className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90">
+            <button type="submit" className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90">
               {t('pagination.next', 'Next')} <ChevronRight className="w-4 h-4" />
             </button>
           </div>
@@ -297,24 +297,24 @@ export default function InvoiceCreatePage() {
       {/* ── STEP 2: Line Items ── */}
       {step === 'lineItems' && (
         <div className="space-y-4">
-          <div className="bg-white rounded-xl border p-6 space-y-4">
-            <h2 className="font-semibold text-gray-800">{t('invoice.lineItems', 'Line Items')}</h2>
-            <p className="text-xs text-gray-400">{t('invoice.lineItemsHint', 'Add invoice line items. These are compared against the PO during matching.')}</p>
+          <div className="bg-surface rounded-[4px] border border-hairline p-6 space-y-4">
+            <h2 className="font-semibold text-ink">{t('invoice.lineItems', 'Line Items')}</h2>
+            <p className="text-xs text-ink-faint">{t('invoice.lineItemsHint', 'Add invoice line items. These are compared against the PO during matching.')}</p>
             <form onSubmit={liForm.handleSubmit(addLineItem)} className="grid grid-cols-4 gap-3 items-end">
               <div className="col-span-2">
-                <label className="block text-xs font-medium text-gray-600 mb-1">{t('invoice.description', 'Description')}</label>
-                <input {...liForm.register('description')} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none" />
+                <label className="block text-xs font-medium text-ink-soft mb-1">{t('invoice.description', 'Description')}</label>
+                <input {...liForm.register('description')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">{t('invoice.quantity', 'Qty')}</label>
-                <input type="number" step="0.001" {...liForm.register('quantity')} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none" />
+                <label className="block text-xs font-medium text-ink-soft mb-1">{t('invoice.quantity', 'Qty')}</label>
+                <input type="number" step="0.001" {...liForm.register('quantity')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">{t('invoice.unitPrice', 'Unit Price')}</label>
-                <input type="number" step="0.01" {...liForm.register('unitPrice')} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none" />
+                <label className="block text-xs font-medium text-ink-soft mb-1">{t('invoice.unitPrice', 'Unit Price')}</label>
+                <input type="number" step="0.01" {...liForm.register('unitPrice')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none" />
               </div>
               <div className="col-span-4 flex justify-end">
-                <button type="submit" className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 text-white rounded-lg text-sm hover:bg-gray-700">
+                <button type="submit" className="flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded-[4px] text-sm hover:bg-primary/90">
                   <Plus className="w-4 h-4" /> {t('invoice.addLine', 'Add Line')}
                 </button>
               </div>
@@ -322,7 +322,7 @@ export default function InvoiceCreatePage() {
 
             {lineItems.length > 0 && (
               <table className="w-full text-sm mt-2">
-                <thead><tr className="border-b text-left text-gray-500 text-xs">
+                <thead><tr className="border-b text-left text-ink-soft text-xs">
                   <th className="py-2">{t('invoice.description', 'Description')}</th>
                   <th className="text-right">{t('invoice.quantity', 'Qty')}</th>
                   <th className="text-right">{t('invoice.unitPrice', 'Unit Price')}</th>
@@ -334,16 +334,16 @@ export default function InvoiceCreatePage() {
                     <tr key={i}>
                       <td className="py-2">{li.description}</td>
                       <td className="text-right">{li.quantity}</td>
-                      <td className="text-right font-mono">{li.unitPrice.toFixed(2)}</td>
-                      <td className="text-right font-mono font-medium">{li.totalPrice.toFixed(2)}</td>
+                      <td className="text-right num">{li.unitPrice.toFixed(2)}</td>
+                      <td className="text-right num font-medium">{li.totalPrice.toFixed(2)}</td>
                       <td className="pl-2">
-                        <button onClick={() => removeLineItem(i)} className="text-red-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                        <button onClick={() => removeLineItem(i)} className="text-crit hover:text-crit"><Trash2 className="w-4 h-4" /></button>
                       </td>
                     </tr>
                   ))}
                   <tr className="font-semibold border-t">
                     <td colSpan={3} className="text-right py-2">Total</td>
-                    <td className="text-right font-mono">{total.toFixed(2)}</td>
+                    <td className="text-right num">{total.toFixed(2)}</td>
                     <td></td>
                   </tr>
                 </tbody>
@@ -351,10 +351,10 @@ export default function InvoiceCreatePage() {
             )}
           </div>
           <div className="flex justify-between">
-            <button onClick={() => setStep('details')} className="flex items-center gap-2 px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">
+            <button onClick={() => setStep('details')} className="flex items-center gap-2 px-4 py-2 border border-hairline rounded-[4px] text-sm hover:bg-ground">
               <ChevronLeft className="w-4 h-4" /> {t('pagination.previous', 'Previous')}
             </button>
-            <button onClick={() => setStep('documents')} className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90">
+            <button onClick={() => setStep('documents')} className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90">
               {t('pagination.next', 'Next')} <ChevronRight className="w-4 h-4" />
             </button>
           </div>
@@ -364,15 +364,15 @@ export default function InvoiceCreatePage() {
       {/* ── STEP 3: Documents ── */}
       {step === 'documents' && (
         <div className="space-y-4">
-          <div className="bg-white rounded-xl border p-6 space-y-4">
-            <h2 className="font-semibold text-gray-800">{t('invoice.documents', 'Documents')}</h2>
-            <label htmlFor="document-upload" className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
+          <div className="bg-surface rounded-[4px] border border-hairline p-6 space-y-4">
+            <h2 className="font-semibold text-ink">{t('invoice.documents', 'Documents')}</h2>
+            <label htmlFor="document-upload" className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-hairline-strong rounded-[4px] cursor-pointer hover:bg-ground transition-colors">
               <div className="text-center">
-                <svg className="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-10 h-10 text-ink-faint mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6h.1a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
                 <p className="text-sm text-muted-foreground">{t('invoice.dropFiles', 'Drop files or click to select')}</p>
-                <p className="text-xs text-gray-400 mt-1">PDF, PNG, JPG, XLSX (max 10 MB)</p>
+                <p className="text-xs text-ink-faint mt-1">PDF, PNG, JPG, XLSX (max 10 MB)</p>
               </div>
               <input id="document-upload" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.xlsx,.xls" className="hidden"
                 onChange={(e) => { if (e.target.files) setFiles((prev) => [...prev, ...Array.from(e.target.files!)]) }} />
@@ -380,11 +380,11 @@ export default function InvoiceCreatePage() {
             {files.length > 0 && (
               <ul className="space-y-1.5">
                 {files.map((f, i) => (
-                  <li key={i} className="flex items-center justify-between text-sm px-3 py-2 bg-gray-50 rounded-lg border">
-                    <span className="font-medium text-gray-700 truncate">{f.name}</span>
+                  <li key={i} className="flex items-center justify-between text-sm px-3 py-2 bg-ground rounded-[4px] border border-hairline">
+                    <span className="font-medium text-ink-soft truncate">{f.name}</span>
                     <div className="flex items-center gap-2 ml-2 shrink-0">
                       <span className="text-xs text-muted-foreground">{(f.size / 1024).toFixed(1)} KB</span>
-                      <button onClick={() => setFiles((p) => p.filter((_, j) => j !== i))} className="text-red-400 hover:text-red-600"><Trash2 className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => setFiles((p) => p.filter((_, j) => j !== i))} className="text-crit hover:text-crit"><Trash2 className="w-3.5 h-3.5" /></button>
                     </div>
                   </li>
                 ))}
@@ -393,17 +393,17 @@ export default function InvoiceCreatePage() {
           </div>
 
           {createMutation.isError && (
-            <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">
+            <div className="text-sm text-crit bg-crit-bg p-3 rounded-[4px] border border-crit/30">
               {(createMutation.error as any)?.response?.data?.message ?? t('app.error', 'An error occurred. Check that all required fields are filled.')}
             </div>
           )}
 
           <div className="flex justify-between">
-            <button onClick={() => setStep('lineItems')} className="flex items-center gap-2 px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">
+            <button onClick={() => setStep('lineItems')} className="flex items-center gap-2 px-4 py-2 border border-hairline rounded-[4px] text-sm hover:bg-ground">
               <ChevronLeft className="w-4 h-4" /> {t('pagination.previous', 'Previous')}
             </button>
             <button onClick={() => createMutation.mutate()} disabled={createMutation.isPending}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-60">
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90 disabled:opacity-60">
               {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               {t('invoice.createDraft', 'Create Draft')}
             </button>

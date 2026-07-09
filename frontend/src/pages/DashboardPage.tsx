@@ -302,7 +302,7 @@ export default function DashboardPage() {
         </div>
         {isAA && (
           <Link to="/invoices/new"
-            className="flex items-center gap-2 px-4 py-2 bg-oct-navy text-white text-sm font-medium rounded-lg hover:bg-oct-navy-light transition-colors">
+            className="flex items-center gap-2 px-4 py-2 bg-oct-navy text-white text-sm font-medium rounded-[4px] hover:bg-oct-navy-light transition-colors">
             <Plus className="w-4 h-4" />
             {t('breadcrumb.newInvoice')}
           </Link>

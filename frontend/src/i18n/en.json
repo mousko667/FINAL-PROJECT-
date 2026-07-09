@@ -31,7 +31,9 @@
     "download": "Download",
     "preview": "Preview",
     "active": "Active",
-    "inactive": "Inactive"
+    "inactive": "Inactive",
+    "pageNotFound": "Page not found",
+    "backHome": "Back to home"
   },
   "auth": {
     "login": "Login",

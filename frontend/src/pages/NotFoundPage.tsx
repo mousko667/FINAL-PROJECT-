@@ -6,10 +6,10 @@ export default function NotFoundPage() {
   const navigate = useNavigate()
   return (
     <div className="min-h-screen flex flex-col items-center justify-center">
-      <h1 className="text-6xl font-bold text-gray-200 mb-4">404</h1>
-      <p className="text-gray-500 mb-6">{t('app.error')}</p>
+      <h1 className="text-6xl font-bold num text-hairline-strong mb-4">404</h1>
+      <p className="text-ink-soft mb-6">{t('app.pageNotFound')}</p>
       <button onClick={() => navigate('/')} className="text-primary underline text-sm">
-        {t('app.retry')}
+        {t('app.backHome')}
       </button>
     </div>
   )

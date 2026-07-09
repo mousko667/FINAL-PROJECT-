@@ -31,7 +31,9 @@
     "download": "Télécharger",
     "preview": "Aperçu",
     "active": "Actif",
-    "inactive": "Inactif"
+    "inactive": "Inactif",
+    "pageNotFound": "Page introuvable",
+    "backHome": "Retour à l'accueil"
   },
   "auth": {
     "login": "Connexion",
