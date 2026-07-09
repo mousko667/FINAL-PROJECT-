@@ -1074,7 +1074,10 @@
         "TAX_CERTIFICATE": "Tax Certificate",
         "CONTRACT": "Contract",
         "OTHER": "Other Document"
-      }
+      },
+      "uploading": "Uploading…",
+      "uploadError": "Failed to upload document. Please try again.",
+      "accepted": "Accepted: PDF, Word, Excel, JPEG, PNG, TIFF. Max 10 MB."
     },
     "profile": {
       "title": "My Company Profile",
@@ -1085,7 +1088,12 @@
       "address": "Address",
       "bankDetails": "Bank Account Details",
       "bankDetailsHint": "Stored encrypted. Enter your full bank account details for payment processing.",
-      "save": "Update Profile"
+      "save": "Update Profile",
+      "updated": "Profile updated successfully.",
+      "companyInfo": "Company Information",
+      "taxIdLocked": "Tax ID cannot be changed.",
+      "bankPlaceholder": "IBAN, Bank name, Branch code, SWIFT/BIC…",
+      "bankKeepHint": "Leave blank to keep the current bank details unchanged."
     },
     "status": {
       "PENDING_VERIFICATION": "Pending Verification",

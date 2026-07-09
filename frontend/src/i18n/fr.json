@@ -1074,7 +1074,10 @@
         "TAX_CERTIFICATE": "Attestation fiscale",
         "CONTRACT": "Contrat",
         "OTHER": "Autre document"
-      }
+      },
+      "uploading": "Téléversement…",
+      "uploadError": "Échec du téléversement du document. Veuillez réessayer.",
+      "accepted": "Formats acceptés : PDF, Word, Excel, JPEG, PNG, TIFF. Max 10 Mo."
     },
     "profile": {
       "title": "Mon profil entreprise",
@@ -1085,7 +1088,12 @@
       "address": "Adresse",
       "bankDetails": "Coordonnées bancaires",
       "bankDetailsHint": "Stocké de manière chiffrée. Saisissez vos coordonnées bancaires complètes pour le traitement des paiements.",
-      "save": "Mettre à jour le profil"
+      "save": "Mettre à jour le profil",
+      "updated": "Profil mis à jour avec succès.",
+      "companyInfo": "Informations de l'entreprise",
+      "taxIdLocked": "Le NIF ne peut pas être modifié.",
+      "bankPlaceholder": "IBAN, nom de la banque, code agence, SWIFT/BIC…",
+      "bankKeepHint": "Laissez vide pour conserver les coordonnées bancaires actuelles."
     },
     "status": {
       "PENDING_VERIFICATION": "En attente de vérification",

@@ -162,11 +162,11 @@ export default function SupplierInvoiceSubmitPage() {
     <form onSubmit={handleSubmit((d) => submitMutation.mutate(d))} className="space-y-5">
 
       {ocrResult && stage === 'confirm' && (
-        <div className="flex items-start gap-3 bg-green-50 border border-green-200 rounded-lg p-4">
-          <CheckCircle className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
+        <div className="flex items-start gap-3 bg-pos-bg border border-pos/30 rounded-[4px] p-4">
+          <CheckCircle className="w-5 h-5 text-pos shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-green-800">{t('ocr.success', 'Fields extracted from your document')}</p>
-            <p className="text-xs text-green-700 mt-0.5">
+            <p className="text-sm font-medium text-pos">{t('ocr.success', 'Fields extracted from your document')}</p>
+            <p className="text-xs text-pos mt-0.5">
               {ocrResult.digitalPdf
                 ? t('ocr.digitalPdf', 'Digital PDF — extracted via text layer (high accuracy)')
                 : t('ocr.scanned', 'Scanned document — extracted via OCR (please verify all fields)')}
@@ -176,16 +176,16 @@ export default function SupplierInvoiceSubmitPage() {
       )}
 
       {ocrError && (
-        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-          <p className="text-sm text-amber-800">{ocrError}</p>
+        <div className="flex items-start gap-3 bg-warn-bg border border-warn/30 rounded-[4px] p-4">
+          <AlertCircle className="w-5 h-5 text-warn shrink-0 mt-0.5" />
+          <p className="text-sm text-warn">{ocrError}</p>
         </div>
       )}
 
       {duplicateCheck?.duplicate && (
-        <div role="status" className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-          <p className="text-sm text-amber-800">{t('invoice.duplicateWarning', { count: duplicateCheck.count })}</p>
+        <div role="status" className="flex items-start gap-3 bg-warn-bg border border-warn/30 rounded-[4px] p-4">
+          <AlertTriangle className="w-5 h-5 text-warn shrink-0 mt-0.5" />
+          <p className="text-sm text-warn">{t('invoice.duplicateWarning', { count: duplicateCheck.count })}</p>
         </div>
       )}
 
@@ -193,12 +193,12 @@ export default function SupplierInvoiceSubmitPage() {
 
         {/* Department */}
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoice.department')} *</label>
+          <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.department')} *</label>
           <Controller
             name="departmentId"
             control={control}
             render={({ field }) => (
-              <select {...field} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+              <select {...field} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-primary/30">
                 <option value="">{t('invoice.selectDept', '— Select department —')}</option>
                 {(departments ?? []).map((d) => (
                   <option key={d.id} value={d.id}>{i18n.language === 'fr' ? d.nameFr : d.nameEn} ({d.code})</option>
@@ -206,41 +206,41 @@ export default function SupplierInvoiceSubmitPage() {
               </select>
             )}
           />
-          {errors.departmentId && <p className="text-xs text-red-500 mt-1">{t('validation.required')}</p>}
+          {errors.departmentId && <p className="text-xs text-crit mt-1">{t('validation.required')}</p>}
         </div>
 
         {/* Invoice Number (OCR-extracted, editable) */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-ink-soft mb-1">
             {t('invoice.invoiceNumber', 'Invoice Number (your ref.)')}
-            {ocrResult?.invoiceNumber && <span className="ml-2 text-xs text-green-600">✓ {t('ocr.extracted', 'auto-filled')}</span>}
+            {ocrResult?.invoiceNumber && <span className="ml-2 text-xs text-pos">✓ {t('ocr.extracted', 'auto-filled')}</span>}
           </label>
           <input
             {...register('invoiceNumber')}
             defaultValue={ocrResult?.invoiceNumber ?? ''}
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
             placeholder={t('invoice.invoiceNumberPlaceholder', 'e.g. FAC-2026-001')}
           />
         </div>
 
         {/* Amount */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-ink-soft mb-1">
             {t('invoice.amount')} *
-            {ocrResult?.totalAmount && <span className="ml-2 text-xs text-green-600">✓ {t('ocr.extracted', 'auto-filled')}</span>}
+            {ocrResult?.totalAmount && <span className="ml-2 text-xs text-pos">✓ {t('ocr.extracted', 'auto-filled')}</span>}
           </label>
           <input
             type="number" step="0.01"
             {...register('amount')}
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
-          {errors.amount && <p className="text-xs text-red-500 mt-1">{t('validation.positiveNumber')}</p>}
+          {errors.amount && <p className="text-xs text-crit mt-1">{t('validation.positiveNumber')}</p>}
         </div>
 
         {/* Currency */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoice.currency')} *</label>
-          <select {...register('currency')} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+          <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.currency')} *</label>
+          <select {...register('currency')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-primary/30">
             <option value="XOF">XOF (FCFA)</option>
             <option value="EUR">EUR</option>
             <option value="USD">USD</option>
@@ -249,58 +249,58 @@ export default function SupplierInvoiceSubmitPage() {
 
         {/* Issue Date */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-ink-soft mb-1">
             {t('invoice.issueDate')} *
-            {ocrResult?.invoiceDate && <span className="ml-2 text-xs text-green-600">✓ {t('ocr.extracted', 'auto-filled')}</span>}
+            {ocrResult?.invoiceDate && <span className="ml-2 text-xs text-pos">✓ {t('ocr.extracted', 'auto-filled')}</span>}
           </label>
           <input
             type="date"
             {...register('issueDate')}
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
-          {errors.issueDate && <p className="text-xs text-red-500 mt-1">{t('validation.required')}</p>}
+          {errors.issueDate && <p className="text-xs text-crit mt-1">{t('validation.required')}</p>}
         </div>
 
         {/* Due Date */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoice.dueDate')} *</label>
+          <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.dueDate')} *</label>
           <input
             type="date"
             {...register('dueDate')}
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
-          {errors.dueDate && <p className="text-xs text-red-500 mt-1">{t('validation.required')}</p>}
+          {errors.dueDate && <p className="text-xs text-crit mt-1">{t('validation.required')}</p>}
         </div>
 
         {/* Description */}
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoice.description')}</label>
+          <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.description')}</label>
           <textarea
             {...register('description')}
             rows={2}
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
       </div>
 
       {submitMutation.isError && (
-        <p className="text-sm text-red-500 bg-red-50 px-4 py-2 rounded-lg">
+        <p className="text-sm text-crit bg-crit-bg px-4 py-2 rounded-[4px]">
           {(submitMutation.error as any)?.response?.data?.message ?? t('app.error')}
         </p>
       )}
 
-      <div className="flex items-center justify-between pt-2 border-t">
+      <div className="flex items-center justify-between pt-2 border-t border-hairline">
         <button
           type="button"
           onClick={() => { setStage('upload'); setOcrResult(null); setUploadedFile(null) }}
-          className="text-sm text-gray-500 hover:text-gray-700 underline"
+          className="text-sm text-ink-soft hover:text-ink underline"
         >
           {t('ocr.uploadDifferent', '← Upload a different file')}
         </button>
         <button
           type="submit"
           disabled={submitMutation.isPending}
-          className="flex items-center gap-2 px-6 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-60"
+          className="flex items-center gap-2 px-6 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90 disabled:opacity-60"
         >
           {submitMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
           {t('supplier.invoice.submit.title', 'Submit Invoice')}
@@ -312,12 +312,12 @@ export default function SupplierInvoiceSubmitPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <button onClick={() => navigate('/supplier/invoices')} className="p-2 hover:bg-gray-100 rounded-full">
-          <ArrowLeft className="w-5 h-5 text-gray-600" />
+        <button onClick={() => navigate('/supplier/invoices')} className="p-2 hover:bg-ground rounded-full">
+          <ArrowLeft className="w-5 h-5 text-ink-soft" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('supplier.invoice.submit.title', 'Submit Invoice')}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{t('supplier.invoice.submit.subtitle', 'Upload your invoice — fields will be extracted automatically.')}</p>
+          <h1 className="text-2xl font-bold text-ink">{t('supplier.invoice.submit.title', 'Submit Invoice')}</h1>
+          <p className="text-sm text-ink-soft mt-0.5">{t('supplier.invoice.submit.subtitle', 'Upload your invoice — fields will be extracted automatically.')}</p>
         </div>
       </div>
 
@@ -326,23 +326,23 @@ export default function SupplierInvoiceSubmitPage() {
         <div
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
-          className="bg-white rounded-xl border-2 border-dashed border-gray-300 p-10 flex flex-col items-center gap-4 hover:bg-gray-50 transition-colors"
+          className="bg-surface rounded-[4px] border-2 border-dashed border-hairline-strong p-10 flex flex-col items-center gap-4 hover:bg-ground transition-colors"
         >
           {ocrMutation.isPending ? (
             <div className="flex flex-col items-center gap-3">
               <Loader2 className="w-10 h-10 animate-spin text-primary" />
-              <p className="text-sm font-medium text-gray-700">{t('ocr.extracting', 'Extracting invoice data…')}</p>
-              <p className="text-xs text-gray-400">{t('ocr.wait', 'This takes a few seconds')}</p>
+              <p className="text-sm font-medium text-ink-soft">{t('ocr.extracting', 'Extracting invoice data…')}</p>
+              <p className="text-xs text-ink-faint">{t('ocr.wait', 'This takes a few seconds')}</p>
             </div>
           ) : (
             <>
-              <Upload className="w-12 h-12 text-gray-300" />
+              <Upload className="w-12 h-12 text-ink-faint" />
               <div className="text-center">
-                <p className="text-base font-medium text-gray-700">{t('ocr.dropHere', 'Drop your invoice here')}</p>
-                <p className="text-sm text-gray-400 mt-1">{t('ocr.formats', 'PDF, JPEG, PNG, TIFF — max 10 MB')}</p>
+                <p className="text-base font-medium text-ink-soft">{t('ocr.dropHere', 'Drop your invoice here')}</p>
+                <p className="text-sm text-ink-faint mt-1">{t('ocr.formats', 'PDF, JPEG, PNG, TIFF — max 10 MB')}</p>
               </div>
               <label className="cursor-pointer">
-                <span className="px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90">
+                <span className="px-5 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90">
                   {t('ocr.chooseFile', 'Choose File')}
                 </span>
                 <input
@@ -354,7 +354,7 @@ export default function SupplierInvoiceSubmitPage() {
               </label>
               <button
                 onClick={() => setStage('manual')}
-                className="text-xs text-gray-400 hover:text-gray-600 underline"
+                className="text-xs text-ink-faint hover:text-ink-soft underline"
               >
                 {t('ocr.skipOcr', 'Skip — fill in manually instead')}
               </button>
@@ -365,22 +365,22 @@ export default function SupplierInvoiceSubmitPage() {
 
       {/* ── STAGE: Confirm OCR fields ── */}
       {stage === 'confirm' && uploadedFile && (
-        <div className="bg-white rounded-xl border p-6 space-y-5">
-          <div className="flex items-center gap-3 pb-3 border-b">
+        <div className="bg-surface rounded-[4px] border border-hairline shadow-sm p-6 space-y-5">
+          <div className="flex items-center gap-3 pb-3 border-b border-hairline">
             <FileText className="w-5 h-5 text-primary" />
             <div>
-              <p className="text-sm font-semibold text-gray-800">{uploadedFile.name}</p>
-              <p className="text-xs text-gray-400">{(uploadedFile.size / 1024).toFixed(1)} KB</p>
+              <p className="text-sm font-semibold text-ink">{uploadedFile.name}</p>
+              <p className="text-xs text-ink-faint num">{(uploadedFile.size / 1024).toFixed(1)} KB</p>
             </div>
           </div>
-          <p className="text-sm text-gray-600">{t('ocr.reviewPrompt', 'Review and correct the extracted fields below, then submit.')}</p>
+          <p className="text-sm text-ink-soft">{t('ocr.reviewPrompt', 'Review and correct the extracted fields below, then submit.')}</p>
           {formContent}
         </div>
       )}
 
       {/* ── STAGE: Manual entry (OCR skipped or failed) ── */}
       {stage === 'manual' && (
-        <div className="bg-white rounded-xl border p-6 space-y-5">
+        <div className="bg-surface rounded-[4px] border border-hairline shadow-sm p-6 space-y-5">
           {formContent}
         </div>
       )}

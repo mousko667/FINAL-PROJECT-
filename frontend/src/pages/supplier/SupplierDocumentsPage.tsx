@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import { Upload, FileText, Loader2, AlertCircle } from 'lucide-react'
 import { formatDate } from '@/lib/format'
+import { Panel } from '@/components/ui/Panel'
 
 interface SupplierDocument {
   id: string
@@ -47,7 +48,7 @@ export default function SupplierDocumentsPage() {
       if (fileRef.current) fileRef.current.value = ''
     },
     onError: () => {
-      setError('Failed to upload document. Please try again.')
+      setError(t('supplier.documents.uploadError'))
     },
   })
 
@@ -60,21 +61,21 @@ export default function SupplierDocumentsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">{t('supplier.documents.title')}</h1>
-        <p className="text-sm text-gray-500 mt-1">{t('supplier.documents.subtitle')}</p>
+        <h1 className="text-2xl font-bold text-ink">{t('supplier.documents.title')}</h1>
+        <p className="text-sm text-ink-soft mt-1">{t('supplier.documents.subtitle')}</p>
       </div>
 
       {/* Upload section */}
-      <div className="bg-white rounded-xl border p-5 space-y-4">
-        <h2 className="font-semibold text-gray-900">{t('supplier.documents.upload')}</h2>
+      <Panel className="p-5 space-y-4">
+        <h2 className="font-semibold text-ink">{t('supplier.documents.upload')}</h2>
 
         <div className="flex flex-wrap gap-3 items-end">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('supplier.documents.type')}</label>
+            <label className="block text-sm font-medium text-ink-soft mb-1">{t('supplier.documents.type')}</label>
             <select
               value={docType}
               onChange={e => setDocType(e.target.value as DocType)}
-              className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
+              className="border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-surface text-ink"
             >
               {DOC_TYPES.map(dt => (
                 <option key={dt} value={dt}>{t(`supplier.documents.types.${dt}`)}</option>
@@ -91,59 +92,59 @@ export default function SupplierDocumentsPage() {
               onChange={handleFileChange}
               disabled={uploadMutation.isPending}
             />
-            <span className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${uploadMutation.isPending ? 'opacity-60 cursor-not-allowed bg-gray-50' : 'bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer'}`}>
+            <span className={`flex items-center gap-2 px-4 py-2 rounded-[4px] text-sm font-medium border border-hairline transition-colors ${uploadMutation.isPending ? 'opacity-60 cursor-not-allowed bg-ground' : 'bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer'}`}>
               {uploadMutation.isPending
-                ? <><Loader2 className="w-4 h-4 animate-spin" /> Uploading…</>
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('supplier.documents.uploading')}</>
                 : <><Upload className="w-4 h-4" /> {t('supplier.documents.upload')}</>}
             </span>
           </label>
         </div>
 
         {error && (
-          <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+          <div className="flex items-center gap-2 text-sm text-crit bg-crit-bg border border-crit/30 rounded-[4px] px-4 py-3">
             <AlertCircle className="w-4 h-4 shrink-0" />
             {error}
           </div>
         )}
 
-        <p className="text-xs text-gray-400">
-          Accepted: PDF, Word, Excel, JPEG, PNG, TIFF. Max 10 MB.
+        <p className="text-xs text-ink-faint">
+          {t('supplier.documents.accepted')}
         </p>
-      </div>
+      </Panel>
 
       {/* Documents list */}
-      <div className="bg-white rounded-xl border overflow-hidden">
+      <Panel className="overflow-hidden">
         {isLoading ? (
           <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
         ) : !data?.length ? (
           <div className="py-16 text-center">
-            <FileText className="w-8 h-8 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm text-gray-500">{t('supplier.documents.noDocuments')}</p>
+            <FileText className="w-8 h-8 text-ink-faint mx-auto mb-3" />
+            <p className="text-sm text-ink-soft">{t('supplier.documents.noDocuments')}</p>
           </div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-ground">
               <tr>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('supplier.documents.filename')}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('supplier.documents.type')}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('supplier.documents.uploaded')}</th>
+                <th className="text-left px-4 py-3 font-medium text-ink-faint text-xs uppercase tracking-wide">{t('supplier.documents.filename')}</th>
+                <th className="text-left px-4 py-3 font-medium text-ink-faint text-xs uppercase tracking-wide">{t('supplier.documents.type')}</th>
+                <th className="text-left px-4 py-3 font-medium text-ink-faint text-xs uppercase tracking-wide">{t('supplier.documents.uploaded')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-hairline">
               {data.map(doc => (
-                <tr key={doc.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-800">
+                <tr key={doc.id} className="hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)]">
+                  <td className="px-4 py-3 font-medium text-ink">
                     <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-gray-400 shrink-0" />
+                      <FileText className="w-4 h-4 text-ink-faint shrink-0" />
                       {doc.originalFilename ?? doc.filename ?? 'Document'}
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+                    <span className="text-xs bg-ground text-ink-soft px-2 py-0.5 rounded border border-hairline">
                       {t(`supplier.documents.types.${doc.documentType}`, doc.documentType)}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-gray-500 text-xs">
+                  <td className="px-4 py-3 text-ink-soft text-xs num">
                     {doc.uploadedAt ? formatDate(doc.uploadedAt) : '—'}
                   </td>
                 </tr>
@@ -151,7 +152,7 @@ export default function SupplierDocumentsPage() {
             </tbody>
           </table>
         )}
-      </div>
+      </Panel>
     </div>
   )
 }
