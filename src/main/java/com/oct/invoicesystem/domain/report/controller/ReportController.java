@@ -215,8 +215,9 @@ public class ReportController {
     @GetMapping("/definitions/{id}/run")
     @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
     @Operation(summary = "Run a report definition now and download the result")
-    public ResponseEntity<byte[]> runDefinition(@PathVariable UUID id) {
-        byte[] body = reportBuilderService.run(id);
+    public ResponseEntity<byte[]> runDefinition(@PathVariable UUID id,
+                                                org.springframework.security.core.Authentication authentication) {
+        byte[] body = reportBuilderService.run(id, authentication);
         var fmt = reportBuilderService.formatOf(id);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=report." + fmt.extension)
@@ -246,8 +247,8 @@ public class ReportController {
     @GetMapping("/executive-summary")
     @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
     @Operation(summary = "Download the executive-summary PDF")
-    public ResponseEntity<byte[]> executiveSummary() {
-        byte[] body = reportBuilderService.executiveSummaryPdf();
+    public ResponseEntity<byte[]> executiveSummary(org.springframework.security.core.Authentication authentication) {
+        byte[] body = reportBuilderService.executiveSummaryPdf(authentication);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=executive_summary.pdf")
                 .contentType(MediaType.APPLICATION_PDF)

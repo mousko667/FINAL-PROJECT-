@@ -7,17 +7,22 @@ import com.oct.invoicesystem.domain.report.dto.ReportPreviewDTO;
 import com.oct.invoicesystem.domain.report.model.ReportDefinition;
 import com.oct.invoicesystem.domain.report.repository.ReportDefinitionRepository;
 import com.oct.invoicesystem.domain.supplier.service.SupplierService;
+import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 import com.oct.invoicesystem.shared.exception.ValidationException;
+import com.oct.invoicesystem.shared.export.ReportMetadata;
 import com.oct.invoicesystem.shared.export.TabularExportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -43,6 +48,7 @@ public class ReportBuilderService {
     private final AuditLogRepository auditLogRepository;
     private final ReportService reportService;
     private final org.springframework.context.MessageSource messageSource;
+    private final com.oct.invoicesystem.shared.util.SecurityHelper securityHelper;
 
     @Transactional(readOnly = true)
     public List<ReportDefinitionDTO.Response> list() {
@@ -70,10 +76,10 @@ public class ReportBuilderService {
 
     /** Runs a definition and returns the rendered file bytes (does not distribute). */
     @Transactional
-    public byte[] run(UUID id) {
+    public byte[] run(UUID id, Authentication authentication) {
         ReportDefinition def = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Report definition not found: " + id));
-        byte[] bytes = render(def);
+        byte[] bytes = render(def, authentication);
         def.setLastRunAt(Instant.now());
         repository.save(def);
         return bytes;
@@ -86,10 +92,32 @@ public class ReportBuilderService {
     }
 
     /** Renders the report's dataset into the chosen format. Used by run() and the scheduler. */
-    public byte[] render(ReportDefinition def) {
+    public byte[] render(ReportDefinition def, Authentication authentication) {
         TabularExportService.Format fmt = TabularExportService.Format.from(def.getFormat());
         Dataset ds = buildDataset(def);
+        if (fmt == TabularExportService.Format.PDF && authentication != null) {
+            ReportMetadata meta = builderMetadata(authentication, org.springframework.context.i18n.LocaleContextHolder.getLocale());
+            return exportService.export(fmt, ds.title(), ds.columns(), ds.rows(), meta, messageSource);
+        }
         return exportService.export(fmt, ds.title(), ds.columns(), ds.rows());
+    }
+
+    /** Report metadata for builder PDFs: "LASTNAME Firstname" + localized role, no period. */
+    private ReportMetadata builderMetadata(Authentication authentication, Locale locale) {
+        User u = securityHelper.currentUser(authentication);
+        String name = ((u.getLastName() == null ? "" : u.getLastName()) + " "
+                + (u.getFirstName() == null ? "" : u.getFirstName())).trim();
+        String roleCode;
+        var names = u.getUserRoles() == null ? Set.<String>of()
+                : u.getUserRoles().stream()
+                    .map(ur -> ur.getRole() == null ? null : ur.getRole().getName())
+                    .filter(Objects::nonNull).collect(java.util.stream.Collectors.toSet());
+        if (names.contains("ROLE_DAF")) roleCode = "ROLE_DAF";
+        else if (names.contains("ROLE_ASSISTANT_COMPTABLE")) roleCode = "ROLE_ASSISTANT_COMPTABLE";
+        else roleCode = names.stream().findFirst().orElse(null);
+        String roleLabel = roleCode == null ? ""
+                : messageSource.getMessage("report.pdf.role." + roleCode, null, roleCode, locale);
+        return new ReportMetadata(name, roleLabel, Instant.now(), null);
     }
 
     /** Builds the headers + rows for a definition's dataset. Shared by render() and preview(). */
@@ -168,10 +196,10 @@ public class ReportBuilderService {
      * Executive summary (M11): a one-page PDF aggregating the headline KPIs + budget totals.
      */
     @Transactional(readOnly = true)
-    public byte[] executiveSummaryPdf() {
+    public byte[] executiveSummaryPdf(Authentication authentication) {
         var kpi = reportService.getDashboardKpis();
         var budget = reportService.getBudgetVsActual();
-        java.util.Locale locale = org.springframework.context.i18n.LocaleContextHolder.getLocale();
+        Locale locale = org.springframework.context.i18n.LocaleContextHolder.getLocale();
         List<List<String>> rows = List.of(
                 List.of(messageSource.getMessage("report.excel.header.total_invoices", null, locale), String.valueOf(kpi.totalInvoices())),
                 List.of(messageSource.getMessage("report.excel.header.overdue_invoices", null, locale), String.valueOf(kpi.overdueCount())),
@@ -180,11 +208,12 @@ public class ReportBuilderService {
                 List.of(messageSource.getMessage("report.excel.header.total_budget", null, locale), budget.totalBudget() == null ? "0" : budget.totalBudget().toPlainString()),
                 List.of(messageSource.getMessage("report.excel.header.total_committed_spend", null, locale), budget.totalActual() == null ? "0" : budget.totalActual().toPlainString()),
                 List.of(messageSource.getMessage("report.excel.header.webhook_delivery_success", null, locale), String.format("%.0f%%", kpi.webhookDeliverySuccessRate() * 100)));
+        ReportMetadata meta = builderMetadata(authentication, locale);
         return exportService.export(TabularExportService.Format.PDF, "Executive Summary",
                 List.of(
                         messageSource.getMessage("report.excel.header.indicator", null, locale),
                         messageSource.getMessage("report.excel.header.value", null, locale)
-                ), rows);
+                ), rows, meta, messageSource);
     }
 
     private String upperOrThrow(String v, Set<String> allowed, String field) {

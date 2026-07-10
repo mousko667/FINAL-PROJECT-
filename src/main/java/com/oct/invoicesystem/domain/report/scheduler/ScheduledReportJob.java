@@ -44,7 +44,7 @@ public class ScheduledReportJob {
         log.info("Scheduled report distribution: {} {} report(s) due.", due.size(), frequency);
         for (ReportDefinition def : due) {
             try {
-                byte[] bytes = reportBuilderService.render(def);
+                byte[] bytes = reportBuilderService.render(def, null);
                 TabularExportService.Format fmt = TabularExportService.Format.from(def.getFormat());
                 String filename = sanitize(def.getName()) + "." + fmt.extension;
                 for (String email : recipients(def)) {

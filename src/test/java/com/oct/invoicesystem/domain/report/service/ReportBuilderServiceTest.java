@@ -37,9 +37,11 @@ class ReportBuilderServiceTest {
     @Mock private AuditLogRepository auditLogRepository;
     @Mock private ReportService reportService;
     @Mock private org.springframework.context.MessageSource messageSource;
+    @Mock private com.oct.invoicesystem.shared.util.SecurityHelper securityHelper;
 
-    // Real export service (no need to mock byte generation)
-    private final TabularExportService exportService = new TabularExportService();
+    // Spy on a real export service so PDF/CSV bytes are genuinely generated while still allowing
+    // verify()/ArgumentCaptor on the call args (a plain @Mock would return null bytes).
+    private final TabularExportService exportService = org.mockito.Mockito.spy(new TabularExportService());
 
     private ReportBuilderService service() {
         org.mockito.Mockito.lenient().when(messageSource.getMessage(any(String.class), any(), any(java.util.Locale.class)))
@@ -55,7 +57,7 @@ class ReportBuilderServiceTest {
                 .thenReturn(List.of("Reference", "Supplier", "Supplier email", "Amount", "Currency",
                         "Status", "Department", "Issue date", "Due date", "Created at", "Matching status"));
         return new ReportBuilderService(repository, exportService, invoiceService,
-                supplierService, auditLogRepository, reportService, messageSource);
+                supplierService, auditLogRepository, reportService, messageSource, securityHelper);
     }
 
     @Test
@@ -78,7 +80,7 @@ class ReportBuilderServiceTest {
         when(invoiceService.buildExportRows(any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(List.of(List.of("FAC-1", "ACME", "100", "XAF", "VALIDE", "2026-01-01", "2026-02-01", "FIN")));
         ReportDefinition def = ReportDefinition.builder().name("Inv").dataset("INVOICES").format("CSV").build();
-        byte[] bytes = service().render(def);
+        byte[] bytes = service().render(def, null);
         assertTrue(bytes.length > 0);
         String csv = new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
         assertTrue(csv.contains("FAC-1"));
@@ -140,5 +142,41 @@ class ReportBuilderServiceTest {
 
         assertNull(def.getLastRunAt());
         verify(repository, never()).save(any());
+    }
+
+    @Test
+    void executiveSummaryPdf_passesMetadataToExport() {
+        com.oct.invoicesystem.domain.user.model.Role role =
+                com.oct.invoicesystem.domain.user.model.Role.builder().name("ROLE_DAF").build();
+        com.oct.invoicesystem.domain.user.model.UserRole ur =
+                com.oct.invoicesystem.domain.user.model.UserRole.builder().role(role).build();
+        com.oct.invoicesystem.domain.user.model.User user =
+                com.oct.invoicesystem.domain.user.model.User.builder()
+                        .firstName("Jean").lastName("Dupont")
+                        .userRoles(new java.util.HashSet<>(java.util.Set.of(ur)))
+                        .build();
+        org.springframework.security.core.Authentication auth =
+                org.mockito.Mockito.mock(org.springframework.security.core.Authentication.class);
+        org.mockito.Mockito.when(securityHelper.currentUser(auth)).thenReturn(user);
+
+        org.mockito.Mockito.when(reportService.getDashboardKpis())
+                .thenReturn(new com.oct.invoicesystem.domain.report.dto.DashboardKpiDTO(
+                        0L, java.util.Map.of(), 0.0, 0.0, 0L, java.util.Map.of(), 0.0, 0.0, 0.0, 0.0, java.util.Map.of()));
+        org.mockito.Mockito.when(reportService.getBudgetVsActual())
+                .thenReturn(new com.oct.invoicesystem.domain.report.dto.BudgetVsActualDTO(
+                        java.util.List.of(), null, null));
+
+        ReportBuilderService svc = service();
+        byte[] out = svc.executiveSummaryPdf(auth);
+        assertTrue(out != null && out.length > 0);
+
+        org.mockito.ArgumentCaptor<com.oct.invoicesystem.shared.export.ReportMetadata> cap =
+                org.mockito.ArgumentCaptor.forClass(com.oct.invoicesystem.shared.export.ReportMetadata.class);
+        org.mockito.Mockito.verify(exportService).export(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+                cap.capture(), org.mockito.ArgumentMatchers.any());
+        assertEquals("Dupont Jean", cap.getValue().generatorName());
+        assertNull(cap.getValue().periodLabel());
     }
 }
