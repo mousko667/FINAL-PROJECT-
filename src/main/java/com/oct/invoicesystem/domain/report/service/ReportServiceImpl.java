@@ -35,7 +35,6 @@ import com.oct.invoicesystem.domain.workflow.model.InvoiceStatusHistory;
 import com.oct.invoicesystem.domain.workflow.repository.ApprovalStepRepository;
 import com.oct.invoicesystem.domain.workflow.repository.InvoiceStatusHistoryRepository;
 import com.oct.invoicesystem.domain.webhook.repository.WebhookDeliveryRepository;
-import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.shared.export.ReportMetadata;
 import com.oct.invoicesystem.shared.export.PdfMetadata;
 import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
@@ -242,25 +241,7 @@ public class ReportServiceImpl implements ReportService {
      * falling back to the raw role code). {@code periodLabelOrNull} is passed through unchanged.
      */
     private ReportMetadata buildMetadata(Authentication authentication, String periodLabelOrNull, Locale locale) {
-        User u = securityHelper.currentUser(authentication);
-        String name = ((u.getLastName() == null ? "" : u.getLastName()) + " "
-                + (u.getFirstName() == null ? "" : u.getFirstName())).trim();
-        String roleCode = resolveRoleCode(u);
-        String roleLabel = roleCode == null ? ""
-                : messageSource.getMessage("report.pdf.role." + roleCode, null, roleCode, locale);
-        return new ReportMetadata(name, roleLabel, Instant.now(), periodLabelOrNull);
-    }
-
-    /** DAF first, then ASSISTANT_COMPTABLE, else the first role name, else null. */
-    private String resolveRoleCode(User u) {
-        java.util.Set<String> names = u.getUserRoles() == null ? java.util.Set.of()
-                : u.getUserRoles().stream()
-                    .map(ur -> ur.getRole() == null ? null : ur.getRole().getName())
-                    .filter(java.util.Objects::nonNull)
-                    .collect(Collectors.toSet());
-        if (names.contains("ROLE_DAF")) return "ROLE_DAF";
-        if (names.contains("ROLE_ASSISTANT_COMPTABLE")) return "ROLE_ASSISTANT_COMPTABLE";
-        return names.stream().findFirst().orElse(null);
+        return ReportMetadata.of(securityHelper.currentUser(authentication), messageSource, periodLabelOrNull, locale);
     }
 
     @Override

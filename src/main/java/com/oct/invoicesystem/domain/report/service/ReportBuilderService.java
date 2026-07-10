@@ -7,7 +7,6 @@ import com.oct.invoicesystem.domain.report.dto.ReportPreviewDTO;
 import com.oct.invoicesystem.domain.report.model.ReportDefinition;
 import com.oct.invoicesystem.domain.report.repository.ReportDefinitionRepository;
 import com.oct.invoicesystem.domain.supplier.service.SupplierService;
-import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 import com.oct.invoicesystem.shared.exception.ValidationException;
 import com.oct.invoicesystem.shared.export.ReportMetadata;
@@ -22,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -104,20 +102,7 @@ public class ReportBuilderService {
 
     /** Report metadata for builder PDFs: "LASTNAME Firstname" + localized role, no period. */
     private ReportMetadata builderMetadata(Authentication authentication, Locale locale) {
-        User u = securityHelper.currentUser(authentication);
-        String name = ((u.getLastName() == null ? "" : u.getLastName()) + " "
-                + (u.getFirstName() == null ? "" : u.getFirstName())).trim();
-        String roleCode;
-        var names = u.getUserRoles() == null ? Set.<String>of()
-                : u.getUserRoles().stream()
-                    .map(ur -> ur.getRole() == null ? null : ur.getRole().getName())
-                    .filter(Objects::nonNull).collect(java.util.stream.Collectors.toSet());
-        if (names.contains("ROLE_DAF")) roleCode = "ROLE_DAF";
-        else if (names.contains("ROLE_ASSISTANT_COMPTABLE")) roleCode = "ROLE_ASSISTANT_COMPTABLE";
-        else roleCode = names.stream().findFirst().orElse(null);
-        String roleLabel = roleCode == null ? ""
-                : messageSource.getMessage("report.pdf.role." + roleCode, null, roleCode, locale);
-        return new ReportMetadata(name, roleLabel, Instant.now(), null);
+        return ReportMetadata.of(securityHelper.currentUser(authentication), messageSource, null, locale);
     }
 
     /** Builds the headers + rows for a definition's dataset. Shared by render() and preview(). */
