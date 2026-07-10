@@ -86,8 +86,9 @@ public class ReportController {
     @GetMapping("/export/pdf/audit/{id}")
     @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
     @Operation(summary = "Export Invoice Audit to PDF", description = "Generates and downloads a detailed audit trail for a specific invoice")
-    public ResponseEntity<Resource> exportAuditPdf(@PathVariable UUID id) {
-        ByteArrayInputStream stream = reportService.generateInvoiceAuditPdf(id);
+    public ResponseEntity<Resource> exportAuditPdf(@PathVariable UUID id,
+                                                   org.springframework.security.core.Authentication authentication) {
+        ByteArrayInputStream stream = reportService.generateInvoiceAuditPdf(id, authentication);
         InputStreamResource file = new InputStreamResource(stream);
 
         return ResponseEntity.ok()
@@ -101,9 +102,10 @@ public class ReportController {
     @Operation(summary = "Export Compliance Report to PDF", description = "Generates and downloads a compliance summary for a date range")
     public ResponseEntity<Resource> exportCompliancePdf(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            org.springframework.security.core.Authentication authentication) {
 
-        ByteArrayInputStream stream = reportService.generateCompliancePdf(startDate, endDate);
+        ByteArrayInputStream stream = reportService.generateCompliancePdf(startDate, endDate, authentication);
         InputStreamResource file = new InputStreamResource(stream);
 
         return ResponseEntity.ok()

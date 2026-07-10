@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
+import org.springframework.security.core.Authentication;
 
 public interface ReportService {
 
@@ -30,9 +31,9 @@ public interface ReportService {
             String reference
     );
 
-    ByteArrayInputStream generateInvoiceAuditPdf(UUID invoiceId);
+    ByteArrayInputStream generateInvoiceAuditPdf(UUID invoiceId, Authentication authentication);
 
-    ByteArrayInputStream generateCompliancePdf(LocalDate startDate, LocalDate endDate);
+    ByteArrayInputStream generateCompliancePdf(LocalDate startDate, LocalDate endDate, Authentication authentication);
 
     /**
      * Generate aging analysis for overdue invoices.

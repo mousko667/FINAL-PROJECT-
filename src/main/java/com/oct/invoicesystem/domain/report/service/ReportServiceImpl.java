@@ -35,6 +35,9 @@ import com.oct.invoicesystem.domain.workflow.model.InvoiceStatusHistory;
 import com.oct.invoicesystem.domain.workflow.repository.ApprovalStepRepository;
 import com.oct.invoicesystem.domain.workflow.repository.InvoiceStatusHistoryRepository;
 import com.oct.invoicesystem.domain.webhook.repository.WebhookDeliveryRepository;
+import com.oct.invoicesystem.domain.user.model.User;
+import com.oct.invoicesystem.shared.export.ReportMetadata;
+import com.oct.invoicesystem.shared.export.PdfMetadata;
 import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +45,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -74,6 +78,7 @@ public class ReportServiceImpl implements ReportService {
     private final DepartmentRepository departmentRepository;
     private final com.oct.invoicesystem.domain.invoice.service.InvoiceService invoiceService;
     private final com.oct.invoicesystem.shared.export.TabularExportService tabularExportService;
+    private final com.oct.invoicesystem.shared.util.SecurityHelper securityHelper;
 
     @Override
     @Transactional(readOnly = true)
@@ -231,16 +236,44 @@ public class ReportServiceImpl implements ReportService {
         return new ByteArrayInputStream(xlsx);
     }
 
+    /**
+     * Resolve the report generator from the caller's authentication: "LASTNAME Firstname" plus the
+     * localized role label (report.pdf.role.<ROLE>, DAF prioritized over ASSISTANT_COMPTABLE,
+     * falling back to the raw role code). {@code periodLabelOrNull} is passed through unchanged.
+     */
+    private ReportMetadata buildMetadata(Authentication authentication, String periodLabelOrNull, Locale locale) {
+        User u = securityHelper.currentUser(authentication);
+        String name = ((u.getLastName() == null ? "" : u.getLastName()) + " "
+                + (u.getFirstName() == null ? "" : u.getFirstName())).trim();
+        String roleCode = resolveRoleCode(u);
+        String roleLabel = roleCode == null ? ""
+                : messageSource.getMessage("report.pdf.role." + roleCode, null, roleCode, locale);
+        return new ReportMetadata(name, roleLabel, Instant.now(), periodLabelOrNull);
+    }
+
+    /** DAF first, then ASSISTANT_COMPTABLE, else the first role name, else null. */
+    private String resolveRoleCode(User u) {
+        java.util.Set<String> names = u.getUserRoles() == null ? java.util.Set.of()
+                : u.getUserRoles().stream()
+                    .map(ur -> ur.getRole() == null ? null : ur.getRole().getName())
+                    .filter(java.util.Objects::nonNull)
+                    .collect(Collectors.toSet());
+        if (names.contains("ROLE_DAF")) return "ROLE_DAF";
+        if (names.contains("ROLE_ASSISTANT_COMPTABLE")) return "ROLE_ASSISTANT_COMPTABLE";
+        return names.stream().findFirst().orElse(null);
+    }
+
     @Override
     @Transactional(readOnly = true)
-    public ByteArrayInputStream generateInvoiceAuditPdf(UUID invoiceId) {
+    public ByteArrayInputStream generateInvoiceAuditPdf(UUID invoiceId, Authentication authentication) {
         log.info("Generating PDF Audit report for invoice: {}", invoiceId);
         Invoice invoice = invoiceRepository.findById(invoiceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Invoice not found: " + invoiceId));
-        
+
         List<InvoiceStatusHistory> histories = historyRepository.findByInvoiceIdOrderByChangedAtAsc(invoiceId);
         Locale locale = LocaleContextHolder.getLocale();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss").withZone(ZoneId.systemDefault());
+        ReportMetadata meta = buildMetadata(authentication, null, locale);
 
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             PdfWriter writer = new PdfWriter(out);
@@ -255,11 +288,8 @@ public class ReportServiceImpl implements ReportService {
                     .setFontSize(20)
                     .setBold());
 
-            // Generated at
-            String generatedAt = formatter.format(java.time.Instant.now());
-            document.add(new Paragraph(messageSource.getMessage("report.pdf.generated_at", new Object[]{generatedAt}, locale))
-                    .setTextAlignment(TextAlignment.RIGHT)
-                    .setFontSize(8));
+            // Metadata header (generator + date; no period for a single-invoice audit)
+            PdfMetadata.renderHeader(document, meta, messageSource, locale);
 
             document.add(new Paragraph("\n"));
 
@@ -299,6 +329,7 @@ public class ReportServiceImpl implements ReportService {
             }
             document.add(auditTable);
 
+            PdfMetadata.renderSignatureBlock(document, messageSource, locale);
             document.close();
             return new ByteArrayInputStream(out.toByteArray());
         } catch (Exception e) {
@@ -309,13 +340,15 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     @Transactional(readOnly = true)
-    public ByteArrayInputStream generateCompliancePdf(LocalDate startDate, LocalDate endDate) {
+    public ByteArrayInputStream generateCompliancePdf(LocalDate startDate, LocalDate endDate, Authentication authentication) {
         log.info("Generating Compliance PDF report from {} to {}", startDate, endDate);
         List<Invoice> invoices = invoiceRepository.findAllWithFilters(
                 null, null, startDate, endDate, null, null, Pageable.unpaged()).getContent();
-        
+
         Locale locale = LocaleContextHolder.getLocale();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss").withZone(ZoneId.systemDefault());
+        String periodLabel = messageSource.getMessage("report.pdf.period",
+                new Object[]{startDate.toString(), endDate.toString()}, locale);
+        ReportMetadata meta = buildMetadata(authentication, periodLabel, locale);
 
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             PdfWriter writer = new PdfWriter(out);
@@ -330,15 +363,8 @@ public class ReportServiceImpl implements ReportService {
                     .setFontSize(20)
                     .setBold());
 
-            // Period
-            String period = messageSource.getMessage("report.pdf.period", new Object[]{startDate.toString(), endDate.toString()}, locale);
-            document.add(new Paragraph(period).setTextAlignment(TextAlignment.CENTER).setFontSize(12));
-
-            // Generated at
-            String generatedAt = formatter.format(java.time.Instant.now());
-            document.add(new Paragraph(messageSource.getMessage("report.pdf.generated_at", new Object[]{generatedAt}, locale))
-                    .setTextAlignment(TextAlignment.RIGHT)
-                    .setFontSize(8));
+            // Metadata header (period + generator + date, rendered once)
+            PdfMetadata.renderHeader(document, meta, messageSource, locale);
 
             document.add(new Paragraph("\n"));
 
@@ -361,6 +387,7 @@ public class ReportServiceImpl implements ReportService {
             }
             document.add(table);
 
+            PdfMetadata.renderSignatureBlock(document, messageSource, locale);
             document.close();
             return new ByteArrayInputStream(out.toByteArray());
         } catch (Exception e) {

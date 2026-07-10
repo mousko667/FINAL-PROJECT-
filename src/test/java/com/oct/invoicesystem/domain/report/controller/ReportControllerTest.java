@@ -157,7 +157,7 @@ class ReportControllerTest {
     @WithMockUser(roles = "DAF")
     void exportAuditPdf_WithDaf_ReturnsFile() throws Exception {
         UUID id = UUID.randomUUID();
-        when(reportService.generateInvoiceAuditPdf(id))
+        when(reportService.generateInvoiceAuditPdf(eq(id), any()))
                 .thenReturn(new ByteArrayInputStream("fake pdf".getBytes()));
 
         mockMvc.perform(get("/api/v1/reports/export/pdf/audit/" + id))
@@ -176,7 +176,7 @@ class ReportControllerTest {
     @Test
     @WithMockUser(roles = "DAF")
     void exportCompliancePdf_WithDaf_ReturnsFile() throws Exception {
-        when(reportService.generateCompliancePdf(any(), any()))
+        when(reportService.generateCompliancePdf(any(), any(), any()))
                 .thenReturn(new ByteArrayInputStream("fake pdf".getBytes()));
 
         mockMvc.perform(get("/api/v1/reports/export/pdf/compliance")

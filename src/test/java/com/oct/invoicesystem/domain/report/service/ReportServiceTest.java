@@ -77,6 +77,9 @@ class ReportServiceTest {
     @Mock
     private com.oct.invoicesystem.shared.export.TabularExportService tabularExportService;
 
+    @Mock
+    private com.oct.invoicesystem.shared.util.SecurityHelper securityHelper;
+
     @InjectMocks
     private ReportServiceImpl reportService;
 
@@ -85,6 +88,26 @@ class ReportServiceTest {
     @BeforeEach
     void setUp() {
         invoiceId = UUID.randomUUID();
+    }
+
+    private org.springframework.security.core.Authentication stubDafAuth() {
+        com.oct.invoicesystem.domain.user.model.Role role =
+                com.oct.invoicesystem.domain.user.model.Role.builder().name("ROLE_DAF").build();
+        com.oct.invoicesystem.domain.user.model.UserRole ur =
+                com.oct.invoicesystem.domain.user.model.UserRole.builder().role(role).build();
+        com.oct.invoicesystem.domain.user.model.User user =
+                com.oct.invoicesystem.domain.user.model.User.builder()
+                        .firstName("Jean").lastName("Dupont")
+                        .userRoles(new java.util.HashSet<>(java.util.Set.of(ur)))
+                        .build();
+        org.springframework.security.core.Authentication auth =
+                org.mockito.Mockito.mock(org.springframework.security.core.Authentication.class);
+        org.mockito.Mockito.lenient().when(securityHelper.currentUser(auth)).thenReturn(user);
+        // buildMetadata resolves the role label via the 4-arg getMessage(code, args, defaultMessage, locale)
+        // overload — distinct stub from the 3-arg one used elsewhere in these tests.
+        org.mockito.Mockito.lenient().when(messageSource.getMessage(anyString(), any(), anyString(), any()))
+                .thenReturn("Label");
+        return auth;
     }
 
     @Test
@@ -157,7 +180,7 @@ class ReportServiceTest {
         when(historyRepository.findByInvoiceIdOrderByChangedAtAsc(invoiceId)).thenReturn(Collections.emptyList());
         when(messageSource.getMessage(anyString(), any(), any())).thenReturn("Label");
 
-        ByteArrayInputStream result = reportService.generateInvoiceAuditPdf(invoiceId);
+        ByteArrayInputStream result = reportService.generateInvoiceAuditPdf(invoiceId, stubDafAuth());
         assertNotNull(result);
     }
 
@@ -167,7 +190,7 @@ class ReportServiceTest {
                 .thenReturn(new PageImpl<>(Collections.emptyList()));
         when(messageSource.getMessage(anyString(), any(), any())).thenReturn("Label");
 
-        ByteArrayInputStream result = reportService.generateCompliancePdf(LocalDate.now(), LocalDate.now());
+        ByteArrayInputStream result = reportService.generateCompliancePdf(LocalDate.now(), LocalDate.now(), stubDafAuth());
         assertNotNull(result);
     }
 
