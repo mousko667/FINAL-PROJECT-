@@ -11,6 +11,7 @@ interface TabsContextValue {
   setValue: (v: string) => void
   register: (v: string) => void
   order: React.MutableRefObject<string[]>
+  tabNodes: React.MutableRefObject<Map<string, HTMLButtonElement>>
 }
 const TabsContext = React.createContext<TabsContextValue | null>(null)
 function useTabs() {
@@ -31,6 +32,7 @@ export function Tabs({ value, defaultValue, onValueChange, children, className }
   const [internal, setInternal] = React.useState(defaultValue ?? '')
   const current = value ?? internal
   const order = React.useRef<string[]>([])
+  const tabNodes = React.useRef<Map<string, HTMLButtonElement>>(new Map())
 
   const setValue = React.useCallback(
     (v: string) => {
@@ -44,7 +46,7 @@ export function Tabs({ value, defaultValue, onValueChange, children, className }
   }, [])
 
   return (
-    <TabsContext.Provider value={{ value: current, setValue, register, order }}>
+    <TabsContext.Provider value={{ value: current, setValue, register, order, tabNodes }}>
       <div className={className}>{children}</div>
     </TabsContext.Provider>
   )
@@ -54,7 +56,7 @@ export function TabList({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
-  const { value, setValue, order } = useTabs()
+  const { value, setValue, order, tabNodes } = useTabs()
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     const list = order.current
     const i = list.indexOf(value)
@@ -66,7 +68,13 @@ export function TabList({
     else if (e.key === 'End') next = list.length - 1
     if (next !== null) {
       e.preventDefault()
-      setValue(list[next])
+      const nextValue = list[next]
+      setValue(nextValue)
+      // Le focus DOM doit suivre la sélection clavier (WAI-ARIA APG Tabs,
+      // roving tabindex). L'élément bouton existe déjà dans le DOM ; seul son
+      // tabIndex sera mis à jour au prochain rendu — .focus() fonctionne
+      // indépendamment de ce re-render.
+      tabNodes.current.get(nextValue)?.focus()
     }
   }
   return (
@@ -83,11 +91,19 @@ export interface TabProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
   value: string
 }
 export function Tab({ value: tabValue, className, ...props }: TabProps) {
-  const { value, setValue, register } = useTabs()
+  const { value, setValue, register, tabNodes } = useTabs()
   React.useEffect(() => register(tabValue), [register, tabValue])
+  const setNode = React.useCallback(
+    (el: HTMLButtonElement | null) => {
+      if (el) tabNodes.current.set(tabValue, el)
+      else tabNodes.current.delete(tabValue)
+    },
+    [tabNodes, tabValue]
+  )
   const active = value === tabValue
   return (
     <button
+      ref={setNode}
       role="tab"
       type="button"
       aria-selected={active}
