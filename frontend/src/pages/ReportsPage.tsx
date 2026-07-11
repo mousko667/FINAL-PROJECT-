@@ -5,6 +5,7 @@ import { reportService } from '@/services/reportService'
 import apiClient from '@/services/apiClient'
 import VolumeTrendSection from '@/components/reports/VolumeTrendSection'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
+import { useHasRole } from '@/hooks/useHasRole'
 import {
   FileSpreadsheet, FileCheck, TrendingUp, AlertTriangle, Clock,
   XCircle, Loader2, Download, BarChart3, ChevronDown, ChevronUp,
@@ -50,9 +51,14 @@ export default function ReportsPage() {
   const [toDate, setToDate] = useState('')
   const [perfSupplierId, setPerfSupplierId] = useState('')
 
+  // Reports are DAF / Assistant Comptable only. Gate every fetch on the role so
+  // the page doesn't fire calls the backend will 403 before PageRoleGuard hides it.
+  const canView = useHasRole('ROLE_DAF', 'ROLE_ASSISTANT_COMPTABLE')
+
   const { data: kpi, isLoading: kpiLoading } = useQuery({
     queryKey: ['kpis'],
     queryFn: reportService.getKpis,
+    enabled: canView,
     retry: false,
   })
 
@@ -62,6 +68,7 @@ export default function ReportsPage() {
       const { data } = await apiClient.get<{ data: { buckets: Array<{ label: string; count: number; totalAmount: number }> } }>('/reports/aging')
       return data.data
     },
+    enabled: canView,
     retry: false,
   })
 
@@ -71,6 +78,7 @@ export default function ReportsPage() {
       const { data } = await apiClient.get<{ data: Array<{ approverUsername: string; invoiceCount: number; averageDays: number }> }>('/reports/bottlenecks')
       return data.data ?? []
     },
+    enabled: canView,
     retry: false,
   })
 
@@ -80,6 +88,7 @@ export default function ReportsPage() {
       const { data } = await apiClient.get<{ data: { weeks: Array<{ weekLabel: string; totalAmount: number; invoiceCount: number }> } }>('/reports/cash-flow')
       return data.data
     },
+    enabled: canView,
     retry: false,
   })
 
@@ -92,6 +101,7 @@ export default function ReportsPage() {
       } }>('/reports/budget-vs-actual')
       return data.data
     },
+    enabled: canView,
     retry: false,
   })
 
@@ -103,13 +113,14 @@ export default function ReportsPage() {
       )
       return data.data?.content ?? []
     },
+    enabled: canView,
     retry: false,
   })
 
   const { data: supplierPerf, isLoading: perfLoading } = useQuery({
     queryKey: ['supplier-performance', perfSupplierId],
     queryFn: () => reportService.getSupplierPerformance(perfSupplierId),
-    enabled: !!perfSupplierId,
+    enabled: canView && !!perfSupplierId,
     retry: false,
   })
 

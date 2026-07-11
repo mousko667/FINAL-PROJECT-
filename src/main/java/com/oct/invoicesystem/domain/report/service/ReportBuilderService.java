@@ -194,7 +194,8 @@ public class ReportBuilderService {
                 List.of(messageSource.getMessage("report.excel.header.total_committed_spend", null, locale), budget.totalActual() == null ? "0" : budget.totalActual().toPlainString()),
                 List.of(messageSource.getMessage("report.excel.header.webhook_delivery_success", null, locale), String.format("%.0f%%", kpi.webhookDeliverySuccessRate() * 100)));
         ReportMetadata meta = builderMetadata(authentication, locale);
-        return exportService.export(TabularExportService.Format.PDF, "Executive Summary",
+        String title = messageSource.getMessage("report.pdf.executive.title", null, locale);
+        return exportService.export(TabularExportService.Format.PDF, title,
                 List.of(
                         messageSource.getMessage("report.excel.header.indicator", null, locale),
                         messageSource.getMessage("report.excel.header.value", null, locale)

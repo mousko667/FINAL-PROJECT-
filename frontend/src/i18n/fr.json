@@ -819,7 +819,8 @@
       "colFile": "Fichier",
       "colTriggeredBy": "Déclenché par",
       "historyTitle": "Historique des opérations",
-      "historyEmpty": "Aucun historique d'opération."
+      "historyEmpty": "Aucun historique d'opération.",
+      "noBackup": "Aucune sauvegarde enregistrée pour le moment."
     }
   },
   "profile": {
@@ -1102,7 +1103,8 @@
       "companyInfo": "Informations de l'entreprise",
       "taxIdLocked": "Le NIF ne peut pas être modifié.",
       "bankPlaceholder": "IBAN, nom de la banque, code agence, SWIFT/BIC…",
-      "bankKeepHint": "Laissez vide pour conserver les coordonnées bancaires actuelles."
+      "bankKeepHint": "Laissez vide pour conserver les coordonnées bancaires actuelles.",
+      "subtitle": "Gérez les informations de votre entreprise et vos coordonnées bancaires."
     },
     "status": {
       "PENDING_VERIFICATION": "En attente de vérification",
@@ -1394,5 +1396,9 @@
     "dropHere": "Déposez ici…",
     "dragOrClick": "Glissez-déposez ou cliquez pour ajouter",
     "formatsHint": "PDF, PNG, JPG, XLSX (max {{max}} Mo par fichier)"
+  },
+  "theme": {
+    "switchToDark": "Passer au thème sombre",
+    "switchToLight": "Passer au thème clair"
   }
 }

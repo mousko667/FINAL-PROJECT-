@@ -308,8 +308,8 @@ public class InvoiceController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<Invoice> result = invoiceService.searchArchived(keyword, department, folderId, from, to, pageable);
-        return ResponseEntity.ok(ApiResponse.success(result.map(invoiceMapper::toDto)));
+        Page<InvoiceDTO> result = invoiceService.searchArchived(keyword, department, folderId, from, to, pageable);
+        return ResponseEntity.ok(ApiResponse.success(result));
     }
 
     @GetMapping("/{id}/export/pdf")

@@ -1,8 +1,11 @@
 package com.oct.invoicesystem.shared.exception;
 
 import com.oct.invoicesystem.shared.response.ApiResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.HttpStatus;
@@ -23,8 +26,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
+@RequiredArgsConstructor
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private final MessageSource messageSource;
+
+    /**
+     * Translates an exception message that is an i18n key (e.g. "error.invoice.document_required")
+     * into the caller's language. Plain human-readable messages (no dot-separated key shape) and
+     * unknown keys are returned unchanged, so nothing is lost when a message isn't a key.
+     */
+    private String resolve(String message) {
+        if (message == null || message.isBlank() || message.contains(" ")) return message;
+        try {
+            return messageSource.getMessage(message, null, message, LocaleContextHolder.getLocale());
+        } catch (RuntimeException ex) {
+            return message;
+        }
+    }
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleResourceNotFound(ResourceNotFoundException ex) {
@@ -45,13 +65,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(WorkflowException.class)
     public ResponseEntity<ApiResponse<Void>> handleWorkflowException(WorkflowException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(ex.getMessage(), null));
+                .body(ApiResponse.error(resolve(ex.getMessage()), null));
     }
 
     @ExceptionHandler(ValidationException.class)
     public ResponseEntity<ApiResponse<Void>> handleCustomValidationException(ValidationException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(ex.getMessage(), null));
+                .body(ApiResponse.error(resolve(ex.getMessage()), null));
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -103,7 +123,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(AccessDeniedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error("Access denied", null));
+                .body(ApiResponse.error(resolve("error.access_denied"), null));
     }
 
     @ExceptionHandler(NoResourceFoundException.class)

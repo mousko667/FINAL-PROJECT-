@@ -2,8 +2,9 @@ import { useTranslation } from 'react-i18next'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { logout } from '@/store/slices/authSlice'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
-import { LogOut, Globe, ChevronRight } from 'lucide-react'
+import { LogOut, Globe, ChevronRight, Sun, Moon } from 'lucide-react'
 import { NotificationDropdown } from './NotificationDropdown'
+import { useTheme } from '@/hooks/useTheme'
 
 const BREADCRUMB_MAP: Record<string, string> = {
   '/dashboard':              'nav.dashboard',
@@ -53,6 +54,7 @@ export default function Header() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const { user } = useAppSelector((s) => s.auth)
+  const { theme, toggleTheme } = useTheme()
   const breadcrumbs = useBreadcrumb()
 
   const handleLogout = () => {
@@ -99,6 +101,16 @@ export default function Header() {
         >
           <Globe className="w-3.5 h-3.5" />
           {i18n.language === 'fr' ? 'EN' : 'FR'}
+        </button>
+
+        <button
+          id="btn-theme-toggle"
+          onClick={toggleTheme}
+          className="p-2 text-ink-soft hover:bg-ground rounded-[4px] transition-colors border border-transparent hover:border-hairline"
+          aria-label={t(theme === 'dark' ? 'theme.switchToLight' : 'theme.switchToDark')}
+          title={t(theme === 'dark' ? 'theme.switchToLight' : 'theme.switchToDark')}
+        >
+          {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
 
         <NotificationDropdown />

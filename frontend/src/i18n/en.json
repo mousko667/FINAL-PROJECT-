@@ -819,7 +819,8 @@
       "colFile": "File",
       "colTriggeredBy": "Triggered by",
       "historyTitle": "Operation history",
-      "historyEmpty": "No operation history."
+      "historyEmpty": "No operation history.",
+      "noBackup": "No backup recorded yet."
     }
   },
   "profile": {
@@ -1102,7 +1103,8 @@
       "companyInfo": "Company Information",
       "taxIdLocked": "Tax ID cannot be changed.",
       "bankPlaceholder": "IBAN, Bank name, Branch code, SWIFT/BIC…",
-      "bankKeepHint": "Leave blank to keep the current bank details unchanged."
+      "bankKeepHint": "Leave blank to keep the current bank details unchanged.",
+      "subtitle": "Manage your company information and bank details."
     },
     "status": {
       "PENDING_VERIFICATION": "Pending Verification",
@@ -1394,5 +1396,9 @@
     "dropHere": "Drop here…",
     "dragOrClick": "Drag and drop or click to add files",
     "formatsHint": "PDF, PNG, JPG, XLSX (max {{max}} MB per file)"
+  },
+  "theme": {
+    "switchToDark": "Switch to dark theme",
+    "switchToLight": "Switch to light theme"
   }
 }

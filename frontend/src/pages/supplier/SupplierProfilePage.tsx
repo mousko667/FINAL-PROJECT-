@@ -41,7 +41,7 @@ export default function SupplierProfilePage() {
     <form onSubmit={handleSubmit(values => mutation.mutate(values))} className="space-y-6 max-w-3xl">
       <div>
         <h1 className="text-2xl font-bold text-ink">{t('supplier.profile.title')}</h1>
-        <p className="text-sm text-ink-soft mt-1">{t('supplier.invoice.submit.subtitle')}</p>
+        <p className="text-sm text-ink-soft mt-1">{t('supplier.profile.subtitle')}</p>
       </div>
 
       {mutation.isSuccess && (

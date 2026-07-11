@@ -90,8 +90,10 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
     buttons.push({ action: 'SUBMIT', label: t('invoice.submit', 'Submit for Validation'), variant: 'primary' })
   }
 
-  // Take charge of a submitted invoice (SOUMIS → EN_VALIDATION_N1)
-  if ((isAA || isN1) && status === 'SOUMIS') {
+  // Take charge of a submitted invoice (SOUMIS → EN_VALIDATION_N1). Only the department's
+  // N1 validator can self-assign — the backend's assignReviewer enforces the dept N1 role,
+  // so the Assistant Comptable (who can only submit) must not see this action.
+  if (isN1 && status === 'SOUMIS' && deptMatches) {
     buttons.push({ action: 'ASSIGN_REVIEWER', label: t('invoice.startReview', 'Start review'), variant: 'primary' })
   }
 

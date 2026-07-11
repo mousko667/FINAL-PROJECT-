@@ -86,7 +86,9 @@ export default function AdminBackupsPage() {
                   {status.status}
                 </span>
               </p>
-              <p className="text-xs text-ink-soft mt-1">{status.detail}</p>
+              <p className="text-xs text-ink-soft mt-1">
+                {status.status === 'UNKNOWN' ? t('admin.backups.noBackup') : status.detail}
+              </p>
             </div>
             {status.lastBackupAt && (
               <div className="text-right text-sm text-ink-soft num">

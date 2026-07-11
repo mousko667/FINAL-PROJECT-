@@ -8,6 +8,7 @@ import AppRoutes from './AppRoutes'
 import '@/i18n'
 import apiClient from '@/services/apiClient'
 import { useSessionTimeout } from '@/hooks/useSessionTimeout'
+import { useTheme } from '@/hooks/useTheme'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -75,12 +76,20 @@ function SessionTimeoutManager() {
   return null
 }
 
+// Activates the light/dark theme (OS preference or the user's saved choice) on the
+// document root for every layout — staff and supplier alike.
+function ThemeManager() {
+  useTheme()
+  return null
+}
+
 function App() {
   return (
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <AuthRehydrator>
+            <ThemeManager />
             <SessionTimeoutManager />
             <AppRoutes />
           </AuthRehydrator>

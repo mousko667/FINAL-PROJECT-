@@ -100,9 +100,9 @@ export default function AdminCompliancePage() {
           <div className="flex items-center gap-2"><Database className="w-5 h-5 text-primary" /><h2 className="font-semibold text-ink">{t('admin.compliance.backup', 'Statut de sauvegarde')}</h2></div>
           <button onClick={() => recordBackup.mutate()} disabled={recordBackup.isPending} className="text-sm border border-hairline px-3 py-1.5 rounded-[4px] hover:bg-ground">{t('admin.compliance.recordBackup', 'Enregistrer une sauvegarde')}</button>
         </div>
-        <div className="mt-2 text-sm">
+        <div className="mt-2 text-sm flex items-center gap-2">
           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${backup.data?.status === 'OK' ? 'bg-pos-bg text-pos' : backup.data?.status === 'FAILED' ? 'bg-crit-bg text-crit' : 'bg-ground text-ink-soft'}`}>{backup.data?.status ?? 'UNKNOWN'}</span>
-          <span className="text-ink-soft ml-2">{backup.data?.lastBackupAt ? formatDateTime(backup.data.lastBackupAt) : t('admin.compliance.noBackup', 'Aucune sauvegarde enregistrée')}</span>
+          <span className="text-ink-soft">{backup.data?.lastBackupAt ? formatDateTime(backup.data.lastBackupAt) : t('admin.compliance.noBackup', 'Aucune sauvegarde enregistrée')}</span>
         </div>
       </Panel>
 

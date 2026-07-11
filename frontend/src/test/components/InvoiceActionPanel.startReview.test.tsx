@@ -77,19 +77,21 @@ const dafUser: AuthUser = {
 }
 
 describe('InvoiceActionPanel — Start review (SOUMIS -> EN_VALIDATION_N1)', () => {
-  it('shows Start review on a SOUMIS invoice for an AA and posts /workflow/assign', async () => {
-    const post = vi.spyOn(apiClient, 'post').mockResolvedValue({ data: { data: null } } as any)
+  it('does NOT show Start review for an AA — only the dept N1 validator can self-assign', () => {
+    // The backend's assignReviewer enforces the invoice department's N1 role, so the
+    // Assistant Comptable (who can only submit) must not see this action.
     renderPanel(makeInvoice('SOUMIS'), assistantUser)
+    expect(screen.queryByRole('button', { name: /Démarrer la revue|Start review/ })).toBeNull()
+  })
+
+  it('shows Start review on a SOUMIS invoice for an N1 validator and posts /workflow/assign', async () => {
+    const post = vi.spyOn(apiClient, 'post').mockResolvedValue({ data: { data: null } } as any)
+    renderPanel(makeInvoice('SOUMIS'), validateur1)
 
     const btn = screen.getByRole('button', { name: /Démarrer la revue|Start review/ })
     await userEvent.click(btn)
 
     expect(post).toHaveBeenCalledWith('/invoices/inv-1/workflow/assign')
-  })
-
-  it('shows Start review on a SOUMIS invoice for an N1 validator', () => {
-    renderPanel(makeInvoice('SOUMIS'), validateur1)
-    expect(screen.getByRole('button', { name: /Démarrer la revue|Start review/ })).toBeDefined()
   })
 
   it('does NOT show Start review for DAF on a SOUMIS invoice', () => {

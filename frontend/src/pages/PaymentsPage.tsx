@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import apiClient from '@/services/apiClient'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
+import { useHasRole } from '@/hooks/useHasRole'
 import { ExportMenu } from '@/components/ui/ExportMenu'
 import { Panel } from '@/components/ui/Panel'
 import {
@@ -197,6 +198,10 @@ export default function PaymentsPage() {
     }
   }
 
+  // Payments are DAF / Assistant Comptable only. Gate the fetches on role so the
+  // page doesn't fire calls the backend 403s before PageRoleGuard hides the UI.
+  const canView = useHasRole('ROLE_DAF', 'ROLE_ASSISTANT_COMPTABLE')
+
   const { data: payments, isLoading: paymentsLoading } = useQuery({
     queryKey: ['payments', page, statusFilter],
     queryFn: async () => {
@@ -207,6 +212,7 @@ export default function PaymentsPage() {
       )
       return data.data
     },
+    enabled: canView,
   })
 
   // Invoices awaiting payment (BON_A_PAYER status)
@@ -218,6 +224,7 @@ export default function PaymentsPage() {
       )
       return data.data?.content ?? []
     },
+    enabled: canView,
   })
 
   const paymentList = payments?.content ?? []

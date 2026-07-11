@@ -2,6 +2,8 @@ package com.oct.invoicesystem.domain.invoice.service;
 
 import com.oct.invoicesystem.domain.department.model.Department;
 import com.oct.invoicesystem.domain.department.repository.DepartmentRepository;
+import com.oct.invoicesystem.domain.invoice.dto.InvoiceDTO;
+import com.oct.invoicesystem.domain.invoice.mapper.InvoiceMapper;
 import com.oct.invoicesystem.domain.invoice.model.Invoice;
 import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
 import com.oct.invoicesystem.domain.invoice.repository.InvoiceDocumentRepository;
@@ -47,6 +49,7 @@ public class InvoiceService {
     private final InvoiceDocumentRepository invoiceDocumentRepository;
     private final ThreeWayMatchingResultRepository matchingResultRepository;
     private final InvoiceStatusHistoryRepository historyRepository;
+    private final InvoiceMapper invoiceMapper;
 
     /**
      * Creates an invoice draft in BROUILLON status.
@@ -353,14 +356,18 @@ public class InvoiceService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Invoice> searchArchived(String keyword, String departmentCode, String folderId, Instant from, Instant to, Pageable pageable) {
+    public Page<InvoiceDTO> searchArchived(String keyword, String departmentCode, String folderId, Instant from, Instant to, Pageable pageable) {
         UUID departmentId = null;
         if (departmentCode != null && !departmentCode.trim().isEmpty()) {
             departmentId = departmentRepository.findByCode(departmentCode)
                 .map(Department::getId)
                 .orElse(UUID.randomUUID()); // If not found, use a random UUID so it matches nothing
         }
-        return invoiceRepository.searchArchived(keyword, departmentId, folderId, from, to, pageable);
+        // Map to DTO inside the transaction: searchArchived is a native query whose lazy
+        // Department proxy would otherwise fail with LazyInitializationException once the
+        // session closes (the controller used to map after the tx boundary).
+        return invoiceRepository.searchArchived(keyword, departmentId, folderId, from, to, pageable)
+                .map(invoiceMapper::toDto);
     }
 
     @Transactional

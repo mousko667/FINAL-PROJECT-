@@ -20,6 +20,12 @@ vi.mock('@/components/auth/RoleGuard', () => ({
   PageRoleGuard: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
 
+// The page gates its data fetches on the current user's role via useHasRole
+// (backed by the Redux store); in tests we grant the role directly.
+vi.mock('@/hooks/useHasRole', () => ({
+  useHasRole: () => true,
+}))
+
 // VolumeTrendSection makes its own queries we don't care about.
 vi.mock('@/components/reports/VolumeTrendSection', () => ({ default: () => <div /> }))
 

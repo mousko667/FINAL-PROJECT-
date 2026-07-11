@@ -2,7 +2,13 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import ArchiveFolderTree from '@/components/archive/ArchiveFolderTree'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import * as AuthHook from '@/hooks/useAuth'
+
+// Mock the Redux store selector — ArchiveFolderTree reads the current user's
+// roles via useAppSelector((state) => state.auth.user) to decide admin actions.
+vi.mock('@/store/hooks', () => ({
+  useAppSelector: (selector: (state: unknown) => unknown) =>
+    selector({ auth: { user: { roles: ['ROLE_ADMIN'] } } }),
+}))
 
 // Mock react-i18next
 vi.mock('react-i18next', () => ({
@@ -23,7 +29,6 @@ vi.mock('@/services/apiClient', () => ({
 
 describe('ArchiveFolderTree', () => {
   it('renders folders and handles selection', async () => {
-    vi.spyOn(AuthHook, 'useAuth').mockReturnValue({ hasRole: () => true } as any)
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
     const onSelect = vi.fn()
 

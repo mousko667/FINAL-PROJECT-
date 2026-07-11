@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type { ArchiveFolder, ArchiveFolderCreateRequest, ArchiveFolderUpdateRequest } from '@/types/archive'
 import apiClient from '@/services/apiClient'
 import { Folder, FolderOpen, MoreVertical, Plus, Edit2, Trash2, ChevronRight, ChevronDown, Loader2 } from 'lucide-react'
-import { useAuth } from '@/hooks/useAuth'
+import { useAppSelector } from '@/store/hooks'
 
 interface ArchiveFolderTreeProps {
   selectedFolderId: string | null
@@ -13,8 +13,8 @@ interface ArchiveFolderTreeProps {
 
 export default function ArchiveFolderTree({ selectedFolderId, onSelectFolder }: ArchiveFolderTreeProps) {
   const { t } = useTranslation()
-  const { hasRole } = useAuth()
-  const isAdmin = hasRole('ROLE_ADMIN')
+  const user = useAppSelector((state) => state.auth.user)
+  const isAdmin = user?.roles.includes('ROLE_ADMIN') ?? false
   const queryClient = useQueryClient()
 
   const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({})
