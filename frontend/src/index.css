@@ -103,6 +103,18 @@
     --info-bg: 204 38% 92%;
 
     --gold-deep: 44 54% 39%;
+
+    /* ===================================================================
+     * Application tokens (Lot couleur "Soutenu") — ZÉRO couleur nouvelle :
+     * chaque valeur pointe vers un token existant via hsl(var(...)). Les
+     * opacités ci-dessous sont celles validées AA par scripts/color/validate-aa.mjs.
+     * =================================================================== */
+    --header-grad-from: hsl(var(--oct-navy));
+    --header-grad-to: hsl(var(--oct-navy-light));
+    --header-accent: hsl(var(--oct-gold));
+    --nav-tint: hsl(var(--info) / 0.12);
+    --page-tint: hsl(var(--info) / 0.07);
+    --kpi-info-bg: hsl(var(--info) / 0.09);
   }
 
   /* ===================================================================
@@ -156,6 +168,14 @@
     --info-bg: 210 29% 12%;
 
     --gold-deep: 43 62% 61%;
+
+    /* Application tokens — dark (navy éclaircie via --primary, or rehaussé) */
+    --header-grad-from: hsl(var(--primary));
+    --header-grad-to: hsl(var(--oct-navy-light));
+    --header-accent: hsl(var(--gold-deep));
+    --nav-tint: hsl(var(--info) / 0.14);
+    --page-tint: hsl(var(--info) / 0.06);
+    --kpi-info-bg: hsl(var(--info) / 0.10);
 
     /* Identité en dark : navy s'éclaircit (sinon illisible sur fond sombre),
      * gold rehaussé pour ne pas paraître boueux (aligné sur --gold-deep dark). */

@@ -92,6 +92,12 @@ module.exports = {
           bg: "hsl(var(--info-bg))",
         },
         "gold-deep": "hsl(var(--gold-deep))",
+        "header-grad-from": "var(--header-grad-from)",
+        "header-grad-to": "var(--header-grad-to)",
+        "header-accent": "var(--header-accent)",
+        "nav-tint": "var(--nav-tint)",
+        "page-tint": "var(--page-tint)",
+        "kpi-info": "var(--kpi-info-bg)",
       },
       borderRadius: {
         lg: "var(--radius)",
