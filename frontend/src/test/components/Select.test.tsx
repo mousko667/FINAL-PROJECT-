@@ -36,4 +36,16 @@ describe('Select', () => {
     render(<Select ref={ref} aria-label="s"><option>x</option></Select>)
     expect(ref.current?.tagName).toBe('SELECT')
   })
+
+  it('porte la classe select-chevron qui pilote la commutation light/dark du chevron (index.css)', () => {
+    // Le chevron est un SVG data-URI (ne peut pas lire une CSS var) : sa couleur
+    // suit le thème via deux background-image commutés en CSS par la classe
+    // .select-chevron / .dark .select-chevron (voir index.css), pas par un hex
+    // figé dans un style inline. On vérifie ici que le <select> porte bien le
+    // hook CSS attendu, et qu'aucune couleur n'est plus figée en style inline.
+    render(<Select aria-label="s"><option>x</option></Select>)
+    const el = screen.getByLabelText('s')
+    expect(el.className).toMatch(/\bselect-chevron\b/)
+    expect(el.style.backgroundImage).toBe('')
+  })
 })

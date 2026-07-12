@@ -208,6 +208,21 @@
   background-size: 800px 100%;
 }
 
+/* Select chevron (Lot 1 / design-system) - a data-URI SVG background-image
+ * cannot read a CSS variable, so its stroke color is baked in at build time.
+ * We switch the whole background-image between two baked SVGs (light/dark)
+ * so the chevron still tracks the --ink-soft token instead of a stray hex.
+ *   light --ink-soft #6B6456 (40 11% 38%)
+ *   dark  --ink-soft #A9A499 (41 9% 63%)
+ */
+.select-chevron {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B6456' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+}
+
+.dark .select-chevron {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23A9A499' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+}
+
 /* OCT sidebar nav active state override */
 .oct-nav-active {
   background: linear-gradient(135deg, hsl(213 64% 22%) 0%, hsl(213 64% 18%) 100%);
