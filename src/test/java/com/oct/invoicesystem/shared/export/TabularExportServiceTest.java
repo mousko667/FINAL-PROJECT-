@@ -133,9 +133,7 @@ class TabularExportServiceTest {
                     List.of("a", "b"), List.of(List.of("1", "2")), meta, ms);
             assertNotNull(bytes);
             assertEquals("%PDF", new String(bytes, 0, 4, StandardCharsets.US_ASCII));
-            // Le filet de separation est une cellule/bordure coloree -> le flux PDF contient
-            // un operateur de trace ("re" rectangle ou "l" line) au-dela du simple texte.
-            String content = new String(bytes, StandardCharsets.ISO_8859_1);
+            // Un en-tete avec metadonnees + filet de separation produit un flux PDF non trivial.
             assertTrue(bytes.length > 1000, "un rapport avec en-tete meta doit produire un flux non trivial");
         } finally {
             org.springframework.context.i18n.LocaleContextHolder.setLocale(prev);

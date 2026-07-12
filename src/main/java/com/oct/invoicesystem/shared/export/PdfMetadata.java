@@ -16,11 +16,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
 /**
- * Shared rendering of the OCT report metadata: a header block (optional period, generator name +
- * role, generation date) placed under the title, and a bordered signature box placed at the
- * bottom. Centralized so every PDF report (audit, compliance, executive summary, custom builder)
- * looks identical. Never fails report generation on a missing key — callers pass a resolved
- * {@link ReportMetadata}.
+ * Shared rendering of the OCT report metadata: a header block (generator name + role, generation
+ * date, optional period) aligned right under the title with a thin navy/gold separator rule, and a
+ * two-line signature block (Signature / Date, no box) placed at the bottom. Centralized so every PDF
+ * report (audit, compliance, executive summary, custom builder) looks identical. Never fails report
+ * generation on a missing key — callers pass a resolved {@link ReportMetadata}.
  */
 public final class PdfMetadata {
 
