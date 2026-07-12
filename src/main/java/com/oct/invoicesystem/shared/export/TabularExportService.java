@@ -28,6 +28,13 @@ import java.util.List;
 @Service
 public class TabularExportService {
 
+    private static final com.itextpdf.kernel.colors.Color PDF_NAVY =
+            new com.itextpdf.kernel.colors.DeviceRgb(15, 37, 64);    // #0F2540
+    private static final com.itextpdf.kernel.colors.Color PDF_ZEBRA =
+            new com.itextpdf.kernel.colors.DeviceRgb(251, 250, 247); // #FBFAF7
+    private static final com.itextpdf.kernel.colors.Color PDF_HAIRLINE =
+            new com.itextpdf.kernel.colors.DeviceRgb(218, 211, 196); // #DAD3C4
+
     public enum Format {
         CSV("text/csv", "csv"),
         EXCEL("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "xlsx"),
@@ -181,13 +188,31 @@ public class TabularExportService {
             for (int i = 0; i < widths.length; i++) widths[i] = 1f;
             Table table = new Table(UnitValue.createPercentArray(widths)).useAllAvailableWidth();
 
+            // Header row: navy background, white bold text, no per-cell borders.
             for (String h : headers) {
-                table.addHeaderCell(new Cell().add(new Paragraph(h == null ? "" : h).setBold()));
+                table.addHeaderCell(new Cell()
+                        .add(new Paragraph(h == null ? "" : h).setBold())
+                        .setFontColor(com.itextpdf.kernel.colors.ColorConstants.WHITE)
+                        .setBackgroundColor(PDF_NAVY)
+                        .setBorder(com.itextpdf.layout.borders.Border.NO_BORDER)
+                        .setPadding(5f));
             }
+            // Data rows: zebra striping + thin bottom rule only (no vertical borders).
+            int r = 0;
             for (List<String> row : rows) {
+                boolean even = (r % 2 == 0);
                 for (String v : row) {
-                    table.addCell(new Cell().add(new Paragraph(v == null ? "" : v)));
+                    Cell cell = new Cell()
+                            .add(new Paragraph(v == null ? "" : v))
+                            .setBorder(com.itextpdf.layout.borders.Border.NO_BORDER)
+                            .setBorderBottom(new com.itextpdf.layout.borders.SolidBorder(PDF_HAIRLINE, 0.3f))
+                            .setPadding(4f);
+                    if (!even) {
+                        cell.setBackgroundColor(PDF_ZEBRA);
+                    }
+                    table.addCell(cell);
                 }
+                r++;
             }
 
             document.add(table);

@@ -141,4 +141,20 @@ class TabularExportServiceTest {
             org.springframework.context.i18n.LocaleContextHolder.setLocale(prev);
         }
     }
+
+    @Test
+    void pdf_manyRows_repeatsHeaderAcrossPages() {
+        java.util.List<java.util.List<String>> rows = new java.util.ArrayList<>();
+        for (int i = 0; i < 120; i++) {
+            rows.add(java.util.List.of("ligne " + i, "valeur " + i));
+        }
+        byte[] bytes = service.export(TabularExportService.Format.PDF, "Grand rapport",
+                List.of("Libelle", "Montant"), rows);
+        assertNotNull(bytes);
+        assertEquals("%PDF", new String(bytes, 0, 4, StandardCharsets.US_ASCII));
+        // Un document multi-pages declare plusieurs objets /Page.
+        String content = new String(bytes, StandardCharsets.ISO_8859_1);
+        int pageCount = content.split("/Type\\s*/Page[^s]").length - 1;
+        assertTrue(pageCount >= 2, "120 lignes doivent deborder sur au moins 2 pages, vu: " + pageCount);
+    }
 }
