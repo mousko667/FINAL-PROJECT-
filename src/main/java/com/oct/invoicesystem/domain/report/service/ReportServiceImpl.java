@@ -274,39 +274,43 @@ public class ReportServiceImpl implements ReportService {
 
             document.add(new Paragraph("\n"));
 
-            // Invoice Summary Table
+            // Invoice Summary Table — key/value sheet, not a data grid: borderless styling only
+            // (no navy header background, no zebra striping), bold kept on the labels.
             Table summary = new Table(UnitValue.createPercentArray(new float[]{30, 70})).useAllAvailableWidth();
-            summary.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.reference", null, locale)).setBold()));
-            summary.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(invoice.getReferenceNumber())));
-            summary.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.supplier", null, locale)).setBold()));
-            summary.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(invoice.getSupplierName())));
-            summary.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.amount", null, locale)).setBold()));
-            summary.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(
+            summary.addCell(com.oct.invoicesystem.shared.export.PdfTableStyle.dataCell(new Paragraph(messageSource.getMessage("report.excel.header.reference", null, locale)).setBold(), false));
+            summary.addCell(com.oct.invoicesystem.shared.export.PdfTableStyle.dataCell(new Paragraph(invoice.getReferenceNumber()), false));
+            summary.addCell(com.oct.invoicesystem.shared.export.PdfTableStyle.dataCell(new Paragraph(messageSource.getMessage("report.excel.header.supplier", null, locale)).setBold(), false));
+            summary.addCell(com.oct.invoicesystem.shared.export.PdfTableStyle.dataCell(new Paragraph(invoice.getSupplierName()), false));
+            summary.addCell(com.oct.invoicesystem.shared.export.PdfTableStyle.dataCell(new Paragraph(messageSource.getMessage("report.excel.header.amount", null, locale)).setBold(), false));
+            summary.addCell(com.oct.invoicesystem.shared.export.PdfTableStyle.dataCell(new Paragraph(
                     (invoice.getAmount() == null ? "" : invoice.getAmount().toPlainString())
-                            + " " + (invoice.getCurrency() == null ? "" : invoice.getCurrency()))));
-            summary.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.status", null, locale)).setBold()));
-            summary.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("invoice.status." + invoice.getStatus().name().toLowerCase(), null, locale))));
+                            + " " + (invoice.getCurrency() == null ? "" : invoice.getCurrency())), false));
+            summary.addCell(com.oct.invoicesystem.shared.export.PdfTableStyle.dataCell(new Paragraph(messageSource.getMessage("report.excel.header.status", null, locale)).setBold(), false));
+            summary.addCell(com.oct.invoicesystem.shared.export.PdfTableStyle.dataCell(new Paragraph(messageSource.getMessage("invoice.status." + invoice.getStatus().name().toLowerCase(), null, locale)), false));
             document.add(summary);
 
             document.add(new Paragraph("\n"));
             document.add(new Paragraph(messageSource.getMessage("report.excel.header.audit_trail", null, locale)).setBold().setFontSize(14));
 
-            // Audit Trail Table — localized headers.
+            // Audit Trail Table — localized headers, full navy header + zebra styling.
             Table auditTable = new Table(UnitValue.createPercentArray(new float[]{20, 20, 20, 40})).useAllAvailableWidth();
-            auditTable.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.date", null, locale)).setBold()));
-            auditTable.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.user", null, locale)).setBold()));
-            auditTable.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.transition", null, locale)).setBold()));
-            auditTable.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.reason", null, locale)).setBold()));
+            auditTable.addHeaderCell(com.oct.invoicesystem.shared.export.PdfTableStyle.headerCell(new Paragraph(messageSource.getMessage("report.excel.header.date", null, locale))));
+            auditTable.addHeaderCell(com.oct.invoicesystem.shared.export.PdfTableStyle.headerCell(new Paragraph(messageSource.getMessage("report.excel.header.user", null, locale))));
+            auditTable.addHeaderCell(com.oct.invoicesystem.shared.export.PdfTableStyle.headerCell(new Paragraph(messageSource.getMessage("report.excel.header.transition", null, locale))));
+            auditTable.addHeaderCell(com.oct.invoicesystem.shared.export.PdfTableStyle.headerCell(new Paragraph(messageSource.getMessage("report.excel.header.reason", null, locale))));
 
+            int r = 0;
             for (InvoiceStatusHistory h : histories) {
-                auditTable.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(formatter.format(h.getChangedAt()))));
-                auditTable.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(h.getChangedBy().getUsername())));
-                
+                boolean zebra = (r % 2 != 0);
+                auditTable.addCell(com.oct.invoicesystem.shared.export.PdfTableStyle.dataCell(new Paragraph(formatter.format(h.getChangedAt())), zebra));
+                auditTable.addCell(com.oct.invoicesystem.shared.export.PdfTableStyle.dataCell(new Paragraph(h.getChangedBy().getUsername()), zebra));
+
                 String fromStatusLabel = messageSource.getMessage("invoice.status." + h.getFromStatus().toLowerCase(), null, locale);
                 String toStatusLabel = messageSource.getMessage("invoice.status." + h.getToStatus().toLowerCase(), null, locale);
-                auditTable.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(fromStatusLabel + " -> " + toStatusLabel)));
-                
-                auditTable.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(h.getChangeReason() != null ? h.getChangeReason() : "")));
+                auditTable.addCell(com.oct.invoicesystem.shared.export.PdfTableStyle.dataCell(new Paragraph(fromStatusLabel + " -> " + toStatusLabel), zebra));
+
+                auditTable.addCell(com.oct.invoicesystem.shared.export.PdfTableStyle.dataCell(new Paragraph(h.getChangeReason() != null ? h.getChangeReason() : ""), zebra));
+                r++;
             }
             document.add(auditTable);
 
@@ -351,20 +355,23 @@ public class ReportServiceImpl implements ReportService {
 
             // Compliance Table — amount and currency in separate columns (aligned with the Excel export).
             Table table = new Table(UnitValue.createPercentArray(new float[]{15, 27, 15, 10, 15, 18})).useAllAvailableWidth();
-            table.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.reference", null, locale)).setBold()));
-            table.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.supplier", null, locale)).setBold()));
-            table.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.amount", null, locale)).setBold()));
-            table.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.currency", null, locale)).setBold()));
-            table.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.issue_date", null, locale)).setBold()));
-            table.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.status", null, locale)).setBold()));
+            table.addHeaderCell(com.oct.invoicesystem.shared.export.PdfTableStyle.headerCell(new Paragraph(messageSource.getMessage("report.excel.header.reference", null, locale))));
+            table.addHeaderCell(com.oct.invoicesystem.shared.export.PdfTableStyle.headerCell(new Paragraph(messageSource.getMessage("report.excel.header.supplier", null, locale))));
+            table.addHeaderCell(com.oct.invoicesystem.shared.export.PdfTableStyle.headerCell(new Paragraph(messageSource.getMessage("report.excel.header.amount", null, locale))));
+            table.addHeaderCell(com.oct.invoicesystem.shared.export.PdfTableStyle.headerCell(new Paragraph(messageSource.getMessage("report.excel.header.currency", null, locale))));
+            table.addHeaderCell(com.oct.invoicesystem.shared.export.PdfTableStyle.headerCell(new Paragraph(messageSource.getMessage("report.excel.header.issue_date", null, locale))));
+            table.addHeaderCell(com.oct.invoicesystem.shared.export.PdfTableStyle.headerCell(new Paragraph(messageSource.getMessage("report.excel.header.status", null, locale))));
 
+            int r = 0;
             for (Invoice i : invoices) {
-                table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(i.getReferenceNumber())));
-                table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(i.getSupplierName())));
-                table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(i.getAmount() == null ? "" : i.getAmount().toPlainString())));
-                table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(i.getCurrency() == null ? "" : i.getCurrency())));
-                table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(i.getIssueDate().toString())));
-                table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("invoice.status." + i.getStatus().name().toLowerCase(), null, locale))));
+                boolean zebra = (r % 2 != 0);
+                table.addCell(com.oct.invoicesystem.shared.export.PdfTableStyle.dataCell(new Paragraph(i.getReferenceNumber()), zebra));
+                table.addCell(com.oct.invoicesystem.shared.export.PdfTableStyle.dataCell(new Paragraph(i.getSupplierName()), zebra));
+                table.addCell(com.oct.invoicesystem.shared.export.PdfTableStyle.dataCell(new Paragraph(i.getAmount() == null ? "" : i.getAmount().toPlainString()), zebra));
+                table.addCell(com.oct.invoicesystem.shared.export.PdfTableStyle.dataCell(new Paragraph(i.getCurrency() == null ? "" : i.getCurrency()), zebra));
+                table.addCell(com.oct.invoicesystem.shared.export.PdfTableStyle.dataCell(new Paragraph(i.getIssueDate().toString()), zebra));
+                table.addCell(com.oct.invoicesystem.shared.export.PdfTableStyle.dataCell(new Paragraph(messageSource.getMessage("invoice.status." + i.getStatus().name().toLowerCase(), null, locale)), zebra));
+                r++;
             }
             document.add(table);
 
