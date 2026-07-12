@@ -40,4 +40,18 @@ describe('Table', () => {
     render(<Table><TBody><TR><TD className="num">1 000</TD></TR></TBody></Table>)
     expect(screen.getByRole('cell').className).toMatch(/num/)
   })
+
+  it('applique containerClassName au wrapper overflow et className au <table>', () => {
+    const { container } = render(
+      <Table className="table-cls" containerClassName="wrapper-cls">
+        <TBody><TR><TD>x</TD></TR></TBody>
+      </Table>
+    )
+    const wrapper = container.querySelector('div.wrapper-cls')
+    expect(wrapper).not.toBeNull()
+    expect(wrapper?.className).toMatch(/overflow-x-auto/)
+    const table = container.querySelector('table')
+    expect(table?.className).toMatch(/table-cls/)
+    expect(wrapper?.className).not.toMatch(/table-cls/)
+  })
 })
