@@ -3,9 +3,11 @@ import { useQuery } from '@tanstack/react-query'
 import apiClient from '@/services/apiClient'
 import { Loader2 } from 'lucide-react'
 import {
-  ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import { formatAmount } from '@/lib/format'
+import { getSeriesColor, chartGridProps, chartAxisProps } from '@/lib/chart-theme'
+import { ChartTooltip } from '@/components/ui/ChartTooltip'
 
 interface TrendPoint {
   monthLabel: string
@@ -22,6 +24,8 @@ interface VolumeTrend {
 
 export default function VolumeTrendSection() {
   const { t } = useTranslation()
+  const dark = typeof document !== 'undefined'
+    && document.documentElement.classList.contains('dark')
 
   const { data: trend, isLoading } = useQuery({
     queryKey: ['volume-trend'],
@@ -47,6 +51,9 @@ export default function VolumeTrendSection() {
     )
   }
 
+  const amountColor = getSeriesColor(0, dark)
+  const countColor = getSeriesColor(1, dark)
+
   return (
     <div className="bg-surface rounded-[4px] border border-hairline overflow-hidden">
       <div className="px-5 py-4 font-semibold text-ink">{t('reports.trends.title', 'Tendances volume / valeur')}</div>
@@ -55,20 +62,38 @@ export default function VolumeTrendSection() {
         {isEmpty ? (
           <p data-testid="volume-trend-empty" className="text-sm text-center text-ink-faint py-4">{t('reports.noData', 'Aucune donnée')}</p>
         ) : (
-          <ResponsiveContainer width="100%" height={260}>
-            <ComposedChart data={trend!.points}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="monthLabel" tick={{ fontSize: 11 }} />
-              <YAxis yAxisId="left" tick={{ fontSize: 11 }} tickFormatter={v => `${(v / 1000).toFixed(0)}k`} />
-              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} allowDecimals={false} />
-              <Tooltip formatter={(value, name) => name === t('reports.trends.amount', 'Montant (XAF)')
-                ? [`${formatAmount(value)} XAF`, name]
-                : [value, name]} />
-              <Legend />
-              <Bar yAxisId="left" dataKey="totalAmount" name={t('reports.trends.amount', 'Montant (XAF)')} fill="#6366f1" radius={[4, 4, 0, 0]} />
-              <Line yAxisId="right" dataKey="invoiceCount" name={t('reports.trends.count', 'Nb de factures')} stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
-            </ComposedChart>
-          </ResponsiveContainer>
+          <div className="space-y-6">
+            <div data-testid="volume-trend-amount">
+              <div className="text-xs font-medium text-ink-soft mb-2">{t('reports.trends.amount', 'Montant (XAF)')}</div>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={trend!.points}>
+                  <CartesianGrid {...chartGridProps} />
+                  <XAxis dataKey="monthLabel" {...chartAxisProps} />
+                  <YAxis {...chartAxisProps} tickFormatter={v => `${(v / 1000).toFixed(0)}k`} />
+                  <Tooltip
+                    cursor={{ fill: 'hsl(var(--hairline) / 0.4)' }}
+                    content={<ChartTooltip valueFormatter={v => `${formatAmount(v)} XAF`} />}
+                  />
+                  <Bar dataKey="totalAmount" name={t('reports.trends.amount', 'Montant (XAF)')} fill={amountColor} radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div data-testid="volume-trend-count">
+              <div className="text-xs font-medium text-ink-soft mb-2">{t('reports.trends.count', 'Nb de factures')}</div>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={trend!.points}>
+                  <CartesianGrid {...chartGridProps} />
+                  <XAxis dataKey="monthLabel" {...chartAxisProps} />
+                  <YAxis {...chartAxisProps} allowDecimals={false} />
+                  <Tooltip
+                    cursor={{ stroke: 'hsl(var(--hairline))' }}
+                    content={<ChartTooltip />}
+                  />
+                  <Line dataKey="invoiceCount" name={t('reports.trends.count', 'Nb de factures')} stroke={countColor} strokeWidth={2} dot={{ r: 3 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         )}
       </div>
     </div>
