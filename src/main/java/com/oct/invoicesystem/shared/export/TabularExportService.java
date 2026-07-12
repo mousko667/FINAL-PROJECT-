@@ -3,7 +3,6 @@ package com.oct.invoicesystem.shared.export;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
-import com.itextpdf.layout.element.Cell;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.UnitValue;
@@ -181,13 +180,18 @@ public class TabularExportService {
             for (int i = 0; i < widths.length; i++) widths[i] = 1f;
             Table table = new Table(UnitValue.createPercentArray(widths)).useAllAvailableWidth();
 
+            // Header row: navy background, white bold text, no per-cell borders.
             for (String h : headers) {
-                table.addHeaderCell(new Cell().add(new Paragraph(h == null ? "" : h).setBold()));
+                table.addHeaderCell(PdfTableStyle.headerCell(new Paragraph(h == null ? "" : h)));
             }
+            // Data rows: zebra striping + thin bottom rule only (no vertical borders).
+            int r = 0;
             for (List<String> row : rows) {
+                boolean even = (r % 2 == 0);
                 for (String v : row) {
-                    table.addCell(new Cell().add(new Paragraph(v == null ? "" : v)));
+                    table.addCell(PdfTableStyle.dataCell(new Paragraph(v == null ? "" : v), !even));
                 }
+                r++;
             }
 
             document.add(table);

@@ -13,7 +13,7 @@ import com.itextpdf.layout.element.Image;
 public final class PdfBranding {
 
     private static final String LOGO_RESOURCE = "/branding/oct-logo.png";
-    private static final float LOGO_WIDTH_PT = 170f;
+    private static final float LOGO_WIDTH_PT = 150f;
 
     private static volatile byte[] logoBytes;
     private static volatile boolean lookupDone;
