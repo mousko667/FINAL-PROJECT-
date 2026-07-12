@@ -30,4 +30,9 @@ describe('chart-theme palette', () => {
     // au-delà de n : reste dans la palette (dernier slot ou "Other"), pas de undefined
     expect(SERIES_PALETTE_LIGHT).toContain(getSeriesColor(n + 3))
   })
+
+  it('borne un index négatif au premier slot (jamais undefined)', () => {
+    expect(getSeriesColor(-1)).toBe(SERIES_PALETTE_LIGHT[0])
+    expect(getSeriesColor(-5, true)).toBe(SERIES_PALETTE_DARK[0])
+  })
 })

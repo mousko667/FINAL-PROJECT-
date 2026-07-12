@@ -22,7 +22,8 @@ export const SERIES_PALETTE_DARK: string[] = [
  *  replie sur le dernier slot plutôt que de générer/cycler une hue. */
 export function getSeriesColor(index: number, dark = false): string {
   const palette = dark ? SERIES_PALETTE_DARK : SERIES_PALETTE_LIGHT
-  return palette[Math.min(index, palette.length - 1)]
+  const i = Math.max(0, Math.min(index, palette.length - 1))
+  return palette[i]
 }
 
 /** Props recessives pour CartesianGrid — lignes fines hairline, pas de verticales. */

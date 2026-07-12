@@ -53,6 +53,19 @@ Requirements. They supersede the old "Known Gaps — Must Be Fixed" section form
 > filtrer/marquer ces factures côté liste serait un plus UX. (b) Ajouter un `@DataJpaTest`
 > dédié à `PaymentRepository.findProcessedBetween` (actuellement couvert uniquement par mocks).
 
+> **Suivi non bloquant (2026-07-12, revue finale Design System Lot 2) :** les couleurs de
+> séries des graphiques Recharts (ex. `VolumeTrendSection`) sont calculées via une lecture
+> ponctuelle de `document.documentElement.classList.contains('dark')` au rendu. Elles ne se
+> **rafraîchissent pas au toggle de thème runtime SANS reload** : `useTheme` (`hooks/useTheme.ts`)
+> réinstancie un `useState` disjoint à chaque appel (App vs Header) → le toggle bascule bien la
+> classe `.dark` sur `<html>` mais ne re-rend pas l'arbre `AppRoutes`. Impact faible et
+> auto-correcteur (grille/axes suivent via CSS vars ; la teinte des séries se corrige au prochain
+> render : navigation/refetch ; les palettes light/dark sont toutes deux validées pour le
+> contraste). **Fix recommandé (lot thème dédié) :** centraliser le thème dans un `ThemeContext`
+> unique (supprime la double source `useTheme`) pour rendre `dark` réactif ; bénéfice au-delà des
+> charts. C'est un défaut d'architecture **pré-existant** au Lot 2, seulement exposé par
+> l'adoption `getSeriesColor`.
+
 > ⚠️ **RÉGRESSION corrigée par PROB-106 (2026-07-09)** : le fix devise XAF→XOF ci-dessous était
 > FAUX (OCT = Gabon = zone CEMAC/BEAC = **XAF**, pas XOF/BCEAO). Tous les XOF ont été re-remplacés
 > par XAF. Ne pas réappliquer XAF→XOF. Le reste du Fix Task 15 (helper `format.ts`, locale fr-FR) reste valide.

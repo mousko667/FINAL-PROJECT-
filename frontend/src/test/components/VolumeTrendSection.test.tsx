@@ -33,10 +33,13 @@ const sampleTrend = {
 describe('VolumeTrendSection', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('renders the trend section title once loaded', async () => {
+  it('renders the two small-multiple charts once loaded (no dual-axis)', async () => {
     vi.mocked(apiClient.get).mockResolvedValueOnce({ data: { data: sampleTrend } })
     renderSection()
     expect(await screen.findByText('Tendances volume / valeur')).toBeInTheDocument()
+    // Deux graphiques distincts (montant + nombre), chacun son axe Y unique.
+    expect(screen.getByTestId('volume-trend-amount')).toBeInTheDocument()
+    expect(screen.getByTestId('volume-trend-count')).toBeInTheDocument()
   })
 
   it('shows the empty state when all months are zero', async () => {
