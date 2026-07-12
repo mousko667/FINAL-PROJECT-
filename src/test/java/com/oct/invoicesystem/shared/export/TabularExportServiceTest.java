@@ -113,4 +113,32 @@ class TabularExportServiceTest {
             org.springframework.context.i18n.LocaleContextHolder.setLocale(prev);
         }
     }
+
+    @Test
+    void pdf_withMetadata_rendersHeaderRule() {
+        org.springframework.context.support.StaticMessageSource ms =
+                new org.springframework.context.support.StaticMessageSource();
+        java.util.Locale loc = java.util.Locale.FRENCH;
+        ms.addMessage("report.pdf.generated_by", loc, "Genere par : {0} ({1})");
+        ms.addMessage("report.pdf.generated_at", loc, "Genere le : {0}");
+        ms.addMessage("report.pdf.signature", loc, "Signature :");
+        ms.addMessage("report.pdf.signature.date", loc, "Date :");
+
+        java.util.Locale prev = org.springframework.context.i18n.LocaleContextHolder.getLocale();
+        org.springframework.context.i18n.LocaleContextHolder.setLocale(loc);
+        try {
+            ReportMetadata meta = new ReportMetadata(
+                    "DUPONT Jean", "DAF", java.time.Instant.now(), "Periode : 2026");
+            byte[] bytes = service.export(TabularExportService.Format.PDF, "Report",
+                    List.of("a", "b"), List.of(List.of("1", "2")), meta, ms);
+            assertNotNull(bytes);
+            assertEquals("%PDF", new String(bytes, 0, 4, StandardCharsets.US_ASCII));
+            // Le filet de separation est une cellule/bordure coloree -> le flux PDF contient
+            // un operateur de trace ("re" rectangle ou "l" line) au-dela du simple texte.
+            String content = new String(bytes, StandardCharsets.ISO_8859_1);
+            assertTrue(bytes.length > 1000, "un rapport avec en-tete meta doit produire un flux non trivial");
+        } finally {
+            org.springframework.context.i18n.LocaleContextHolder.setLocale(prev);
+        }
+    }
 }

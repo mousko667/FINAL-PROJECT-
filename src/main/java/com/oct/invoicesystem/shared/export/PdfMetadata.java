@@ -29,27 +29,38 @@ public final class PdfMetadata {
 
     private PdfMetadata() {}
 
-    /** Header block under the title: optional period (centered), then generator + date (right). */
+    private static final com.itextpdf.kernel.colors.Color NAVY =
+            new com.itextpdf.kernel.colors.DeviceRgb(15, 37, 64);
+    private static final com.itextpdf.kernel.colors.Color GOLD =
+            new com.itextpdf.kernel.colors.DeviceRgb(200, 168, 75);
+
+    /** Header block under the title: metadata (generator, date, optional period) aligned right,
+     *  then a thin navy rule with a gold accent segment separating the header from the body. */
     public static void renderHeader(Document doc, ReportMetadata meta, MessageSource ms, Locale loc) {
         if (meta == null) {
             return;
         }
-        if (meta.periodLabel() != null) {
-            doc.add(new Paragraph(meta.periodLabel())
-                    .setTextAlignment(TextAlignment.CENTER)
-                    .setFontSize(12));
-        }
+        // Metadata grouped on the right.
         String generatedBy = ms.getMessage("report.pdf.generated_by",
                 new Object[]{meta.generatorName(), meta.generatorRole()}, loc);
         doc.add(new Paragraph(generatedBy)
-                .setTextAlignment(TextAlignment.RIGHT)
-                .setFontSize(8));
-
+                .setTextAlignment(TextAlignment.RIGHT).setFontSize(8));
         String generatedAt = ms.getMessage("report.pdf.generated_at",
                 new Object[]{DATE_FORMAT.format(meta.generatedAt() == null ? Instant.now() : meta.generatedAt())}, loc);
         doc.add(new Paragraph(generatedAt)
-                .setTextAlignment(TextAlignment.RIGHT)
-                .setFontSize(8));
+                .setTextAlignment(TextAlignment.RIGHT).setFontSize(8));
+        if (meta.periodLabel() != null) {
+            doc.add(new Paragraph(meta.periodLabel())
+                    .setTextAlignment(TextAlignment.RIGHT).setFontSize(9));
+        }
+        // Thin navy rule with a short gold accent on the left, as a 2-cell borderless table.
+        Table rule = new Table(UnitValue.createPercentArray(new float[]{15, 85})).useAllAvailableWidth();
+        rule.addCell(new Cell().setHeight(3f).setBackgroundColor(GOLD)
+                .setBorder(com.itextpdf.layout.borders.Border.NO_BORDER));
+        rule.addCell(new Cell().setHeight(3f).setBackgroundColor(NAVY)
+                .setBorder(com.itextpdf.layout.borders.Border.NO_BORDER));
+        rule.setMarginTop(4f).setMarginBottom(8f);
+        doc.add(rule);
     }
 
     /** Bottom-of-page bordered box with a blank area to sign plus a date line. */
