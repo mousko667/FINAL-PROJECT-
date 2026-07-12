@@ -111,7 +111,7 @@ export function Tab({ value: tabValue, className, ...props }: TabProps) {
       onClick={() => setValue(tabValue)}
       className={cn(
         'px-4 py-2.5 -mb-px border-b-2 text-sm font-medium transition-colors',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         active
           ? 'border-oct-navy text-ink'
           : 'border-transparent text-ink-soft hover:text-ink',

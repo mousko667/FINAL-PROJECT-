@@ -139,4 +139,18 @@ describe('Tabs', () => {
     expect(screen.getByText('Panneau A')).toBeInTheDocument()
     expect(screen.queryByText('Panneau B')).not.toBeInTheDocument()
   })
+
+  it('utilise ring-offset-2 au focus (harmonise avec Button)', () => {
+    render(
+      <Tabs defaultValue="a">
+        <TabList>
+          <Tab value="a">Onglet A</Tab>
+          <Tab value="b">Onglet B</Tab>
+        </TabList>
+      </Tabs>
+    )
+    const tab = screen.getByRole('tab', { name: 'Onglet A' })
+    expect(tab.className).toMatch(/focus-visible:ring-offset-2/)
+    expect(tab.className).not.toMatch(/ring-offset-1/)
+  })
 })
