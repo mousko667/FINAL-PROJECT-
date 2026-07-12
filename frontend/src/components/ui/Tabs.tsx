@@ -4,7 +4,8 @@ import { cn } from '@/lib/utils'
 /**
  * Tabs maison (Lot 1 / design-system) — pas de Radix. role=tablist/tab/tabpanel,
  * aria-selected, navigation clavier (←/→, Home/End). Contrôlé (value) ou
- * non-contrôlé (defaultValue). Onglet actif = sous-ligne navy. Aucun texte en dur.
+ * non-contrôlé (defaultValue). Onglet actif = fond surface + sous-ligne or
+ * (Lot couleur « Soutenu »). Aucun texte en dur.
  */
 interface TabsContextValue {
   value: string
