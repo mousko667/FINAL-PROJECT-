@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { formatAmount, formatDate } from '@/lib/format'
 import { Panel } from '@/components/ui/Panel'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { KpiBand, type KpiBandItem } from '@/components/ui/KpiBand'
 
 interface SupplierInvoice {
@@ -259,19 +260,19 @@ export default function SupplierInvoicesPage() {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-ink">{t('supplier.portal.invoices', 'Mes Factures')}</h1>
-          <p className="text-sm text-ink-soft mt-0.5">{t('supplier.tracking.subtitle', 'Suivez le statut de vos factures en temps réel')}</p>
-        </div>
-        <Link
-          to="/supplier/invoices/new"
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          {t('supplier.invoice.submit.title', 'Soumettre une facture')}
-        </Link>
-      </div>
+      <PageHeader
+        title={t('supplier.portal.invoices', 'Mes Factures')}
+        subtitle={t('supplier.tracking.subtitle', 'Suivez le statut de vos factures en temps réel')}
+        actions={
+          <Link
+            to="/supplier/invoices/new"
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            {t('supplier.invoice.submit.title', 'Soumettre une facture')}
+          </Link>
+        }
+      />
 
       {/* KPI band */}
       <KpiBand items={kpiItems} className="grid grid-cols-2 md:grid-cols-4" />

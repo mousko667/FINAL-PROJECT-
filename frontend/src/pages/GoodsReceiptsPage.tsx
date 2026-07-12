@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { Loader2, Plus, Package, CheckCircle, Calendar } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { formatDate } from '@/lib/format'
 
 interface GoodsReceipt {
@@ -79,18 +80,18 @@ export default function GoodsReceiptsPage() {
   return (
     <PageRoleGuard allowedRoles={['ROLE_ASSISTANT_COMPTABLE', 'ROLE_DAF', 'ROLE_ADMIN']}>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-ink">{t('grn.title', 'Bons de Réception (GRN)')}</h1>
-            <p className="text-sm text-ink-soft mt-0.5">{t('grn.subtitle', 'Enregistrez les marchandises reçues liées aux bons de commande')}</p>
-          </div>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90 transition-colors"
-          >
-            <Plus className="w-4 h-4" /> {t('grn.create', 'Nouveau GRN')}
-          </button>
-        </div>
+        <PageHeader
+          title={t('grn.title', 'Bons de Réception (GRN)')}
+          subtitle={t('grn.subtitle', 'Enregistrez les marchandises reçues liées aux bons de commande')}
+          actions={
+            <button
+              onClick={() => setShowCreate(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
+              <Plus className="w-4 h-4" /> {t('grn.create', 'Nouveau GRN')}
+            </button>
+          }
+        />
 
         {/* Create form */}
         {showCreate && (

@@ -5,6 +5,7 @@ import apiClient from '@/services/apiClient'
 import { useAppSelector } from '@/store/hooks'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { Loader2, Plus, ChevronLeft, ChevronRight, Upload, FileSpreadsheet } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { formatAmount, formatDate } from '@/lib/format'
 
 interface PurchaseOrder {
@@ -78,13 +79,11 @@ export default function PurchaseOrdersPage() {
   return (
     <PageRoleGuard allowedRoles={['ROLE_ADMIN', 'ROLE_ASSISTANT_COMPTABLE', 'ROLE_DAF']}>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-ink">{t('po.title', 'Purchase Orders')}</h1>
-            <p className="text-sm text-ink-soft">{t('po.subtitle', 'Manage purchase orders linked to supplier invoices')}</p>
-          </div>
-          {isAA && (
-            <div className="flex items-center gap-2">
+        <PageHeader
+          title={t('po.title', 'Purchase Orders')}
+          subtitle={t('po.subtitle', 'Manage purchase orders linked to supplier invoices')}
+          actions={isAA && (
+            <>
               {/* Bulk import is not implemented (no ERP integration, Module 12 out of scope) —
                   the button is honestly disabled instead of pretending a feature exists. */}
               <button
@@ -92,7 +91,7 @@ export default function PurchaseOrdersPage() {
                 disabled
                 title={t('po.importUnavailable', 'ERP import unavailable — enter manually')}
                 aria-disabled="true"
-                className="flex items-center gap-2 px-3 py-2 border border-hairline rounded-[4px] text-sm font-medium text-ink-faint cursor-not-allowed"
+                className="flex items-center gap-2 px-3 py-2 border border-white/30 rounded-[4px] text-sm font-medium text-white/50 cursor-not-allowed"
               >
                 <FileSpreadsheet className="w-4 h-4" />
                 {t('po.importFile', 'Import')}
@@ -103,9 +102,9 @@ export default function PurchaseOrdersPage() {
               >
                 <Plus className="w-4 h-4" /> {t('po.create', 'New PO')}
               </button>
-            </div>
+            </>
           )}
-        </div>
+        />
 
         {/* Honest note: bulk import is unavailable, manual entry works below */}
         {isAA && (

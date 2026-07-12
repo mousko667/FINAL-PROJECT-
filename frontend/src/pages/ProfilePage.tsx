@@ -7,6 +7,7 @@ import { QRCodeSVG } from 'qrcode.react'
 import apiClient from '@/services/apiClient'
 import { useAppSelector } from '@/store/hooks'
 import { formatAmount } from '@/lib/format'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface StaffProfile {
   id: string
@@ -281,10 +282,7 @@ export default function ProfilePage() {
 
   return (
     <form onSubmit={handleSubmit((values) => mutation.mutate(values))} className="max-w-4xl space-y-5 page-enter">
-      <div>
-        <h1 className="text-2xl font-bold text-ink">{t('profile.title')}</h1>
-        <p className="text-sm text-ink-soft">{t('profile.subtitle')}</p>
-      </div>
+      <PageHeader title={t('profile.title')} subtitle={t('profile.subtitle')} />
 
       {mutation.isSuccess && (
         <div className="flex items-center gap-2 text-sm text-pos bg-pos-bg border border-pos/30 rounded-[4px] px-4 py-3">

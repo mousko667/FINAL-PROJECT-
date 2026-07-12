@@ -5,6 +5,7 @@ import { useParams, Link } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { Panel } from '@/components/ui/Panel'
+import { PageHeader } from '@/components/ui/PageHeader'
 import apiClient from '@/services/apiClient'
 import { getMatchingLines, resolveMatchingLine, type LineComparison } from '@/services/matchingService'
 import MatchingLineResolveModal from '@/components/matching/MatchingLineResolveModal'
@@ -78,22 +79,26 @@ export default function MatchingDetailPage() {
           <p className="text-sm text-crit">{t('matching.error')}</p>
         ) : (
           <>
-            <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-ink">
-                <span className="num">{data.summary.invoiceNumber}</span> · {data.summary.supplierName}
-              </h1>
-              <div className="flex gap-2">
-                {(['csv', 'excel', 'pdf'] as const).map((f) => (
-                  <button
-                    key={f}
-                    onClick={() => exportReport(f)}
-                    className="text-sm border border-hairline rounded-[4px] px-3 py-1.5 text-ink-soft hover:bg-ground"
-                  >
-                    {t('matching.export')} {f.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <PageHeader
+              title={
+                <>
+                  <span className="num">{data.summary.invoiceNumber}</span> · {data.summary.supplierName}
+                </>
+              }
+              actions={
+                <div className="flex gap-2">
+                  {(['csv', 'excel', 'pdf'] as const).map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => exportReport(f)}
+                      className="text-sm border border-white/30 rounded-[4px] px-3 py-1.5 text-white hover:bg-white/10"
+                    >
+                      {t('matching.export')} {f.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              }
+            />
 
             <Panel className="overflow-hidden">
               <table className="w-full text-sm">

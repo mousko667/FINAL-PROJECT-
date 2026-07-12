@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { useAppSelector } from '@/store/hooks'
 import apiClient from '@/services/apiClient'
 import { Panel } from '@/components/ui/Panel'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { Loader2, CheckCircle, Clock, AlertTriangle } from 'lucide-react'
 import { formatAmount, formatDate } from '@/lib/format'
 
@@ -86,13 +87,11 @@ export default function ApprovalQueuePage() {
 
   return (
     <div className="space-y-6 page-enter">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-ink">{t('nav.approvals', 'Approval Queue')}</h1>
-          <p className="text-sm text-ink-soft mt-0.5">{roleLabel}</p>
-        </div>
-        <button onClick={() => refetch()} className="text-sm text-gold-deep hover:underline">{t('app.retry', 'Refresh')}</button>
-      </div>
+      <PageHeader
+        title={t('nav.approvals', 'Approval Queue')}
+        subtitle={roleLabel}
+        actions={<button onClick={() => refetch()} className="text-sm text-gold-deep hover:underline">{t('app.retry', 'Refresh')}</button>}
+      />
 
       {/* SLA breach banner */}
       {breachedCount > 0 && (

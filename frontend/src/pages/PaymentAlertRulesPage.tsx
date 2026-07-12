@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import apiClient from '@/services/apiClient'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { Loader2, Plus, Trash2, Save, X, ArrowLeft, BellRing } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface AlertRule {
   id: string
@@ -56,17 +57,17 @@ export default function PaymentAlertRulesPage() {
   return (
     <PageRoleGuard allowedRoles={['ROLE_DAF', 'ROLE_ASSISTANT_COMPTABLE']}>
       <div className="max-w-3xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/payments" className="p-2 hover:bg-ground rounded-full transition-colors">
-              <ArrowLeft className="w-5 h-5 text-ink-soft" />
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-ink">{t('paymentAlerts.title', 'Payment Alert Rules')}</h1>
-              <p className="text-sm text-ink-soft mt-0.5">{t('paymentAlerts.subtitle', 'Configure when payment due-date reminders are sent (J-N).')}</p>
-            </div>
-          </div>
-          {!editor && (
+        <PageHeader
+          title={
+            <span className="flex items-center gap-3">
+              <Link to="/payments" className="p-2 -ml-2 hover:bg-white/10 rounded-full transition-colors shrink-0">
+                <ArrowLeft className="w-5 h-5 text-white/80" />
+              </Link>
+              {t('paymentAlerts.title', 'Payment Alert Rules')}
+            </span>
+          }
+          subtitle={t('paymentAlerts.subtitle', 'Configure when payment due-date reminders are sent (J-N).')}
+          actions={!editor && (
             <button
               onClick={() => setEditor(emptyEditor())}
               className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-[4px] hover:bg-primary/90 text-sm font-medium"
@@ -75,7 +76,7 @@ export default function PaymentAlertRulesPage() {
               {t('paymentAlerts.new', 'New rule')}
             </button>
           )}
-        </div>
+        />
 
         {editor ? (
           <div className="bg-surface rounded-[4px] border border-hairline p-6 space-y-5">

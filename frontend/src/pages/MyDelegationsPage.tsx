@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { UserCheck, Loader2, Trash2, Plus, AlertCircle } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface Delegation {
   id: string
@@ -70,13 +71,15 @@ export default function MyDelegationsPage() {
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <div className="flex items-center gap-3">
-        <UserCheck className="w-6 h-6 text-primary" />
-        <div>
-          <h1 className="text-2xl font-bold text-ink">{t('delegations.myTitle', 'Mes délégations d\'approbation')}</h1>
-          <p className="text-sm text-ink-soft mt-1">{t('delegations.mySubtitle', 'Déléguez vos approbations à un collègue pendant votre absence.')}</p>
-        </div>
-      </div>
+      <PageHeader
+        title={
+          <span className="flex items-center gap-2">
+            <UserCheck className="w-5 h-5" aria-hidden />
+            {t('delegations.myTitle', 'Mes délégations d\'approbation')}
+          </span>
+        }
+        subtitle={t('delegations.mySubtitle', 'Déléguez vos approbations à un collègue pendant votre absence.')}
+      />
 
       <form onSubmit={onSubmit} className="bg-surface rounded-[4px] border border-hairline p-5 space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

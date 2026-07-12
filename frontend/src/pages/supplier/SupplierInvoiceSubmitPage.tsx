@@ -8,6 +8,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import apiClient from '@/services/apiClient'
 import { invoiceService } from '@/services/invoiceService'
 import { Loader2, ArrowLeft, Upload, CheckCircle, AlertCircle, AlertTriangle, FileText } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface Department { id: string; code: string; nameEn: string; nameFr: string }
 
@@ -311,15 +312,17 @@ export default function SupplierInvoiceSubmitPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
-        <button onClick={() => navigate('/supplier/invoices')} className="p-2 hover:bg-ground rounded-full">
-          <ArrowLeft className="w-5 h-5 text-ink-soft" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-ink">{t('supplier.invoice.submit.title', 'Submit Invoice')}</h1>
-          <p className="text-sm text-ink-soft mt-0.5">{t('supplier.invoice.submit.subtitle', 'Upload your invoice — fields will be extracted automatically.')}</p>
-        </div>
-      </div>
+      <PageHeader
+        title={
+          <span className="flex items-center gap-3">
+            <button onClick={() => navigate('/supplier/invoices')} className="p-2 -ml-2 hover:bg-white/10 rounded-full shrink-0">
+              <ArrowLeft className="w-5 h-5 text-white/80" />
+            </button>
+            {t('supplier.invoice.submit.title', 'Submit Invoice')}
+          </span>
+        }
+        subtitle={t('supplier.invoice.submit.subtitle', 'Upload your invoice — fields will be extracted automatically.')}
+      />
 
       {/* ── STAGE: Upload ── */}
       {stage === 'upload' && (

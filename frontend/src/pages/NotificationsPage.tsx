@@ -9,6 +9,7 @@ import {
   FileText, Loader2, BellOff,
 } from 'lucide-react'
 import { formatDateTime } from '@/lib/format'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface ApiNotification {
   id: string
@@ -81,16 +82,14 @@ export default function NotificationsPage() {
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-ink">{t('notifications.title', 'Notifications')}</h1>
-          {unread > 0 && (
-            <p className="text-sm text-ink-soft mt-0.5">
-              <span className="font-semibold text-primary">{unread}</span> {t('notifications.unread', 'non lu(s)')}
-            </p>
-          )}
-        </div>
-        {unread > 0 && (
+      <PageHeader
+        title={t('notifications.title', 'Notifications')}
+        subtitle={unread > 0 && (
+          <>
+            <span className="font-semibold text-white">{unread}</span> {t('notifications.unread', 'non lu(s)')}
+          </>
+        )}
+        actions={unread > 0 && (
           <button
             onClick={() => markAllMutation.mutate()}
             disabled={markAllMutation.isPending}
@@ -100,7 +99,7 @@ export default function NotificationsPage() {
             {t('notifications.markAllRead', 'Tout marquer comme lu')}
           </button>
         )}
-      </div>
+      />
 
       <div className="bg-surface rounded-[4px] border border-hairline overflow-hidden">
         {isLoading ? (

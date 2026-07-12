@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import { Loader2, CheckCircle, Building2, Lock } from 'lucide-react'
 import { Panel } from '@/components/ui/Panel'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface SupplierProfile {
   companyName: string
@@ -39,10 +40,7 @@ export default function SupplierProfilePage() {
 
   return (
     <form onSubmit={handleSubmit(values => mutation.mutate(values))} className="space-y-6 max-w-3xl">
-      <div>
-        <h1 className="text-2xl font-bold text-ink">{t('supplier.profile.title')}</h1>
-        <p className="text-sm text-ink-soft mt-1">{t('supplier.profile.subtitle')}</p>
-      </div>
+      <PageHeader title={t('supplier.profile.title')} subtitle={t('supplier.profile.subtitle')} />
 
       {mutation.isSuccess && (
         <div className="flex items-center gap-2 text-sm text-pos bg-pos-bg border border-pos/30 rounded-[4px] px-4 py-3">

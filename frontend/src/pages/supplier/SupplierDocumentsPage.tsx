@@ -5,6 +5,7 @@ import apiClient from '@/services/apiClient'
 import { Upload, FileText, Loader2, AlertCircle } from 'lucide-react'
 import { formatDate } from '@/lib/format'
 import { Panel } from '@/components/ui/Panel'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface SupplierDocument {
   id: string
@@ -60,10 +61,7 @@ export default function SupplierDocumentsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-ink">{t('supplier.documents.title')}</h1>
-        <p className="text-sm text-ink-soft mt-1">{t('supplier.documents.subtitle')}</p>
-      </div>
+      <PageHeader title={t('supplier.documents.title')} subtitle={t('supplier.documents.subtitle')} />
 
       {/* Upload section */}
       <Panel className="p-5 space-y-4">
