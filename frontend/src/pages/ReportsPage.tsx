@@ -6,6 +6,7 @@ import apiClient from '@/services/apiClient'
 import VolumeTrendSection from '@/components/reports/VolumeTrendSection'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { useHasRole } from '@/hooks/useHasRole'
+import { PageHeader } from '@/components/ui/PageHeader'
 import {
   FileSpreadsheet, FileCheck, TrendingUp, AlertTriangle, Clock,
   XCircle, Loader2, Download, BarChart3, ChevronDown, ChevronUp,
@@ -135,10 +136,7 @@ export default function ReportsPage() {
   return (
     <PageRoleGuard allowedRoles={['ROLE_DAF', 'ROLE_ASSISTANT_COMPTABLE']}>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-ink">{t('reports.title')}</h1>
-          <p className="text-sm text-ink-soft mt-1">{t('reports.subtitle')}</p>
-        </div>
+        <PageHeader title={t('reports.title')} subtitle={t('reports.subtitle')} />
 
         {/* Date range selector */}
         <div className="bg-surface rounded-[4px] border border-hairline shadow-sm p-5 flex flex-wrap items-end gap-4">
