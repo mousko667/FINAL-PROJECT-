@@ -208,3 +208,41 @@ report builder déjà présent → YAGNI.
 **Chemin de migration :** le endpoint `GET /reports/volume-trend?months=N` peut accueillir
 des paramètres optionnels (`departmentId`, `supplierId`, `granularity`) sans rupture, et
 `findAllWithFilters` accepte déjà dept/fournisseur.
+
+---
+
+## PDF — Étendre le redesign à la facture et à l'avis de règlement
+
+**Contexte :** le redesign PDF (2026-07-12, spec
+`docs/superpowers/specs/2026-07-12-pdf-report-redesign-design.md`) traite **uniquement les 4
+rapports tabulaires** qui passent par le chemin commun
+`TabularExportService` / `PdfMetadata` / `PdfBranding` (logo détouré, en-tête logo-gauche,
+tableau en-tête navy + zébrures sans bordures verticales, signature en lignes fines). C'est
+là que se trouvaient les 3 défauts signalés (logo capturé, tableau trop gras, cadre
+signature 90pt).
+
+**Écarté pour l'instant (à reconsidérer si le besoin se confirme) :** appliquer la même
+direction aux **deux autres générateurs PDF**, qui construisent leur document **indépendamment**
+(leur propre `Document`/`PdfWriter`, sans passer par le chemin commun) :
+- `InvoicePdfService` (facture individuelle) — déjà plus abouti (en-têtes navy, fonds gris,
+  bordures 0.5pt) mais non aligné sur la nouvelle direction, et il embarque probablement le
+  **même logo capturé** à remplacer.
+- `RemittanceAdviceServiceImpl` (avis de règlement).
+
+**Ce que cela impliquerait :**
+- **Extraire** la logique de branding/tableau/signature du redesign rapports en helpers
+  réutilisables (`PdfBranding` déjà partagé ; factoriser un style de tableau et un bloc
+  signature communs) pour ne pas dupliquer la direction visuelle sur 3 générateurs.
+- Adapter `InvoicePdfService` et `RemittanceAdviceServiceImpl` à ces helpers, en tenant compte
+  de leurs mises en page propres (une facture n'est pas un rapport tabulaire : blocs
+  émetteur/destinataire, totaux, TVA…).
+- Vérif runtime : générer une facture et un avis réels et les inspecter.
+
+**Pourquoi écarté pour l'instant :** les 3 défauts explicitement signalés par le commanditaire
+sont **tous** dans les 4 rapports tabulaires ; la facture a déjà un style correct. Élargir
+tripleraut la surface (3 générateurs, styles hétérogènes) pour un gain esthétique sur des
+documents déjà présentables → périmètre volontairement restreint (décision 2026-07-12).
+
+**Chemin de migration :** si le redesign rapports factorise ses helpers (branding, style de
+tableau, bloc signature) plutôt que de les coder en dur dans `TabularExportService`, l'extension
+à la facture et à l'avis se réduit à brancher ces helpers — sans réécriture.
