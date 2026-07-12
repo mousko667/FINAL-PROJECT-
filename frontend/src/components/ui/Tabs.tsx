@@ -81,7 +81,10 @@ export function TabList({
     <div
       role="tablist"
       onKeyDown={onKeyDown}
-      className={cn('flex items-center gap-1 border-b border-hairline', className)}
+      className={cn(
+        'flex items-center gap-1 rounded-t-[4px] bg-nav-tint px-1 pt-1 border-b border-hairline',
+        className
+      )}
       {...props}
     />
   )
@@ -110,10 +113,10 @@ export function Tab({ value: tabValue, className, ...props }: TabProps) {
       tabIndex={active ? 0 : -1}
       onClick={() => setValue(tabValue)}
       className={cn(
-        'px-4 py-2.5 -mb-px border-b-2 text-sm font-medium transition-colors',
+        'px-4 py-2.5 -mb-px border-b-2 text-sm font-medium transition-colors rounded-t-[4px]',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         active
-          ? 'border-oct-navy text-ink'
+          ? 'bg-surface border-oct-gold text-oct-navy dark:text-info'
           : 'border-transparent text-ink-soft hover:text-ink',
         className
       )}
