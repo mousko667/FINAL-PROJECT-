@@ -63,19 +63,30 @@ public final class PdfMetadata {
         doc.add(rule);
     }
 
-    /** Bottom-of-page bordered box with a blank area to sign plus a date line. */
+    /** Bottom-of-page signature: two thin underlined fields (signature, date), no box,
+     *  kept together so the block never splits across a page break. */
     public static void renderSignatureBlock(Document doc, MessageSource ms, Locale loc) {
         doc.add(new Paragraph("\n"));
-        Table box = new Table(UnitValue.createPercentArray(new float[]{100})).useAllAvailableWidth();
-        Cell cell = new Cell()
-                .setBorder(new SolidBorder(ColorConstants.GRAY, 1f))
-                .setHeight(90f)
-                .add(new Paragraph(ms.getMessage("report.pdf.signature", null, loc))
-                        .setBold().setFontSize(10))
-                .add(new Paragraph("\n"))
-                .add(new Paragraph(ms.getMessage("report.pdf.signature.date", null, loc))
-                        .setFontSize(9));
-        box.addCell(cell);
-        doc.add(box);
+        Table sig = new Table(UnitValue.createPercentArray(new float[]{55, 45})).useAllAvailableWidth();
+        sig.setKeepTogether(true);
+
+        Cell signature = new Cell()
+                .setBorder(com.itextpdf.layout.borders.Border.NO_BORDER)
+                .setBorderBottom(new com.itextpdf.layout.borders.SolidBorder(
+                        com.itextpdf.kernel.colors.ColorConstants.GRAY, 0.5f))
+                .setPaddingTop(28f)
+                .add(new Paragraph(ms.getMessage("report.pdf.signature", null, loc)).setFontSize(9));
+
+        Cell date = new Cell()
+                .setBorder(com.itextpdf.layout.borders.Border.NO_BORDER)
+                .setBorderBottom(new com.itextpdf.layout.borders.SolidBorder(
+                        com.itextpdf.kernel.colors.ColorConstants.GRAY, 0.5f))
+                .setPaddingTop(28f)
+                .setMarginLeft(16f)
+                .add(new Paragraph(ms.getMessage("report.pdf.signature.date", null, loc)).setFontSize(9));
+
+        sig.addCell(signature);
+        sig.addCell(date);
+        doc.add(sig);
     }
 }
