@@ -139,4 +139,40 @@ class TabularExportServiceTest {
         assertThat(w[0]).isCloseTo(w[1], within(0.01f));
         assertThat(w[1]).isCloseTo(w[2], within(0.01f));
     }
+
+    @Test
+    void pdfIsValidAndContainsSignatureAndGeneratorWhenMetaPresent() throws Exception {
+        TabularExportService svc = new TabularExportService();
+        org.springframework.context.support.StaticMessageSource ms =
+                new org.springframework.context.support.StaticMessageSource();
+        ms.addMessage("report.pdf.generated_by", java.util.Locale.FRENCH, "Genere par {0} ({1})");
+        ms.addMessage("report.pdf.generated_at", java.util.Locale.FRENCH, "Genere le {0}");
+        ms.addMessage("report.pdf.signature", java.util.Locale.FRENCH, "Signature");
+        ms.addMessage("report.pdf.signature.date", java.util.Locale.FRENCH, "Date :");
+        ms.addMessage("export.pdf.signature.name", java.util.Locale.FRENCH, "Nom / fonction :");
+        org.springframework.context.i18n.LocaleContextHolder.setLocale(java.util.Locale.FRENCH);
+        try {
+            ReportMetadata meta = new ReportMetadata("Dubois Marie", "DAF",
+                    java.time.Instant.now(), null, "Statut: Draft");
+            byte[] pdf = svc.export(TabularExportService.Format.PDF, "Factures",
+                    java.util.List.of("Reference", "Amount"),
+                    java.util.List.of(java.util.List.of("FAC-1", "1000")),
+                    meta, ms);
+
+            assertThat(new String(pdf, 0, 5, java.nio.charset.StandardCharsets.ISO_8859_1)).isEqualTo("%PDF-");
+
+            String text = extractPdfText(pdf);
+            assertThat(text).contains("Dubois Marie");
+            assertThat(text).contains("Signature");
+        } finally {
+            org.springframework.context.i18n.LocaleContextHolder.resetLocaleContext();
+        }
+    }
+
+    private static String extractPdfText(byte[] pdf) throws Exception {
+        try (org.apache.pdfbox.pdmodel.PDDocument doc =
+                     org.apache.pdfbox.Loader.loadPDF(pdf)) {
+            return new org.apache.pdfbox.text.PDFTextStripper().getText(doc);
+        }
+    }
 }

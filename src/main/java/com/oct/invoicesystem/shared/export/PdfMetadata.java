@@ -60,7 +60,7 @@ public final class PdfMetadata {
                 .setFontSize(8));
     }
 
-    /** Bottom-of-page bordered box with a blank area to sign plus a date line. */
+    /** Bottom-of-page bordered box with a blank area to sign plus name/function and date lines. */
     public static void renderSignatureBlock(Document doc, MessageSource ms, Locale loc) {
         doc.add(new Paragraph("\n"));
         Table box = new Table(UnitValue.createPercentArray(new float[]{100})).useAllAvailableWidth();
@@ -70,6 +70,8 @@ public final class PdfMetadata {
                 .add(new Paragraph(ms.getMessage("report.pdf.signature", null, loc))
                         .setBold().setFontSize(10))
                 .add(new Paragraph("\n"))
+                .add(new Paragraph(ms.getMessage("export.pdf.signature.name", null, "Name / function:", loc))
+                        .setFontSize(9))
                 .add(new Paragraph(ms.getMessage("report.pdf.signature.date", null, loc))
                         .setFontSize(9));
         box.addCell(cell);

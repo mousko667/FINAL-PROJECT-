@@ -192,27 +192,41 @@ public class TabularExportService {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             PdfWriter writer = new PdfWriter(out);
             PdfDocument pdf = new PdfDocument(writer);
-            Document document = new Document(pdf);
+            Document document = new Document(pdf, com.itextpdf.kernel.geom.PageSize.A4);
+            document.setMargins(36, 36, 36, 36);
+
+            com.itextpdf.kernel.font.PdfFont bold    = PdfTableStyle.bold();
+            com.itextpdf.kernel.font.PdfFont regular = PdfTableStyle.regular();
 
             PdfBranding.addLetterhead(document);
-            document.add(new Paragraph(title == null ? "Export" : title).setBold().setFontSize(14));
+            document.add(new Paragraph(title == null ? "Export" : title)
+                    .setFont(bold).setFontSize(14).setFontColor(PdfTableStyle.OCT_NAVY));
+            document.add(new com.itextpdf.layout.element.LineSeparator(
+                            new com.itextpdf.kernel.pdf.canvas.draw.SolidLine(1.5f))
+                    .setStrokeColor(PdfTableStyle.OCT_GOLD).setMarginTop(6).setMarginBottom(10));
 
             if (meta != null && messageSource != null) {
                 PdfMetadata.renderHeader(document, meta, messageSource,
                         org.springframework.context.i18n.LocaleContextHolder.getLocale());
             }
 
-            float[] widths = new float[headers.size()];
-            for (int i = 0; i < widths.length; i++) widths[i] = 1f;
-            Table table = new Table(UnitValue.createPercentArray(widths)).useAllAvailableWidth();
+            float fontSize = headers.size() >= 8 ? 7f : 8f;
+            Table table = new Table(UnitValue.createPercentArray(columnWeights(headers)))
+                    .useAllAvailableWidth();
 
             for (String h : headers) {
-                table.addHeaderCell(new Cell().add(new Paragraph(h == null ? "" : h).setBold()));
+                table.addHeaderCell(PdfTableStyle.headerCell(h, bold, fontSize));
             }
+            boolean alt = false;
             for (List<String> row : rows) {
-                for (String v : row) {
-                    table.addCell(new Cell().add(new Paragraph(v == null ? "" : v)));
+                for (int c = 0; c < row.size(); c++) {
+                    String v = row.get(c);
+                    com.itextpdf.layout.properties.TextAlignment align = isNumericColumn(headers, c)
+                            ? com.itextpdf.layout.properties.TextAlignment.RIGHT
+                            : com.itextpdf.layout.properties.TextAlignment.LEFT;
+                    table.addCell(PdfTableStyle.bodyCell(v, regular, fontSize, alt, align));
                 }
+                alt = !alt;
             }
 
             document.add(table);
@@ -227,6 +241,14 @@ public class TabularExportService {
         } catch (Exception e) {
             throw new ExportException("Failed to build PDF export", e);
         }
+    }
+
+    /** Right-align amount/quantity/count columns (deduced from the header label). */
+    private static boolean isNumericColumn(List<String> headers, int col) {
+        if (col >= headers.size()) return false;
+        String h = headers.get(col) == null ? "" : headers.get(col).toLowerCase();
+        return h.contains("amount") || h.contains("montant") || h.contains("nombre")
+                || h.contains("count") || h.contains("qt") || h.contains("total");
     }
 
     public static class ExportException extends RuntimeException {
