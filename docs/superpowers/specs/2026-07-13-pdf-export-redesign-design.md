@@ -12,6 +12,7 @@ Les PDF d'**export de liste** (factures, audit, fournisseurs, utilisateurs, paie
 - **Aucun en-tête metadata** (généré par / date / période) et **aucun bloc signature** : ces blocs ne sont rendus que si `meta != null && messageSource != null`, or **tous les appelants d'export de liste passent `meta = null`** (seul le Report Builder passe `meta`).
 - **Police par défaut** iText (Helvetica non déclarée), pas de couleur, pas de zébrure, pas de hiérarchie.
 - **Titre en dur en anglais** (`"Invoices"`, `"Audit"`, `"Payments"`…) ; headers d'audit en dur (`"Date", "User ID", …`).
+- **Mauvais logo** : le fichier `branding/oct-logo.png` embarqué porte un **fond photo** (grue en filigrane) au lieu du logotype OCT détouré. Le bon asset (`assets/logos/oct-logo.png`) existe déjà, détouré sur fond transparent.
 
 En regard, `InvoicePdfService` (facture individuelle « Bon À Payer », soignée en PR #3) est riche : couleurs `OCT_NAVY`/`OCT_GOLD`, polices Helvetica bold/regular explicites, en-tête logo + filet or, tableaux navy à en-têtes blancs + zébrures + largeurs adaptées + alignement des montants, footer. **Les deux chemins de génération PDF sont disjoints** ; le soin de PR #3 n'a jamais touché les exports tabulaires.
 
@@ -32,6 +33,12 @@ Porter les 6 PDF d'export de liste au niveau visuel d'`InvoicePdfService`, avec 
 ## Architecture
 
 Cinq unités, chacune avec une responsabilité claire.
+
+### 0. Logo PDF (correction d'asset)
+Le logo embarqué dans les PDF (`src/main/resources/branding/oct-logo.png`, chargé par `PdfBranding`) est **le mauvais fichier** : il porte un **fond photographique** (grue de terminal en filigrane, bordure bleu clair) au lieu d'un logo détouré. Le bon logo est **`assets/logos/oct-logo.png`** : logotype OCT propre, **fond transparent** (carte d'Afrique en dégradé bleu + « OWENDO CONTAINER TERMINAL » + « GABON » + filet or).
+- **Action** : remplacer le contenu de `src/main/resources/branding/oct-logo.png` par celui de `assets/logos/oct-logo.png` (même chemin classpath → aucun changement de code dans `PdfBranding`).
+- Ce logo étant plus large que haut (bandeau horizontal), vérifier que `LOGO_WIDTH_PT = 170f` dans `PdfBranding` reste visuellement correct ; ajuster la largeur si le rendu est trop grand/petit (seul ce littéral peut changer, pas la logique).
+- S'applique à **tous** les PDF qui passent par `PdfBranding.addLetterhead` (exports de liste **et**, mécaniquement, tout futur appelant). `InvoicePdfService` **n'utilise pas** `PdfBranding` (il dessine son propre en-tête textuel « OCT ») → hors périmètre, non touché.
 
 ### 1. `PdfTableStyle` (nouveau, `shared/export/`)
 Centralise le style de tableau extrait d'`InvoicePdfService` pour qu'export de liste et facture partagent la même identité visuelle.
@@ -91,7 +98,7 @@ Unitaires (`TabularExportServiceTest`, `PdfTableStyleTest`) :
 
 Intégration légère (au moins un contrôleur, ex. `InvoiceController`) : `GET /export?format=pdf` avec `Accept-Language: fr` → 200, `application/pdf`, corps commençant par `%PDF`, contenant le titre FR + « Signature ».
 
-Vérif runtime finale : re-télécharger l'export factures (compte daf) et **regarder le PDF** (portrait sans coupure, en-tête navy + filet or, généré par + filtres, tableau zébré, bloc signature).
+Vérif runtime finale : re-télécharger l'export factures (compte daf) et **regarder le PDF** (portrait sans coupure, **logo OCT détouré correct** — plus de fond photo, en-tête navy + filet or, généré par + filtres, tableau zébré, bloc signature).
 
 ## Hors périmètre
 
