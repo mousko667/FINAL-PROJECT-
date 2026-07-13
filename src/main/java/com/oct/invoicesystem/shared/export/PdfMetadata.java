@@ -29,7 +29,7 @@ public final class PdfMetadata {
 
     private PdfMetadata() {}
 
-    /** Header block under the title: optional period (centered), then generator + date (right). */
+    /** Header block under the title: optional period (centered), optional filters (centered), then generator + date (right). */
     public static void renderHeader(Document doc, ReportMetadata meta, MessageSource ms, Locale loc) {
         if (meta == null) {
             return;
@@ -38,6 +38,14 @@ public final class PdfMetadata {
             doc.add(new Paragraph(meta.periodLabel())
                     .setTextAlignment(TextAlignment.CENTER)
                     .setFontSize(12));
+        }
+        if (meta.filtersLabel() != null) {
+            String filtersLine = ms.getMessage("report.pdf.filters",
+                    new Object[]{meta.filtersLabel()}, meta.filtersLabel(), loc);
+            doc.add(new Paragraph(filtersLine)
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setFontSize(9)
+                    .setItalic());
         }
         String generatedBy = ms.getMessage("report.pdf.generated_by",
                 new Object[]{meta.generatorName(), meta.generatorRole()}, loc);
