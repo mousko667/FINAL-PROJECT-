@@ -5,6 +5,7 @@ import apiClient from '@/services/apiClient'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { FileBarChart, Loader2, Plus, Trash2, Play, FileText, Eye, X, Download } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface ReportDef {
   id: string; name: string; dataset: string; format: string
@@ -79,19 +80,21 @@ export default function ReportBuilderPage() {
   return (
     <PageRoleGuard allowedRoles={['ROLE_DAF', 'ROLE_ASSISTANT_COMPTABLE']}>
       <div className="space-y-6 max-w-4xl">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <FileBarChart className="w-6 h-6 text-primary" />
-            <div>
-              <h1 className="text-2xl font-bold text-ink">{t('reportBuilder.title', 'Constructeur de rapports')}</h1>
-              <p className="text-sm text-ink-soft mt-1">{t('reportBuilder.subtitle', 'Définissez des rapports personnalisés, exécutez-les à la demande ou planifiez leur envoi par e-mail.')}</p>
-            </div>
-          </div>
-          <button onClick={downloadExecSummary}
-            className="inline-flex items-center gap-2 border border-hairline px-3 py-2 rounded-[4px] text-sm font-medium text-ink-soft hover:bg-ground">
-            <FileText className="w-4 h-4" /> {t('reportBuilder.execSummary', 'Résumé exécutif (PDF)')}
-          </button>
-        </div>
+        <PageHeader
+          title={
+            <span className="flex items-center gap-2">
+              <FileBarChart className="w-5 h-5" aria-hidden />
+              {t('reportBuilder.title', 'Constructeur de rapports')}
+            </span>
+          }
+          subtitle={t('reportBuilder.subtitle', 'Définissez des rapports personnalisés, exécutez-les à la demande ou planifiez leur envoi par e-mail.')}
+          actions={
+            <button onClick={downloadExecSummary}
+              className="inline-flex items-center gap-2 border border-white/30 px-3 py-2 rounded-[4px] text-sm font-medium text-white hover:bg-white/10">
+              <FileText className="w-4 h-4" /> {t('reportBuilder.execSummary', 'Résumé exécutif (PDF)')}
+            </button>
+          }
+        />
 
         <form onSubmit={e => { e.preventDefault(); if (name.trim()) create.mutate() }} className="bg-surface rounded-[4px] border p-5 grid grid-cols-1 md:grid-cols-2 gap-3">
           <input value={name} onChange={e => setName(e.target.value)} placeholder={t('reportBuilder.name', 'Nom du rapport')} className={`${inputCls} md:col-span-2`} />

@@ -1,54 +1,39 @@
 import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render } from '@testing-library/react'
 import { KpiBand } from '@/components/ui/KpiBand'
 
 describe('KpiBand', () => {
-  it('renders one item per entry (label, value, hint)', () => {
-    render(
-      <KpiBand
-        items={[
-          { label: 'Total factures', value: 128, hint: 'ce mois' },
-          { label: 'En retard', value: 4 },
-        ]}
-      />
-    )
-    expect(screen.getByText('Total factures')).toBeInTheDocument()
-    expect(screen.getByText('128')).toBeInTheDocument()
-    expect(screen.getByText('ce mois')).toBeInTheDocument()
-    expect(screen.getByText('En retard')).toBeInTheDocument()
-    expect(screen.getByText('4')).toBeInTheDocument()
+  it('une tuile sans tone prend le fond informatif (bleu-ardoise)', () => {
+    const { container } = render(<KpiBand items={[{ label: 'Total', value: 42 }]} />)
+    const tile = container.querySelector('[data-kpi-tile]') as HTMLElement
+    expect(tile.className).toMatch(/bg-kpi-info/)
   })
 
-  it('renders a single shared container, not one card per item', () => {
+  it('une tuile tone=crit prend le fond crit-bg + barre latérale crit', () => {
     const { container } = render(
-      <KpiBand
-        items={[
-          { label: 'A', value: 1 },
-          { label: 'B', value: 2 },
-          { label: 'C', value: 3 },
-        ]}
-      />
+      <KpiBand items={[{ label: 'En retard', value: 3, tone: 'crit' }]} />
     )
-    // Exactly one bordered band wrapper at the top level.
-    expect(container.children).toHaveLength(1)
-    expect(container.firstElementChild).toHaveClass('border-hairline')
+    const tile = container.querySelector('[data-kpi-tile]') as HTMLElement
+    expect(tile.className).toMatch(/bg-crit-bg/)
+    expect(tile.className).toMatch(/border-l-4/)
+    expect(tile.className).toMatch(/border-l-crit/)
   })
 
-  it('applies the semantic tone class to the value when tone is set', () => {
-    render(<KpiBand items={[{ label: 'Alertes', value: 3, tone: 'crit' }]} />)
-    const value = screen.getByText('3')
-    expect(value.className).toMatch(/text-crit/)
+  it('une tuile tone=pos prend le fond pos-bg + barre latérale pos', () => {
+    const { container } = render(
+      <KpiBand items={[{ label: 'Conformité', value: 'OK', tone: 'pos' }]} />
+    )
+    const tile = container.querySelector('[data-kpi-tile]') as HTMLElement
+    expect(tile.className).toMatch(/bg-pos-bg/)
+    expect(tile.className).toMatch(/border-l-pos/)
   })
 
-  it('puts the .num class on the value for tabular figures', () => {
-    render(<KpiBand items={[{ label: 'Montant', value: '1 234 500 XAF' }]} />)
-    const value = screen.getByText('1 234 500 XAF')
-    expect(value.className).toMatch(/\bnum\b/)
-  })
-
-  it('does not apply a tone class when tone is omitted', () => {
-    render(<KpiBand items={[{ label: 'Sans teinte', value: 7 }]} />)
-    const value = screen.getByText('7')
-    expect(value.className).not.toMatch(/text-(pos|warn|hot|crit|info)\b/)
+  it('affiche label, valeur et hint', () => {
+    const { getByText } = render(
+      <KpiBand items={[{ label: 'Total', value: 42, hint: 'ce mois' }]} />
+    )
+    expect(getByText('Total')).toBeInTheDocument()
+    expect(getByText('42')).toBeInTheDocument()
+    expect(getByText('ce mois')).toBeInTheDocument()
   })
 })

@@ -8,6 +8,7 @@ import { Loader2, ArrowLeft } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
 import { ROLE_OPTIONS } from '@/constants/roles'
 import { Panel } from '@/components/ui/Panel'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 // Matches the backend DepartmentCreateRequest: code, nameFr, nameEn, requiresN2, n1Role, n2Role (+ optional budget via update).
 const departmentSchema = z.object({
@@ -65,17 +66,19 @@ export default function AdminDepartmentFormPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => navigate('/admin/departments')}
-          className="p-2 hover:bg-ground rounded-full transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5 text-ink-soft" />
-        </button>
-        <h1 className="text-2xl font-bold text-ink">
-          {t('admin.departments.create', 'Créer un département')}
-        </h1>
-      </div>
+      <PageHeader
+        title={
+          <span className="flex items-center gap-4">
+            <button
+              onClick={() => navigate('/admin/departments')}
+              className="p-2 hover:bg-white/10 rounded-full transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5 text-white" aria-hidden />
+            </button>
+            {t('admin.departments.create', 'Créer un département')}
+          </span>
+        }
+      />
 
       <Panel className="p-6">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">

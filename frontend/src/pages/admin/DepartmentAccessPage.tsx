@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { departmentAccessService, type DepartmentAccess } from '@/services/departmentAccessService'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 export default function DepartmentAccessPage() {
   const { t, i18n } = useTranslation()
@@ -23,10 +24,10 @@ export default function DepartmentAccessPage() {
 
   return (
     <div className="p-6 space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold text-ink">{t('departmentAccess.title')}</h1>
-        <p className="text-sm text-ink-soft">{t('departmentAccess.subtitle')}</p>
-      </div>
+      <PageHeader
+        title={t('departmentAccess.title')}
+        subtitle={t('departmentAccess.subtitle')}
+      />
 
       {data.length === 0 ? (
         <p className="text-ink-soft">{t('departmentAccess.empty')}</p>

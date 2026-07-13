@@ -5,6 +5,7 @@ import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { listBackups, createBackup, restoreBackup, getBackupStatus, getAuditLogs } from '@/api/backups'
 import { Loader2, HardDrive, Download, RotateCcw, Plus, AlertTriangle, Activity, CheckCircle2, XCircle } from 'lucide-react'
 import { Panel } from '@/components/ui/Panel'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 export default function AdminBackupsPage() {
   const { t } = useTranslation()
@@ -53,25 +54,20 @@ export default function AdminBackupsPage() {
   return (
     <PageRoleGuard allowedRoles={['ROLE_ADMIN']}>
       <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-ink flex items-center gap-2">
-              <HardDrive className="w-6 h-6 text-primary" />
-              {t('admin.backups.title')}
-            </h1>
-            <p className="text-sm text-ink-soft mt-1">
-              {t('admin.backups.description')}
-            </p>
-          </div>
-          <button
-            onClick={() => createMutation.mutate()}
-            disabled={createMutation.isPending}
-            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-[4px] hover:bg-primary/90 disabled:opacity-50"
-          >
-            {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-            {t('admin.backups.createBtn')}
-          </button>
-        </div>
+        <PageHeader
+          title={<span className="flex items-center gap-2"><HardDrive className="w-6 h-6" aria-hidden />{t('admin.backups.title')}</span>}
+          subtitle={t('admin.backups.description')}
+          actions={
+            <button
+              onClick={() => createMutation.mutate()}
+              disabled={createMutation.isPending}
+              className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-[4px] hover:bg-primary/90 disabled:opacity-50"
+            >
+              {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              {t('admin.backups.createBtn')}
+            </button>
+          }
+        />
 
         {/* Status Card */}
         {status && (

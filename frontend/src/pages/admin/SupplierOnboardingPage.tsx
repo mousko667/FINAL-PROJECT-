@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { CheckCircle2, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { useCreateSupplier } from '@/api/suppliers'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 const SUPPLIER_CATEGORIES = ['GOODS', 'SERVICES', 'WORKS', 'CONSULTING'] as const
 
@@ -80,12 +81,10 @@ export default function SupplierOnboardingPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-bold text-ink">{t('supplier.onboarding.title', 'Supplier onboarding')}</h1>
-        <p className="text-sm text-ink-soft">
-          {t('supplier.onboarding.subtitle', 'Guide a supplier through creation, verification, and activation readiness.')}
-        </p>
-      </div>
+      <PageHeader
+        title={t('supplier.onboarding.title', 'Supplier onboarding')}
+        subtitle={t('supplier.onboarding.subtitle', 'Guide a supplier through creation, verification, and activation readiness.')}
+      />
 
       <div className="bg-surface rounded-[4px] border border-hairline p-5">
         <div className="flex items-center gap-3">

@@ -7,6 +7,7 @@ import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { useHasRole } from '@/hooks/useHasRole'
 import { ExportMenu } from '@/components/ui/ExportMenu'
 import { Panel } from '@/components/ui/Panel'
+import { PageHeader } from '@/components/ui/PageHeader'
 import {
   Loader2, DollarSign, ExternalLink, Download, CheckCircle,
   FileText, CreditCard, Calendar, Hash, BellRing,
@@ -268,19 +269,19 @@ export default function PaymentsPage() {
   return (
     <PageRoleGuard allowedRoles={['ROLE_ASSISTANT_COMPTABLE', 'ROLE_DAF']}>
       <div className="space-y-6 page-enter">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-ink">{t('nav.payments', 'Paiements')}</h1>
-            <p className="text-sm text-ink-soft mt-0.5">{t('payments.subtitle', 'Enregistrez les paiements et consultez l\'historique')}</p>
-          </div>
-          <Link
-            to="/payments/alert-rules"
-            className="flex items-center gap-2 border border-hairline px-3 py-2 rounded-[4px] hover:bg-ground text-sm font-medium text-ink-soft"
-          >
-            <BellRing className="w-4 h-4" />
-            {t('paymentAlerts.configureLink', 'Alert rules')}
-          </Link>
-        </div>
+        <PageHeader
+          title={t('nav.payments', 'Paiements')}
+          subtitle={t('payments.subtitle', 'Enregistrez les paiements et consultez l\'historique')}
+          actions={
+            <Link
+              to="/payments/alert-rules"
+              className="flex items-center gap-2 border border-white/30 px-3 py-2 rounded-[4px] hover:bg-white/10 text-sm font-medium text-white"
+            >
+              <BellRing className="w-4 h-4" />
+              {t('paymentAlerts.configureLink', 'Alert rules')}
+            </Link>
+          }
+        />
 
         {/* Invoices awaiting payment */}
         {(invoicesLoading || pendingInvoices.length > 0) && (

@@ -4,6 +4,7 @@ import apiClient from '@/services/apiClient'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { Loader2, ShieldCheck } from 'lucide-react'
 import { Panel } from '@/components/ui/Panel'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface CoverageSection {
   archivedInvoices: number
@@ -71,12 +72,10 @@ export default function AdminArchiveCompliancePage() {
   return (
     <PageRoleGuard allowedRoles={['ROLE_ADMIN']}>
       <div className="max-w-4xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-ink">{t('archiveCompliance.title', 'Conformité des archives')}</h1>
-          <p className="text-sm text-ink-soft mt-0.5">
-            {t('archiveCompliance.subtitle', "État de conformité du dépôt d'archives documentaires. Aucune donnée financière.")}
-          </p>
-        </div>
+        <PageHeader
+          title={t('archiveCompliance.title', 'Conformité des archives')}
+          subtitle={t('archiveCompliance.subtitle', "État de conformité du dépôt d'archives documentaires. Aucune donnée financière.")}
+        />
 
         {isLoading || !report ? (
           <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-ink-faint" /></div>

@@ -153,4 +153,25 @@ describe('Tabs', () => {
     expect(tab.className).toMatch(/focus-visible:ring-offset-2/)
     expect(tab.className).not.toMatch(/ring-offset-1/)
   })
+
+  it('TabList porte le fond bleu-ardoise nav-tint', () => {
+    const { container } = render(
+      <Tabs defaultValue="a">
+        <TabList><Tab value="a">A</Tab><Tab value="b">B</Tab></TabList>
+      </Tabs>
+    )
+    const list = container.querySelector('[role="tablist"]') as HTMLElement
+    expect(list.className).toMatch(/bg-nav-tint/)
+  })
+
+  it("l'onglet actif porte une sous-ligne or", () => {
+    const { getByRole } = render(
+      <Tabs defaultValue="a">
+        <TabList><Tab value="a">A</Tab><Tab value="b">B</Tab></TabList>
+      </Tabs>
+    )
+    const activeTab = getByRole('tab', { name: 'A' })
+    expect(activeTab.getAttribute('aria-selected')).toBe('true')
+    expect(activeTab.className).toMatch(/border-oct-gold/)
+  })
 })

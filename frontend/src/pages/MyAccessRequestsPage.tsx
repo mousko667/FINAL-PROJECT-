@@ -6,6 +6,7 @@ import type { ApiResponse, PagedResponse } from '@/types/invoice'
 import { useAppSelector } from '@/store/hooks'
 import { ROLE_OPTIONS } from '@/constants/roles'
 import { KeyRound, Loader2, AlertCircle, Send } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 export interface AccessRequest {
   id: string
@@ -87,13 +88,15 @@ export default function MyAccessRequestsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start gap-3">
-        <KeyRound className="w-6 h-6 text-primary mt-0.5" />
-        <div>
-          <h1 className="text-2xl font-bold text-ink">{t('accessRequests.myTitle')}</h1>
-          <p className="text-sm text-ink-soft mt-1">{t('accessRequests.mySubtitle')}</p>
-        </div>
-      </div>
+      <PageHeader
+        title={
+          <span className="flex items-center gap-2">
+            <KeyRound className="w-5 h-5" aria-hidden />
+            {t('accessRequests.myTitle')}
+          </span>
+        }
+        subtitle={t('accessRequests.mySubtitle')}
+      />
 
       {/* Request form */}
       <form onSubmit={onSubmit} className="bg-surface rounded-[4px] border border-hairline p-5 space-y-4 max-w-2xl">

@@ -7,6 +7,7 @@ import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { Loader2, Archive, Search, Download, Filter, ExternalLink, FileText, FolderPlus } from 'lucide-react'
 import ArchiveFolderTree from '@/components/archive/ArchiveFolderTree'
 import AssignFolderModal from '@/components/archive/AssignFolderModal'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { formatAmount, formatDate } from '@/lib/format'
 
 interface ArchivedInvoice {
@@ -83,13 +84,15 @@ export default function ArchivePage() {
 
         {/* Main Content */}
         <div className="flex-1 space-y-6 p-6 overflow-y-auto">
-          <div>
-            <h1 className="text-2xl font-bold text-ink">{t('archive.title', 'Archive Numérique')}</h1>
-            <p className="text-sm text-ink-soft mt-0.5">
-              {t('archive.subtitle', 'Toutes les factures archivées — recherche et téléchargement')}
-              {data && <span className="ml-2 font-medium text-ink-soft">{data.totalElements} documents</span>}
-            </p>
-          </div>
+          <PageHeader
+            title={t('archive.title', 'Archive Numérique')}
+            subtitle={
+              <>
+                {t('archive.subtitle', 'Toutes les factures archivées — recherche et téléchargement')}
+                {data && <span className="ml-2 font-medium text-oct-gold-light/90">{data.totalElements} documents</span>}
+              </>
+            }
+          />
 
           {/* Search & Filters */}
           <div className="bg-surface rounded-[4px] border border-hairline p-4 space-y-3">

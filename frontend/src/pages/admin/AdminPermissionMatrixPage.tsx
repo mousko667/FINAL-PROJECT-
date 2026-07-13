@@ -6,6 +6,7 @@ import type { ApiResponse, PagedResponse } from '@/types/invoice'
 import { ROLE_OPTIONS } from '@/constants/roles'
 import { Loader2, Check, ShieldCheck, AlertCircle } from 'lucide-react'
 import { Panel } from '@/components/ui/Panel'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface User {
   id: string
@@ -115,13 +116,10 @@ export default function AdminPermissionMatrixPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start gap-3">
-        <ShieldCheck className="w-6 h-6 text-primary mt-0.5" />
-        <div>
-          <h1 className="text-2xl font-bold text-ink">{t('admin.permissions.title')}</h1>
-          <p className="text-sm text-ink-soft mt-1">{t('admin.permissions.subtitle')}</p>
-        </div>
-      </div>
+      <PageHeader
+        title={<span className="flex items-center gap-2"><ShieldCheck className="w-6 h-6" aria-hidden />{t('admin.permissions.title')}</span>}
+        subtitle={t('admin.permissions.subtitle')}
+      />
 
       {isLoading ? (
         <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-ink-faint" /></div>

@@ -7,6 +7,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import apiClient from '@/services/apiClient'
 import { Loader2, ArrowLeft } from 'lucide-react'
 import type { ApiResponse, PagedResponse } from '@/types/invoice'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { ROLE_OPTIONS, DEPT_REQUIRED_ROLES } from '@/constants/roles'
 
 interface Department { id: string; code: string; nameEn: string; nameFr: string }
@@ -78,17 +79,19 @@ export default function AdminUserFormPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => navigate('/admin/users')}
-          className="p-2 hover:bg-ground rounded-full transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5 text-ink-soft" />
-        </button>
-        <h1 className="text-2xl font-bold text-ink">
-          {t('admin.users.create', 'Add User')}
-        </h1>
-      </div>
+      <PageHeader
+        title={
+          <span className="flex items-center gap-4">
+            <button
+              onClick={() => navigate('/admin/users')}
+              className="p-2 hover:bg-white/10 rounded-full transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5 text-white" aria-hidden />
+            </button>
+            {t('admin.users.create', 'Add User')}
+          </span>
+        }
+      />
 
       <form onSubmit={handleSubmit(onSubmit)} className="bg-surface rounded-[4px] border border-hairline p-6 space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

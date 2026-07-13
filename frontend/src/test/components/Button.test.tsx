@@ -9,11 +9,6 @@ describe('Button', () => {
     expect(screen.getByRole('button', { name: 'Enregistrer' })).toBeInTheDocument()
   })
 
-  it('applique la variante primary par défaut (navy)', () => {
-    render(<Button>x</Button>)
-    expect(screen.getByRole('button').className).toMatch(/bg-oct-navy/)
-  })
-
   it('applique la variante gold (CTA premium, gold-deep en fond)', () => {
     render(<Button variant="gold">x</Button>)
     expect(screen.getByRole('button').className).toMatch(/bg-gold-deep/)
@@ -47,16 +42,38 @@ describe('Button', () => {
     expect(screen.getByRole('button').className).toMatch(/w-full/)
   })
 
-  it('applique la variante secondary (surface + bordure hairline)', () => {
-    render(<Button variant="secondary">x</Button>)
-    const cls = screen.getByRole('button').className
-    expect(cls).toMatch(/bg-surface/)
-    expect(cls).toMatch(/border-hairline/)
-  })
-
   it('applique la variante ghost (fond transparent)', () => {
     render(<Button variant="ghost">x</Button>)
     expect(screen.getByRole('button').className).toMatch(/bg-transparent/)
+  })
+
+  it('primary porte un dégradé navy (défaut et explicite)', () => {
+    // Test que primary est le défaut (sans prop variant)
+    const { rerender } = render(<Button>x</Button>)
+    let c = screen.getByRole('button').className
+    expect(c).toMatch(/bg-gradient-to-/)
+    expect(c).toMatch(/from-oct-navy-light/)
+    expect(c).toMatch(/to-oct-navy/)
+
+    // Et aussi explicitement avec variant="primary"
+    rerender(<Button variant="primary">x</Button>)
+    c = screen.getByRole('button').className
+    expect(c).toMatch(/bg-gradient-to-/)
+    expect(c).toMatch(/from-oct-navy-light/)
+    expect(c).toMatch(/to-oct-navy/)
+  })
+
+  it('secondary porte un fond bleu-ardoise (info teinté) + bordure info', () => {
+    render(<Button variant="secondary">x</Button>)
+    const c = screen.getByRole('button').className
+    expect(c).toMatch(/bg-info-bg/)
+    expect(c).toMatch(/border-info/)
+    expect(c).toMatch(/text-info/)
+  })
+
+  it('ghost porte un texte info', () => {
+    render(<Button variant="ghost">x</Button>)
+    expect(screen.getByRole('button').className).toMatch(/text-info/)
   })
 
   it('applique la taille sm (h-8)', () => {

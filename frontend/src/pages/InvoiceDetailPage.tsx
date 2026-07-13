@@ -11,6 +11,7 @@ import { BulkDocumentUpload } from '@/components/invoice/BulkDocumentUpload'
 import { DocumentViewerModal } from '@/components/invoice/DocumentViewerModal'
 import { ExportMenu } from '@/components/ui/ExportMenu'
 import { Panel } from '@/components/ui/Panel'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { ValidationChecklist } from '@/components/invoice/ValidationChecklist'
 import { useAppSelector } from '@/store/hooks'
 import { Loader2, ArrowLeft, Download, CheckCircle, XCircle, AlertTriangle, MinusCircle, Clock, User, FileDown, Lock, Eye } from 'lucide-react'
@@ -150,44 +151,46 @@ export default function InvoiceDetailPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6 page-enter">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/invoices')} className="p-2 rounded-[4px] hover:bg-ground text-ink-faint">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="num text-2xl font-bold text-ink">{invoice.referenceNumber}</h1>
-            <p className="text-sm text-ink-soft">{invoice.supplierName}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          {invoice.dataSensitivity && <SensitivityBadge level={invoice.dataSensitivity} />}
-          {invoice.matchingStatus && <MatchingBadge status={invoice.matchingStatus} />}
-          <StatusBadge status={invoice.status} className="text-sm px-3 py-1" />
-          <button
-            onClick={async () => {
-              setPdfLoading(true)
-              try {
-                const res = await apiClient.get(`/invoices/${id}/export/pdf`, { responseType: 'blob' })
-                const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }))
-                const a = document.createElement('a')
-                a.href = url
-                a.download = `${invoice.referenceNumber}.pdf`
-                a.click()
-                window.URL.revokeObjectURL(url)
-              } finally {
-                setPdfLoading(false)
-              }
-            }}
-            disabled={pdfLoading}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-hairline rounded-[4px] hover:bg-ground transition-colors disabled:opacity-50 text-ink-soft"
-            title={t('invoice.exportPdf', 'Exporter en PDF')}
-          >
-            {pdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
-            PDF
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title={
+          <span className="flex items-center gap-3">
+            <button onClick={() => navigate('/invoices')} className="p-2 -ml-2 rounded-[4px] hover:bg-white/10 text-white/80 shrink-0">
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <span className="num">{invoice.referenceNumber}</span>
+          </span>
+        }
+        subtitle={invoice.supplierName}
+        actions={
+          <>
+            {invoice.dataSensitivity && <SensitivityBadge level={invoice.dataSensitivity} />}
+            {invoice.matchingStatus && <MatchingBadge status={invoice.matchingStatus} />}
+            <StatusBadge status={invoice.status} className="text-sm px-3 py-1" />
+            <button
+              onClick={async () => {
+                setPdfLoading(true)
+                try {
+                  const res = await apiClient.get(`/invoices/${id}/export/pdf`, { responseType: 'blob' })
+                  const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }))
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = `${invoice.referenceNumber}.pdf`
+                  a.click()
+                  window.URL.revokeObjectURL(url)
+                } finally {
+                  setPdfLoading(false)
+                }
+              }}
+              disabled={pdfLoading}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-white/30 rounded-[4px] hover:bg-white/10 transition-colors disabled:opacity-50 text-white"
+              title={t('invoice.exportPdf', 'Exporter en PDF')}
+            >
+              {pdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+              PDF
+            </button>
+          </>
+        }
+      />
 
       <div className="grid grid-cols-3 gap-6">
         {/* Main content */}

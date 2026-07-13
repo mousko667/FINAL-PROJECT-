@@ -7,6 +7,7 @@ import { Loader2, Search, ChevronLeft, ChevronRight, FileDown } from 'lucide-rea
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { reportService } from '@/services/reportService'
 import AuditSummary from '@/components/audit/AuditSummary'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { formatDateTime } from '@/lib/format'
 
 interface AuditLog {
@@ -68,14 +69,10 @@ export default function FinancialAuditPage() {
   return (
     <PageRoleGuard allowedRoles={['ROLE_DAF']}>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-ink">{t('audit.financial.title', 'Financial Audit Trail')}</h1>
-            <p className="text-sm text-ink-soft mt-0.5">
-              {t('audit.financial.subtitle', 'Immutable record of all financial events — invoice submissions, approvals, rejections, payments.')}
-            </p>
-          </div>
-          {tab === 'journal' && (
+        <PageHeader
+          title={t('audit.financial.title', 'Financial Audit Trail')}
+          subtitle={t('audit.financial.subtitle', 'Immutable record of all financial events — invoice submissions, approvals, rejections, payments.')}
+          actions={tab === 'journal' && (
             <button
               onClick={() => exportMutation.mutate()}
               disabled={exportMutation.isPending}
@@ -85,7 +82,7 @@ export default function FinancialAuditPage() {
               {t('audit.financial.exportPdf', 'Export PDF')}
             </button>
           )}
-        </div>
+        />
 
         {/* M10 #12: Journal / Synthèse tabs */}
         <div className="flex gap-2 border-b border-hairline">

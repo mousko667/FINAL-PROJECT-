@@ -10,6 +10,7 @@ import { Panel } from '@/components/ui/Panel'
 import { ImportInvoicesModal } from '@/components/invoice/ImportInvoicesModal'
 import type { InvoiceStatus } from '@/types/invoice'
 import { Plus, Upload, Search, ChevronLeft, ChevronRight, Loader2, Archive, Lock } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { formatAmount } from '@/lib/format'
 
 const ALL_STATUSES: InvoiceStatus[] = [
@@ -79,34 +80,36 @@ export default function InvoiceListPage() {
   return (
     <div className="space-y-6 page-enter">
       {/* Page header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-ink">{t('invoice.title')}</h1>
-        <div className="flex items-center gap-2">
-          <ExportMenu endpoint="/invoices/export" filename="invoices" />
-          {isAA && (
-            <button
-              id="btn-import-invoices"
-              onClick={() => setShowImport(true)}
-              title={t('invoice.import.tooltip', 'Importer des factures depuis un fichier CSV ou XML')}
-              className="flex items-center gap-2 px-4 py-2 border border-hairline rounded-[4px] text-sm font-medium text-ink-soft hover:bg-ground transition-colors"
-            >
-              <Upload className="w-4 h-4" />
-              {t('invoice.import.button', 'Importer')}
-            </button>
-          )}
-          {isAA && (
-            <button
-              id="btn-new-invoice"
-              onClick={() => navigate('/invoices/new')}
-              title={t('invoice.newTooltip')}
-              className="flex items-center gap-2 px-4 py-2 bg-oct-navy text-white rounded-[4px] text-sm font-medium hover:bg-oct-navy-light transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              {t('invoice.new')}
-            </button>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        title={t('invoice.title')}
+        actions={
+          <>
+            <ExportMenu endpoint="/invoices/export" filename="invoices" />
+            {isAA && (
+              <button
+                id="btn-import-invoices"
+                onClick={() => setShowImport(true)}
+                title={t('invoice.import.tooltip', 'Importer des factures depuis un fichier CSV ou XML')}
+                className="flex items-center gap-2 px-4 py-2 border border-hairline rounded-[4px] text-sm font-medium text-ink-soft hover:bg-ground transition-colors"
+              >
+                <Upload className="w-4 h-4" />
+                {t('invoice.import.button', 'Importer')}
+              </button>
+            )}
+            {isAA && (
+              <button
+                id="btn-new-invoice"
+                onClick={() => navigate('/invoices/new')}
+                title={t('invoice.newTooltip')}
+                className="flex items-center gap-2 px-4 py-2 bg-oct-navy text-white rounded-[4px] text-sm font-medium hover:bg-oct-navy-light transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                {t('invoice.new')}
+              </button>
+            )}
+          </>
+        }
+      />
 
       {/* Department scope notice for validators */}
       {isValidator && userDeptId && (

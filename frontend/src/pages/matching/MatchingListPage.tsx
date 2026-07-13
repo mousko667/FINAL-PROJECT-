@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { Panel } from '@/components/ui/Panel'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { listMatching, type MatchingSummary } from '@/services/matchingService'
 
 const rowHoverTint = 'hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)] transition-colors'
@@ -40,10 +41,7 @@ export default function MatchingListPage() {
   return (
     <PageRoleGuard allowedRoles={STAFF_ROLES}>
       <div className="max-w-5xl mx-auto space-y-6 page-enter">
-        <div>
-          <h1 className="text-2xl font-bold text-ink">{t('matching.pageTitle')}</h1>
-          <p className="text-sm text-ink-soft mt-0.5">{t('matching.pageSubtitle')}</p>
-        </div>
+        <PageHeader title={t('matching.pageTitle')} subtitle={t('matching.pageSubtitle')} />
 
         <div className="flex gap-3">
           <input

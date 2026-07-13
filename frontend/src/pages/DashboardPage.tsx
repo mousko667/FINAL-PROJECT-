@@ -19,6 +19,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge'
 import { SkeletonCard, SkeletonDashboard, Skeleton } from '@/components/ui/Skeleton'
 import { KpiBand, type KpiBandItem } from '@/components/ui/KpiBand'
 import { Panel } from '@/components/ui/Panel'
+import { PageHeader } from '@/components/ui/PageHeader'
 import type { InvoiceStatus } from '@/types/invoice'
 import { formatAmount } from '@/lib/format'
 
@@ -102,10 +103,7 @@ export default function DashboardPage() {
   if (isAdmin) {
     return (
       <div className="space-y-6 page-enter">
-        <div>
-          <h1 className="text-2xl font-bold text-ink">{t('dashboard.title')}</h1>
-          <p className="text-sm text-ink-soft mt-0.5">{t('dashboard.adminNote')}</p>
-        </div>
+        <PageHeader title={t('dashboard.title')} subtitle={t('dashboard.adminNote')} />
 
         {/* Primary admin actions */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -188,10 +186,7 @@ export default function DashboardPage() {
     ]
     return (
       <div className="space-y-6 page-enter">
-        <div>
-          <h1 className="text-2xl font-bold text-ink">{t('dashboard.title')}</h1>
-          <p className="text-sm text-ink-soft mt-0.5">{t('dashboard.supplierRealtimeTracking')}</p>
-        </div>
+        <PageHeader title={t('dashboard.title')} subtitle={t('dashboard.supplierRealtimeTracking')} />
         <KpiBand items={kpiItems} className="grid grid-cols-2 md:grid-cols-5 [&>div]:text-center" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Link to="/supplier/invoices/new" className="flex items-center gap-4 p-5 bg-oct-navy text-white rounded-[4px] hover:bg-oct-navy-light transition-colors shadow-sm">
@@ -229,10 +224,7 @@ export default function DashboardPage() {
     ]
     return (
       <div className="space-y-6 page-enter">
-        <div>
-          <h1 className="text-2xl font-bold text-ink">{t('dashboard.title')}</h1>
-          <p className="text-sm text-ink-soft mt-0.5">{t('dashboard.validatorQueueSub')}</p>
-        </div>
+        <PageHeader title={t('dashboard.title')} subtitle={t('dashboard.validatorQueueSub')} />
 
         <KpiBand items={validatorKpis} className="grid grid-cols-3 [&>div]:text-center" />
 
@@ -295,19 +287,17 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 page-enter">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-ink">{t('dashboard.title')}</h1>
-          <p className="text-sm text-ink-soft mt-0.5">{t('dashboard.invoiceProcessingOverview')}</p>
-        </div>
-        {isAA && (
+      <PageHeader
+        title={t('dashboard.title')}
+        subtitle={t('dashboard.invoiceProcessingOverview')}
+        actions={isAA && (
           <Link to="/invoices/new"
             className="flex items-center gap-2 px-4 py-2 bg-oct-navy text-white text-sm font-medium rounded-[4px] hover:bg-oct-navy-light transition-colors">
             <Plus className="w-4 h-4" />
             {t('breadcrumb.newInvoice')}
           </Link>
         )}
-      </div>
+      />
 
       {/* M2: system announcements (everyone) + budget alerts (DAF/AA) ; M14: privacy acceptance */}
       <PrivacyPolicyBanner />

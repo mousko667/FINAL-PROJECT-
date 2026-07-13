@@ -5,6 +5,7 @@ import apiClient from '@/services/apiClient'
 import type { ApiResponse, PagedResponse } from '@/types/invoice'
 import { Loader2, CheckCircle, XCircle, GitBranch, Plus } from 'lucide-react'
 import { Panel } from '@/components/ui/Panel'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface Department {
   id: string
@@ -40,30 +41,28 @@ export default function AdminDepartmentsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-ink">{t('admin.departments.title')}</h1>
-          <p className="text-sm text-ink-soft mt-0.5">
-            {t('admin.departments.subtitle', 'Départements OCT et chaînes d\'approbation BAP')}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link
-            to="/admin/departments/new"
-            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-[4px] hover:bg-primary/90 text-sm font-medium"
-          >
-            <Plus className="w-4 h-4" />
-            {t('admin.departments.create', 'Créer un département')}
-          </Link>
-          <Link
-            to="/admin/approval-matrix"
-            className="flex items-center gap-2 border border-hairline px-4 py-2 rounded-[4px] hover:bg-ground text-sm font-medium text-ink-soft"
-          >
-            <GitBranch className="w-4 h-4" />
-            {t('admin.approvalMatrix.title', 'Matrice d\'approbation')}
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        title={t('admin.departments.title')}
+        subtitle={t('admin.departments.subtitle', 'Départements OCT et chaînes d\'approbation BAP')}
+        actions={
+          <>
+            <Link
+              to="/admin/departments/new"
+              className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-[4px] hover:bg-primary/90 text-sm font-medium"
+            >
+              <Plus className="w-4 h-4" />
+              {t('admin.departments.create', 'Créer un département')}
+            </Link>
+            <Link
+              to="/admin/approval-matrix"
+              className="flex items-center gap-2 border border-white/30 px-4 py-2 rounded-[4px] hover:bg-white/10 text-sm font-medium text-white"
+            >
+              <GitBranch className="w-4 h-4" />
+              {t('admin.approvalMatrix.title', 'Matrice d\'approbation')}
+            </Link>
+          </>
+        }
+      />
 
       <Panel className="overflow-hidden">
         {isLoading ? (

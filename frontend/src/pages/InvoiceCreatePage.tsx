@@ -8,6 +8,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { invoiceService } from '@/services/invoiceService'
 import apiClient from '@/services/apiClient'
 import { ChevronRight, ChevronLeft, Loader2, Plus, Trash2, AlertTriangle } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 import type { ApiResponse, PagedResponse } from '@/types/invoice'
 import { formatAmount } from '@/lib/format'
 
@@ -156,7 +157,7 @@ export default function InvoiceCreatePage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-ink">{t('invoice.new', 'New Invoice')}</h1>
+      <PageHeader title={t('invoice.new', 'New Invoice')} />
 
       {/* Step indicators */}
       <div className="flex gap-2">

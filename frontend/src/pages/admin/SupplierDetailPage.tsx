@@ -15,6 +15,7 @@ import { SupplierStatusBadge } from '@/components/SupplierStatusBadge'
 import { SupplierRelationship } from '@/components/supplier/SupplierRelationship'
 import { formatDate } from '@/lib/format'
 import { Loader2, ArrowLeft, CheckCircle, Ban, Trash2, Building, Mail, Phone, MapPin, Calendar, FileText, Activity, Upload } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 export default function SupplierDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -59,13 +60,17 @@ export default function SupplierDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <button onClick={() => navigate('/admin/suppliers')} className="p-2 hover:bg-ground rounded-full transition-colors">
-          <ArrowLeft className="w-5 h-5 text-ink-soft" />
-        </button>
-        <h1 className="text-2xl font-bold text-ink flex-1">{supplier.companyName}</h1>
-        <SupplierStatusBadge status={supplier.status} className="text-sm px-3 py-1" />
-      </div>
+      <PageHeader
+        title={
+          <span className="flex items-center gap-4">
+            <button onClick={() => navigate('/admin/suppliers')} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+              <ArrowLeft className="w-5 h-5 text-white" aria-hidden />
+            </button>
+            {supplier.companyName}
+          </span>
+        }
+        actions={<SupplierStatusBadge status={supplier.status} className="text-sm px-3 py-1" />}
+      />
 
       {canManageSupplier && (
         <div className="flex items-center gap-3 bg-surface p-4 rounded-[4px] border border-hairline">

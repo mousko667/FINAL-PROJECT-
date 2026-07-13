@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import apiClient from '@/services/apiClient'
 import { Loader2, Plus, Trash2, Save, X, GripVertical } from 'lucide-react'
 import { Panel } from '@/components/ui/Panel'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface Department { id: string; code: string; nameEn: string; nameFr: string }
 
@@ -90,12 +91,10 @@ export default function AdminChecklistTemplatesPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-ink">{t('checklist.title', 'Validation Checklist Templates')}</h1>
-          <p className="text-sm text-ink-soft mt-1">{t('checklist.subtitle', 'Reusable checklists shown to validators during invoice review.')}</p>
-        </div>
-        {!editor && (
+      <PageHeader
+        title={t('checklist.title', 'Validation Checklist Templates')}
+        subtitle={t('checklist.subtitle', 'Reusable checklists shown to validators during invoice review.')}
+        actions={!editor && (
           <button
             onClick={() => setEditor(emptyEditor())}
             className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-[4px] hover:bg-primary/90 text-sm font-medium"
@@ -104,7 +103,7 @@ export default function AdminChecklistTemplatesPage() {
             {t('checklist.new', 'New template')}
           </button>
         )}
-      </div>
+      />
 
       {editor ? (
         <Panel className="p-6 space-y-5">
