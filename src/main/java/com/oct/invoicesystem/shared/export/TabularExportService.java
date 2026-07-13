@@ -161,6 +161,31 @@ public class TabularExportService {
         return name.length() > 31 ? name.substring(0, 31) : name;
     }
 
+    /**
+     * Weighted column widths (as percentages summing to 100) so wide text columns (email,
+     * description, supplier name) get more room than narrow ones (amount, date, code). Keeps an
+     * 11-column table inside an A4 portrait page instead of overflowing off the right margin.
+     */
+    static float[] columnWeights(java.util.List<String> headers) {
+        String[] wideKeys = {"email", "description", "libell", "label", "supplier", "fournisseur", "name", "nom"};
+        float[] weights = new float[headers.size()];
+        float total = 0f;
+        for (int i = 0; i < headers.size(); i++) {
+            String h = headers.get(i) == null ? "" : headers.get(i).toLowerCase();
+            boolean wide = false;
+            for (String k : wideKeys) {
+                if (h.contains(k)) { wide = true; break; }
+            }
+            weights[i] = wide ? 3f : 1f;
+            total += weights[i];
+        }
+        if (total == 0f) total = headers.size();
+        for (int i = 0; i < weights.length; i++) {
+            weights[i] = weights[i] / total * 100f;
+        }
+        return weights;
+    }
+
     // ── PDF ──────────────────────────────────────────────────────────────────
     private byte[] toPdf(String title, List<String> headers, List<List<String>> rows,
                          ReportMetadata meta, org.springframework.context.MessageSource messageSource) {

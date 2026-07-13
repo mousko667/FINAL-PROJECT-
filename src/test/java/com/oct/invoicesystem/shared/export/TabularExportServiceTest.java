@@ -8,6 +8,8 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 
 class TabularExportServiceTest {
 
@@ -112,5 +114,29 @@ class TabularExportServiceTest {
         } finally {
             org.springframework.context.i18n.LocaleContextHolder.setLocale(prev);
         }
+    }
+
+    @Test
+    void columnWeightsSumTo100() {
+        float[] w = TabularExportService.columnWeights(
+                List.of("Reference", "Supplier Email", "Amount", "Status"));
+        float sum = 0;
+        for (float f : w) sum += f;
+        assertThat(sum).isCloseTo(100f, within(0.5f));
+    }
+
+    @Test
+    void wideColumnsGetMoreWeightThanNarrow() {
+        List<String> headers = List.of("Amount", "Supplier Email");
+        float[] w = TabularExportService.columnWeights(headers);
+        // "Supplier Email" (wide) must be wider than "Amount" (narrow).
+        assertThat(w[1]).isGreaterThan(w[0]);
+    }
+
+    @Test
+    void unknownHeadersFallBackToEqualWeights() {
+        float[] w = TabularExportService.columnWeights(List.of("Aaa", "Bbb", "Ccc"));
+        assertThat(w[0]).isCloseTo(w[1], within(0.01f));
+        assertThat(w[1]).isCloseTo(w[2], within(0.01f));
     }
 }
