@@ -102,7 +102,7 @@ class TabularExportServiceTest {
         try {
             com.oct.invoicesystem.shared.export.ReportMetadata meta =
                     new com.oct.invoicesystem.shared.export.ReportMetadata(
-                            "DUPONT Jean", "DAF", java.time.Instant.now(), null);
+                            "DUPONT Jean", "DAF", java.time.Instant.now(), null, null);
             byte[] withMeta = service.export(TabularExportService.Format.PDF, "Report",
                     List.of("a", "b"), List.of(List.of("1", "2")), meta, ms);
             byte[] withoutMeta = service.export(TabularExportService.Format.PDF, "Report",

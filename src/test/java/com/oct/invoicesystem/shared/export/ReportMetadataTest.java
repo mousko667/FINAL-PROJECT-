@@ -12,6 +12,8 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -22,7 +24,7 @@ class ReportMetadataTest {
     @Test
     void holdsAllFields_andAllowsNullPeriod() {
         Instant now = Instant.now();
-        ReportMetadata meta = new ReportMetadata("DUPONT Jean", "DAF (Directeur Administratif et Financier)", now, null);
+        ReportMetadata meta = new ReportMetadata("DUPONT Jean", "DAF (Directeur Administratif et Financier)", now, null, null);
 
         assertEquals("DUPONT Jean", meta.generatorName());
         assertEquals("DAF (Directeur Administratif et Financier)", meta.generatorRole());
@@ -33,7 +35,7 @@ class ReportMetadataTest {
     @Test
     void keepsPeriodLabelWhenProvided() {
         ReportMetadata meta = new ReportMetadata("NOM Prenom", "Assistant comptable", Instant.now(),
-                "Periode du 2026-01-01 au 2026-01-31");
+                "Periode du 2026-01-01 au 2026-01-31", null);
         assertEquals("Periode du 2026-01-01 au 2026-01-31", meta.periodLabel());
     }
 
@@ -72,5 +74,27 @@ class ReportMetadataTest {
         }
         user.setUserRoles(roles);
         return user;
+    }
+
+    @Test
+    void ofWithFiltersLabelKeepsBothPeriodAndFilters() {
+        User u = new User();
+        u.setFirstName("Marie");
+        u.setLastName("Dubois");
+        org.springframework.context.support.StaticMessageSource ms = new org.springframework.context.support.StaticMessageSource();
+        ReportMetadata meta = ReportMetadata.of(u, ms, "Periode X", "Statut: Draft", Locale.FRENCH);
+        assertThat(meta.periodLabel()).isEqualTo("Periode X");
+        assertThat(meta.filtersLabel()).isEqualTo("Statut: Draft");
+        assertThat(meta.generatorName()).isEqualTo("Dubois Marie");
+    }
+
+    @Test
+    void legacyOfHasNullFiltersLabel() {
+        User u = new User();
+        u.setFirstName("Marie");
+        u.setLastName("Dubois");
+        org.springframework.context.support.StaticMessageSource ms = new org.springframework.context.support.StaticMessageSource();
+        ReportMetadata meta = ReportMetadata.of(u, ms, "Periode X", Locale.FRENCH);
+        assertThat(meta.filtersLabel()).isNull();
     }
 }

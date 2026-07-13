@@ -18,22 +18,29 @@ public record ReportMetadata(
         String generatorName,
         String generatorRole,
         Instant generatedAt,
-        String periodLabel
+        String periodLabel,
+        String filtersLabel
 ) {
+
+    /** Legacy factory (no filters): filtersLabel is null. */
+    public static ReportMetadata of(User user, MessageSource messageSource, String periodLabel, Locale locale) {
+        return of(user, messageSource, periodLabel, null, locale);
+    }
 
     /**
      * Resolves the report generator from the current {@link User}: "LASTNAME Firstname" plus the
      * localized role label (report.pdf.role.&lt;ROLE&gt;, DAF prioritized over ASSISTANT_COMPTABLE,
-     * then the first role found, falling back to the raw role code). {@code periodLabel} is passed
-     * through unchanged (null for reports that have no date range).
+     * then the first role found, falling back to the raw role code). {@code periodLabel} and
+     * {@code filtersLabel} are passed through unchanged (either may be null).
      */
-    public static ReportMetadata of(User user, MessageSource messageSource, String periodLabel, Locale locale) {
+    public static ReportMetadata of(User user, MessageSource messageSource, String periodLabel,
+                                    String filtersLabel, Locale locale) {
         String name = ((user.getLastName() == null ? "" : user.getLastName()) + " "
                 + (user.getFirstName() == null ? "" : user.getFirstName())).trim();
         String roleCode = resolveRoleCode(user);
         String roleLabel = roleCode == null ? ""
                 : messageSource.getMessage("report.pdf.role." + roleCode, null, roleCode, locale);
-        return new ReportMetadata(name, roleLabel, Instant.now(), periodLabel);
+        return new ReportMetadata(name, roleLabel, Instant.now(), periodLabel, filtersLabel);
     }
 
     /** DAF first, then ASSISTANT_COMPTABLE, else the first role name, else null. */
