@@ -6,6 +6,7 @@ import { Loader2, ArrowRight, Calendar } from 'lucide-react'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { KpiBand, type KpiBandItem } from '@/components/ui/KpiBand'
 import { Panel } from '@/components/ui/Panel'
+import { PageHeader } from '@/components/ui/PageHeader'
 import type { InvoiceStatus } from '@/types/invoice'
 import { formatDate } from '@/lib/format'
 
@@ -42,7 +43,7 @@ export default function SupplierDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-ink">{t('supplier.portal.dashboard', 'Dashboard')}</h1>
+      <PageHeader title={t('supplier.portal.dashboard', 'Dashboard')} />
 
       {isLoading ? (
         <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
