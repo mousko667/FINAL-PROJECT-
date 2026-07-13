@@ -152,18 +152,18 @@ class PaymentServiceTest {
         when(tabularExportService.export(
                 eq(com.oct.invoicesystem.shared.export.TabularExportService.Format.CSV),
                 eq("Payments"),
-                anyList(), anyList()))
+                anyList(), anyList(), any(), any()))
             .thenReturn("CSV".getBytes());
 
         byte[] out = paymentService.exportPayments(
-                null, com.oct.invoicesystem.shared.export.TabularExportService.Format.CSV);
+                null, com.oct.invoicesystem.shared.export.TabularExportService.Format.CSV, "Payments", null, null);
 
         assertArrayEquals("CSV".getBytes(), out);
 
         ArgumentCaptor<java.util.List<java.util.List<String>>> rowsCap = ArgumentCaptor.forClass(java.util.List.class);
         verify(tabularExportService).export(
                 eq(com.oct.invoicesystem.shared.export.TabularExportService.Format.CSV),
-                eq("Payments"), anyList(), rowsCap.capture());
+                eq("Payments"), anyList(), rowsCap.capture(), any(), any());
         java.util.List<String> row = rowsCap.getValue().get(0);
         assertEquals("INV-1", row.get(0));
         assertEquals("ACME", row.get(1));

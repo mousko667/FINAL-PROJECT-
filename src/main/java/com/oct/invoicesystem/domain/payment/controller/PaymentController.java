@@ -35,6 +35,7 @@ public class PaymentController {
 
     private final PaymentService paymentService;
     private final RemittanceAdviceService remittanceAdviceService;
+    private final org.springframework.context.MessageSource messageSource;
 
     @PostMapping("/invoice/{invoiceId}")
     @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
@@ -101,9 +102,15 @@ public class PaymentController {
             description = "Unified export of the payment history in the requested format")
     public ResponseEntity<byte[]> exportPayments(
             @RequestParam(required = false) String departmentCode,
-            @RequestParam(defaultValue = "csv") String format) {
+            @RequestParam(defaultValue = "csv") String format,
+            java.util.Locale locale,
+            @AuthenticationPrincipal User currentUser) {
         TabularExportService.Format fmt = TabularExportService.Format.from(format);
-        byte[] body = paymentService.exportPayments(departmentCode, fmt);
+        java.util.Locale loc = locale != null ? locale : java.util.Locale.getDefault();
+        String title = messageSource.getMessage("export.title.payments", null, loc);
+        com.oct.invoicesystem.shared.export.ReportMetadata meta =
+                com.oct.invoicesystem.shared.export.ReportMetadata.of(currentUser, messageSource, null, null, loc);
+        byte[] body = paymentService.exportPayments(departmentCode, fmt, title, meta, messageSource);
         String mediaType = fmt == TabularExportService.Format.CSV
                 ? fmt.mediaType + "; charset=UTF-8"
                 : fmt.mediaType;

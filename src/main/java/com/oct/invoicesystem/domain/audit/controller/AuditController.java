@@ -38,6 +38,8 @@ public class AuditController {
     private final AuditService auditService;
     private final com.oct.invoicesystem.domain.audit.service.AuditAnomalyService auditAnomalyService;
     private final com.oct.invoicesystem.shared.export.TabularExportService tabularExportService;
+    private final org.springframework.context.MessageSource messageSource;
+    private final com.oct.invoicesystem.shared.util.SecurityHelper securityHelper;
 
     // System/security audit trail — Administrator only
     private static final List<String> SYSTEM_ACTIONS = List.of(
@@ -128,12 +130,21 @@ public class AuditController {
     public org.springframework.http.ResponseEntity<byte[]> exportLogs(
             @RequestParam(defaultValue = "csv") String format,
             @RequestParam(required = false) String entityType,
-            @RequestParam(required = false) String action) {
+            @RequestParam(required = false) String action,
+            java.util.Locale locale,
+            org.springframework.security.core.Authentication authentication) {
         var fmt = com.oct.invoicesystem.shared.export.TabularExportService.Format.from(format);
+        java.util.Locale loc = locale != null ? locale : java.util.Locale.getDefault();
         Pageable pageable = PageRequest.of(0, 10000, Sort.by(Sort.Direction.DESC, "createdAt"));
         java.util.List<AuditLogDTO> logs =
                 auditService.searchLogs(null, entityType, null, action, pageable).getContent();
-        java.util.List<String> headers = java.util.List.of("Date", "User ID", "Action", "Entity", "Entity ID", "IP");
+        java.util.List<String> headers = java.util.List.of(
+                messageSource.getMessage("export.header.audit.date", null, loc),
+                messageSource.getMessage("export.header.audit.user", null, loc),
+                messageSource.getMessage("export.header.audit.action", null, loc),
+                messageSource.getMessage("export.header.audit.entity", null, loc),
+                messageSource.getMessage("export.header.audit.entity_id", null, loc),
+                messageSource.getMessage("export.header.audit.ip", null, loc));
         java.util.List<java.util.List<String>> rows = logs.stream().map(l -> java.util.List.of(
                 l.createdAt() == null ? "" : l.createdAt().toString(),
                 l.userId() == null ? "" : l.userId().toString(),
@@ -141,7 +152,10 @@ public class AuditController {
                 l.entityType() == null ? "" : l.entityType(),
                 l.entityId() == null ? "" : l.entityId(),
                 l.ipAddress() == null ? "" : l.ipAddress())).toList();
-        byte[] body = tabularExportService.export(fmt, "Audit", headers, rows);
+        String title = messageSource.getMessage("export.title.audit", null, loc);
+        com.oct.invoicesystem.shared.export.ReportMetadata meta =
+                com.oct.invoicesystem.shared.export.ReportMetadata.of(securityHelper.currentUser(authentication), messageSource, null, null, loc);
+        byte[] body = tabularExportService.export(fmt, title, headers, rows, meta, messageSource);
         return org.springframework.http.ResponseEntity.ok()
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
                         "attachment; filename=audit_export." + fmt.extension)
@@ -189,6 +203,7 @@ public class AuditController {
             @RequestParam(defaultValue = "system") String scope,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate from,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate to,
+            java.util.Locale locale,
             org.springframework.security.core.Authentication auth) {
         boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         boolean isDaf = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_DAF"));
@@ -197,17 +212,24 @@ public class AuditController {
         if ((financial && !isDaf) || (!financial && !isAdmin)) {
             return org.springframework.http.ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
         }
+        java.util.Locale loc = locale != null ? locale : java.util.Locale.getDefault();
         java.time.LocalDate t = orDefault(to, java.time.LocalDate.now());
         java.time.LocalDate f = orDefault(from, t.minusDays(30));
         var summary = auditService.summarize(f, t, actionsForScope(scope));
         var fmt = com.oct.invoicesystem.shared.export.TabularExportService.Format.from(format);
-        java.util.List<String> headers = java.util.List.of("Dimension", "Libelle", "Nombre");
+        java.util.List<String> headers = java.util.List.of(
+                messageSource.getMessage("export.header.audit.dimension", null, loc),
+                messageSource.getMessage("export.header.audit.label", null, loc),
+                messageSource.getMessage("export.header.audit.count", null, loc));
         java.util.List<java.util.List<String>> rows = new java.util.ArrayList<>();
-        appendDim(rows, "Action", summary.byAction());
-        appendDim(rows, "Utilisateur", summary.byUser());
-        appendDim(rows, "Entite", summary.byEntityType());
+        appendDim(rows, messageSource.getMessage("export.header.audit.action", null, loc), summary.byAction());
+        appendDim(rows, messageSource.getMessage("export.header.audit.user", null, loc), summary.byUser());
+        appendDim(rows, messageSource.getMessage("export.header.audit.entity", null, loc), summary.byEntityType());
         appendDim(rows, "Jour", summary.byDay());
-        byte[] body = tabularExportService.export(fmt, "Audit Summary", headers, rows);
+        String title = messageSource.getMessage("export.title.audit_summary", null, loc);
+        com.oct.invoicesystem.shared.export.ReportMetadata meta =
+                com.oct.invoicesystem.shared.export.ReportMetadata.of(securityHelper.currentUser(auth), messageSource, null, null, loc);
+        byte[] body = tabularExportService.export(fmt, title, headers, rows, meta, messageSource);
         return org.springframework.http.ResponseEntity.ok()
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
                         "attachment; filename=audit_summary." + fmt.extension)

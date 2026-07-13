@@ -208,7 +208,9 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional(readOnly = true)
-    public byte[] exportPayments(String departmentCode, TabularExportService.Format format) {
+    public byte[] exportPayments(String departmentCode, TabularExportService.Format format,
+                                 String title, com.oct.invoicesystem.shared.export.ReportMetadata meta,
+                                 org.springframework.context.MessageSource messageSource) {
         List<Payment> payments = (departmentCode == null || departmentCode.isBlank())
                 ? paymentRepository.findAll()
                 : paymentRepository.findByInvoiceDepartmentCode(departmentCode);
@@ -230,7 +232,7 @@ public class PaymentServiceImpl implements PaymentService {
                     p.getRecordedBy() == null ? "" : nz(p.getRecordedBy().getUsername()));
         }).toList();
 
-        return tabularExportService.export(format, "Payments", headers, rows);
+        return tabularExportService.export(format, title, headers, rows, meta, messageSource);
     }
 
     private PaymentDTO toDTO(Payment payment) {

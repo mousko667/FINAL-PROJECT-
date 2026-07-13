@@ -91,7 +91,8 @@ public class SupplierController {
 
     @GetMapping("/export")
     @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE', 'DAF')")
-    public ResponseEntity<byte[]> exportSuppliers(@RequestParam(defaultValue = "csv") String format) {
+    public ResponseEntity<byte[]> exportSuppliers(@RequestParam(defaultValue = "csv") String format,
+            Authentication authentication) {
         var fmt = com.oct.invoicesystem.shared.export.TabularExportService.Format.from(format);
         var suppliers = supplierService.searchSuppliers(null, null, null, null,
                 org.springframework.data.domain.Pageable.unpaged()).getContent();
@@ -109,7 +110,10 @@ public class SupplierController {
                 ns(s.companyName()), ns(s.taxId()), ns(s.contactEmail()), ns(s.contactPhone()),
                 ns(s.address()), s.status() == null ? "" : s.status().name(),
                 s.category() == null ? "" : s.category().name())).toList();
-        byte[] body = tabularExportService.export(fmt, "Suppliers", headers, rows);
+        String title = messageSource.getMessage("export.title.suppliers", null, locale);
+        com.oct.invoicesystem.shared.export.ReportMetadata meta =
+                com.oct.invoicesystem.shared.export.ReportMetadata.of(securityHelper.currentUser(authentication), messageSource, null, null, locale);
+        byte[] body = tabularExportService.export(fmt, title, headers, rows, meta, messageSource);
         return ResponseEntity.ok()
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
                         "attachment; filename=suppliers_export." + fmt.extension)

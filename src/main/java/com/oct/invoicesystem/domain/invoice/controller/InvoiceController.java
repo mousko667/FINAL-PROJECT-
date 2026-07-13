@@ -103,13 +103,24 @@ public class InvoiceController {
             @RequestParam(required = false) LocalDate from,
             @RequestParam(required = false) LocalDate to,
             @RequestParam(required = false) String reference,
-            java.util.Locale locale) {
+            java.util.Locale locale,
+            Authentication authentication) {
         var fmt = com.oct.invoicesystem.shared.export.TabularExportService.Format.from(format);
         // Build rows inside the service transaction so the lazy Department association can be read.
         // Headers + rows come from the single invoice-export source of truth (11 columns).
         List<String> headers = invoiceService.invoiceExportHeaders(messageSource, locale);
         List<List<String>> rows = invoiceService.buildExportRows(status, department, from, to, reference, messageSource, locale);
-        byte[] body = tabularExportService.export(fmt, "Invoices", headers, rows);
+        // Build filters label
+        StringBuilder f = new StringBuilder();
+        if (status != null)     f.append("Statut: ").append(status.name());
+        if (department != null) f.append(f.length() > 0 ? " \u00B7 " : "").append("Departement: ").append(department);
+        if (from != null || to != null) f.append(f.length() > 0 ? " \u00B7 " : "")
+                .append("Periode: ").append(from == null ? "" : from).append("..").append(to == null ? "" : to);
+        String filters = f.length() == 0 ? null : f.toString();
+        String title = messageSource.getMessage("export.title.invoices", null, locale);
+        com.oct.invoicesystem.shared.export.ReportMetadata meta =
+                com.oct.invoicesystem.shared.export.ReportMetadata.of(securityHelper.currentUser(authentication), messageSource, null, filters, locale);
+        byte[] body = tabularExportService.export(fmt, title, headers, rows, meta, messageSource);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=invoices_export." + fmt.extension)
                 .contentType(MediaType.parseMediaType(fmt.mediaType))
@@ -182,14 +193,18 @@ public class InvoiceController {
     public ResponseEntity<byte[]> exportMatchingReport(
             @PathVariable UUID id,
             @RequestParam(defaultValue = "csv") String format,
-            java.util.Locale locale) {
+            java.util.Locale locale,
+            Authentication authentication) {
         var fmt = com.oct.invoicesystem.shared.export.TabularExportService.Format.from(format);
         List<String> headers = List.of(
                 messageSource.getMessage("report.excel.header.field", null, locale),
                 messageSource.getMessage("report.excel.header.value", null, locale)
         );
         List<List<String>> rows = invoiceService.buildMatchingExportRows(id);
-        byte[] body = tabularExportService.export(fmt, "Matching report", headers, rows);
+        String title = messageSource.getMessage("export.title.matching", null, locale);
+        com.oct.invoicesystem.shared.export.ReportMetadata meta =
+                com.oct.invoicesystem.shared.export.ReportMetadata.of(securityHelper.currentUser(authentication), messageSource, null, null, locale);
+        byte[] body = tabularExportService.export(fmt, title, headers, rows, meta, messageSource);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=matching_report_" + id + "." + fmt.extension)
                 .contentType(MediaType.parseMediaType(fmt.mediaType))

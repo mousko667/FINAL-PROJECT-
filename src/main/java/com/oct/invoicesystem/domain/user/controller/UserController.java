@@ -22,6 +22,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -40,6 +41,8 @@ public class UserController {
     private final UserService userService;
     private final UserCsvService userCsvService;
     private final com.oct.invoicesystem.shared.export.TabularExportService tabularExportService;
+    private final org.springframework.context.MessageSource messageSource;
+    private final com.oct.invoicesystem.shared.util.SecurityHelper securityHelper;
 
     private static String nz(String s) {
         return s == null ? "" : s;
@@ -132,15 +135,20 @@ public class UserController {
     @GetMapping("/export")
     @Operation(summary = "Export users (csv|excel|pdf)",
             description = "Unified export of all users in the requested format (no passwords)")
-    public ResponseEntity<byte[]> exportUsers(@RequestParam(defaultValue = "csv") String format) {
+    public ResponseEntity<byte[]> exportUsers(@RequestParam(defaultValue = "csv") String format,
+            java.util.Locale locale, Authentication authentication) {
         TabularExportService.Format fmt = TabularExportService.Format.from(format);
         List<UserDTO> users = userService.getUsers(0, 10000, "createdAt,desc").getContent();
+        java.util.Locale loc = locale != null ? locale : java.util.Locale.getDefault();
         List<String> headers = List.of("Username", "Email", "First name", "Last name", "Roles", "Active");
         List<List<String>> rows = users.stream().map(u -> List.of(
                 nz(u.username()), nz(u.email()), nz(u.firstName()), nz(u.lastName()),
                 u.roles() == null ? "" : String.join("|", u.roles()),
                 Boolean.toString(u.active()))).toList();
-        byte[] body = tabularExportService.export(fmt, "Users", headers, rows);
+        String title = messageSource.getMessage("export.title.users", null, loc);
+        com.oct.invoicesystem.shared.export.ReportMetadata meta =
+                com.oct.invoicesystem.shared.export.ReportMetadata.of(securityHelper.currentUser(authentication), messageSource, null, null, loc);
+        byte[] body = tabularExportService.export(fmt, title, headers, rows, meta, messageSource);
         return fileResponse(body, "users_export", fmt);
     }
 
