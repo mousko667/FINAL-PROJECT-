@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Shield, CheckCircle, Clock, Lock, Key, Users, Trash2, Loader2, AlertCircle } from 'lucide-react'
 import apiClient from '@/services/apiClient'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface ActiveSession {
   id: string
@@ -104,10 +105,10 @@ export default function SecuritySettingsPage() {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <div>
-        <h1 className="text-2xl font-bold text-ink">{t('admin.security.title')}</h1>
-        <p className="text-sm text-ink-soft mt-1">{t('admin.security.subtitle', 'Configure system-wide security policies.')}</p>
-      </div>
+      <PageHeader
+        title={t('admin.security.title')}
+        subtitle={t('admin.security.subtitle', 'Configure system-wide security policies.')}
+      />
 
       {/* P11-53: security-health dashboard */}
       {health && (

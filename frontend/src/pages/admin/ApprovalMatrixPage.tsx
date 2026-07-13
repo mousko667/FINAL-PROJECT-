@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import { Loader2, CheckCircle, Save } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface Department {
   id: string
@@ -65,10 +66,10 @@ export default function ApprovalMatrixPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-ink">{t('admin.approvalMatrix.title')}</h1>
-        <p className="text-sm text-ink-soft mt-1">{t('admin.approvalMatrix.subtitle')}</p>
-      </div>
+      <PageHeader
+        title={t('admin.approvalMatrix.title')}
+        subtitle={t('admin.approvalMatrix.subtitle')}
+      />
 
       {saved && (
         <div className="flex items-center gap-2 text-sm text-pos bg-pos-bg border border-pos/30 rounded-[4px] px-4 py-3">

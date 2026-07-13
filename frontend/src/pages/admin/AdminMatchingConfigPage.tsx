@@ -6,6 +6,7 @@ import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { Loader2, SlidersHorizontal, Save, CheckCircle, AlertCircle } from 'lucide-react'
 import { formatDateTime } from '@/lib/format'
 import { Panel } from '@/components/ui/Panel'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface MatchingConfig {
   id: string
@@ -78,15 +79,10 @@ export default function AdminMatchingConfigPage() {
   return (
     <PageRoleGuard allowedRoles={['ROLE_ADMIN']}>
       <div className="space-y-6 page-enter max-w-2xl">
-        <div>
-          <h1 className="text-2xl font-bold text-ink flex items-center gap-2">
-            <SlidersHorizontal className="w-6 h-6 text-primary" />
-            {t('admin.matchingConfig.title', 'Three-Way Matching Configuration')}
-          </h1>
-          <p className="text-sm text-ink-soft mt-0.5">
-            {t('admin.matchingConfig.subtitle', 'Tolerance thresholds applied when matching invoices against purchase orders and goods receipts.')}
-          </p>
-        </div>
+        <PageHeader
+          title={<span className="flex items-center gap-2"><SlidersHorizontal className="w-6 h-6" aria-hidden />{t('admin.matchingConfig.title', 'Three-Way Matching Configuration')}</span>}
+          subtitle={t('admin.matchingConfig.subtitle', 'Tolerance thresholds applied when matching invoices against purchase orders and goods receipts.')}
+        />
 
         {isLoading ? (
           <div className="p-8 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-ink-faint" /></div>

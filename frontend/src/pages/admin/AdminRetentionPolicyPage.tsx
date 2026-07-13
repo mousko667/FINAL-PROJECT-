@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import apiClient from '@/services/apiClient'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { Loader2, Save, Archive } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface RetentionPolicy {
   retentionYears: number
@@ -45,12 +46,10 @@ export default function AdminRetentionPolicyPage() {
   return (
     <PageRoleGuard allowedRoles={['ROLE_ADMIN']}>
       <div className="max-w-2xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-ink">{t('retentionPolicy.title', 'Politique de rétention')}</h1>
-          <p className="text-sm text-ink-soft mt-0.5">
-            {t('retentionPolicy.subtitle', 'Durée de conservation des documents de facture avant signalement pour disposition.')}
-          </p>
-        </div>
+        <PageHeader
+          title={t('retentionPolicy.title', 'Politique de rétention')}
+          subtitle={t('retentionPolicy.subtitle', 'Durée de conservation des documents de facture avant signalement pour disposition.')}
+        />
 
         <p className="text-xs text-ink-soft bg-ground border border-hairline rounded-[4px] p-3">
           {t('retentionPolicy.note', 'Le balayage est non destructif : les documents dépassant la durée de rétention sont signalés (audit) pour qu’un administrateur décide de leur disposition. Aucune suppression automatique.')}

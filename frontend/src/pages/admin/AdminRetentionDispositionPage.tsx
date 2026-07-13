@@ -5,6 +5,7 @@ import apiClient from '@/services/apiClient'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { Link } from 'react-router-dom'
 import { Loader2, CheckCircle, Trash2, ShieldCheck } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface PendingDocument {
   id: string
@@ -40,12 +41,10 @@ export default function AdminRetentionDispositionPage() {
   return (
     <PageRoleGuard allowedRoles={['ROLE_ADMIN']}>
       <div className="max-w-4xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-ink">{t('retentionDisposition.title', 'Contrôles de purge')}</h1>
-          <p className="text-sm text-ink-soft mt-0.5">
-            {t('retentionDisposition.subtitle', 'Documents de facture ayant dépassé la durée de rétention et en attente de décision.')}
-          </p>
-        </div>
+        <PageHeader
+          title={t('retentionDisposition.title', 'Contrôles de purge')}
+          subtitle={t('retentionDisposition.subtitle', 'Documents de facture ayant dépassé la durée de rétention et en attente de décision.')}
+        />
 
         <p className="text-xs text-ink-soft bg-ground border border-hairline rounded-[4px] p-3">
           {t('retentionDisposition.note', "« Purger » est un marquage de conformité : le fichier n’est pas supprimé physiquement du stockage. La décision est tracée dans l’audit.")}

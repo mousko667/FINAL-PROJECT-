@@ -9,6 +9,7 @@ import AuditSummary from '@/components/audit/AuditSummary'
 import RetentionComplianceCard from '@/components/audit/RetentionComplianceCard'
 import { formatDateTime } from '@/lib/format'
 import { Panel } from '@/components/ui/Panel'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface AuditLog {
   id: string
@@ -171,13 +172,13 @@ export default function AdminAuditPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-ink">{t('admin.audit.title')}</h1>
-        {tab === 'journal' && (
+      <PageHeader
+        title={t('admin.audit.title')}
+        actions={tab === 'journal' && (
           <ExportMenu endpoint="/audit-logs/export" filename="audit"
             params={{ entityType: filters.entityType, action: filters.action }} />
         )}
-      </div>
+      />
 
       {/* M10 #12: Journal / Synthèse tabs */}
       <div className="flex gap-2 border-b border-hairline">

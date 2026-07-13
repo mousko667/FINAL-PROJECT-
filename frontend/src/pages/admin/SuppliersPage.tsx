@@ -5,6 +5,7 @@ import { useSuppliers, useActivateSupplier, useSuspendSupplier, useDeleteSupplie
 import { useAppSelector } from '@/store/hooks'
 import { SupplierStatusBadge } from '@/components/SupplierStatusBadge'
 import { ExportMenu } from '@/components/ui/ExportMenu'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { Loader2, Search, Filter, Eye, CheckCircle, Ban, Trash2, Plus } from 'lucide-react'
 import { formatDate } from '@/lib/format'
 
@@ -34,21 +35,23 @@ export default function SuppliersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-ink">{t('supplier.title', 'Suppliers')}</h1>
-        <div className="flex items-center gap-2">
-          <ExportMenu endpoint="/suppliers/export" filename="suppliers" />
-          {isAdmin && (
-            <Link
-              to="/admin/suppliers/new"
-              className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-[4px] hover:bg-primary/90 text-sm font-medium"
-            >
-              <Plus className="w-4 h-4" />
-              {t('supplier.create', 'Add Supplier')}
-            </Link>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        title={t('supplier.title', 'Suppliers')}
+        actions={
+          <>
+            <ExportMenu endpoint="/suppliers/export" filename="suppliers" />
+            {isAdmin && (
+              <Link
+                to="/admin/suppliers/new"
+                className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-[4px] hover:bg-primary/90 text-sm font-medium"
+              >
+                <Plus className="w-4 h-4" />
+                {t('supplier.create', 'Add Supplier')}
+              </Link>
+            )}
+          </>
+        }
+      />
 
       <div className="flex items-center gap-4 bg-surface p-4 rounded-[4px] border border-hairline">
         <div className="relative flex-1">

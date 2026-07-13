@@ -6,6 +6,7 @@ import { ShieldAlert, Database, ListChecks, CalendarClock, Plus, Trash2, Loader2
 import { formatDate, formatDateTime } from '@/lib/format'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Panel } from '@/components/ui/Panel'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface Incident { id: string; title: string; severity: string; status: string; reportedAt: string }
 interface ChecklistItem { id: string; framework: string; label: string; completed: boolean }
@@ -59,13 +60,10 @@ export default function AdminCompliancePage() {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <div className="flex items-center gap-3">
-        <ShieldAlert className="w-6 h-6 text-primary" />
-        <div>
-          <h1 className="text-2xl font-bold text-ink">{t('admin.compliance.title', 'Sécurité & Conformité')}</h1>
-          <p className="text-sm text-ink-soft mt-1">{t('admin.compliance.subtitle', 'Sauvegardes, incidents, checklist SOX/IFRS, calendrier de conformité.')}</p>
-        </div>
-      </div>
+      <PageHeader
+        title={<span className="flex items-center gap-2"><ShieldAlert className="w-6 h-6" aria-hidden />{t('admin.compliance.title', 'Sécurité & Conformité')}</span>}
+        subtitle={t('admin.compliance.subtitle', 'Sauvegardes, incidents, checklist SOX/IFRS, calendrier de conformité.')}
+      />
 
       {/* Audit preparation — read-only synthesis of the existing compliance data */}
       <Panel className="p-5">

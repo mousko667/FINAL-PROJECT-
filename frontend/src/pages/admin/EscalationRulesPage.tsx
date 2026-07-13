@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import apiClient from '@/services/apiClient'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { Loader2, Plus, Trash2, Save, X, AlarmClock } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface EscalationRule {
   id: string
@@ -55,18 +56,16 @@ export default function EscalationRulesPage() {
   return (
     <PageRoleGuard allowedRoles={['ROLE_ADMIN', 'ROLE_DAF']}>
       <div className="max-w-3xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-ink">{t('escalationRules.title', 'Escalation Rules')}</h1>
-            <p className="text-sm text-ink-soft mt-0.5">{t('escalationRules.subtitle', 'Configure how long after a missed deadline an approval is escalated.')}</p>
-          </div>
-          {!editor && (
+        <PageHeader
+          title={t('escalationRules.title', 'Escalation Rules')}
+          subtitle={t('escalationRules.subtitle', 'Configure how long after a missed deadline an approval is escalated.')}
+          actions={!editor && (
             <button onClick={() => setEditor(emptyEditor())}
               className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-[4px] hover:bg-primary/90 text-sm font-medium">
               <Plus className="w-4 h-4" />{t('escalationRules.new', 'New rule')}
             </button>
           )}
-        </div>
+        />
 
         <p className="text-xs text-ink-soft bg-ground border border-hairline rounded-[4px] p-3">
           {t('escalationRules.recipientNote', 'The recipient is determined automatically: the next approval tier in the same department, otherwise the DAF.')}

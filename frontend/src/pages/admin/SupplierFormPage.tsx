@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useSupplier, useCreateSupplier, useUpdateSupplier } from '@/api/suppliers'
 import { Loader2, ArrowLeft } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 const SUPPLIER_CATEGORIES = ['GOODS', 'SERVICES', 'WORKS', 'CONSULTING'] as const
 
@@ -74,17 +75,19 @@ export default function SupplierFormPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => navigate(isEdit ? `/admin/suppliers/${id}` : '/admin/suppliers')}
-          className="p-2 hover:bg-ground rounded-full transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5 text-ink-soft" />
-        </button>
-        <h1 className="text-2xl font-bold text-ink">
-          {isEdit ? t('supplier.edit', 'Edit Supplier') : t('supplier.create', 'Add Supplier')}
-        </h1>
-      </div>
+      <PageHeader
+        title={
+          <span className="flex items-center gap-4">
+            <button
+              onClick={() => navigate(isEdit ? `/admin/suppliers/${id}` : '/admin/suppliers')}
+              className="p-2 hover:bg-white/10 rounded-full transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5 text-white" aria-hidden />
+            </button>
+            {isEdit ? t('supplier.edit', 'Edit Supplier') : t('supplier.create', 'Add Supplier')}
+          </span>
+        }
+      />
 
       <form onSubmit={handleSubmit(onSubmit)} className="bg-surface rounded-[4px] border border-hairline p-6 space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

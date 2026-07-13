@@ -7,6 +7,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Loader2, UserCheck, Trash2, Plus, ArrowRight, AlertCircle } from 'lucide-react'
 import { formatDate } from '@/lib/format'
 import { Panel } from '@/components/ui/Panel'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface Department {
   id: string
@@ -130,15 +131,10 @@ export default function AdminDelegationsPage() {
   return (
     <PageRoleGuard allowedRoles={['ROLE_ADMIN']}>
       <div className="space-y-6 page-enter">
-        <div>
-          <h1 className="text-2xl font-bold text-ink flex items-center gap-2">
-            <UserCheck className="w-6 h-6 text-primary" />
-            {t('admin.delegations.title', 'Approval Delegations')}
-          </h1>
-          <p className="text-sm text-ink-soft mt-0.5">
-            {t('admin.delegations.subtitle', 'Reassign a validator’s approval authority during an absence.')}
-          </p>
-        </div>
+        <PageHeader
+          title={<span className="flex items-center gap-2"><UserCheck className="w-6 h-6" aria-hidden />{t('admin.delegations.title', 'Approval Delegations')}</span>}
+          subtitle={t('admin.delegations.subtitle', 'Reassign a validator’s approval authority during an absence.')}
+        />
 
         {/* Department selector */}
         <Panel className="p-5">

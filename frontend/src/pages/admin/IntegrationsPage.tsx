@@ -5,6 +5,7 @@ import apiClient from '@/services/apiClient'
 import { Loader2, Plus, Trash2, Zap, CheckCircle, XCircle, Activity, ScrollText } from 'lucide-react'
 import { IntegrationConnectors } from '@/components/admin/IntegrationConnectors'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { formatDateTime } from '@/lib/format'
 
 interface Webhook {
@@ -97,18 +98,18 @@ export default function IntegrationsPage() {
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-ink">{t('admin.integrations.title')}</h1>
-          <p className="text-sm text-ink-soft mt-1">{t('admin.integrations.subtitle')}</p>
-        </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-[4px] text-sm font-medium hover:bg-primary/90 transition-colors"
-        >
-          <Plus className="w-4 h-4" /> {t('admin.integrations.addWebhook')}
-        </button>
-      </div>
+      <PageHeader
+        title={t('admin.integrations.title')}
+        subtitle={t('admin.integrations.subtitle')}
+        actions={
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-[4px] text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            <Plus className="w-4 h-4" /> {t('admin.integrations.addWebhook')}
+          </button>
+        }
+      />
 
       {/* M12: configurable integration connectors */}
       <IntegrationConnectors />

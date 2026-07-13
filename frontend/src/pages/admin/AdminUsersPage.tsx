@@ -7,6 +7,7 @@ import type { ApiResponse, PagedResponse } from '@/types/invoice'
 import { Loader2, Plus, Pencil, LockOpen, UserCheck, UserX, Upload, X, AlertCircle, CheckCircle, ShieldOff } from 'lucide-react'
 import { ExportMenu } from '@/components/ui/ExportMenu'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface ImportRowError { line: number; username: string; message: string }
 interface ImportResult { totalRows: number; created: number; failed: number; errors: ImportRowError[] }
@@ -45,7 +46,7 @@ function CsvToolbar() {
       <button
         onClick={() => fileInputRef.current?.click()}
         disabled={importMutation.isPending}
-        className="flex items-center gap-2 px-3 py-2 rounded-[4px] border border-hairline text-sm font-medium text-ink-soft hover:bg-ground disabled:opacity-50"
+        className="flex items-center gap-2 px-3 py-2 rounded-[4px] border border-white/30 text-sm font-medium text-white hover:bg-white/10 disabled:opacity-50"
       >
         {importMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
         {t('admin.users.importCsv')}
@@ -266,22 +267,22 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-ink">{t('admin.users.title')}</h1>
-          <p className="text-sm text-ink-soft mt-0.5">{data?.totalElements ?? 0} users registered</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <CsvToolbar />
-          <Link
-            to="/admin/users/new"
-            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-[4px] hover:bg-primary/90 text-sm font-medium transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            {t('admin.users.create')}
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        title={t('admin.users.title')}
+        subtitle={`${data?.totalElements ?? 0} users registered`}
+        actions={
+          <>
+            <CsvToolbar />
+            <Link
+              to="/admin/users/new"
+              className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-[4px] hover:bg-primary/90 text-sm font-medium transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              {t('admin.users.create')}
+            </Link>
+          </>
+        }
+      />
 
       <div className="bg-surface rounded-[4px] border border-hairline overflow-hidden">
         {isLoading ? (

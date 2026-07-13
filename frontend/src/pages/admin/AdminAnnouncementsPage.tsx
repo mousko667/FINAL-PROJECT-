@@ -5,6 +5,7 @@ import apiClient from '@/services/apiClient'
 import { Megaphone, Loader2, Trash2, Plus } from 'lucide-react'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Panel } from '@/components/ui/Panel'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 interface Announcement {
   id: string
@@ -63,13 +64,10 @@ export default function AdminAnnouncementsPage() {
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <div className="flex items-center gap-3">
-        <Megaphone className="w-6 h-6 text-primary" />
-        <div>
-          <h1 className="text-2xl font-bold text-ink">{t('admin.announcements.title', 'Annonces système')}</h1>
-          <p className="text-sm text-ink-soft mt-1">{t('admin.announcements.subtitle', 'Messages affichés sur les tableaux de bord de tous les utilisateurs.')}</p>
-        </div>
-      </div>
+      <PageHeader
+        title={<span className="flex items-center gap-2"><Megaphone className="w-6 h-6" aria-hidden /> {t('admin.announcements.title', 'Annonces système')}</span>}
+        subtitle={t('admin.announcements.subtitle', 'Messages affichés sur les tableaux de bord de tous les utilisateurs.')}
+      />
 
       <Panel className="p-5">
         <form onSubmit={onSubmit} className="space-y-4">

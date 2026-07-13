@@ -6,6 +6,7 @@ import type { ApiResponse, PagedResponse } from '@/types/invoice'
 import { type AccessRequest, StatusBadge } from '@/pages/MyAccessRequestsPage'
 import { ShieldCheck, Loader2, Check, X } from 'lucide-react'
 import { Panel } from '@/components/ui/Panel'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 type StatusFilter = 'PENDING' | 'APPROVED' | 'REJECTED' | 'ALL'
 
@@ -45,13 +46,10 @@ export default function AdminAccessRequestsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start gap-3">
-        <ShieldCheck className="w-6 h-6 text-primary mt-0.5" />
-        <div>
-          <h1 className="text-2xl font-bold text-ink">{t('accessRequests.adminTitle')}</h1>
-          <p className="text-sm text-ink-soft mt-1">{t('accessRequests.adminSubtitle')}</p>
-        </div>
-      </div>
+      <PageHeader
+        title={<span className="flex items-center gap-2"><ShieldCheck className="w-6 h-6" aria-hidden /> {t('accessRequests.adminTitle')}</span>}
+        subtitle={t('accessRequests.adminSubtitle')}
+      />
 
       <div className="flex gap-2">
         {filters.map((f) => (
