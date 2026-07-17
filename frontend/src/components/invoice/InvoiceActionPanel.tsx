@@ -104,23 +104,20 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
   }
 
   // N2 validator: approve or reject — only for their department
-  if ((isN2 || isAdmin) && status === 'EN_VALIDATION_N2' && deptMatches) {
+  if (isN2 && status === 'EN_VALIDATION_N2' && deptMatches) {
     buttons.push({ action: 'VALIDATE_N2', label: t('invoice.validate', 'Approve (N2)'), variant: 'success' })
     buttons.push({ action: 'REJECT', label: t('invoice.reject', 'Reject'), variant: 'danger', requiresReason: true })
   }
 
   // DAF: BON_A_PAYER on any validated invoice
-  if ((isDaf || isAdmin) && status === 'VALIDE') {
+  if (isDaf && status === 'VALIDE') {
     buttons.push({ action: 'BON_A_PAYER', label: t('invoice.approve', 'Issue BON À PAYER'), variant: 'success' })
     buttons.push({ action: 'REJECT', label: t('invoice.reject', 'Reject'), variant: 'danger', requiresReason: true })
   }
 
   // Payment recording is handled via PaymentsPage modal — see PaymentsPage.tsx
 
-  // Admin-only actions
-  if (isAdmin && status === 'EN_VALIDATION_N1') {
-    buttons.push({ action: 'REJECT', label: t('invoice.reject', 'Reject (Admin)'), variant: 'danger', requiresReason: true })
-  }
+  // Admin-only actions (removed due to SoD Rule #1)
 
   if (buttons.length === 0) return null
 

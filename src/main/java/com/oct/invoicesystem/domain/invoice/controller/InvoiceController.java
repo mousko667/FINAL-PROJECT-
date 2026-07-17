@@ -84,7 +84,7 @@ public class InvoiceController {
             @RequestParam(required = false) String reference,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "createdAt,desc") String sort) {
+            @RequestParam(defaultValue = "issueDate,asc") String sort) {
         PagedResponse<Invoice> paged = invoiceService.listInvoices(status, department, from, to, reference, null, page, size, sort);
         List<InvoiceDTO> mapped = paged.getContent().stream().map(invoiceMapper::toDto).toList();
         return ResponseEntity.ok(ApiResponse.success(
@@ -110,16 +110,21 @@ public class InvoiceController {
         // Headers + rows come from the single invoice-export source of truth (11 columns).
         List<String> headers = invoiceService.invoiceExportHeaders(messageSource, locale);
         List<List<String>> rows = invoiceService.buildExportRows(status, department, from, to, reference, messageSource, locale);
+        String period = null;
+        if (from != null || to != null) {
+            String fromStr = from != null ? from.toString() : "...";
+            String toStr = to != null ? to.toString() : "...";
+            period = messageSource.getMessage("export.pdf.period", new Object[]{fromStr, toStr}, locale);
+        }
+        
         // Build filters label
         StringBuilder f = new StringBuilder();
         if (status != null)     f.append("Statut: ").append(status.name());
         if (department != null) f.append(f.length() > 0 ? " \u00B7 " : "").append("Departement: ").append(department);
-        if (from != null || to != null) f.append(f.length() > 0 ? " \u00B7 " : "")
-                .append("Periode: ").append(from == null ? "" : from).append("..").append(to == null ? "" : to);
         String filters = f.length() == 0 ? null : f.toString();
         String title = messageSource.getMessage("export.title.invoices", null, locale);
         com.oct.invoicesystem.shared.export.ReportMetadata meta =
-                com.oct.invoicesystem.shared.export.ReportMetadata.of(securityHelper.currentUser(authentication), messageSource, null, filters, locale);
+                com.oct.invoicesystem.shared.export.ReportMetadata.of(securityHelper.currentUser(authentication), messageSource, period, filters, locale);
         byte[] body = tabularExportService.export(fmt, title, headers, rows, meta, messageSource);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=invoices_export." + fmt.extension)
@@ -154,7 +159,7 @@ public class InvoiceController {
     }
 
     @GetMapping("/pending-validation")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DAF', 'ASSISTANT_COMPTABLE') " +
+    @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE') " +
                   "or hasAuthority('ROLE_VALIDATEUR_N1_DRH') or hasAuthority('ROLE_VALIDATEUR_N1_DG') " +
                   "or hasAuthority('ROLE_VALIDATEUR_N1_INFO') or hasAuthority('ROLE_VALIDATEUR_N1_TERM') " +
                   "or hasAuthority('ROLE_VALIDATEUR_N1_COM') or hasAuthority('ROLE_VALIDATEUR_N1_QHSSE') " +
@@ -202,8 +207,10 @@ public class InvoiceController {
         );
         List<List<String>> rows = invoiceService.buildMatchingExportRows(id);
         String title = messageSource.getMessage("export.title.matching", null, locale);
+        String periodLabel = null;
+        // The endpoint currently does not accept from/to, so periodLabel remains null.
         com.oct.invoicesystem.shared.export.ReportMetadata meta =
-                com.oct.invoicesystem.shared.export.ReportMetadata.of(securityHelper.currentUser(authentication), messageSource, null, null, locale);
+                com.oct.invoicesystem.shared.export.ReportMetadata.of(securityHelper.currentUser(authentication), messageSource, periodLabel, null, locale);
         byte[] body = tabularExportService.export(fmt, title, headers, rows, meta, messageSource);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=matching_report_" + id + "." + fmt.extension)
@@ -299,7 +306,7 @@ public class InvoiceController {
     }
 
     @PostMapping("/{id}/matching/override")
-    @PreAuthorize("hasAnyRole('DAF', 'ADMIN')")
+    @PreAuthorize("hasRole('DAF')")
     @Operation(summary = "Override three-way matching mismatch",
                description = "DAF or Admin can force an invoice through despite matching discrepancies")
     public ResponseEntity<ApiResponse<Void>> overrideMatchingMismatch(
@@ -312,7 +319,7 @@ public class InvoiceController {
     }
 
     @GetMapping("/archive")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DAF', 'ASSISTANT_COMPTABLE')")
+    @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
     @Operation(summary = "Rechercher dans les archives", description = "Full-text search dans les factures archivées")
     public ResponseEntity<ApiResponse<Page<InvoiceDTO>>> searchArchived(
             @RequestParam(required = false) String keyword,
@@ -328,7 +335,7 @@ public class InvoiceController {
     }
 
     @GetMapping("/{id}/export/pdf")
-    @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER')")
+    @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER') and !hasRole('ADMIN')")
     @Operation(summary = "Export invoice as PDF", description = "Generates a compliance-grade PDF for an invoice (AA, DAF, Admin, Validators)")
     public ResponseEntity<byte[]> exportPdf(@PathVariable UUID id) {
         byte[] pdfBytes = invoicePdfService.generatePdf(id);

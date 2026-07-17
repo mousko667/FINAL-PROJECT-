@@ -48,7 +48,7 @@ class UserControllerTest {
     @WithMockUser(roles = "ADMIN")
     void getUsers_AsAdmin_Returns200() throws Exception {
         PagedResponse<UserDTO> response = new PagedResponse<>(Collections.emptyList(), 0, 20, 0, 0, true);
-        when(userService.getUsers(0, 20, "createdAt,desc")).thenReturn(response);
+        when(userService.getUsers(0, 20, "createdAt,desc", null, null)).thenReturn(response);
 
         mockMvc.perform(get("/api/v1/users"))
                 .andExpect(status().isOk())

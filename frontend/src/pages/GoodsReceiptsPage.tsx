@@ -78,7 +78,7 @@ export default function GoodsReceiptsPage() {
     setForm(f => ({ ...f, items: f.items.map((item, idx) => idx === i ? { ...item, [field]: value } : item) }))
 
   return (
-    <PageRoleGuard allowedRoles={['ROLE_ASSISTANT_COMPTABLE', 'ROLE_DAF', 'ROLE_ADMIN']}>
+    <PageRoleGuard allowedRoles={['ROLE_ASSISTANT_COMPTABLE', 'ROLE_DAF']}>
       <div className="space-y-6">
         <PageHeader
           title={t('grn.title', 'Bons de Réception (GRN)')}

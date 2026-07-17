@@ -90,6 +90,7 @@ public class ApprovalServiceImpl implements ApprovalService {
         }
         checkRole(currentUser, invoice.getDepartment().getN2Role());
         ensureNotSubmitter(invoice, currentUser);
+        ensureNotN1Approver(invoiceId, currentUser);
         ensureWithinApprovalLimit(currentUser, invoice);
 
         createOrUpdateStep(invoice, 2, currentUser, "Validation N2 - " + invoice.getDepartment().getCode(), comment, null, ApprovalStepStatus.APPROVED);
@@ -235,6 +236,14 @@ public class ApprovalServiceImpl implements ApprovalService {
                 && approver != null
                 && invoice.getSubmittedBy().getId().equals(approver.getId())) {
             throw new WorkflowException("Approver cannot approve their own submitted invoice");
+        }
+    }
+
+    private void ensureNotN1Approver(UUID invoiceId, User approver) {
+        ApprovalStep n1Step = approvalStepRepository.findByInvoiceIdAndStepOrder(invoiceId, 1).orElse(null);
+        if (n1Step != null && n1Step.getApprover() != null && approver != null 
+                && n1Step.getApprover().getId().equals(approver.getId())) {
+            throw new WorkflowException("N2 approver cannot be the same user who performed N1 validation");
         }
     }
 

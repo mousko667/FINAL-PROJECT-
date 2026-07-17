@@ -71,7 +71,7 @@ public class AuditController {
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<AuditLogDTO> result = auditService.searchLogsWithActionFilter(
-                userId, entityType, null, action, SYSTEM_ACTIONS, pageable);
+                userId, entityType, null, action, SYSTEM_ACTIONS, null, null, pageable);
         return ApiResponse.success(PagedResponse.of(result), "audit.system.retrieved");
     }
 
@@ -92,7 +92,7 @@ public class AuditController {
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<AuditLogDTO> result = auditService.searchLogsWithActionFilter(
-                userId, entityType, entityId, action, FINANCIAL_ACTIONS, pageable);
+                userId, entityType, entityId, action, FINANCIAL_ACTIONS, null, null, pageable);
         return ApiResponse.success(PagedResponse.of(result), "audit.financial.retrieved");
     }
 
@@ -108,11 +108,13 @@ public class AuditController {
             @RequestParam(required = false) String entityType,
             @RequestParam(required = false) String entityId,
             @RequestParam(required = false) String action,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant from,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant to,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<AuditLogDTO> result = auditService.searchLogs(userId, entityType, entityId, action, pageable);
+        Page<AuditLogDTO> result = auditService.searchLogs(userId, entityType, entityId, action, from, to, pageable);
         return ApiResponse.success(PagedResponse.of(result), "audit.retrieved");
     }
 
@@ -131,13 +133,16 @@ public class AuditController {
             @RequestParam(defaultValue = "csv") String format,
             @RequestParam(required = false) String entityType,
             @RequestParam(required = false) String action,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant from,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant to,
             java.util.Locale locale,
             org.springframework.security.core.Authentication authentication) {
         var fmt = com.oct.invoicesystem.shared.export.TabularExportService.Format.from(format);
         java.util.Locale loc = locale != null ? locale : java.util.Locale.getDefault();
-        Pageable pageable = PageRequest.of(0, 10000, Sort.by(Sort.Direction.DESC, "createdAt"));
+        // Force ASC sort by createdAt for export, as requested by the user
+        Pageable pageable = PageRequest.of(0, 10000, Sort.by(Sort.Direction.ASC, "createdAt"));
         java.util.List<AuditLogDTO> logs =
-                auditService.searchLogs(null, entityType, null, action, pageable).getContent();
+                auditService.searchLogs(null, entityType, null, action, from, to, pageable).getContent();
         java.util.List<String> headers = java.util.List.of(
                 messageSource.getMessage("export.header.audit.date", null, loc),
                 messageSource.getMessage("export.header.audit.user", null, loc),
@@ -153,8 +158,14 @@ public class AuditController {
                 l.entityId() == null ? "" : l.entityId(),
                 l.ipAddress() == null ? "" : l.ipAddress())).toList();
         String title = messageSource.getMessage("export.title.audit", null, loc);
+        String periodLabel = null;
+        if (from != null || to != null) {
+            String fromStr = from != null ? from.toString() : "...";
+            String toStr = to != null ? to.toString() : "...";
+            periodLabel = messageSource.getMessage("export.pdf.period", new Object[]{fromStr, toStr}, loc);
+        }
         com.oct.invoicesystem.shared.export.ReportMetadata meta =
-                com.oct.invoicesystem.shared.export.ReportMetadata.of(securityHelper.currentUser(authentication), messageSource, null, null, loc);
+                com.oct.invoicesystem.shared.export.ReportMetadata.of(securityHelper.currentUser(authentication), messageSource, periodLabel, null, loc);
         byte[] body = tabularExportService.export(fmt, title, headers, rows, meta, messageSource);
         return org.springframework.http.ResponseEntity.ok()
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
@@ -227,8 +238,9 @@ public class AuditController {
         appendDim(rows, messageSource.getMessage("export.header.audit.entity", null, loc), summary.byEntityType());
         appendDim(rows, "Jour", summary.byDay());
         String title = messageSource.getMessage("export.title.audit_summary", null, loc);
+        String period = messageSource.getMessage("export.pdf.period", new Object[]{f.toString(), t.toString()}, loc);
         com.oct.invoicesystem.shared.export.ReportMetadata meta =
-                com.oct.invoicesystem.shared.export.ReportMetadata.of(securityHelper.currentUser(auth), messageSource, null, null, loc);
+                com.oct.invoicesystem.shared.export.ReportMetadata.of(securityHelper.currentUser(auth), messageSource, period, null, loc);
         byte[] body = tabularExportService.export(fmt, title, headers, rows, meta, messageSource);
         return org.springframework.http.ResponseEntity.ok()
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,

@@ -197,23 +197,34 @@ public class PaymentServiceImpl implements PaymentService {
         return toDTO(payment);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public Page<PaymentDTO> listPayments(String departmentCode, Pageable pageable) {
-        if (departmentCode == null || departmentCode.isBlank()) {
-            return paymentRepository.findAll(pageable).map(this::toDTO);
-        }
-        return paymentRepository.findByInvoiceDepartmentCode(departmentCode, pageable).map(this::toDTO);
+    private org.springframework.data.jpa.domain.Specification<Payment> buildSpec(String departmentCode, java.time.Instant from, java.time.Instant to) {
+        return org.springframework.data.jpa.domain.Specification.where((root, query, cb) -> {
+            java.util.List<jakarta.persistence.criteria.Predicate> predicates = new java.util.ArrayList<>();
+            if (departmentCode != null && !departmentCode.isBlank()) {
+                predicates.add(cb.equal(root.get("invoice").get("department").get("code"), departmentCode));
+            }
+            if (from != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("paymentDate"), java.time.LocalDate.ofInstant(from, java.time.ZoneId.systemDefault())));
+            }
+            if (to != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("paymentDate"), java.time.LocalDate.ofInstant(to, java.time.ZoneId.systemDefault())));
+            }
+            return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        });
     }
 
     @Override
     @Transactional(readOnly = true)
-    public byte[] exportPayments(String departmentCode, TabularExportService.Format format,
+    public Page<PaymentDTO> listPayments(String departmentCode, java.time.Instant from, java.time.Instant to, Pageable pageable) {
+        return paymentRepository.findAll(buildSpec(departmentCode, from, to), pageable).map(this::toDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] exportPayments(String departmentCode, java.time.Instant from, java.time.Instant to, TabularExportService.Format format,
                                  String title, com.oct.invoicesystem.shared.export.ReportMetadata meta,
                                  org.springframework.context.MessageSource messageSource) {
-        List<Payment> payments = (departmentCode == null || departmentCode.isBlank())
-                ? paymentRepository.findAll()
-                : paymentRepository.findByInvoiceDepartmentCode(departmentCode);
+        List<Payment> payments = paymentRepository.findAll(buildSpec(departmentCode, from, to));
 
         List<String> headers = List.of(
                 "Référence facture", "Fournisseur", "Mode de paiement", "Référence paiement",

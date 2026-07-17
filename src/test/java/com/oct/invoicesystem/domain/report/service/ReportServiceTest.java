@@ -189,6 +189,8 @@ class ReportServiceTest {
         when(invoiceRepository.findAllWithFilters(any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(new PageImpl<>(Collections.emptyList()));
         when(messageSource.getMessage(anyString(), any(), any())).thenReturn("Label");
+        when(tabularExportService.export(any(), any(), any(), any(), any(), any()))
+                .thenReturn(new byte[]{1, 2, 3});
 
         ByteArrayInputStream result = reportService.generateCompliancePdf(LocalDate.now(), LocalDate.now(), stubDafAuth());
         assertNotNull(result);

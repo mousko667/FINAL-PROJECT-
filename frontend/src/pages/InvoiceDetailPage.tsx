@@ -79,9 +79,9 @@ export default function InvoiceDetailPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const roles = useAppSelector((s) => s.auth.user?.roles ?? [])
-  // Matching override is restricted to DAF/ADMIN on the backend (InvoiceController /matching/override
-  // is @PreAuthorize hasAnyRole('DAF','ADMIN')). ASSISTANT_COMPTABLE must NOT see this button.
-  const canOverride = roles.includes('ROLE_DAF') || roles.includes('ROLE_ADMIN')
+  // Matching override is restricted to DAF on the backend (InvoiceController /matching/override
+  // is @PreAuthorize hasRole('DAF')). ASSISTANT_COMPTABLE must NOT see this button.
+  const canOverride = roles.includes('ROLE_DAF')
   // P11-15: only DAF and Assistant Comptable may reclassify an invoice's data sensitivity.
   const canClassify = roles.includes('ROLE_DAF') || roles.includes('ROLE_ASSISTANT_COMPTABLE')
 

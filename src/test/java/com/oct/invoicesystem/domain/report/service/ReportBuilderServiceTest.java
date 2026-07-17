@@ -52,6 +52,8 @@ class ReportBuilderServiceTest {
                     suffix = suffix.replace("_", " ");
                     return suffix.substring(0, 1).toUpperCase() + suffix.substring(1);
                 });
+        org.mockito.Mockito.lenient().when(messageSource.getMessage(any(String.class), any(), any(String.class), any(java.util.Locale.class)))
+                .thenAnswer(inv -> inv.getArgument(2));
         // INVOICES dataset now delegates its header list to the shared invoice-export source of truth.
         org.mockito.Mockito.lenient().when(invoiceService.invoiceExportHeaders(any(), any()))
                 .thenReturn(List.of("Reference", "Supplier", "Supplier email", "Amount", "Currency",

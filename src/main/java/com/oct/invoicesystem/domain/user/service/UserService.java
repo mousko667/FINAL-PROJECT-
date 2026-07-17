@@ -42,7 +42,7 @@ public class UserService {
     private final SecurityPolicyService securityPolicyService;
 
     @Transactional(readOnly = true)
-    public PagedResponse<UserDTO> getUsers(int page, int size, String sort) {
+    public PagedResponse<UserDTO> getUsers(int page, int size, String sort, java.time.Instant from, java.time.Instant to) {
         String[] sortParams = sort.split(",");
         String sortBy = sortParams[0];
         Sort.Direction direction = sortParams.length > 1 && sortParams[1].equalsIgnoreCase("desc") 
@@ -50,7 +50,19 @@ public class UserService {
                 : Sort.Direction.ASC;
                 
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
-        Page<User> usersPage = userRepository.findAll(pageable);
+
+        org.springframework.data.jpa.domain.Specification<User> spec = org.springframework.data.jpa.domain.Specification.where((root, query, cb) -> {
+            java.util.List<jakarta.persistence.criteria.Predicate> predicates = new java.util.ArrayList<>();
+            if (from != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), from));
+            }
+            if (to != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("createdAt"), to));
+            }
+            return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        });
+
+        Page<User> usersPage = userRepository.findAll(spec, pageable);
         
         List<UserDTO> userDTOs = usersPage.getContent().stream()
                 .map(userMapper::toDto)

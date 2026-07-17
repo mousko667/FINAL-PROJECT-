@@ -241,7 +241,7 @@ public class InvoiceService {
             org.springframework.context.MessageSource messageSource, java.util.Locale locale) {
         List<Invoice> invoices = invoiceRepository.findAllWithFilters(
                 status, departmentId, fromDate, toDate, reference, null,
-                PageRequest.of(0, 10000, Sort.by(Sort.Direction.DESC, "createdAt"))).getContent();
+                PageRequest.of(0, 10000, Sort.by(Sort.Direction.ASC, "issueDate"))).getContent();
 
         // Batch-resolve matching status for all invoices in one query (avoids N+1).
         java.util.Map<UUID, String> matchingByInvoice = new java.util.HashMap<>();

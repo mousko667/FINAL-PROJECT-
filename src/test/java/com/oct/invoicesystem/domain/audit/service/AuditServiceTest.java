@@ -99,7 +99,7 @@ class AuditServiceTest {
     void searchLogs_WithNoFilters_ReturnsPage() {
         PageRequest pr = PageRequest.of(0, 10);
         when(auditLogRepository.findAll(any(Specification.class), eq(pr))).thenReturn(Page.empty());
-        Page<AuditLogDTO> result = auditService.searchLogs(null, null, null, null, pr);
+        Page<AuditLogDTO> result = auditService.searchLogs(null, null, null, null, null, null, pr);
         assertNotNull(result);
     }
     
@@ -107,7 +107,7 @@ class AuditServiceTest {
     void searchLogs_WithFilters_ReturnsPage() {
         PageRequest pr = PageRequest.of(0, 10);
         when(auditLogRepository.findAll(any(Specification.class), eq(pr))).thenReturn(Page.empty());
-        Page<AuditLogDTO> result = auditService.searchLogs(UUID.randomUUID(), "INVOICE", "123", "CREATE", pr);
+        Page<AuditLogDTO> result = auditService.searchLogs(UUID.randomUUID(), "INVOICE", "123", "CREATE", null, null, pr);
         assertNotNull(result);
     }
 
@@ -135,7 +135,7 @@ class AuditServiceTest {
                 "MATCHING_OVERRIDE", "RESUBMIT");
 
         Page<AuditLogDTO> result = auditService.searchLogsWithActionFilter(
-                null, null, null, null, financialActions, pr);
+                null, null, null, null, financialActions, null, null, pr);
 
         assertEquals(1, result.getTotalElements());
         assertEquals("HTTP_REQUEST_FINANCIAL", result.getContent().get(0).action());

@@ -29,7 +29,7 @@ class PdfMetadataTest {
         ms.addMessage("report.pdf.generated_at", loc, "Genere le : {0}");
         ms.addMessage("report.pdf.filters", loc, "Filtres : {0}");
 
-        PdfMetadata.renderHeader(doc, meta, ms, loc);
+        PdfMetadata.renderHeader(doc, "Test Title", meta, ms, loc);
         doc.close();
         return out.toByteArray();
     }

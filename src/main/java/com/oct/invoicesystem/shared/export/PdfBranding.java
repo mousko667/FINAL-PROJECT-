@@ -28,7 +28,19 @@ public final class PdfBranding {
         }
         Image img = new Image(ImageDataFactory.create(logo));
         img.setWidth(LOGO_WIDTH_PT);
+        img.setMarginBottom(40f);
         document.add(img);
+    }
+
+    public static Image getLogoImage() {
+        byte[] logo = logo();
+        if (logo == null) {
+            return null;
+        }
+        Image img = new Image(ImageDataFactory.create(logo));
+        img.setWidth(LOGO_WIDTH_PT);
+        img.setMarginBottom(40f);
+        return img;
     }
 
     private static byte[] logo() {

@@ -33,7 +33,7 @@ public class GoodsReceiptController {
     private final GoodsReceiptService grnService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
+    @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
     @Operation(summary = "Create GRN", description = "Records received goods against a purchase order")
     public ResponseEntity<ApiResponse<GoodsReceiptDTO>> createGRN(
             @Valid @RequestBody GoodsReceiptCreateRequest request) {
@@ -42,14 +42,14 @@ public class GoodsReceiptController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE', 'DAF')")
+    @PreAuthorize("hasAnyRole('ASSISTANT_COMPTABLE', 'DAF')")
     @Operation(summary = "Get GRN", description = "Retrieves a goods receipt note by ID")
     public ResponseEntity<ApiResponse<GoodsReceiptDTO>> getGRN(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.success(grnService.getGRN(id)));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE', 'DAF')")
+    @PreAuthorize("hasAnyRole('ASSISTANT_COMPTABLE', 'DAF')")
     @Operation(summary = "List GRNs", description = "Lists GRNs, optionally filtered by purchase order")
     public ResponseEntity<ApiResponse<List<GoodsReceiptDTO>>> listGRNs(
             @RequestParam(required = false) UUID purchaseOrderId) {

@@ -74,7 +74,7 @@ export default function ArchivePage() {
   const invoices = data?.content ?? []
 
   return (
-    <PageRoleGuard allowedRoles={['ROLE_DAF', 'ROLE_ASSISTANT_COMPTABLE', 'ROLE_ADMIN']}>
+    <PageRoleGuard allowedRoles={['ROLE_DAF', 'ROLE_ASSISTANT_COMPTABLE']}>
       <div className="flex h-[calc(100vh-4rem)]">
         {/* Sidebar Tree */}
         <ArchiveFolderTree 

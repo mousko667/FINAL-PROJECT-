@@ -170,6 +170,14 @@ class ApprovalServiceTest {
         mockSecurityContext("ROLE_VALIDATEUR_N2_INFO");
         when(invoiceRepository.findByIdAndDeletedAtIsNull(invoice.getId())).thenReturn(Optional.of(invoice));
         
+        // SoD guard: ensureNotN1Approver queries step order 1 to check that
+        // the N2 approver is not the same person who approved N1.
+        ApprovalStep n1Step = new ApprovalStep();
+        User n1Approver = new User();
+        n1Approver.setId(UUID.randomUUID()); // different user than currentUser
+        n1Step.setApprover(n1Approver);
+        when(approvalStepRepository.findByInvoiceIdAndStepOrder(invoice.getId(), 1)).thenReturn(Optional.of(n1Step));
+
         ApprovalStep existingStep = new ApprovalStep();
         when(approvalStepRepository.findByInvoiceIdAndStepOrder(invoice.getId(), 2)).thenReturn(Optional.of(existingStep));
         when(approvalStepRepository.save(any(ApprovalStep.class))).thenAnswer(i -> i.getArguments()[0]);

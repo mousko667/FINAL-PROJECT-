@@ -14,7 +14,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface PaymentRepository extends JpaRepository<Payment, UUID> {
+public interface PaymentRepository extends JpaRepository<Payment, UUID>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<Payment> {
     Optional<Payment> findByInvoiceId(UUID invoiceId);
     boolean existsByInvoiceId(UUID invoiceId);
     Page<Payment> findByInvoiceDepartmentCode(String departmentCode, Pageable pageable);

@@ -62,8 +62,10 @@ public class UserController {
     public ResponseEntity<ApiResponse<PagedResponse<UserDTO>>> getUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "createdAt,desc") String sort) {
-        return ResponseEntity.ok(ApiResponse.success(userService.getUsers(page, size, sort)));
+            @RequestParam(defaultValue = "createdAt,desc") String sort,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant from,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant to) {
+        return ResponseEntity.ok(ApiResponse.success(userService.getUsers(page, size, sort, from, to)));
     }
 
     @GetMapping("/{id}")
@@ -73,14 +75,14 @@ public class UserController {
     }
 
     @PostMapping
-    @Operation(summary = "Create user", description = "Creates a new user")
+    @Operation(summary = "Create a new user", description = "Creates a new user and assigns roles")
     public ResponseEntity<ApiResponse<UserDTO>> createUser(@Valid @RequestBody UserCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(userService.createUser(request), "User created successfully"));
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Update user", description = "Updates an existing user's basic information")
+    @Operation(summary = "Update user", description = "Updates a user's details and active status")
     public ResponseEntity<ApiResponse<UserDTO>> updateUser(
             @PathVariable UUID id,
             @Valid @RequestBody UserUpdateRequest request) {
@@ -136,9 +138,11 @@ public class UserController {
     @Operation(summary = "Export users (csv|excel|pdf)",
             description = "Unified export of all users in the requested format (no passwords)")
     public ResponseEntity<byte[]> exportUsers(@RequestParam(defaultValue = "csv") String format,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant from,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant to,
             java.util.Locale locale, Authentication authentication) {
         TabularExportService.Format fmt = TabularExportService.Format.from(format);
-        List<UserDTO> users = userService.getUsers(0, 10000, "createdAt,desc").getContent();
+        List<UserDTO> users = userService.getUsers(0, 10000, "createdAt,asc", from, to).getContent();
         java.util.Locale loc = locale != null ? locale : java.util.Locale.getDefault();
         List<String> headers = List.of("Username", "Email", "First name", "Last name", "Roles", "Active");
         List<List<String>> rows = users.stream().map(u -> List.of(
@@ -146,8 +150,16 @@ public class UserController {
                 u.roles() == null ? "" : String.join("|", u.roles()),
                 Boolean.toString(u.active()))).toList();
         String title = messageSource.getMessage("export.title.users", null, loc);
+        
+        String periodLabel = null;
+        if (from != null || to != null) {
+            String fromStr = from != null ? java.time.LocalDate.ofInstant(from, java.time.ZoneId.systemDefault()).toString() : "...";
+            String toStr = to != null ? java.time.LocalDate.ofInstant(to, java.time.ZoneId.systemDefault()).toString() : "...";
+            periodLabel = messageSource.getMessage("export.pdf.period", new Object[]{fromStr, toStr}, loc);
+        }
+        
         com.oct.invoicesystem.shared.export.ReportMetadata meta =
-                com.oct.invoicesystem.shared.export.ReportMetadata.of(securityHelper.currentUser(authentication), messageSource, null, null, loc);
+                com.oct.invoicesystem.shared.export.ReportMetadata.of(securityHelper.currentUser(authentication), messageSource, periodLabel, null, loc);
         byte[] body = tabularExportService.export(fmt, title, headers, rows, meta, messageSource);
         return fileResponse(body, "users_export", fmt);
     }

@@ -55,7 +55,7 @@ public class ApprovalController {
     }
 
     @PostMapping("/assign")
-    @PreAuthorize("hasAnyRole('ASSISTANT_COMPTABLE','DAF','ADMIN') " +
+    @PreAuthorize("hasAnyRole('ASSISTANT_COMPTABLE','DAF') " +
                   "or hasAuthority('ROLE_VALIDATEUR_N1_DRH') or hasAuthority('ROLE_VALIDATEUR_N1_DG') " +
                   "or hasAuthority('ROLE_VALIDATEUR_N1_INFO') or hasAuthority('ROLE_VALIDATEUR_N1_TERM') " +
                   "or hasAuthority('ROLE_VALIDATEUR_N1_COM') or hasAuthority('ROLE_VALIDATEUR_N1_QHSSE') " +
@@ -74,8 +74,7 @@ public class ApprovalController {
                   "or hasAuthority('ROLE_VALIDATEUR_N1_DRH') or hasAuthority('ROLE_VALIDATEUR_N1_DG') " +
                   "or hasAuthority('ROLE_VALIDATEUR_N1_INFO') or hasAuthority('ROLE_VALIDATEUR_N1_TERM') " +
                   "or hasAuthority('ROLE_VALIDATEUR_N1_COM') or hasAuthority('ROLE_VALIDATEUR_N1_QHSSE') " +
-                  "or hasAuthority('ROLE_VALIDATEUR_N1_INFRA') or hasAuthority('ROLE_VALIDATEUR_N1_TECH') " +
-                  "or hasRole('ADMIN')")
+                  "or hasAuthority('ROLE_VALIDATEUR_N1_INFRA') or hasAuthority('ROLE_VALIDATEUR_N1_TECH')")
     @Operation(summary = "Validate N1", description = "Records N1 validation decision")
     public ResponseEntity<ApiResponse<Void>> validateN1(
             @Parameter(description = "UUID of the invoice") @PathVariable UUID invoiceId,
@@ -87,7 +86,7 @@ public class ApprovalController {
 
     @PostMapping("/validate-n2")
     @PreAuthorize("hasAuthority('ROLE_VALIDATEUR_N2_INFO') or hasAuthority('ROLE_VALIDATEUR_N2_INFRA') " +
-                  "or hasAuthority('ROLE_VALIDATEUR_N2_TECH') or hasRole('ADMIN')")
+                  "or hasAuthority('ROLE_VALIDATEUR_N2_TECH')")
     @Operation(summary = "Validate N2", description = "Records N2 validation decision")
     public ResponseEntity<ApiResponse<Void>> validateN2(
             @Parameter(description = "UUID of the invoice") @PathVariable UUID invoiceId,
@@ -98,7 +97,7 @@ public class ApprovalController {
     }
 
     @PostMapping("/bon-a-payer")
-    @PreAuthorize("hasRole('DAF') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('DAF')")
     @Operation(summary = "Bon à Payer", description = "Final DAF approval for the invoice")
     public ResponseEntity<ApiResponse<Void>> bonAPayer(
             @Parameter(description = "UUID of the invoice") @PathVariable UUID invoiceId,
@@ -109,7 +108,7 @@ public class ApprovalController {
     }
 
     @PostMapping("/reject")
-    @PreAuthorize("hasRole('DAF') or hasRole('ADMIN') " +
+    @PreAuthorize("hasRole('DAF') " +
                   "or hasAuthority('ROLE_VALIDATEUR_N1_DRH') or hasAuthority('ROLE_VALIDATEUR_N1_DG') " +
                   "or hasAuthority('ROLE_VALIDATEUR_N1_INFO') or hasAuthority('ROLE_VALIDATEUR_N1_TERM') " +
                   "or hasAuthority('ROLE_VALIDATEUR_N1_COM') or hasAuthority('ROLE_VALIDATEUR_N1_QHSSE') " +

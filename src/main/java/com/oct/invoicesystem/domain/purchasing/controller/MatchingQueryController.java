@@ -53,7 +53,7 @@ public class MatchingQueryController {
     }
 
     @PostMapping("/{invoiceId}/lines/{poLineId}/resolve")
-    @PreAuthorize("isAuthenticated() and (hasRole('ADMIN') or hasRole('DAF'))")
+    @PreAuthorize("hasRole('DAF')")
     @Operation(summary = "Résoudre une ligne en écart", description = "Enregistre une résolution manuelle pour une ligne en écart (M5).")
     public ResponseEntity<ApiResponse<Void>> resolveLine(
             @PathVariable UUID invoiceId,

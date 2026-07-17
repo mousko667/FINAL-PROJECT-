@@ -14,6 +14,8 @@ export default function SuppliersPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('')
   const [categoryFilter, setCategoryFilter] = useState<string>('')
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState('')
   const [page, setPage] = useState(0)
 
   const { user } = useAppSelector((state) => state.auth)
@@ -25,6 +27,12 @@ export default function SuppliersPage() {
     name: searchTerm || undefined,
     status: statusFilter || undefined,
     category: categoryFilter || undefined,
+    from: from ? new Date(from).toISOString() : undefined,
+    to: to ? (() => {
+      const d = new Date(to)
+      d.setHours(23, 59, 59, 999)
+      return d.toISOString()
+    })() : undefined,
   })
 
   const SUPPLIER_CATEGORIES = ['GOODS', 'SERVICES', 'WORKS', 'CONSULTING'] as const
@@ -39,7 +47,21 @@ export default function SuppliersPage() {
         title={t('supplier.title', 'Suppliers')}
         actions={
           <>
-            <ExportMenu endpoint="/suppliers/export" filename="suppliers" />
+            <ExportMenu 
+              endpoint="/suppliers/export" 
+              filename="suppliers" 
+              params={{
+                from: from ? new Date(from).toISOString() : undefined,
+                to: to ? (() => {
+                  const d = new Date(to)
+                  d.setHours(23, 59, 59, 999)
+                  return d.toISOString()
+                })() : undefined,
+                name: searchTerm || undefined,
+                status: statusFilter || undefined,
+                category: categoryFilter || undefined
+              }} 
+            />
             {isAdmin && (
               <Link
                 to="/admin/suppliers/new"
@@ -53,8 +75,8 @@ export default function SuppliersPage() {
         }
       />
 
-      <div className="flex items-center gap-4 bg-surface p-4 rounded-[4px] border border-hairline">
-        <div className="relative flex-1">
+      <div className="flex items-center gap-4 bg-surface p-4 rounded-[4px] border border-hairline flex-wrap">
+        <div className="relative flex-1 min-w-[200px]">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
           <input
             type="text"
@@ -64,6 +86,20 @@ export default function SuppliersPage() {
             className="w-full pl-9 pr-4 py-2 text-sm border border-hairline rounded-[4px] focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
+        <input
+          type="date"
+          title={t('common.fromDate', 'From date')}
+          value={from}
+          onChange={(e) => { setFrom(e.target.value); setPage(0) }}
+          className="border border-hairline rounded-[4px] px-3 py-2 text-sm outline-none focus:border-primary"
+        />
+        <input
+          type="date"
+          title={t('common.toDate', 'To date')}
+          value={to}
+          onChange={(e) => { setTo(e.target.value); setPage(0) }}
+          className="border border-hairline rounded-[4px] px-3 py-2 text-sm outline-none focus:border-primary"
+        />
         <div className="relative w-48">
           <Filter className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
           <select

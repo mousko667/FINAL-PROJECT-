@@ -36,6 +36,8 @@ export const invoiceService = {
     const { data } = await apiClient.get<ApiResponse<PagedResponse<Invoice>>>('/invoices', {
       params: {
         ...filters,
+        from: filters.fromDate,
+        to: filters.toDate,
         page: filters.page ?? 0,
         size: filters.size ?? 20,
       },

@@ -115,7 +115,7 @@ export default function Sidebar() {
         <NavItem to="/dashboard" icon={LayoutDashboard} label={t('nav.dashboard')} end />
 
         {/* AA + DAF: Purchase Orders */}
-        <RoleGuard allowedRoles={['ROLE_ASSISTANT_COMPTABLE', 'ROLE_DAF', 'ROLE_ADMIN']} fallback={null}>
+        <RoleGuard allowedRoles={['ROLE_ASSISTANT_COMPTABLE', 'ROLE_DAF']} fallback={null}>
           <NavItem to="/purchase-orders" icon={FileText} label={t('nav.purchaseOrders', 'Purchase Orders')} />
         </RoleGuard>
 
@@ -171,7 +171,7 @@ export default function Sidebar() {
           <NavItem to="/goods-receipts" icon={Package} label={t('nav.goodsReceipts', 'Bons de Réception')} />
         </RoleGuard>
 
-        <RoleGuard allowedRoles={['ROLE_ASSISTANT_COMPTABLE', 'ROLE_DAF', 'ROLE_ADMIN']} fallback={null}>
+        <RoleGuard allowedRoles={['ROLE_ASSISTANT_COMPTABLE', 'ROLE_DAF']} fallback={null}>
           <NavItem to="/archive" icon={Archive} label={t('nav.archive', 'Archive')} />
         </RoleGuard>
 

@@ -13,7 +13,7 @@ interface ImportRowError { line: number; username: string; message: string }
 interface ImportResult { totalRows: number; created: number; failed: number; errors: ImportRowError[] }
 
 /** Export/import toolbar for bulk user CSV (P11-16). */
-function CsvToolbar() {
+function CsvToolbar({ from, to }: { from?: string, to?: string }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -42,7 +42,18 @@ function CsvToolbar() {
 
   return (
     <div className="flex items-center gap-2">
-      <ExportMenu endpoint="/users/export" filename="users_export" />
+      <ExportMenu 
+        endpoint="/users/export" 
+        filename="users_export" 
+        params={{
+          from: from ? new Date(from).toISOString() : undefined,
+          to: to ? (() => {
+            const d = new Date(to)
+            d.setHours(23, 59, 59, 999)
+            return d.toISOString()
+          })() : undefined
+        }} 
+      />
       <button
         onClick={() => fileInputRef.current?.click()}
         disabled={importMutation.isPending}
@@ -256,11 +267,20 @@ function EditUserModal({ user, onClose }: EditUserModalProps) {
 export default function AdminUsersPage() {
   const { t } = useTranslation()
   const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState('')
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-users'],
+    queryKey: ['admin-users', from, to],
     queryFn: async () => {
-      const { data } = await apiClient.get<ApiResponse<PagedResponse<User>>>('/users', { params: { size: 100 } })
+      const params: any = { size: 100 }
+      if (from) params.from = new Date(from).toISOString()
+      if (to) {
+        const d = new Date(to)
+        d.setHours(23, 59, 59, 999)
+        params.to = d.toISOString()
+      }
+      const { data } = await apiClient.get<ApiResponse<PagedResponse<User>>>('/users', { params })
       return data.data
     },
   })
@@ -272,7 +292,7 @@ export default function AdminUsersPage() {
         subtitle={`${data?.totalElements ?? 0} users registered`}
         actions={
           <>
-            <CsvToolbar />
+            <CsvToolbar from={from} to={to} />
             <Link
               to="/admin/users/new"
               className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-[4px] hover:bg-primary/90 text-sm font-medium transition-colors"
@@ -283,6 +303,23 @@ export default function AdminUsersPage() {
           </>
         }
       />
+
+      <div className="flex items-center gap-3 bg-surface p-4 rounded-[4px] border border-hairline flex-wrap">
+        <input
+          type="date"
+          title={t('common.fromDate', 'From date')}
+          value={from}
+          onChange={(e) => setFrom(e.target.value)}
+          className="border border-hairline rounded-[4px] px-3 py-2 text-sm outline-none focus:border-primary"
+        />
+        <input
+          type="date"
+          title={t('common.toDate', 'To date')}
+          value={to}
+          onChange={(e) => setTo(e.target.value)}
+          className="border border-hairline rounded-[4px] px-3 py-2 text-sm outline-none focus:border-primary"
+        />
+      </div>
 
       <div className="bg-surface rounded-[4px] border border-hairline overflow-hidden">
         {isLoading ? (

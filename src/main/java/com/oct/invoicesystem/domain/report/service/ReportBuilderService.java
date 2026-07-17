@@ -111,12 +111,12 @@ public class ReportBuilderService {
         return switch (def.getDataset()) {
             // INVOICES reuses the single invoice-export source of truth (headers + rows), so the
             // builder and the direct /reports/export/excel can never diverge (11 columns, translated status).
-            case "INVOICES" -> new Dataset("Invoices",
+            case "INVOICES" -> new Dataset(messageSource.getMessage("export.title.invoices", null, locale),
                     invoiceService.invoiceExportHeaders(messageSource, locale),
                     invoiceService.buildExportRows(null, null, null, null, null, messageSource, locale));
             // SUPPLIERS matches the SupplierController /suppliers/export layout exactly (7 columns,
             // incl. address + category), so both supplier exports are identical.
-            case "SUPPLIERS" -> new Dataset("Suppliers",
+            case "SUPPLIERS" -> new Dataset(messageSource.getMessage("export.title.suppliers", null, locale),
                     List.of(
                             messageSource.getMessage("report.excel.header.company", null, locale),
                             messageSource.getMessage("report.excel.header.tax_id", null, locale),
@@ -126,7 +126,7 @@ public class ReportBuilderService {
                             messageSource.getMessage("report.excel.header.status", null, locale),
                             messageSource.getMessage("report.excel.header.category", null, locale)
                     ),
-                    supplierService.searchSuppliers(null, null, null, null, Pageable.unpaged()).getContent().stream()
+                    supplierService.searchSuppliers(null, null, null, null, null, null, Pageable.unpaged()).getContent().stream()
                             .map(s -> List.of(ns(s.companyName()), ns(s.taxId()), ns(s.contactEmail()),
                                     ns(s.contactPhone()), ns(s.address()),
                                     s.status() == null ? "" : s.status().name(),
@@ -149,7 +149,7 @@ public class ReportBuilderService {
                                     l.actual() == null ? "" : l.actual().toPlainString(),
                                     l.variance() == null ? "" : l.variance().toPlainString(),
                                     l.utilizationPercent() == null ? "" : l.utilizationPercent().toPlainString())).toList());
-            case "AUDIT" -> new Dataset("Audit",
+            case "AUDIT" -> new Dataset(messageSource.getMessage("export.title.audit", null, locale),
                     List.of(
                             messageSource.getMessage("report.excel.header.date", null, locale),
                             messageSource.getMessage("report.excel.header.action", null, locale),

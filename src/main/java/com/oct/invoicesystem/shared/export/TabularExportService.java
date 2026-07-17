@@ -198,17 +198,8 @@ public class TabularExportService {
             com.itextpdf.kernel.font.PdfFont bold    = PdfTableStyle.bold();
             com.itextpdf.kernel.font.PdfFont regular = PdfTableStyle.regular();
 
-            PdfBranding.addLetterhead(document);
-            document.add(new Paragraph(title == null ? "Export" : title)
-                    .setFont(bold).setFontSize(14).setFontColor(PdfTableStyle.OCT_NAVY));
-            document.add(new com.itextpdf.layout.element.LineSeparator(
-                            new com.itextpdf.kernel.pdf.canvas.draw.SolidLine(1.5f))
-                    .setStrokeColor(PdfTableStyle.OCT_GOLD).setMarginTop(6).setMarginBottom(10));
-
-            if (meta != null && messageSource != null) {
-                PdfMetadata.renderHeader(document, meta, messageSource,
-                        org.springframework.context.i18n.LocaleContextHolder.getLocale());
-            }
+            PdfMetadata.renderHeader(document, title, meta, messageSource,
+                    org.springframework.context.i18n.LocaleContextHolder.getLocale());
 
             float fontSize = headers.size() >= 8 ? 7f : 8f;
             Table table = new Table(UnitValue.createPercentArray(columnWeights(headers)))
@@ -232,7 +223,7 @@ public class TabularExportService {
             document.add(table);
 
             if (meta != null && messageSource != null) {
-                PdfMetadata.renderSignatureBlock(document, messageSource,
+                PdfMetadata.renderFooter(document, meta, messageSource,
                         org.springframework.context.i18n.LocaleContextHolder.getLocale());
             }
 

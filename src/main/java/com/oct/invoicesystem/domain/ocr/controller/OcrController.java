@@ -27,7 +27,7 @@ public class OcrController {
     private final OcrService ocrService;
 
     @PostMapping(value = "/extract", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasAnyRole('SUPPLIER', 'ASSISTANT_COMPTABLE', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPPLIER', 'ASSISTANT_COMPTABLE')")
     @Operation(
         summary = "Extract invoice fields via OCR",
         description = "Accepts a PDF, JPEG, PNG, or TIFF invoice file and returns extracted fields "

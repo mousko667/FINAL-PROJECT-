@@ -84,18 +84,24 @@ public class SupplierController {
             @RequestParam(required = false) String taxId,
             @RequestParam(required = false) SupplierStatus status,
             @RequestParam(required = false) com.oct.invoicesystem.domain.supplier.model.SupplierCategory category,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant from,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant to,
             Pageable pageable) {
-        Page<SupplierResponse> page = supplierService.searchSuppliers(name, taxId, status, category, pageable);
+        Page<SupplierResponse> page = supplierService.searchSuppliers(name, taxId, status, category, from, to, pageable);
         return ApiResponse.success(PagedResponse.of(page));
     }
 
     @GetMapping("/export")
     @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE', 'DAF')")
     public ResponseEntity<byte[]> exportSuppliers(@RequestParam(defaultValue = "csv") String format,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant from,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant to,
             Authentication authentication) {
         var fmt = com.oct.invoicesystem.shared.export.TabularExportService.Format.from(format);
-        var suppliers = supplierService.searchSuppliers(null, null, null, null,
-                org.springframework.data.domain.Pageable.unpaged()).getContent();
+        // Force ASC sort by createdAt for export if possible, but unpaged is used here. 
+        // We'll pass Sort.by("createdAt").ascending() just in case.
+        var suppliers = supplierService.searchSuppliers(null, null, null, null, from, to,
+                org.springframework.data.domain.PageRequest.of(0, 10000, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.ASC, "createdAt"))).getContent();
         java.util.Locale locale = org.springframework.context.i18n.LocaleContextHolder.getLocale();
         java.util.List<String> headers = java.util.List.of(
                 messageSource.getMessage("report.excel.header.company", null, locale),
@@ -111,8 +117,16 @@ public class SupplierController {
                 ns(s.address()), s.status() == null ? "" : s.status().name(),
                 s.category() == null ? "" : s.category().name())).toList();
         String title = messageSource.getMessage("export.title.suppliers", null, locale);
+        
+        String periodLabel = null;
+        if (from != null || to != null) {
+            String fromStr = from != null ? java.time.LocalDate.ofInstant(from, java.time.ZoneId.systemDefault()).toString() : "...";
+            String toStr = to != null ? java.time.LocalDate.ofInstant(to, java.time.ZoneId.systemDefault()).toString() : "...";
+            periodLabel = messageSource.getMessage("export.pdf.period", new Object[]{fromStr, toStr}, locale);
+        }
+        
         com.oct.invoicesystem.shared.export.ReportMetadata meta =
-                com.oct.invoicesystem.shared.export.ReportMetadata.of(securityHelper.currentUser(authentication), messageSource, null, null, locale);
+                com.oct.invoicesystem.shared.export.ReportMetadata.of(securityHelper.currentUser(authentication), messageSource, periodLabel, null, locale);
         byte[] body = tabularExportService.export(fmt, title, headers, rows, meta, messageSource);
         return ResponseEntity.ok()
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,

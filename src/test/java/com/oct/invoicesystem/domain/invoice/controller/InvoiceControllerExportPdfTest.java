@@ -44,7 +44,7 @@ class InvoiceControllerExportPdfTest {
         // French title + signature block present
         try (org.apache.pdfbox.pdmodel.PDDocument doc = org.apache.pdfbox.Loader.loadPDF(body)) {
             String text = new org.apache.pdfbox.text.PDFTextStripper().getText(doc);
-            org.assertj.core.api.Assertions.assertThat(text).contains("Factures");
+            org.assertj.core.api.Assertions.assertThat(text).contains("Liste des factures");
             org.assertj.core.api.Assertions.assertThat(text).contains("Signature");
         }
     }

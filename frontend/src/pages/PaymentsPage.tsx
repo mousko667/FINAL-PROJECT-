@@ -199,15 +199,24 @@ export default function PaymentsPage() {
     }
   }
 
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState('')
+
   // Payments are DAF / Assistant Comptable only. Gate the fetches on role so the
   // page doesn't fire calls the backend 403s before PageRoleGuard hides the UI.
   const canView = useHasRole('ROLE_DAF', 'ROLE_ASSISTANT_COMPTABLE')
 
   const { data: payments, isLoading: paymentsLoading } = useQuery({
-    queryKey: ['payments', page, statusFilter],
+    queryKey: ['payments', page, statusFilter, from, to],
     queryFn: async () => {
       const params: any = { page, size: 20 }
       if (statusFilter !== 'ALL') params.status = statusFilter
+      if (from) params.from = new Date(from).toISOString()
+      if (to) {
+        const d = new Date(to)
+        d.setHours(23, 59, 59, 999)
+        params.to = d.toISOString()
+      }
       const { data } = await apiClient.get<{ data: { content: Payment[]; totalPages: number; totalElements: number } }>(
         '/payments', { params }
       )
@@ -394,6 +403,20 @@ export default function PaymentsPage() {
             <h2 className="font-semibold text-ink text-sm">{t('payments.history', 'Historique des paiements')}</h2>
             {payments && <span className="text-xs text-ink-faint">{payments.totalElements} {t('payments.total', 'paiements')}</span>}
             <div className="ml-auto flex items-center gap-3">
+              <input
+                type="date"
+                title={t('common.fromDate', 'From date')}
+                value={from}
+                onChange={e => { setFrom(e.target.value); setPage(0) }}
+                className="border border-hairline rounded-[4px] px-2 py-1.5 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-gold-deep/30"
+              />
+              <input
+                type="date"
+                title={t('common.toDate', 'To date')}
+                value={to}
+                onChange={e => { setTo(e.target.value); setPage(0) }}
+                className="border border-hairline rounded-[4px] px-2 py-1.5 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-gold-deep/30"
+              />
               <select
                 value={statusFilter}
                 onChange={e => { setStatusFilter(e.target.value); setPage(0) }}
@@ -403,7 +426,18 @@ export default function PaymentsPage() {
                 <option value="SCHEDULED">{t('payments.status.scheduled', 'Planifié')}</option>
                 <option value="PROCESSED">{t('payments.status.processed', 'Exécuté')}</option>
               </select>
-              <ExportMenu endpoint="/payments/export" filename="payments" />
+              <ExportMenu 
+                endpoint="/payments/export" 
+                filename="payments" 
+                params={{
+                  from: from ? new Date(from).toISOString() : undefined,
+                  to: to ? (() => {
+                    const d = new Date(to)
+                    d.setHours(23, 59, 59, 999)
+                    return d.toISOString()
+                  })() : undefined
+                }} 
+              />
             </div>
           </div>
 

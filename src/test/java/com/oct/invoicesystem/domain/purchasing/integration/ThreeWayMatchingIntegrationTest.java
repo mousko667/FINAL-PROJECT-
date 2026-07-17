@@ -420,7 +420,7 @@ class ThreeWayMatchingIntegrationTest {
 
     @Test
     @DisplayName("Get purchase order should return all items and details")
-    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    @WithMockUser(username = "admin", roles = {"ASSISTANT_COMPTABLE"})
     void testGetPurchaseOrderWithItems() throws Exception {
         // Create PO
         PurchaseOrderItemCreateRequest poItem1 = new PurchaseOrderItemCreateRequest(

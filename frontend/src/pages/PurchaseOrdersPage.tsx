@@ -77,7 +77,7 @@ export default function PurchaseOrdersPage() {
   }
 
   return (
-    <PageRoleGuard allowedRoles={['ROLE_ADMIN', 'ROLE_ASSISTANT_COMPTABLE', 'ROLE_DAF']}>
+    <PageRoleGuard allowedRoles={['ROLE_ASSISTANT_COMPTABLE', 'ROLE_DAF']}>
       <div className="space-y-6">
         <PageHeader
           title={t('po.title', 'Purchase Orders')}

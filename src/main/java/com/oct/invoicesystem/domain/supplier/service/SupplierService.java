@@ -21,7 +21,7 @@ public interface SupplierService {
     SupplierResponse updateSupplier(UUID id, SupplierUpdateRequest request);
     SupplierResponse getSupplier(UUID id);
     Page<SupplierResponse> searchSuppliers(String name, String taxId, SupplierStatus status,
-                                           SupplierCategory category, Pageable pageable);
+                                           SupplierCategory category, java.time.Instant from, java.time.Instant to, Pageable pageable);
     void activateSupplier(UUID id, User activatedBy);
     void suspendSupplier(UUID id);
     void softDeleteSupplier(UUID id);

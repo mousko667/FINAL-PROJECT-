@@ -14,8 +14,8 @@ public interface PaymentService {
     PaymentDTO recordPayment(UUID invoiceId, PaymentRequest request, UUID userId);
     BatchPaymentResultDTO recordBatchPayment(BatchPaymentRequest request, UUID userId);
     PaymentDTO getPaymentByInvoiceId(UUID invoiceId);
-    Page<PaymentDTO> listPayments(String departmentCode, Pageable pageable);
-    byte[] exportPayments(String departmentCode, TabularExportService.Format format, String title, com.oct.invoicesystem.shared.export.ReportMetadata meta, org.springframework.context.MessageSource messageSource);
+    Page<PaymentDTO> listPayments(String departmentCode, java.time.Instant from, java.time.Instant to, Pageable pageable);
+    byte[] exportPayments(String departmentCode, java.time.Instant from, java.time.Instant to, TabularExportService.Format format, String title, com.oct.invoicesystem.shared.export.ReportMetadata meta, org.springframework.context.MessageSource messageSource);
 
     /**
      * Marque un paiement planifie (SCHEDULED) comme execute (PROCESSED) et finalise :

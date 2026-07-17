@@ -43,7 +43,7 @@ class PurchaseOrderControllerTest {
     private PurchaseOrderMapper purchaseOrderMapper;
 
     @Test
-    @WithMockUser(roles = "ADMIN")
+    @WithMockUser(roles = "ASSISTANT_COMPTABLE")
     void listPurchaseOrders_NoSupplierId_ReturnsPagedResponse() throws Exception {
         PurchaseOrder po1 = PurchaseOrder.builder()
                 .id(UUID.randomUUID())
@@ -82,7 +82,7 @@ class PurchaseOrderControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
+    @WithMockUser(roles = "ASSISTANT_COMPTABLE")
     void listPurchaseOrders_WithSupplierId_ReturnsSinglePagePagedResponse() throws Exception {
         UUID supplierId = UUID.randomUUID();
         PurchaseOrder po = PurchaseOrder.builder()

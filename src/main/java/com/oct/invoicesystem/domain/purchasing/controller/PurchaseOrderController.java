@@ -51,7 +51,7 @@ public class PurchaseOrderController {
     private final SecurityHelper securityHelper;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
+    @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
     @Operation(summary = "Create purchase order", description = "Creates a new purchase order with items")
     public ResponseEntity<ApiResponse<PurchaseOrderDTO>> createPurchaseOrder(
             @Valid @RequestBody PurchaseOrderCreateRequest request,
@@ -83,7 +83,7 @@ public class PurchaseOrderController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
+    @PreAuthorize("hasAnyRole('ASSISTANT_COMPTABLE', 'DAF')")
     @Operation(summary = "Get purchase order", description = "Retrieves a purchase order with all items")
     public ResponseEntity<ApiResponse<PurchaseOrderDTO>> getPurchaseOrder(@PathVariable UUID id) {
         PurchaseOrder po = purchaseOrderService.getPurchaseOrderWithItems(id);
@@ -92,7 +92,7 @@ public class PurchaseOrderController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE', 'DAF')")
+    @PreAuthorize("hasAnyRole('ASSISTANT_COMPTABLE', 'DAF')")
     @Operation(summary = "List purchase orders", description = "Lists purchase orders, optionally filtered by supplier")
     public ResponseEntity<ApiResponse<PagedResponse<PurchaseOrderDTO>>> listPurchaseOrders(
             @RequestParam(required = false) UUID supplierId,
@@ -121,7 +121,7 @@ public class PurchaseOrderController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
+    @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
     @Operation(summary = "Update purchase order", description = "Updates a purchase order status and items")
     public ResponseEntity<ApiResponse<PurchaseOrderDTO>> updatePurchaseOrder(
             @PathVariable UUID id,
@@ -133,7 +133,7 @@ public class PurchaseOrderController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
+    @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
     @Operation(summary = "Delete purchase order", description = "Soft-deletes a purchase order")
     public ResponseEntity<ApiResponse<Void>> deletePurchaseOrder(@PathVariable UUID id) {
         purchaseOrderService.deletePurchaseOrder(id);

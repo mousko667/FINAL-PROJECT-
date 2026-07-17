@@ -91,7 +91,7 @@ public class AuditServiceImpl implements AuditService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<AuditLogDTO> searchLogs(UUID userId, String entityType, String entityId, String action, Pageable pageable) {
+    public Page<AuditLogDTO> searchLogs(UUID userId, String entityType, String entityId, String action, java.time.Instant from, java.time.Instant to, Pageable pageable) {
         Specification<AuditLog> spec = Specification.where(null);
         
         if (userId != null) {
@@ -106,15 +106,21 @@ public class AuditServiceImpl implements AuditService {
         if (action != null && !action.isBlank()) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("action"), action));
         }
+        if (from != null) {
+            spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("createdAt"), from));
+        }
+        if (to != null) {
+            spec = spec.and((root, query, cb) -> cb.lessThanOrEqualTo(root.get("createdAt"), to));
+        }
         
         return auditLogRepository.findAll(spec, pageable).map(this::toDTO);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<AuditLogDTO> searchLogsWithActionFilter(UUID userId, String entityType, String entityId, String action, List<String> allowedActions, Pageable pageable) {
-        Specification<AuditLog> spec = Specification.where(null);
-
+    public Page<AuditLogDTO> searchLogsWithActionFilter(UUID userId, String entityType, String entityId, String action, List<String> allowedActions, java.time.Instant from, java.time.Instant to, Pageable pageable) {
+        Specification<AuditLog> spec = Specification.where((root, query, cb) -> root.get("action").in(allowedActions));
+        
         if (userId != null) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("user").get("id"), userId));
         }
@@ -124,13 +130,16 @@ public class AuditServiceImpl implements AuditService {
         if (entityId != null && !entityId.isBlank()) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("entityId"), entityId));
         }
-        // Always restrict to the allowed action set for this role
-        spec = spec.and((root, query, cb) -> root.get("action").in(allowedActions));
-        // Optional additional action filter within the allowed set
         if (action != null && !action.isBlank()) {
             spec = spec.and((root, query, cb) -> cb.like(cb.upper(root.get("action")), "%" + action.toUpperCase() + "%"));
         }
-
+        if (from != null) {
+            spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("createdAt"), from));
+        }
+        if (to != null) {
+            spec = spec.and((root, query, cb) -> cb.lessThanOrEqualTo(root.get("createdAt"), to));
+        }
+        
         return auditLogRepository.findAll(spec, pageable).map(this::toDTO);
     }
 

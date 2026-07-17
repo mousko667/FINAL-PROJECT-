@@ -84,7 +84,7 @@ export default function InvoiceListPage() {
         title={t('invoice.title')}
         actions={
           <>
-            <ExportMenu endpoint="/invoices/export" filename="invoices" />
+            <ExportMenu endpoint="/invoices/export" filename="invoices" params={{ ...effectiveFilters, from: effectiveFilters.fromDate, to: effectiveFilters.toDate }} />
             {isAA && (
               <button
                 id="btn-import-invoices"
@@ -144,6 +144,21 @@ export default function InvoiceListPage() {
             onChange={(e) => handleFilterChange('reference', e.target.value)}
           />
         </div>
+        
+        <input
+          id="filter-from-date"
+          type="date"
+          title={t('common.fromDate', 'From date')}
+          className="border border-hairline rounded-[4px] px-3 py-2 text-sm outline-none focus:border-primary"
+          onChange={(e) => handleFilterChange('fromDate', e.target.value)}
+        />
+        <input
+          id="filter-to-date"
+          type="date"
+          title={t('common.toDate', 'To date')}
+          className="border border-hairline rounded-[4px] px-3 py-2 text-sm outline-none focus:border-primary"
+          onChange={(e) => handleFilterChange('toDate', e.target.value)}
+        />
 
         {/* Status filter — only shown in 'all' tab */}
         {tab === 'all' && (
@@ -160,20 +175,7 @@ export default function InvoiceListPage() {
           </select>
         )}
 
-        <input
-          id="filter-from-date"
-          type="date"
-          aria-label={t('invoice.filterFromDate')}
-          className="border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-gold-deep/30"
-          onChange={(e) => handleFilterChange('fromDate', e.target.value)}
-        />
-        <input
-          id="filter-to-date"
-          type="date"
-          aria-label={t('invoice.filterToDate')}
-          className="border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-gold-deep/30"
-          onChange={(e) => handleFilterChange('toDate', e.target.value)}
-        />
+
       </div>
 
       {/* Table */}

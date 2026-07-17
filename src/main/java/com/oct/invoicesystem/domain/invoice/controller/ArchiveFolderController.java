@@ -41,7 +41,7 @@ public class ArchiveFolderController {
     private final SecurityHelper securityHelper;
 
     @GetMapping("/folders")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DAF', 'ASSISTANT_COMPTABLE')")
+    @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
     @Operation(summary = "Get folder tree", description = "Retrieves all archive folders as a flat tree list")
     public ResponseEntity<ApiResponse<List<ArchiveFolderDTO>>> getFolderTree() {
         return ResponseEntity.ok(ApiResponse.success(archiveFolderService.getFolderTree()));

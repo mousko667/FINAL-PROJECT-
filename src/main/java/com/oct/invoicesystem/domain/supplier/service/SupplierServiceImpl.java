@@ -64,11 +64,13 @@ public class SupplierServiceImpl implements SupplierService {
     @Transactional(readOnly = true)
     public Page<SupplierResponse> searchSuppliers(String name, String taxId, SupplierStatus status,
                                                   com.oct.invoicesystem.domain.supplier.model.SupplierCategory category,
+                                                  java.time.Instant from, java.time.Instant to,
                                                   Pageable pageable) {
         return supplierRepository.searchSuppliers(
                         name, taxId,
                         status != null ? status.name() : null,
                         category != null ? category.name() : null,
+                        from, to,
                         pageable)
                 .map(supplierMapper::toResponse);
     }

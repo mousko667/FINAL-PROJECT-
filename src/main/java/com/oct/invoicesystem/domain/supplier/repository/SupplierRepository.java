@@ -29,18 +29,24 @@ public interface SupplierRepository extends JpaRepository<Supplier, UUID> {
                    "AND (CAST(:name AS text) IS NULL OR company_name ILIKE CONCAT('%', CAST(:name AS text), '%')) " +
                    "AND (CAST(:taxId AS text) IS NULL OR tax_id = CAST(:taxId AS text)) " +
                    "AND (CAST(:status AS text) IS NULL OR status = CAST(:status AS text)) " +
-                   "AND (CAST(:category AS text) IS NULL OR category = CAST(:category AS text))",
+                   "AND (CAST(:category AS text) IS NULL OR category = CAST(:category AS text)) " +
+                   "AND (CAST(CAST(:fromDate AS text) AS timestamp) IS NULL OR created_at >= CAST(CAST(:fromDate AS text) AS timestamp)) " +
+                   "AND (CAST(CAST(:toDate AS text) AS timestamp) IS NULL OR created_at <= CAST(CAST(:toDate AS text) AS timestamp))",
            countQuery = "SELECT COUNT(*) FROM suppliers WHERE deleted_at IS NULL " +
                         "AND (CAST(:name AS text) IS NULL OR company_name ILIKE CONCAT('%', CAST(:name AS text), '%')) " +
                         "AND (CAST(:taxId AS text) IS NULL OR tax_id = CAST(:taxId AS text)) " +
                         "AND (CAST(:status AS text) IS NULL OR status = CAST(:status AS text)) " +
-                        "AND (CAST(:category AS text) IS NULL OR category = CAST(:category AS text))",
+                        "AND (CAST(:category AS text) IS NULL OR category = CAST(:category AS text)) " +
+                        "AND (CAST(CAST(:fromDate AS text) AS timestamp) IS NULL OR created_at >= CAST(CAST(:fromDate AS text) AS timestamp)) " +
+                        "AND (CAST(CAST(:toDate AS text) AS timestamp) IS NULL OR created_at <= CAST(CAST(:toDate AS text) AS timestamp))",
            nativeQuery = true)
     Page<Supplier> searchSuppliers(
             @Param("name") String name,
             @Param("taxId") String taxId,
             @Param("status") String status,
             @Param("category") String category,
+            @Param("fromDate") java.time.Instant fromDate,
+            @Param("toDate") java.time.Instant toDate,
             Pageable pageable);
             
     boolean existsByTaxIdAndDeletedAtIsNull(String taxId);

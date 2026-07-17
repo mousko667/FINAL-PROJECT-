@@ -261,16 +261,8 @@ public class ReportServiceImpl implements ReportService {
             PdfDocument pdf = new PdfDocument(writer);
             Document document = new Document(pdf);
 
-            com.oct.invoicesystem.shared.export.PdfBranding.addLetterhead(document);
-
-            // Title
-            document.add(new Paragraph(messageSource.getMessage("report.pdf.audit.title", null, locale))
-                    .setTextAlignment(TextAlignment.CENTER)
-                    .setFontSize(20)
-                    .setBold());
-
-            // Metadata header (generator + date; no period for a single-invoice audit)
-            PdfMetadata.renderHeader(document, meta, messageSource, locale);
+            String title = messageSource.getMessage("report.pdf.audit.title", null, locale);
+            PdfMetadata.renderHeader(document, title, meta, messageSource, locale);
 
             document.add(new Paragraph("\n"));
 
@@ -310,7 +302,7 @@ public class ReportServiceImpl implements ReportService {
             }
             document.add(auditTable);
 
-            PdfMetadata.renderSignatureBlock(document, messageSource, locale);
+            PdfMetadata.renderFooter(document, meta, messageSource, locale);
             document.close();
             return new ByteArrayInputStream(out.toByteArray());
         } catch (Exception e) {
@@ -324,58 +316,39 @@ public class ReportServiceImpl implements ReportService {
     public ByteArrayInputStream generateCompliancePdf(LocalDate startDate, LocalDate endDate, Authentication authentication) {
         log.info("Generating Compliance PDF report from {} to {}", startDate, endDate);
         List<Invoice> invoices = invoiceRepository.findAllWithFilters(
-                null, null, startDate, endDate, null, null, Pageable.unpaged()).getContent();
+                null, null, startDate, endDate, null, null, org.springframework.data.domain.PageRequest.of(0, 10000, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.ASC, "issueDate"))).getContent();
 
         Locale locale = LocaleContextHolder.getLocale();
-        String periodLabel = messageSource.getMessage("report.pdf.period",
+        String periodLabel = messageSource.getMessage("export.pdf.period",
                 new Object[]{startDate.toString(), endDate.toString()}, locale);
         ReportMetadata meta = buildMetadata(authentication, periodLabel, locale);
+        List<String> headers = List.of(
+                messageSource.getMessage("report.excel.header.reference", null, locale),
+                messageSource.getMessage("report.excel.header.supplier", null, locale),
+                messageSource.getMessage("report.excel.header.amount", null, locale),
+                messageSource.getMessage("report.excel.header.currency", null, locale),
+                messageSource.getMessage("report.excel.header.issue_date", null, locale),
+                messageSource.getMessage("report.excel.header.status", null, locale)
+        );
 
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            PdfWriter writer = new PdfWriter(out);
-            PdfDocument pdf = new PdfDocument(writer);
-            Document document = new Document(pdf);
+        List<List<String>> rows = invoices.stream().map(i -> List.of(
+                i.getReferenceNumber() == null ? "" : i.getReferenceNumber(),
+                i.getSupplierName() == null ? "" : i.getSupplierName(),
+                i.getAmount() == null ? "" : i.getAmount().toPlainString(),
+                i.getCurrency() == null ? "" : i.getCurrency(),
+                i.getIssueDate() == null ? "" : i.getIssueDate().toString(),
+                messageSource.getMessage("invoice.status." + (i.getStatus() == null ? "brouillon" : i.getStatus().name().toLowerCase()), null, locale)
+        )).toList();
 
-            com.oct.invoicesystem.shared.export.PdfBranding.addLetterhead(document);
-
-            // Title
-            document.add(new Paragraph(messageSource.getMessage("report.pdf.compliance.title", null, locale))
-                    .setTextAlignment(TextAlignment.CENTER)
-                    .setFontSize(20)
-                    .setBold());
-
-            // Metadata header (period + generator + date, rendered once)
-            PdfMetadata.renderHeader(document, meta, messageSource, locale);
-
-            document.add(new Paragraph("\n"));
-
-            // Compliance Table — amount and currency in separate columns (aligned with the Excel export).
-            Table table = new Table(UnitValue.createPercentArray(new float[]{15, 27, 15, 10, 15, 18})).useAllAvailableWidth();
-            table.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.reference", null, locale)).setBold()));
-            table.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.supplier", null, locale)).setBold()));
-            table.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.amount", null, locale)).setBold()));
-            table.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.currency", null, locale)).setBold()));
-            table.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.issue_date", null, locale)).setBold()));
-            table.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.status", null, locale)).setBold()));
-
-            for (Invoice i : invoices) {
-                table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(i.getReferenceNumber())));
-                table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(i.getSupplierName())));
-                table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(i.getAmount() == null ? "" : i.getAmount().toPlainString())));
-                table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(i.getCurrency() == null ? "" : i.getCurrency())));
-                table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(i.getIssueDate().toString())));
-                table.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("invoice.status." + i.getStatus().name().toLowerCase(), null, locale))));
-            }
-            document.add(table);
-
-            PdfMetadata.renderSignatureBlock(document, messageSource, locale);
-            document.close();
-            return new ByteArrayInputStream(out.toByteArray());
-        } catch (Exception e) {
-            log.error("Error generating compliance PDF", e);
-            throw new RuntimeException("Fail to generate Compliance PDF file: " + e.getMessage());
-        }
-    }
+        byte[] pdfBytes = tabularExportService.export(
+                com.oct.invoicesystem.shared.export.TabularExportService.Format.PDF,
+                messageSource.getMessage("report.pdf.compliance.title", null, locale),
+                headers,
+                rows,
+                meta,
+                messageSource
+        );
+        return new ByteArrayInputStream(pdfBytes);   }
 
     @Override
     @Transactional(readOnly = true)

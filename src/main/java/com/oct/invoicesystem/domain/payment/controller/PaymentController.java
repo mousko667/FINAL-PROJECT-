@@ -82,9 +82,11 @@ public class PaymentController {
     @Operation(summary = "List all payments with optional department filtering")
     public ResponseEntity<ApiResponse<PagedResponse<PaymentDTO>>> listPayments(
             @RequestParam(required = false) String departmentCode,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant from,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant to,
             @PageableDefault(size = 20, sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
 
-        Page<PaymentDTO> page = paymentService.listPayments(departmentCode, pageable);
+        Page<PaymentDTO> page = paymentService.listPayments(departmentCode, from, to, pageable);
         return ResponseEntity.ok(ApiResponse.success(PagedResponse.of(page)));
     }
 
@@ -102,15 +104,26 @@ public class PaymentController {
             description = "Unified export of the payment history in the requested format")
     public ResponseEntity<byte[]> exportPayments(
             @RequestParam(required = false) String departmentCode,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant from,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant to,
             @RequestParam(defaultValue = "csv") String format,
             java.util.Locale locale,
             @AuthenticationPrincipal User currentUser) {
         TabularExportService.Format fmt = TabularExportService.Format.from(format);
         java.util.Locale loc = locale != null ? locale : java.util.Locale.getDefault();
         String title = messageSource.getMessage("export.title.payments", null, loc);
+        
+        String periodLabel = null;
+        if (from != null || to != null) {
+            String fromStr = from != null ? java.time.LocalDate.ofInstant(from, java.time.ZoneId.systemDefault()).toString() : "...";
+            String toStr = to != null ? java.time.LocalDate.ofInstant(to, java.time.ZoneId.systemDefault()).toString() : "...";
+            periodLabel = messageSource.getMessage("export.pdf.period", new Object[]{fromStr, toStr}, loc);
+        }
+        
         com.oct.invoicesystem.shared.export.ReportMetadata meta =
-                com.oct.invoicesystem.shared.export.ReportMetadata.of(currentUser, messageSource, null, null, loc);
-        byte[] body = paymentService.exportPayments(departmentCode, fmt, title, meta, messageSource);
+                com.oct.invoicesystem.shared.export.ReportMetadata.of(currentUser, messageSource, periodLabel, null, loc);
+
+        byte[] body = paymentService.exportPayments(departmentCode, from, to, fmt, title, meta, messageSource);
         String mediaType = fmt == TabularExportService.Format.CSV
                 ? fmt.mediaType + "; charset=UTF-8"
                 : fmt.mediaType;

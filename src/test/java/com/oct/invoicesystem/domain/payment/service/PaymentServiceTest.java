@@ -148,7 +148,8 @@ class PaymentServiceTest {
         p.setPaymentDate(Instant.parse("2026-06-01T00:00:00Z"));
         p.setRecordedBy(recorder);
 
-        when(paymentRepository.findAll()).thenReturn(java.util.List.of(p));
+        when(paymentRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class)))
+                .thenReturn(java.util.List.of(p));
         when(tabularExportService.export(
                 eq(com.oct.invoicesystem.shared.export.TabularExportService.Format.CSV),
                 eq("Payments"),
@@ -156,7 +157,7 @@ class PaymentServiceTest {
             .thenReturn("CSV".getBytes());
 
         byte[] out = paymentService.exportPayments(
-                null, com.oct.invoicesystem.shared.export.TabularExportService.Format.CSV, "Payments", null, null);
+                null, null, null, com.oct.invoicesystem.shared.export.TabularExportService.Format.CSV, "Payments", null, null);
 
         assertArrayEquals("CSV".getBytes(), out);
 

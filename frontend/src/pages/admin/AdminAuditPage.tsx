@@ -29,6 +29,8 @@ interface AuditFilters {
   username?: string
   entityType?: string
   action?: string
+  from?: string
+  to?: string
   page: number
   size: number
 }
@@ -176,7 +178,7 @@ export default function AdminAuditPage() {
         title={t('admin.audit.title')}
         actions={tab === 'journal' && (
           <ExportMenu endpoint="/audit-logs/export" filename="audit"
-            params={{ entityType: filters.entityType, action: filters.action }} />
+            params={{ entityType: filters.entityType, action: filters.action, from: filters.from, to: filters.to }} />
         )}
       />
 
@@ -216,6 +218,26 @@ export default function AdminAuditPage() {
             onChange={(e) => handleFilter('username', e.target.value)}
           />
         </div>
+        <input
+          id="audit-filter-from"
+          type="date"
+          title={t('common.fromDate', 'From date')}
+          className="border border-hairline rounded-[4px] px-3 py-2 text-sm outline-none focus:border-primary"
+          onChange={(e) => handleFilter('from', e.target.value ? new Date(e.target.value).toISOString() : '')}
+        />
+        <input
+          id="audit-filter-to"
+          type="date"
+          title={t('common.toDate', 'To date')}
+          className="border border-hairline rounded-[4px] px-3 py-2 text-sm outline-none focus:border-primary"
+          onChange={(e) => {
+            const date = e.target.value ? new Date(e.target.value) : null;
+            if (date) {
+               date.setHours(23, 59, 59, 999);
+            }
+            handleFilter('to', date ? date.toISOString() : '')
+          }}
+        />
         <input
           id="audit-filter-entity"
           className="border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
