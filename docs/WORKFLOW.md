@@ -46,7 +46,8 @@ The "Bon à Payer" (BAP) is OCT's process for authorizing supplier invoice payme
 
 ```
 [BROUILLON] ──submit──────────────────────────────→ [SOUMIS]
-[SOUMIS] ────assign_reviewer──────────────────────→ [EN_VALIDATION_N1]
+[SOUMIS] ────assign_aa (AA control)───────────────→ [EN_CONTROLE_AA]
+[EN_CONTROLE_AA] ──assign_reviewer────────────────→ [EN_VALIDATION_N1]
 [EN_VALIDATION_N1] ──validate_n1 (2-level dept)──→ [EN_VALIDATION_N2]
 [EN_VALIDATION_N1] ──validate_n1 (1-level dept)──→ [VALIDE]
 [EN_VALIDATION_N2] ──validate_n2──────────────────→ [VALIDE]
@@ -54,7 +55,8 @@ The "Bon à Payer" (BAP) is OCT's process for authorizing supplier invoice payme
 [BON_A_PAYER] ──record_payment────────────────────→ [PAYE]
 [PAYE] ──────archive (automatic)──────────────────→ [ARCHIVE]
 
-Rejection (from any review state):
+Rejection (from AA control or any review state):
+[EN_CONTROLE_AA] ──reject──→ [REJETE]
 [EN_VALIDATION_N1] ──reject──→ [REJETE]
 [EN_VALIDATION_N2] ──reject──→ [REJETE]
 [VALIDE] ────────────reject──→ [REJETE]
@@ -74,10 +76,23 @@ Resubmission:
 - **Guard:** Invoice has at least one document attached + all required fields filled
 - **Side effects:** Notify all available N1 reviewers for the department
 
-### assign_reviewer
+### assign_aa (AA control step — MANDATORY, PROB-115/SoD)
 - **From:** SOUMIS
+- **To:** EN_CONTROLE_AA
+- **Actor:** ASSISTANT_COMPTABLE (transverse role — no department; the `aa2` account is the
+  fallback since delegation is department-scoped and cannot cover the AA)
+- **Guard:** User has ROLE_ASSISTANT_COMPTABLE, AND is NOT the invoice's submitter
+  (`ensureNotSubmitter` — the AA cannot control an invoice they submitted themselves)
+- **Nature:** A simple human control act — the AA either forwards the invoice to validation or
+  rejects it with a mandatory reason. No new business guard beyond role + not-submitter.
+- **Note:** This step is now REQUIRED between SOUMIS and N1 review. Since V47, the `daf` account no
+  longer holds ROLE_ASSISTANT_COMPTABLE (separation of duties), so the DAF cannot perform AA control.
+
+### assign_reviewer
+- **From:** EN_CONTROLE_AA
 - **To:** EN_VALIDATION_N1
-- **Actor:** VALIDATEUR_N1 (self-assigns)
+- **Actor:** VALIDATEUR_N1 (self-assigns) — no longer available from SOUMIS: the invoice must first
+  pass the AA control step
 - **Guard:** User's role matches the department's N1 approver role
 - **Side effects:** Log assignment + start deadline timer (3 business days)
 
@@ -117,11 +132,13 @@ Resubmission:
 - **Side effects:** None
 
 ### reject
-- **From:** EN_VALIDATION_N1, EN_VALIDATION_N2, VALIDE
+- **From:** EN_CONTROLE_AA, EN_VALIDATION_N1, EN_VALIDATION_N2, VALIDE
 - **To:** REJETE
-- **Actor:** VALIDATEUR_N1, VALIDATEUR_N2, or DAF
-- **Guard:** Rejection reason is MANDATORY (minimum 10 characters)
-- **Side effects:** Notify ASSISTANT_COMPTABLE
+- **Actor:** ASSISTANT_COMPTABLE (from EN_CONTROLE_AA), VALIDATEUR_N1, VALIDATEUR_N2, or DAF.
+  The role required is bound to the SOURCE state: only an AA may reject from EN_CONTROLE_AA; only
+  the department's N1/N2/DAF may reject from the review states (enforced by RoleMatchGuard).
+- **Guard:** Rejection reason is MANDATORY (RejectionReasonGuard)
+- **Side effects:** Notify ASSISTANT_COMPTABLE. Then `resubmit` returns the invoice to SOUMIS.
 
 ### resubmit
 - **From:** REJETE

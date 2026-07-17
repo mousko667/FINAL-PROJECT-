@@ -1466,3 +1466,32 @@ n'y est jouee.
 non-fournisseur DOIT poser explicitement `mfa_enabled=false, mfa_verified=true`, sinon le compte
 nait inutilisable. Verifier aussi le NOM REEL d'une classe avant d'affirmer son absence dans une
 justification ecrite.
+
+## PROB-116 — L'etape "Controle AA" (stepOrder 0) n'apparait pas dans le "Parcours d'approbation" du detail facture
+
+**Date:** 2026-07-17
+**Statut:** OUVERT (non bloquant — decouvert en verif runtime du lot controle AA)
+
+**Symptome:** Sur `InvoiceDetailPage`, pour une facture passee par le controle AA
+(EN_CONTROLE_AA puis REJETE), le panneau "Parcours d'approbation" n'affiche QUE la transition
+Brouillon -> Soumis, et un placeholder "Aucune etape d'approbation enregistree" s'affiche, alors
+que la table `approval_steps` contient bien une ligne `step_order=0, step_name_fr="Controle AA",
+status=REJECTED, rejection_reason=[PIECE_MANQUANTE]` (verifie en base sur FAC-2026-00025).
+
+**Cause racine (a confirmer):** l'hypothese posee en revue Task 4 — "une facture EN_CONTROLE_AA a
+toujours un step donc le placeholder l.438 ne se declenche jamais" — est REFUTEE par le runtime.
+Le step existe en base mais le panneau timeline du detail ne le lit/affiche pas (il ne montre que
+les transitions d'etat, pas les approval_steps de stepOrder 0). Le placeholder l.438
+(`!['BROUILLON','SOUMIS'].includes(status)` + steps vides cote CE composant) se declenche donc a
+tort pour l'affichage timeline.
+
+**Impact:** cosmetique / tracabilite. Le workflow fonctionne (transition + motif corrects en base),
+mais l'utilisateur ne voit pas l'etape de controle AA ni son motif de rejet dans le detail.
+
+**Piste de correction (hors lot — 1 sujet = 1 branche):** faire remonter les approval_steps de
+stepOrder 0 dans la source de donnees du panneau "Parcours d'approbation" de `InvoiceDetailPage`,
+et retirer EN_CONTROLE_AA du chemin qui declenche le placeholder vide. A traiter dans une branche
+dediee (pas dans le lot controle AA, deja scope).
+
+**Regle preventive:** un DOM d'apparence correcte peut cacher un affichage incomplet — toujours
+croiser l'UI avec l'etat reel en base lors d'une verif runtime (cf. [[verify-runtime-not-snapshot]]).

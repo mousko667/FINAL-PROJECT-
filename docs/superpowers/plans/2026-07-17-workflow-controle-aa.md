@@ -122,7 +122,7 @@ etant ecartee (risque sur les 5 conteneurs OCT a 3 semaines de la soutenance, po
   le temps de l'INSERT) pour que l'assertion de nettoyage soit falsifiable — le rouge attendu au
   Step 2 ci-dessous est donc **inobservable tel qu'ecrit**.
 
-- [ ] **Step 1: Ecrire le test qui echoue**
+- [x] **Step 1: Ecrire le test qui echoue**
 
 Creer `src/test/java/com/oct/invoicesystem/domain/user/SodRoleConstraintTest.java`.
 
@@ -226,7 +226,7 @@ class SodRoleConstraintTest {
 > etat de la base de dev) : c'est un vrai defaut a remonter, pas a contourner en desactivant
 > Flyway.
 
-- [ ] **Step 2: Lancer le test pour verifier qu'il echoue**
+- [x] **Step 2: Lancer le test pour verifier qu'il echoue**
 
 Run: `./mvnw test -Dtest=SodRoleConstraintTest`
 Expected: FAIL — `dafAccountMustNotHoldAssistantComptableRole` attend 0 mais trouve 1 ;
@@ -235,7 +235,7 @@ Expected: FAIL — `dafAccountMustNotHoldAssistantComptableRole` attend 0 mais t
 Le conteneur doit demarrer et V1..V46 s'appliquer : si le test echoue au demarrage du contexte
 plutot que sur les assertions, c'est un probleme d'infra, pas le rouge attendu.
 
-- [ ] **Step 3: Ecrire la migration V47**
+- [x] **Step 3: Ecrire la migration V47**
 
 Creer `src/main/resources/db/migration/V47__enforce_sod_aa_daf.sql` :
 
@@ -321,13 +321,13 @@ CREATE TRIGGER trg_enforce_sod_aa_daf
     FOR EACH ROW EXECUTE FUNCTION enforce_sod_aa_daf();
 ```
 
-- [ ] **Step 4: Lancer le test pour verifier qu'il passe**
+- [x] **Step 4: Lancer le test pour verifier qu'il passe**
 
 Run: `./mvnw test -Dtest=SodRoleConstraintTest`
 Expected: PASS (3/3). Le conteneur rejoue V1..V47 : les trois tests doivent passer sans aucune
 intervention manuelle sur une base (c'est tout l'interet du conteneur jetable).
 
-- [ ] **Step 5: Verifier la base de developpement**
+- [x] **Step 5: Verifier la base de developpement**
 
 La base de dev n'est PAS touchee par le test (le conteneur est jetable). V47 s'y appliquera au
 prochain demarrage du backend — c'est verifie en Task 5 (Step 2), pas ici.
@@ -343,7 +343,7 @@ Expected (apres application de V47) :
  daf  | ROLE_DAF
 ```
 
-- [ ] **Step 6: Gate complet**
+- [x] **Step 6: Gate complet**
 
 Run: `./mvnw test`
 Expected: 0 failure, 0 error.
@@ -353,7 +353,7 @@ V47 ne les atteint pas — aucun d'eux ne devrait bouger. Si des tests supposaie
 cumul AA+DAF sur `daf` (fixtures Java construisant l'utilisateur en dur), les corriger ici :
 c'est attendu, ils encodaient la violation SoD.
 
-- [ ] **Step 7: Loguer PROB-115 dans le registre**
+- [x] **Step 7: Loguer PROB-115 dans le registre**
 
 Run (heredoc — le registre contient des octets NUL, ne PAS utiliser Edit) :
 ```bash
@@ -383,7 +383,7 @@ seulement dans le service : les chemins d'ecriture sont multiples (API, import C
 EOF
 ```
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/main/resources/db/migration/V47__enforce_sod_aa_daf.sql \
@@ -412,7 +412,7 @@ git commit -m "fix(sod): retrait cumul AA+DAF du compte daf + repli aa2 + trigge
 La transition actuelle `SOUMIS -> EN_VALIDATION_N1` (event `ASSIGN_REVIEWER`, guard
 `roleMatchGuard`) est aux alentours des lignes 56-60.
 
-- [ ] **Step 1: Ecrire le test qui echoue**
+- [x] **Step 1: Ecrire le test qui echoue**
 
 Ajouter dans `StateMachineTransitionExhaustiveTest` (adapter au style existant du fichier —
 le lire d'abord) :
@@ -438,12 +438,12 @@ void aaControlIsMandatoryBetweenSoumisAndValidationN1() {
 > d'assertion deja present dans ce test (lire le fichier avant d'ecrire). Ne PAS introduire
 > un style d'assertion different de l'existant.
 
-- [ ] **Step 2: Lancer le test pour verifier qu'il echoue**
+- [x] **Step 2: Lancer le test pour verifier qu'il echoue**
 
 Run: `./mvnw test -Dtest=StateMachineTransitionExhaustiveTest`
 Expected: FAIL — `ASSIGN_AA` et `EN_CONTROLE_AA` n'existent pas (erreur de compilation du test).
 
-- [ ] **Step 3: Ajouter l'etat et l'evenement**
+- [x] **Step 3: Ajouter l'etat et l'evenement**
 
 Dans `InvoiceStatus.java`, inserer entre `SOUMIS` et `EN_VALIDATION_N1` :
 
@@ -457,7 +457,7 @@ Dans `InvoiceEvent.java`, inserer apres `SUBMIT` :
     ASSIGN_AA,
 ```
 
-- [ ] **Step 4: Remplacer la transition dans StateMachineConfig**
+- [x] **Step 4: Remplacer la transition dans StateMachineConfig**
 
 Remplacer le bloc `SOUMIS -> EN_VALIDATION_N1` par les trois transitions suivantes
 (la source `SOUMIS` de `ASSIGN_REVIEWER` devient `EN_CONTROLE_AA` — c'est ce **remplacement**
@@ -484,7 +484,7 @@ qui rend le controle AA obligatoire) :
                 .guard(rejectionReasonGuard)
 ```
 
-- [ ] **Step 5: Etendre RoleMatchGuard a ASSIGN_AA**
+- [x] **Step 5: Etendre RoleMatchGuard a ASSIGN_AA**
 
 Dans `RoleMatchGuard.evaluate`, la branche existante est
 `if (event == InvoiceEvent.ASSIGN_REVIEWER || event == InvoiceEvent.VALIDATE_N1)` (ligne ~47).
@@ -501,12 +501,12 @@ Ajouter **avant** cette branche le traitement du role AA (transverse, aucun depa
         }
 ```
 
-- [ ] **Step 6: Lancer le test pour verifier qu'il passe**
+- [x] **Step 6: Lancer le test pour verifier qu'il passe**
 
 Run: `./mvnw test -Dtest=StateMachineTransitionExhaustiveTest`
 Expected: PASS.
 
-- [ ] **Step 7: Gate complet**
+- [x] **Step 7: Gate complet**
 
 Run: `./mvnw test`
 Expected: 0 failure, 0 error.
@@ -517,7 +517,7 @@ regressions) : `InvoiceStateMachineServiceTest`, `ApprovalServiceTest`,
 `ApprovalControllerTest`, `InvoiceServiceTest`, `PaymentServiceTest`, `PaymentControllerTest`,
 `BatchPaymentIntegrationTest`, `ReportServiceTest`.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/main/java/com/oct/invoicesystem/domain/invoice/model/InvoiceStatus.java \
@@ -558,7 +558,7 @@ git commit -m "feat(workflow): etat EN_CONTROLE_AA obligatoire entre SOUMIS et E
 - `ensureNotSubmitter(invoice, approver)` existe deja (l.234) et leve
   `error.approval.approver_is_submitter`. `checkRole(user, requiredRole)` est en l.215.
 
-- [ ] **Step 1: Ecrire les tests qui echouent**
+- [x] **Step 1: Ecrire les tests qui echouent**
 
 Ajouter dans `ApprovalServiceTest` (suivre le style de mock existant du fichier) :
 
@@ -590,12 +590,12 @@ void assignReviewer_fromSoumis_isRefused_becauseAaControlIsRequired() {
 > Lire le fichier avant d'ecrire : reprendre exactement le mode de construction des mocks
 > (`@Mock` / `when(...)`) et des fixtures de facture deja en place.
 
-- [ ] **Step 2: Lancer les tests pour verifier qu'ils echouent**
+- [x] **Step 2: Lancer les tests pour verifier qu'ils echouent**
 
 Run: `./mvnw test -Dtest=ApprovalServiceTest`
 Expected: FAIL — `assignAA` n'existe pas.
 
-- [ ] **Step 3: Ajouter la signature au service**
+- [x] **Step 3: Ajouter la signature au service**
 
 Dans `ApprovalService.java`, a cote de `void assignReviewer(UUID invoiceId);` :
 
@@ -603,7 +603,7 @@ Dans `ApprovalService.java`, a cote de `void assignReviewer(UUID invoiceId);` :
     void assignAA(UUID invoiceId);
 ```
 
-- [ ] **Step 4: Implementer assignAA et basculer assignReviewer**
+- [x] **Step 4: Implementer assignAA et basculer assignReviewer**
 
 Dans `ApprovalServiceImpl`, ajouter `assignAA` :
 
@@ -649,7 +649,7 @@ message final traduisible :
 > gate revele ce cas, **NE PAS contourner la regle SoD** : remonter au porteur du projet.
 > Le second compte `aa2` (Task 1) est precisement le repli prevu pour cette situation.
 
-- [ ] **Step 5: Exposer l'endpoint**
+- [x] **Step 5: Exposer l'endpoint**
 
 Dans `ApprovalController`, a cote de `assignReviewer` (l.~66), en copiant le style d'annotation
 existant du fichier (`@Operation`, `ApiResponse`, etc.) :
@@ -664,7 +664,7 @@ existant du fichier (`@Operation`, `ApiResponse`, etc.) :
     }
 ```
 
-- [ ] **Step 6: Ajouter les cles i18n**
+- [x] **Step 6: Ajouter les cles i18n**
 
 `messages.properties` (EN, UTF-8, Edit possible) :
 ```properties
@@ -697,17 +697,17 @@ python -c "d=open('src/main/resources/messages_fr.properties','rb').read(); prin
 ```
 Expected: `ASCII OK`
 
-- [ ] **Step 7: Lancer les tests pour verifier qu'ils passent**
+- [x] **Step 7: Lancer les tests pour verifier qu'ils passent**
 
 Run: `./mvnw test -Dtest=ApprovalServiceTest`
 Expected: PASS.
 
-- [ ] **Step 8: Gate complet**
+- [x] **Step 8: Gate complet**
 
 Run: `./mvnw test`
 Expected: 0 failure, 0 error.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add src/main/java/com/oct/invoicesystem/domain/workflow/ \
@@ -736,7 +736,7 @@ git commit -m "feat(workflow): endpoint et service de controle AA + cles i18n FR
 4 fichiers de test referencent `SOUMIS` : `InvoiceActionPanel.startReview.test.tsx`,
 `InvoiceTimeline.test.tsx`, `StatusBadge.test.tsx`, `useInvoices.test.tsx`.
 
-- [ ] **Step 1: Ecrire le test qui echoue**
+- [x] **Step 1: Ecrire le test qui echoue**
 
 Dans `frontend/src/test/components/StatusBadge.test.tsx`, ajouter (suivre le style existant) :
 
@@ -747,12 +747,12 @@ it('affiche le badge du statut EN_CONTROLE_AA', () => {
 });
 ```
 
-- [ ] **Step 2: Lancer le test pour verifier qu'il echoue**
+- [x] **Step 2: Lancer le test pour verifier qu'il echoue**
 
 Run: `cd frontend && npx vitest run src/test/components/StatusBadge.test.tsx`
 Expected: FAIL — statut inconnu (erreur de type ou libelle absent).
 
-- [ ] **Step 3: Ajouter le statut au type et au badge**
+- [x] **Step 3: Ajouter le statut au type et au badge**
 
 Dans `frontend/src/types/invoice.ts`, ajouter `EN_CONTROLE_AA` a l'union/enum de statut, entre
 `SOUMIS` et `EN_VALIDATION_N1` (respecter la forme existante du type).
@@ -761,12 +761,12 @@ Dans `StatusBadge.tsx`, ajouter l'entree correspondante dans la map de libelles/
 reprenant exactement la convention des autres statuts (libelle FR « En controle AA », couleur
 coherente avec la famille « en cours »).
 
-- [ ] **Step 4: Lancer le test pour verifier qu'il passe**
+- [x] **Step 4: Lancer le test pour verifier qu'il passe**
 
 Run: `cd frontend && npx vitest run src/test/components/StatusBadge.test.tsx`
 Expected: PASS.
 
-- [ ] **Step 5: Cabler l'action AA dans InvoiceActionPanel**
+- [x] **Step 5: Cabler l'action AA dans InvoiceActionPanel**
 
 Dans `InvoiceActionPanel.tsx` : quand `status === 'SOUMIS'` et que l'utilisateur a
 `ROLE_ASSISTANT_COMPTABLE`, afficher deux actions — « Transmettre a la validation » (appelle
@@ -775,13 +775,13 @@ L'action « demarrer la revue » du N1 ne doit plus s'afficher sur `SOUMIS` mais
 `EN_CONTROLE_AA`. Reutiliser le hook/client API deja utilise par le panneau — ne pas introduire
 un nouveau client HTTP.
 
-- [ ] **Step 6: Mettre a jour filtres et affichages**
+- [x] **Step 6: Mettre a jour filtres et affichages**
 
 Ajouter `EN_CONTROLE_AA` aux listes de statuts de `ApprovalQueuePage`, `DashboardPage`,
 `InvoiceDetailPage`, `InvoiceListPage`, `SupplierInvoicesPage` (filtres, compteurs, timeline),
 en suivant le traitement deja applique a `SOUMIS` dans chaque fichier.
 
-- [ ] **Step 7: Gate frontend**
+- [x] **Step 7: Gate frontend**
 
 Run:
 ```bash
@@ -791,7 +791,7 @@ Expected: 0 erreur TypeScript ; 0 test en echec. Corriger ici les tests
 `InvoiceActionPanel.startReview.test.tsx`, `InvoiceTimeline.test.tsx`, `useInvoices.test.tsx`
 qui supposent `SOUMIS -> revue N1` (attendu, ce ne sont pas des regressions).
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add frontend/src/
@@ -810,7 +810,7 @@ git commit -m "feat(workflow-ui): statut EN_CONTROLE_AA et actions de controle A
 - Consumes: tout le reste
 - Produces: preuve runtime
 
-- [ ] **Step 1: Deployer**
+- [x] **Step 1: Deployer**
 
 Run:
 ```bash
@@ -820,7 +820,7 @@ docker restart oct_backend
 cd frontend && npx vite build && docker cp dist/. oct_frontend:/usr/share/nginx/html/ && docker exec oct_frontend nginx -s reload
 ```
 
-- [ ] **Step 2: Verifier que V47 s'est appliquee**
+- [x] **Step 2: Verifier que V47 s'est appliquee**
 
 Run:
 ```bash
@@ -828,7 +828,7 @@ Run:
 ```
 Expected: une ligne, `success = t`.
 
-- [ ] **Step 3: Verifier le workflow en runtime (driver l'app, pas seulement les tests)**
+- [x] **Step 3: Verifier le workflow en runtime (driver l'app, pas seulement les tests)**
 
 Rate-limit login : **5 req/min/IP** -> espacer les logins, reutiliser les JWT.
 
@@ -843,7 +843,7 @@ Rate-limit login : **5 req/min/IP** -> espacer les logins, reutiliser les JWT.
    avec motif -> etat **REJETE**, motif visible.
 6. `resubmit` -> retour a `SOUMIS`.
 
-- [ ] **Step 4: Mettre a jour docs/WORKFLOW.md**
+- [x] **Step 4: Mettre a jour docs/WORKFLOW.md**
 
 Mettre a jour le diagramme §3 et les sections de transition :
 
@@ -858,7 +858,7 @@ Documenter : acteur = `ROLE_ASSISTANT_COMPTABLE`, controle = acte humain (transm
 avec motif), l'AA ne peut pas controler une facture qu'il a soumise, et le compte `aa2` est le
 repli (la delegation etant departementale, elle ne couvre pas l'AA).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add docs/WORKFLOW.md docs/superpowers/plans/2026-07-17-workflow-controle-aa.md
