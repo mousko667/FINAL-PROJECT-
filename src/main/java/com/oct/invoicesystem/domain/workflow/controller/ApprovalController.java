@@ -69,6 +69,15 @@ public class ApprovalController {
         return ResponseEntity.ok(ApiResponse.success(null, "action.assign.success"));
     }
 
+    @PostMapping("/assign-aa")
+    @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
+    @Operation(summary = "Controle AA", description = "Moves a SOUMIS invoice to EN_CONTROLE_AA (assistant comptable check)")
+    public ResponseEntity<ApiResponse<Void>> assignAA(
+            @Parameter(description = "UUID of the invoice") @PathVariable UUID invoiceId) {
+        approvalService.assignAA(invoiceId);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
     @PostMapping("/validate-n1")
     @PreAuthorize("hasRole('DAF') " +
                   "or hasAuthority('ROLE_VALIDATEUR_N1_DRH') or hasAuthority('ROLE_VALIDATEUR_N1_DG') " +

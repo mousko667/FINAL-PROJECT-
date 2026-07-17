@@ -182,6 +182,33 @@ class StateMachineTransitionExhaustiveTest {
         assertEquals(InvoiceStatus.REJETE, reload(inv).getStatus());
     }
 
+    // ── RoleMatchGuard: REJECT from EN_CONTROLE_AA is restricted to ROLE_ASSISTANT_COMPTABLE ──
+    // (access-control gap found during Task 2's review: without this, any authenticated user
+    // could reject an invoice under AA control since RoleMatchGuard left requiredRole null for
+    // this source state.)
+
+    @Test
+    @DisplayName("REJECT from EN_CONTROLE_AA by a non-AA user is denied")
+    void enControleAaReject_byNonAssistantComptable_isDenied() {
+        Invoice inv = advanceTo(InvoiceStatus.SOUMIS, drhDept, assistant, n1Drh);
+        auth(assistant);
+        sendEvent(inv.getId(), InvoiceEvent.ASSIGN_AA, Map.of(WorkflowExtendedStateKeys.USER_ID, assistant.getId()));
+        assertEquals(InvoiceStatus.EN_CONTROLE_AA, reload(inv).getStatus());
+
+        // n1Drh is a legitimate, authenticated user with a real workflow role, but NOT
+        // ROLE_ASSISTANT_COMPTABLE — rejecting an AA-controlled invoice must be denied.
+        // Same guard-combinator pattern as the other REJECT transitions (N1/N2/VALIDE): the
+        // guard lambda's AccessDeniedException is absorbed by the state machine's guard
+        // evaluation and surfaces as a plain "transition denied" WorkflowException, not the
+        // original AccessDeniedException.
+        auth(n1Drh);
+        assertThrows(WorkflowException.class, () ->
+                sendEvent(inv.getId(), InvoiceEvent.REJECT,
+                        Map.of(WorkflowExtendedStateKeys.USER_ID, n1Drh.getId(), "rejectionReason", "Trying to reject without AA role")),
+                "REJECT from EN_CONTROLE_AA by a non-AA user must be rejected");
+        assertEquals(InvoiceStatus.EN_CONTROLE_AA, reload(inv).getStatus(), "invoice must remain in EN_CONTROLE_AA after the denied reject");
+    }
+
     // ── Valid transition T3: EN_VALIDATION_N1 → EN_VALIDATION_N2 (two-level) ─
 
     @Test

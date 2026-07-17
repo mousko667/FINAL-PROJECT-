@@ -47,10 +47,12 @@ public class ApprovalServiceImpl implements ApprovalService {
         Invoice invoice = getInvoice(invoiceId);
         User currentUser = getCurrentUser();
 
-        if (invoice.getStatus() == InvoiceStatus.SOUMIS) {
+        if (invoice.getStatus() == InvoiceStatus.EN_CONTROLE_AA) {
             checkRole(currentUser, invoice.getDepartment().getN1Role());
             createOrUpdateStep(invoice, 1, currentUser, "Validation N1 - " + invoice.getDepartment().getCode(), null, null, ApprovalStepStatus.PENDING);
             invoiceStateMachineService.sendEvent(invoiceId, InvoiceEvent.ASSIGN_REVIEWER, null);
+        } else if (invoice.getStatus() == InvoiceStatus.SOUMIS) {
+            throw new WorkflowException("error.approval.aa_control_required");
         } else if (invoice.getStatus() == InvoiceStatus.EN_VALIDATION_N1 && invoice.getDepartment().isRequiresN2()) {
             throw new WorkflowException("error.approval.cannot_assign_n2_in_n1");
         } else if (invoice.getStatus() == InvoiceStatus.EN_VALIDATION_N2) {
@@ -58,8 +60,29 @@ public class ApprovalServiceImpl implements ApprovalService {
             createOrUpdateStep(invoice, 2, currentUser, "Validation N2 - " + invoice.getDepartment().getCode(), null, null, ApprovalStepStatus.PENDING);
             // No state machine event for this
         } else {
-            throw new WorkflowException("Cannot assign reviewer from state " + invoice.getStatus());
+            throw new WorkflowException("error.approval.cannot_assign_from_state");
         }
+    }
+
+    /**
+     * Moves a SOUMIS invoice into EN_CONTROLE_AA: the mandatory Assistant Comptable (AA)
+     * control step that precedes N1 validation (separation of duties). Only a user holding
+     * ROLE_ASSISTANT_COMPTABLE may perform this action, and the AA cannot control an invoice
+     * they themselves submitted.
+     */
+    @Override
+    @Transactional
+    public void assignAA(UUID invoiceId) {
+        Invoice invoice = getInvoice(invoiceId);
+        User currentUser = getCurrentUser();
+
+        if (invoice.getStatus() != InvoiceStatus.SOUMIS) {
+            throw new WorkflowException("error.approval.not_in_soumis_state");
+        }
+        checkRole(currentUser, "ROLE_ASSISTANT_COMPTABLE");
+        ensureNotSubmitter(invoice, currentUser);
+        createOrUpdateStep(invoice, 0, currentUser, "Controle AA", null, null, ApprovalStepStatus.PENDING);
+        invoiceStateMachineService.sendEvent(invoiceId, InvoiceEvent.ASSIGN_AA, null);
     }
 
     @Override

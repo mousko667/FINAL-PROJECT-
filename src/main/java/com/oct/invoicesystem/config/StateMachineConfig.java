@@ -69,7 +69,7 @@ public class StateMachineConfig extends EnumStateMachineConfigurerAdapter<Invoic
                 .source(InvoiceStatus.EN_CONTROLE_AA)
                 .target(InvoiceStatus.REJETE)
                 .event(InvoiceEvent.REJECT)
-                .guard(rejectionReasonGuard)
+                .guard(ctx -> rejectionReasonGuard.evaluate(ctx) && roleMatchGuard.evaluate(ctx))
                 .and()
                 .withExternal()
                 .source(InvoiceStatus.EN_VALIDATION_N1)

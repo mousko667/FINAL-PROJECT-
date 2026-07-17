@@ -65,6 +65,7 @@ public class RoleMatchGuard implements Guard<InvoiceStatus, InvoiceEvent> {
             if (context.getSource().getId() == InvoiceStatus.EN_VALIDATION_N1) requiredRole = dept.getN1Role();
             else if (context.getSource().getId() == InvoiceStatus.EN_VALIDATION_N2) requiredRole = dept.getN2Role();
             else if (context.getSource().getId() == InvoiceStatus.VALIDE) requiredRole = "ROLE_DAF";
+            else if (context.getSource().getId() == InvoiceStatus.EN_CONTROLE_AA) requiredRole = "ROLE_ASSISTANT_COMPTABLE";
         }
 
         if (requiredRole != null) {

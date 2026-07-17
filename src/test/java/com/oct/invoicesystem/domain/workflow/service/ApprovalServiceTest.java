@@ -33,6 +33,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -94,7 +95,8 @@ class ApprovalServiceTest {
     }
 
     @Test
-    void assignReviewer_WhenSoumis_WithCorrectRole_SuccessAndSetsDeadline() {
+    void assignReviewer_WhenEnControleAA_WithCorrectRole_SuccessAndSetsDeadline() {
+        invoice.setStatus(InvoiceStatus.EN_CONTROLE_AA);
         mockSecurityContext("ROLE_VALIDATEUR_N1_INFO");
         when(invoiceRepository.findByIdAndDeletedAtIsNull(invoice.getId())).thenReturn(Optional.of(invoice));
         when(approvalStepRepository.findByInvoiceIdAndStepOrder(invoice.getId(), 1)).thenReturn(Optional.empty());
@@ -105,17 +107,18 @@ class ApprovalServiceTest {
         ArgumentCaptor<ApprovalStep> stepCaptor = ArgumentCaptor.forClass(ApprovalStep.class);
         verify(approvalStepRepository).save(stepCaptor.capture());
         ApprovalStep savedStep = stepCaptor.getValue();
-        
+
         assertEquals(1, savedStep.getStepOrder());
         assertEquals(ApprovalStepStatus.PENDING, savedStep.getStatus());
         assertEquals(currentUser, savedStep.getApprover());
         assertNotNull(savedStep.getDeadline()); // verifies deadline check logic
-        
+
         verify(invoiceStateMachineService).sendEvent(eq(invoice.getId()), eq(InvoiceEvent.ASSIGN_REVIEWER), isNull());
     }
 
     @Test
-    void assignReviewer_WhenSoumis_WithWrongRole_ThrowsAccessDenied() {
+    void assignReviewer_WhenEnControleAA_WithWrongRole_ThrowsAccessDenied() {
+        invoice.setStatus(InvoiceStatus.EN_CONTROLE_AA);
         mockSecurityContext("ROLE_WRONG");
         when(invoiceRepository.findByIdAndDeletedAtIsNull(invoice.getId())).thenReturn(Optional.of(invoice));
         // Wrong role falls through to the delegation lookup; no active delegation → AccessDenied
@@ -131,7 +134,39 @@ class ApprovalServiceTest {
         when(invoiceRepository.findByIdAndDeletedAtIsNull(invoice.getId())).thenReturn(Optional.of(invoice));
 
         WorkflowException ex = assertThrows(WorkflowException.class, () -> approvalService.assignReviewer(invoice.getId()));
-        assertTrue(ex.getMessage().contains("Cannot assign reviewer from state"));
+        assertEquals("error.approval.cannot_assign_from_state", ex.getMessage());
+    }
+
+    @Test
+    void assignAA_movesSoumisToEnControleAA_whenUserIsAssistantComptable() {
+        mockSecurityContext("ROLE_ASSISTANT_COMPTABLE");
+        when(invoiceRepository.findByIdAndDeletedAtIsNull(invoice.getId())).thenReturn(Optional.of(invoice));
+        when(approvalStepRepository.findByInvoiceIdAndStepOrder(invoice.getId(), 0)).thenReturn(Optional.empty());
+        when(approvalStepRepository.save(any(ApprovalStep.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        approvalService.assignAA(invoice.getId());
+
+        verify(invoiceStateMachineService).sendEvent(invoice.getId(), InvoiceEvent.ASSIGN_AA, null);
+    }
+
+    @Test
+    void assignAA_rejectsNonAssistantComptable() {
+        mockSecurityContext("ROLE_VALIDATEUR_N1_INFO");
+        invoice.setSubmittedBy(null);
+        when(invoiceRepository.findByIdAndDeletedAtIsNull(invoice.getId())).thenReturn(Optional.of(invoice));
+        when(delegationRepository.findActiveDelegationsForDelegatee(any(), any())).thenReturn(List.of());
+
+        assertThrows(AccessDeniedException.class, () -> approvalService.assignAA(invoice.getId()));
+    }
+
+    @Test
+    void assignReviewer_fromSoumis_isRefused_becauseAaControlIsRequired() {
+        mockSecurityContext("ROLE_VALIDATEUR_N1_INFO");
+        when(invoiceRepository.findByIdAndDeletedAtIsNull(invoice.getId())).thenReturn(Optional.of(invoice));
+
+        assertThatThrownBy(() -> approvalService.assignReviewer(invoice.getId()))
+                .isInstanceOf(WorkflowException.class)
+                .hasMessage("error.approval.aa_control_required");
     }
 
     @Test
