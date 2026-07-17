@@ -24,6 +24,7 @@ interface PendingInvoice {
 
 function statusColor(status: string) {
   if (status === 'SOUMIS') return 'bg-info-bg text-info border border-info/30'
+  if (status === 'EN_CONTROLE_AA') return 'bg-info-bg text-info border border-info/30'
   if (status === 'EN_VALIDATION_N1') return 'bg-warn-bg text-warn border border-warn/30'
   if (status === 'EN_VALIDATION_N2') return 'bg-hot-bg text-hot border border-hot/30'
   if (status === 'VALIDE') return 'bg-pos-bg text-pos border border-pos/30'
@@ -59,8 +60,16 @@ export default function ApprovalQueuePage() {
   const isDaf = roles.includes('ROLE_DAF')
   const isAA = roles.includes('ROLE_ASSISTANT_COMPTABLE')
 
-  // N1/AA take charge of SOUMIS, then validate EN_VALIDATION_N1; N2 sees N2; DAF sees VALIDE.
-  const statuses = isDaf ? ['VALIDE'] : isN2 ? ['EN_VALIDATION_N2'] : ['SOUMIS', 'EN_VALIDATION_N1']
+  // AA takes charge of SOUMIS (AA control) and EN_CONTROLE_AA (transmit/reject);
+  // N1 takes charge of EN_CONTROLE_AA (start review) and validates EN_VALIDATION_N1;
+  // N2 sees N2; DAF sees VALIDE.
+  const statuses = isDaf
+    ? ['VALIDE']
+    : isN2
+    ? ['EN_VALIDATION_N2']
+    : isAA
+    ? ['SOUMIS', 'EN_CONTROLE_AA']
+    : ['EN_CONTROLE_AA', 'EN_VALIDATION_N1']
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['approval-queue', statuses.join(','), departmentId],

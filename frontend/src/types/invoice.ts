@@ -1,6 +1,7 @@
 export type InvoiceStatus =
   | 'BROUILLON'
   | 'SOUMIS'
+  | 'EN_CONTROLE_AA'
   | 'EN_VALIDATION_N1'
   | 'EN_VALIDATION_N2'
   | 'VALIDE'

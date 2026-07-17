@@ -359,6 +359,7 @@
       "loadError": "Impossible de charger le document."
     },
     "lineItems": "Lignes de facturation",
+    "transmitToAA": "Transmettre à la validation",
     "startReview": "Démarrer la revue",
     "submit": "Soumettre pour validation",
     "validate": "Valider",
@@ -409,6 +410,7 @@
   "status": {
     "BROUILLON": "Brouillon",
     "SOUMIS": "Soumis",
+    "EN_CONTROLE_AA": "En contrôle AA",
     "EN_VALIDATION_N1": "En validation N1",
     "EN_VALIDATION_N2": "En validation N2",
     "VALIDE": "Validé",

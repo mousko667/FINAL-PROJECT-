@@ -34,6 +34,7 @@ function statusToStep(status: InvoiceStatus): number {
   switch (status) {
     case 'BROUILLON': return -1
     case 'SOUMIS': return 0
+    case 'EN_CONTROLE_AA': return 0
     case 'EN_VALIDATION_N1': return 1
     case 'EN_VALIDATION_N2': return 1
     case 'VALIDE': return 2
@@ -50,6 +51,7 @@ function statusToStep(status: InvoiceStatus): number {
 const STATUS_CONFIG: Record<string, { bg: string; text: string; border: string; icon: typeof CheckCircle }> = {
   BROUILLON:        { bg: 'bg-ground',   text: 'text-ink-soft', border: 'border-l-hairline-strong', icon: FileText },
   SOUMIS:           { bg: 'bg-info-bg',  text: 'text-info',     border: 'border-l-info',            icon: Clock },
+  EN_CONTROLE_AA:   { bg: 'bg-info-bg',  text: 'text-info',     border: 'border-l-info',            icon: Clock },
   EN_VALIDATION_N1: { bg: 'bg-warn-bg',  text: 'text-warn',     border: 'border-l-warn',            icon: Clock },
   EN_VALIDATION_N2: { bg: 'bg-hot-bg',   text: 'text-hot',      border: 'border-l-hot',             icon: Clock },
   VALIDE:           { bg: 'bg-pos-bg',   text: 'text-pos',      border: 'border-l-pos',             icon: CheckCircle },
@@ -244,7 +246,7 @@ export default function SupplierInvoicesPage() {
   const invoices = data?.content ?? []
   const stats = {
     total: data?.totalElements ?? 0,
-    pending: invoices.filter(i => ['SOUMIS','EN_VALIDATION_N1','EN_VALIDATION_N2'].includes(i.status)).length,
+    pending: invoices.filter(i => ['SOUMIS','EN_CONTROLE_AA','EN_VALIDATION_N1','EN_VALIDATION_N2'].includes(i.status)).length,
     approved: invoices.filter(i => ['VALIDE','BON_A_PAYER'].includes(i.status)).length,
     paid: invoices.filter(i => ['PAYE','ARCHIVE'].includes(i.status)).length,
     rejected: invoices.filter(i => i.status === 'REJETE').length,
@@ -286,7 +288,7 @@ export default function SupplierInvoicesPage() {
           className="text-sm border border-hairline rounded-[4px] px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/20 bg-surface text-ink"
         >
           <option value="">{t('app.allStatus', 'Tous les statuts')}</option>
-          {(['BROUILLON','SOUMIS','EN_VALIDATION_N1','EN_VALIDATION_N2','VALIDE','BON_A_PAYER','PAYE','REJETE','ARCHIVE'] as InvoiceStatus[]).map(s => (
+          {(['BROUILLON','SOUMIS','EN_CONTROLE_AA','EN_VALIDATION_N1','EN_VALIDATION_N2','VALIDE','BON_A_PAYER','PAYE','REJETE','ARCHIVE'] as InvoiceStatus[]).map(s => (
             <option key={s} value={s}>{t(`status.${s}`, s)}</option>
           ))}
         </select>

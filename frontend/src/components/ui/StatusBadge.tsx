@@ -22,6 +22,7 @@ interface StatusConfig {
 const statusConfig: Record<InvoiceStatus, StatusConfig> = {
   BROUILLON:        { dot: 'bg-ink-faint',  bg: 'bg-ground',   text: 'text-ink-soft',    border: 'border-hairline' },
   SOUMIS:           { dot: 'bg-info',       bg: 'bg-info-bg',  text: 'text-info',        border: 'border-info/30' },
+  EN_CONTROLE_AA:   { dot: 'bg-info',       bg: 'bg-info-bg',  text: 'text-info',        border: 'border-info/30' },
   EN_VALIDATION_N1: { dot: 'bg-warn',       bg: 'bg-warn-bg',  text: 'text-warn',        border: 'border-warn/30' },
   EN_VALIDATION_N2: { dot: 'bg-hot',        bg: 'bg-hot-bg',   text: 'text-hot',         border: 'border-hot/30' },
   VALIDE:           { dot: 'bg-pos',        bg: 'bg-pos-bg',   text: 'text-pos',         border: 'border-pos/30' },

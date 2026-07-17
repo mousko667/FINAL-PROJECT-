@@ -26,6 +26,7 @@ import { formatAmount } from '@/lib/format'
 const STATUS_COLORS: Record<string, string> = {
   BROUILLON:        '#94a3b8',
   SOUMIS:           '#3b82f6',
+  EN_CONTROLE_AA:   '#60a5fa',
   EN_VALIDATION_N1: '#f59e0b',
   EN_VALIDATION_N2: '#f97316',
   VALIDE:           '#14b8a6',

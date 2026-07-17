@@ -14,7 +14,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { formatAmount } from '@/lib/format'
 
 const ALL_STATUSES: InvoiceStatus[] = [
-  'BROUILLON', 'SOUMIS', 'EN_VALIDATION_N1', 'EN_VALIDATION_N2',
+  'BROUILLON', 'SOUMIS', 'EN_CONTROLE_AA', 'EN_VALIDATION_N1', 'EN_VALIDATION_N2',
   'VALIDE', 'BON_A_PAYER', 'PAYE', 'ARCHIVE', 'REJETE',
 ]
 

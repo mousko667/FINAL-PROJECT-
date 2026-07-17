@@ -28,6 +28,18 @@ describe('StatusBadge — semantic Registre mapping', () => {
     expect(badge.className).toMatch(/text-info\b/)
   })
 
+  it('affiche le badge du statut EN_CONTROLE_AA', () => {
+    renderBadge('EN_CONTROLE_AA')
+    expect(screen.getByText(/contr[oô]le AA/i)).toBeInTheDocument()
+  })
+
+  it('renders EN_CONTROLE_AA with the info semantic classes (in-progress family)', () => {
+    renderBadge('EN_CONTROLE_AA')
+    const badge = screen.getByText(i18n.t('status.EN_CONTROLE_AA')).closest('span')!
+    expect(badge.className).toMatch(/bg-info-bg/)
+    expect(badge.className).toMatch(/text-info\b/)
+  })
+
   it('renders EN_VALIDATION_N1 with the warn semantic classes', () => {
     renderBadge('EN_VALIDATION_N1')
     const badge = screen.getByText(i18n.t('status.EN_VALIDATION_N1')).closest('span')!

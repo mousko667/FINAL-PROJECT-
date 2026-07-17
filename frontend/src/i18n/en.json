@@ -359,6 +359,7 @@
       "loadError": "Unable to load the document."
     },
     "lineItems": "Line Items",
+    "transmitToAA": "Submit for validation",
     "startReview": "Start review",
     "submit": "Submit for Validation",
     "validate": "Validate",
@@ -409,6 +410,7 @@
   "status": {
     "BROUILLON": "Draft",
     "SOUMIS": "Submitted",
+    "EN_CONTROLE_AA": "Under AA Review",
     "EN_VALIDATION_N1": "Under Review — Level 1",
     "EN_VALIDATION_N2": "Under Review — Level 2",
     "VALIDE": "Validated",

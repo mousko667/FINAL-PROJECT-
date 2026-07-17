@@ -44,6 +44,8 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
           return apiClient.post(`/invoices/${invoiceId}/submit`)
         case 'ASSIGN_REVIEWER':
           return apiClient.post(`/invoices/${invoiceId}/workflow/assign`)
+        case 'ASSIGN_AA':
+          return apiClient.post(`/invoices/${invoiceId}/workflow/assign-aa`)
         case 'VALIDATE_N1':
           return apiClient.post(`${base}/validate-n1`, reason ? { comment: reason } : {})
         case 'VALIDATE_N2':
@@ -90,11 +92,23 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
     buttons.push({ action: 'SUBMIT', label: t('invoice.submit', 'Submit for Validation'), variant: 'primary' })
   }
 
-  // Take charge of a submitted invoice (SOUMIS → EN_VALIDATION_N1). Only the department's
-  // N1 validator can self-assign — the backend's assignReviewer enforces the dept N1 role,
-  // so the Assistant Comptable (who can only submit) must not see this action.
-  if (isN1 && status === 'SOUMIS' && deptMatches) {
+  // AA control step (mandatory, precedes N1 review): AA transmits a submitted invoice
+  // into EN_CONTROLE_AA. No reject here — AA can only reject once the invoice is under
+  // their control (EN_CONTROLE_AA), per the workflow-controle-aa design (D5).
+  if (isAA && status === 'SOUMIS') {
+    buttons.push({ action: 'ASSIGN_AA', label: t('invoice.transmitToAA', 'Transmit for validation'), variant: 'primary' })
+  }
+
+  // Take charge of an AA-controlled invoice (EN_CONTROLE_AA → EN_VALIDATION_N1). Only the
+  // department's N1 validator can self-assign — the backend's assignReviewer enforces the
+  // dept N1 role. The AA also sees a "transmit" action here (same assign endpoint) to hand
+  // the invoice off to N1, plus the reject action (motif obligatoire) for this control step.
+  // Roles are mutually exclusive by design (V47 anti-cumul), so only one branch applies.
+  if (isN1 && status === 'EN_CONTROLE_AA' && deptMatches) {
     buttons.push({ action: 'ASSIGN_REVIEWER', label: t('invoice.startReview', 'Start review'), variant: 'primary' })
+  } else if (isAA && status === 'EN_CONTROLE_AA') {
+    buttons.push({ action: 'ASSIGN_REVIEWER', label: t('invoice.transmitToAA', 'Transmit for validation'), variant: 'primary' })
+    buttons.push({ action: 'REJECT', label: t('invoice.reject', 'Reject'), variant: 'danger', requiresReason: true })
   }
 
   // N1 validator: approve or reject — only for their department
