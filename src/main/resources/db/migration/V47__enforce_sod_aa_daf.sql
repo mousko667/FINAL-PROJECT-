@@ -21,10 +21,11 @@
 --      is keyed on department_code NOT NULL and the AA is transverse (no department), so
 --      ApprovalServiceImpl.checkRole would look for a department named ASSISTANT_COMPTABLE
 --      that does not exist. A second account is the only viable fallback.
---   3. Add a trigger rejecting any future AA+DAF cumulation. It lives in the database rather
---      than in Java because there is no central UserServiceImpl: role writes go through User,
---      UserMapper and UserCsvService (CSV import), so an application-side guard on a single
---      path would be bypassed by the importer.
+--   3. Add a trigger rejecting any future AA+DAF cumulation. It lives in the database because a
+--      Java-side guard would be incomplete: `UserService.assignRoles` (l.158) IS a central entry
+--      point for role writes via the API, but it is NOT the only write path — `UserCsvService`
+--      (CSV import) and the SQL seed migrations themselves bypass the service entirely. Only a
+--      database constraint covers every path.
 --
 -- Idempotent: safe to re-run.
 
@@ -37,11 +38,17 @@ WHERE ur.user_id = u.id
   AND r.name = 'ROLE_ASSISTANT_COMPTABLE';
 
 -- 2. Seed the fallback assistant comptable account (password: Test1234!, same BCrypt hash
---    as the existing `aa` test account)
-INSERT INTO users (username, email, password_hash, first_name, last_name, preferred_lang, is_active)
+--    as the existing `aa` test account).
+--    mfa_enabled=FALSE, mfa_verified=TRUE is MANDATORY and mirrors what V34 does for each of the
+--    14 test accounts: both columns default to false, and AuthService.requiresMandatoryMfaSetup
+--    is `!isMfaVerified() && hasNonSupplierRole()`. Omitting them would ship `aa2` bricked —
+--    login would return mfaSetupRequired and every API call outside /mfa/setup|confirm would
+--    fail with 400 mfa_setup_required, making this fallback account useless (see PROB-097 / V43,
+--    same cause and same fix on the `admin` account).
+INSERT INTO users (username, email, password_hash, first_name, last_name, preferred_lang, is_active, mfa_enabled, mfa_verified)
 SELECT 'aa2', 'aa2@oct.local',
        '$2b$12$FFscGrU53UfITyv/j1yDS.hptsmXAPJ7dLKZuNsjjRu/qK4mOXF.e',
-       'Bernard', 'Comptable', 'fr', TRUE
+       'Bernard', 'Comptable', 'fr', TRUE, FALSE, TRUE
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'aa2');
 
 INSERT INTO user_roles (user_id, role_id)

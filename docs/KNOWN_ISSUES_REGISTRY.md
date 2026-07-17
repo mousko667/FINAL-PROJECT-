@@ -1428,3 +1428,41 @@ profil documente), jamais neutralise par un `assumeTrue` silencieux ni rabattu s
 qui se skippe tout seul en vert est un test menteur, et il aurait ici masque le trigger meme
 qu'il verifie. En attendant, V47 est verifiee en runtime sur la base de dev (Task 5 du plan),
 ou le cumul existe reellement et ou le DELETE a un effet observable.
+
+### PROB-115 — RECTIFICATIFS (2026-07-17, revue de code)
+
+**1. Correction de la "Cause racine" enoncee plus haut.** La formulation initiale ("Aucun
+`UserServiceImpl` ne centralise l'ecriture des roles") est **FACTUELLEMENT FAUSSE** et ne doit pas
+etre reprise : le grep d'origine cherchait `UserServiceImpl`, or la classe s'appelle `UserService`.
+`src/main/java/com/oct/invoicesystem/domain/user/service/UserService.java` **existe** et
+`assignRoles` (l.158) **EST** un point central pour les ecritures de roles via l'API.
+
+La conclusion (poser la garde en base) reste la bonne, mais pour la bonne raison : `UserService`
+n'est pas le SEUL chemin d'ecriture — `UserCsvService` (import CSV) et les migrations de seed SQL
+contournent le service. Une garde applicative posee sur `UserService.assignRoles` serait donc
+reelle mais incomplete ; seule une contrainte en base couvre tous les chemins.
+
+**Pourquoi ce rectificatif compte:** le registre est la memoire du projet. Une session future
+cherchant ou poser une garde applicative conclurait, sur la foi du texte initial, qu'aucun point
+central n'existe — alors que `UserService.assignRoles` en est un.
+
+**2. `aa2` naissait brique (corrige avant toute application de V47).** L'INSERT de V47 omettait
+`mfa_enabled` / `mfa_verified`, dont le defaut en base est `false`. Or
+`AuthService.requiresMandatoryMfaSetup` = `!isMfaVerified() && hasNonSupplierRole()` -> vrai pour
+`aa2` : login renvoyant `mfaSetupRequired`, et 400 `mfa_setup_required` sur tout appel API hors
+`/mfa/setup|confirm`. Le compte de repli aurait donc ete inoperant, laissant un seul AA
+fonctionnel (`aa`) — precisement le goulot que `aa2` doit eviter.
+
+Cause identique a **PROB-097 / V43** (meme symptome sur le compte `admin`). `V34__seed_test_users.sql`
+(l.88-89) pose explicitement `mfa_enabled=false, mfa_verified=true` sur ses 14 comptes ; V47 etait
+le seul seed a l'omettre. Corrige en alignant V47 sur V34. V47 n'ayant jamais ete appliquee
+(`flyway_schema_history` s'arretait a V46), la migration a ete corrigee sur place : pas de V48,
+l'immuabilite Flyway n'est pas en cause.
+
+Le gate ne pouvait pas attraper ce defaut : Flyway est desactive sous H2, donc aucune migration
+n'y est jouee.
+
+**Regle preventive (rappel de PROB-097, registre l.575):** tout seed SQL creant un compte de test
+non-fournisseur DOIT poser explicitement `mfa_enabled=false, mfa_verified=true`, sinon le compte
+nait inutilisable. Verifier aussi le NOM REEL d'une classe avant d'affirmer son absence dans une
+justification ecrite.

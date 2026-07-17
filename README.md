@@ -180,6 +180,7 @@ All seeded demonstration users below use password `Test1234!` and are for dev/te
 | Username | Role |
 | --- | --- |
 | `aa` | `ROLE_ASSISTANT_COMPTABLE` |
+| `aa2` | `ROLE_ASSISTANT_COMPTABLE` |
 | `daf` | `ROLE_DAF` |
 | `drh` | `ROLE_VALIDATEUR_N1_DRH` |
 | `dg` | `ROLE_VALIDATEUR_N1_DG` |
@@ -193,6 +194,13 @@ All seeded demonstration users below use password `Test1234!` and are for dev/te
 | `atelier` | `ROLE_VALIDATEUR_N1_TECH` |
 | `dir_tech` | `ROLE_VALIDATEUR_N2_TECH` |
 | `supplier` | `ROLE_SUPPLIER` |
+
+`aa2` is a second assistant comptable (no department — the AA role is transverse). It exists as a
+fallback because the AA control step is a mandatory pass-through and approval delegation is keyed on
+a department, so it cannot cover the AA. It was added by `V47` together with the removal of
+`ROLE_ASSISTANT_COMPTABLE` from the `daf` account, which previously cumulated both roles in the
+development database — a separation-of-duties violation (see `docs/KNOWN_ISSUES_REGISTRY.md`,
+PROB-115).
 
 There is no `ROLE_AUDITEUR`; audit access is split by separation of duties between `ROLE_ADMIN` for system/security audit and `ROLE_DAF` for financial audit.
 
