@@ -10,22 +10,9 @@ import { listMatching, type MatchingSummary } from '@/services/matchingService'
 
 const rowHoverTint = 'hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)] transition-colors'
 
-// Real role names from constants/roles.ts — excludes ROLE_ADMIN (SoD: no financial access)
-const STAFF_ROLES = [
-  'ROLE_DAF',
-  'ROLE_ASSISTANT_COMPTABLE',
-  'ROLE_VALIDATEUR_N1_DRH',
-  'ROLE_VALIDATEUR_N1_DG',
-  'ROLE_VALIDATEUR_N1_INFO',
-  'ROLE_VALIDATEUR_N2_INFO',
-  'ROLE_VALIDATEUR_N1_TERM',
-  'ROLE_VALIDATEUR_N1_COM',
-  'ROLE_VALIDATEUR_N1_QHSSE',
-  'ROLE_VALIDATEUR_N1_INFRA',
-  'ROLE_VALIDATEUR_N2_INFRA',
-  'ROLE_VALIDATEUR_N1_TECH',
-  'ROLE_VALIDATEUR_N2_TECH',
-]
+// N25: the 3-way matching is a financial activity reserved to AA + DAF; department validators
+// (and ADMIN, for SoD) must not reach it. Mirrors the backend MatchingQueryController guard.
+const MATCHING_ROLES = ['ROLE_ASSISTANT_COMPTABLE', 'ROLE_DAF']
 
 export default function MatchingListPage() {
   const { t } = useTranslation()
@@ -39,7 +26,7 @@ export default function MatchingListPage() {
   })
 
   return (
-    <PageRoleGuard allowedRoles={STAFF_ROLES}>
+    <PageRoleGuard allowedRoles={MATCHING_ROLES}>
       <div className="max-w-5xl mx-auto space-y-6 page-enter">
         <PageHeader title={t('matching.pageTitle')} subtitle={t('matching.pageSubtitle')} />
 

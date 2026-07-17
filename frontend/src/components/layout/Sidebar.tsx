@@ -132,16 +132,8 @@ export default function Sidebar() {
           <NavItem to="/invoices" icon={FileText} label={t('nav.invoices')} />
         </RoleGuard>
 
-        {/* Staff: Three-way Matching */}
-        <RoleGuard allowedRoles={[
-          'ROLE_DAF', 'ROLE_ASSISTANT_COMPTABLE',
-          'ROLE_VALIDATEUR_N1_DRH', 'ROLE_VALIDATEUR_N1_DG',
-          'ROLE_VALIDATEUR_N1_INFO', 'ROLE_VALIDATEUR_N2_INFO',
-          'ROLE_VALIDATEUR_N1_TERM', 'ROLE_VALIDATEUR_N1_COM',
-          'ROLE_VALIDATEUR_N1_QHSSE', 'ROLE_VALIDATEUR_N1_INFRA',
-          'ROLE_VALIDATEUR_N2_INFRA', 'ROLE_VALIDATEUR_N1_TECH',
-          'ROLE_VALIDATEUR_N2_TECH',
-        ]} fallback={null}>
+        {/* AA + DAF: Three-way Matching (N25 — financial activity, not open to validators) */}
+        <RoleGuard allowedRoles={['ROLE_ASSISTANT_COMPTABLE', 'ROLE_DAF']} fallback={null}>
           <NavItem to="/matching" icon={GitCompare} label={t('matching.pageTitle')} />
         </RoleGuard>
 
@@ -201,7 +193,8 @@ export default function Sidebar() {
           <NavItem to="/admin/access-requests" icon={UserCheck} label={t('accessRequests.navAdmin', 'Demandes d\'accès')} />
           <NavItem to="/admin/announcements" icon={Megaphone} label={t('admin.announcements.navTitle', 'Annonces')} />
           <NavItem to="/admin/departments" icon={Building2} label={t('nav.departments')} />
-          <NavItem to="/admin/suppliers" icon={Truck} label={t('nav.suppliers')} />
+          {/* N16: the admin has ZERO supplier surface (confidential referential) — the
+              "Fournisseurs" entry lives only under the AA section above. */}
           <NavItem to="/admin/audit" icon={ScrollText} label={t('nav.auditLog')} />
           <NavItem to="/admin/approval-matrix" icon={GitBranch} label={t('admin.approvalMatrix.title', 'Matrice d\'approbation')} />
           <NavItem to="/admin/delegations" icon={UserCheck} label={t('admin.delegations.title', 'Délégations')} />

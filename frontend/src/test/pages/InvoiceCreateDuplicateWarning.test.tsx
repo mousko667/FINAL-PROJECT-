@@ -10,6 +10,12 @@ vi.mock('react-router-dom', async (importOriginal) => {
   return { ...actual, useNavigate: () => vi.fn() }
 })
 
+// The page is now wrapped in a PageRoleGuard (audit finding N14); this test targets the page's own
+// behaviour, so render the guarded children directly (guard logic is covered by RoleGuard.test.tsx).
+vi.mock('@/components/auth/RoleGuard', () => ({
+  PageRoleGuard: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}))
+
 // Render i18n keys verbatim with the interpolated count so assertions are stable.
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

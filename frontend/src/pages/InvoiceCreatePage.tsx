@@ -9,6 +9,7 @@ import { invoiceService } from '@/services/invoiceService'
 import apiClient from '@/services/apiClient'
 import { ChevronRight, ChevronLeft, Loader2, Plus, Trash2, AlertTriangle } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import type { ApiResponse, PagedResponse } from '@/types/invoice'
 import { formatAmount } from '@/lib/format'
 
@@ -40,7 +41,7 @@ type LineItemData = z.infer<typeof lineItemSchema> & { totalPrice: number }
 const STEPS = ['details', 'lineItems', 'documents'] as const
 type Step = typeof STEPS[number]
 
-export default function InvoiceCreatePage() {
+function InvoiceCreatePageInner() {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const [step, setStep] = useState<Step>('details')
@@ -412,5 +413,19 @@ export default function InvoiceCreatePage() {
         </div>
       )}
     </div>
+  )
+}
+
+/**
+ * Invoice entry is reserved to the Assistant Comptable (audit finding N14). Wrapping the page in a
+ * PageRoleGuard adds the defense-in-depth the router lacked, so DAF/admin/validators can no longer
+ * open the entry form by URL — the backend "Only ASSISTANT_COMPTABLE can create" guard is the last
+ * barrier, not the only one.
+ */
+export default function InvoiceCreatePage() {
+  return (
+    <PageRoleGuard allowedRoles={['ROLE_ASSISTANT_COMPTABLE']}>
+      <InvoiceCreatePageInner />
+    </PageRoleGuard>
   )
 }

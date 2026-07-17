@@ -11,6 +11,11 @@ vi.mock('react-router-dom', async (importOriginal) => {
   return { ...actual, useNavigate: () => vi.fn() }
 })
 
+// The page is now wrapped in a PageRoleGuard (audit finding N14); render children directly here.
+vi.mock('@/components/auth/RoleGuard', () => ({
+  PageRoleGuard: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}))
+
 // Departments come back with distinct FR/EN names, mirroring the real V1 seed
 // (e.g. "Informatique" vs "Information Technology") so the test can prove which
 // one the UI actually renders for the active language (RT-5).

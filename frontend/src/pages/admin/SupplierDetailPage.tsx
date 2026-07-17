@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import {
   useSupplier,
   useSupplierDocuments,
@@ -17,7 +18,7 @@ import { formatDate } from '@/lib/format'
 import { Loader2, ArrowLeft, CheckCircle, Ban, Trash2, Building, Mail, Phone, MapPin, Calendar, FileText, Activity, Upload } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 
-export default function SupplierDetailPage() {
+function SupplierDetailPageInner() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { t } = useTranslation()
@@ -310,5 +311,14 @@ export default function SupplierDetailPage() {
       )}
 
     </div>
+  )
+}
+
+/** Supplier referential: Assistant Comptable only (audit findings N15/N7). */
+export default function SupplierDetailPage() {
+  return (
+    <PageRoleGuard allowedRoles={['ROLE_ASSISTANT_COMPTABLE']}>
+      <SupplierDetailPageInner />
+    </PageRoleGuard>
   )
 }

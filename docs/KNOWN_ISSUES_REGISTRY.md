@@ -1336,3 +1336,18 @@
 - **Tests :** `MatchingQueryControllerIntegrationTest` : validateur DRH -> 403 ; DAF -> 200 ; AA -> 200 ; SUPPLIER/ADMIN -> 403 (inchange).
 - **Regle preventive :** le matching 3-voies est une activite AA/DAF ; ne pas l'ouvrir aux roles validateurs de departement.
 - **Fichiers :** `MatchingQueryController.java`, test `MatchingQueryControllerIntegrationTest`. Aucune migration.
+
+### [PROB-113] N14/N15/N16/N25 (frontend) — Pages SoD sans PageRoleGuard + admin habilite fournisseur/matching
+
+- **Severite :** 🔴 Critique (defense en profondeur SoD frontend) — la saisie de facture, les pages fournisseur admin et le matching etaient atteignables par URL par des roles non habilites ; l'admin etait meme traite comme role fournisseur.
+- **Decouvert :** 2026-07-17 — findings N14/N15/N16/N25 (frontend sous `frontend/src/**` ; le routeur ne pose aucune garde au niveau Route, la protection depend d'un PageRoleGuard DANS la page).
+- **Cause racine :** `InvoiceCreatePage`, `admin/SuppliersPage`+detail/form/onboarding, et les pages matching (`STAFF_ROLES` incluant tous les validateurs) n'avaient pas la bonne garde ; `SuppliersPage` habilitait explicitement l'admin (`isAdmin`) et le dashboard/menu admin proposaient une surface fournisseur.
+- **Solution appliquee :**
+  - N14 : `InvoiceCreatePage` enveloppee dans `PageRoleGuard allowedRoles={['ROLE_ASSISTANT_COMPTABLE']}` (wrapper + composant Inner).
+  - N15 : `SuppliersPage`/`SupplierDetailPage`/`SupplierFormPage`/`SupplierOnboardingPage` gardees AA-only ; `isAdmin` remplace par `canManageSuppliers` (ROLE_ASSISTANT_COMPTABLE) — l'admin n'est plus un role fournisseur.
+  - N16 : retrait de l'entree menu Sidebar admin `/admin/suppliers` et de la quick-action dashboard admin "Registre fournisseurs" (les entrees AA restent).
+  - N25 : pages matching gardees `['ROLE_ASSISTANT_COMPTABLE','ROLE_DAF']` (constante `MATCHING_ROLES` remplace `STAFF_ROLES`) + entree menu matching restreinte AA+DAF. Miroir de la garde backend (PROB-112).
+- **Tests :** 3 tests de page (InvoiceCreate x2, SupplierOnboarding) mockent desormais `PageRoleGuard` (pattern etabli MatchingListPage/PaymentsPage). Gate front : `tsc --noEmit` 0, `vitest` 197/197.
+- **Verif runtime (Playwright, build deploye nginx) :** admin -> `/invoices/new`, `/admin/suppliers`, `/matching` = "Acces non autorise" ; menu/dashboard admin sans surface fournisseur ni matching staff ; AA -> memes pages accessibles + entrees menu presentes. Confirme.
+- **Regle preventive :** toute page sous `frontend/src/pages/**` reservee a un role doit poser son propre `PageRoleGuard` (le routeur ne garde pas par role) ; ne jamais traiter l'admin comme role fonctionnel (fournisseur/financier) — separation des devoirs. La garde frontend double la garde backend, elle ne la remplace pas.
+- **Fichiers :** `frontend/src/pages/InvoiceCreatePage.tsx`, `frontend/src/pages/admin/SuppliersPage.tsx`, `SupplierDetailPage.tsx`, `SupplierFormPage.tsx`, `SupplierOnboardingPage.tsx`, `frontend/src/pages/matching/MatchingListPage.tsx`, `MatchingDetailPage.tsx`, `frontend/src/components/layout/Sidebar.tsx`, `frontend/src/pages/DashboardPage.tsx`, + 3 tests. Aucune migration.

@@ -7,9 +7,10 @@ import { SupplierStatusBadge } from '@/components/SupplierStatusBadge'
 import { ExportMenu } from '@/components/ui/ExportMenu'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Loader2, Search, Filter, Eye, CheckCircle, Ban, Trash2, Plus } from 'lucide-react'
+import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { formatDate } from '@/lib/format'
 
-export default function SuppliersPage() {
+function SuppliersPageInner() {
   const { t } = useTranslation()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('')
@@ -19,7 +20,9 @@ export default function SuppliersPage() {
   const [page, setPage] = useState(0)
 
   const { user } = useAppSelector((state) => state.auth)
-  const isAdmin = user?.roles.includes('ROLE_ADMIN')
+  // N15/N7: supplier management belongs to the Assistant Comptable, NOT the admin (confidential
+  // referential). The admin is no longer treated as a supplier-capable role.
+  const canManageSuppliers = user?.roles.includes('ROLE_ASSISTANT_COMPTABLE')
 
   const { data, isLoading } = useSuppliers({
     page,
@@ -62,7 +65,7 @@ export default function SuppliersPage() {
                 category: categoryFilter || undefined
               }} 
             />
-            {isAdmin && (
+            {canManageSuppliers && (
               <Link
                 to="/admin/suppliers/new"
                 className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-[4px] hover:bg-primary/90 text-sm font-medium"
@@ -174,7 +177,7 @@ export default function SuppliersPage() {
                           >
                             <Eye className="w-4 h-4" />
                           </Link>
-                          {isAdmin && supplier.status !== 'ACTIVE' && (
+                          {canManageSuppliers && supplier.status !== 'ACTIVE' && (
                             <button
                               onClick={() => activate(supplier.id)}
                               className="p-1 text-ink-faint hover:text-pos rounded"
@@ -183,7 +186,7 @@ export default function SuppliersPage() {
                               <CheckCircle className="w-4 h-4" />
                             </button>
                           )}
-                          {isAdmin && supplier.status === 'ACTIVE' && (
+                          {canManageSuppliers && supplier.status === 'ACTIVE' && (
                             <button
                               onClick={() => {
                                 const reason = window.prompt(t('supplier.actions.suspendReason', 'Suspension reason:'))
@@ -195,7 +198,7 @@ export default function SuppliersPage() {
                               <Ban className="w-4 h-4" />
                             </button>
                           )}
-                          {isAdmin && (
+                          {canManageSuppliers && (
                             <button
                               onClick={() => {
                                 if (window.confirm(t('supplier.actions.deleteConfirm', 'Are you sure?'))) {
@@ -243,5 +246,18 @@ export default function SuppliersPage() {
         )}
       </div>
     </div>
+  )
+}
+
+/**
+ * The supplier referential is confidential and reserved to the Assistant Comptable (audit findings
+ * N15/N7): neither the admin nor the DAF may browse/manage suppliers. PageRoleGuard adds the page
+ * defense the router lacked, so these pages can no longer be opened by URL by other roles.
+ */
+export default function SuppliersPage() {
+  return (
+    <PageRoleGuard allowedRoles={['ROLE_ASSISTANT_COMPTABLE']}>
+      <SuppliersPageInner />
+    </PageRoleGuard>
   )
 }

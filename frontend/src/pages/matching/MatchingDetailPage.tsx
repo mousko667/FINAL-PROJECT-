@@ -10,22 +10,9 @@ import apiClient from '@/services/apiClient'
 import { getMatchingLines, resolveMatchingLine, type LineComparison } from '@/services/matchingService'
 import MatchingLineResolveModal from '@/components/matching/MatchingLineResolveModal'
 
-// Real role names — mirrors MatchingListPage. Excludes ROLE_ADMIN (SoD: no financial access).
-const STAFF_ROLES = [
-  'ROLE_DAF',
-  'ROLE_ASSISTANT_COMPTABLE',
-  'ROLE_VALIDATEUR_N1_DRH',
-  'ROLE_VALIDATEUR_N1_DG',
-  'ROLE_VALIDATEUR_N1_INFO',
-  'ROLE_VALIDATEUR_N2_INFO',
-  'ROLE_VALIDATEUR_N1_TERM',
-  'ROLE_VALIDATEUR_N1_COM',
-  'ROLE_VALIDATEUR_N1_QHSSE',
-  'ROLE_VALIDATEUR_N1_INFRA',
-  'ROLE_VALIDATEUR_N2_INFRA',
-  'ROLE_VALIDATEUR_N1_TECH',
-  'ROLE_VALIDATEUR_N2_TECH',
-]
+// N25: 3-way matching reserved to AA + DAF (financial activity); mirrors MatchingListPage and the
+// backend MatchingQueryController guard. Excludes ADMIN and department validators (SoD).
+const MATCHING_ROLES = ['ROLE_ASSISTANT_COMPTABLE', 'ROLE_DAF']
 
 const pct = (v: number | null) => (v == null ? '—' : `${v}%`)
 const num = (v: number | null) => (v == null ? '—' : String(v))
@@ -65,7 +52,7 @@ export default function MatchingDetailPage() {
   }
 
   return (
-    <PageRoleGuard allowedRoles={STAFF_ROLES}>
+    <PageRoleGuard allowedRoles={MATCHING_ROLES}>
       <div className="max-w-5xl mx-auto space-y-6 page-enter">
         <Link to="/matching" className="text-sm text-gold-deep hover:underline">
           {t('matching.back')}

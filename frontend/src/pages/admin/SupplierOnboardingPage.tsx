@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { z } from 'zod'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -32,7 +33,7 @@ const DEFAULT_VALUES: SupplierOnboardingForm = {
   bankDetails: '',
 }
 
-export default function SupplierOnboardingPage() {
+function SupplierOnboardingPageInner() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [step, setStep] = useState(1)
@@ -259,5 +260,14 @@ export default function SupplierOnboardingPage() {
         </div>
       </form>
     </div>
+  )
+}
+
+/** Supplier referential: Assistant Comptable only (audit findings N15/N7). */
+export default function SupplierOnboardingPage() {
+  return (
+    <PageRoleGuard allowedRoles={['ROLE_ASSISTANT_COMPTABLE']}>
+      <SupplierOnboardingPageInner />
+    </PageRoleGuard>
   )
 }

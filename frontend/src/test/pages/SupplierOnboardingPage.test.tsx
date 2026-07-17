@@ -11,6 +11,11 @@ vi.mock('@/services/apiClient', () => ({
   default: { post: vi.fn() },
 }))
 
+// The page is now wrapped in a PageRoleGuard (audit findings N15/N7); render children directly here.
+vi.mock('@/components/auth/RoleGuard', () => ({
+  PageRoleGuard: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}))
+
 function renderPage() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(

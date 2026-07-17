@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { z } from 'zod'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -22,7 +23,7 @@ const supplierSchema = z.object({
 
 type SupplierFormData = z.infer<typeof supplierSchema>
 
-export default function SupplierFormPage() {
+function SupplierFormPageInner() {
   const { id } = useParams<{ id: string }>()
   const isEdit = !!id
   const navigate = useNavigate()
@@ -194,5 +195,14 @@ export default function SupplierFormPage() {
         </div>
       </form>
     </div>
+  )
+}
+
+/** Supplier referential: Assistant Comptable only (audit findings N15/N7). */
+export default function SupplierFormPage() {
+  return (
+    <PageRoleGuard allowedRoles={['ROLE_ASSISTANT_COMPTABLE']}>
+      <SupplierFormPageInner />
+    </PageRoleGuard>
   )
 }

@@ -131,13 +131,7 @@ export default function DashboardPage() {
             <span className="text-xs text-ink-faint mt-0.5">{t('dashboard.securityLogs', 'Journaux système')}</span>
           </Link>
 
-          <Link to="/admin/suppliers" className="group flex flex-col items-center p-5 rounded-[4px] bg-surface hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)] border border-hairline hover:border-gold/40 transition-all text-center">
-            <div className="w-12 h-12 rounded-[4px] bg-ground flex items-center justify-center mb-3">
-              <Users className="w-6 h-6 text-ink-soft" />
-            </div>
-            <span className="text-sm font-semibold text-ink">{t('nav.suppliers')}</span>
-            <span className="text-xs text-ink-faint mt-0.5">{t('dashboard.supplierRegistry', 'Registre fournisseurs')}</span>
-          </Link>
+          {/* N16: the admin has ZERO supplier surface — no "Registre fournisseurs" quick-action. */}
         </div>
 
         {/* Secondary admin actions */}
