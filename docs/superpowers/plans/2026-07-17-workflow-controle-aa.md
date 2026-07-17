@@ -64,9 +64,43 @@
 - Convention compte `aa` : email `aa@oct.local`, first_name `Alice`, last_name `Assistante`
 - Roles `ROLE_ASSISTANT_COMPTABLE` et `ROLE_DAF` existent dans `roles`
 
+### AMENDEMENT (2026-07-17) — le test SoD tourne sous Testcontainers, PAS sous H2
+
+**Le probleme (verifie) :** le profil `test` tourne sur **H2 en memoire**
+(`src/test/resources/application-test.yml` : `jdbc:h2:mem:testdb;MODE=PostgreSQL`) et surtout
+**`spring.flyway.enabled: false`** (l.30) — le schema de test est genere par Hibernate
+`ddl-auto: create-drop`, aucune migration n'est jouee.
+
+Consequences, dans les deux sens :
+1. **V47 ne cassera PAS les autres tests** : Flyway etant desactive sous H2, la migration
+   (et son trigger PL/pgSQL, que H2 ne sait pas executer) n'y est jamais jouee. Il n'y a donc
+   **rien a neutraliser** dans le profil H2 des autres tests.
+2. **Mais un test SoD sous `@ActiveProfiles("test")` serait faux** : ni le trigger, ni le seed
+   `aa2`, ni le retrait du role sur `daf` n'existeraient jamais dans H2. Il echouerait toujours.
+
+**Decision user (2026-07-17) : Testcontainers + Flyway ACTIVE, dans le gate normal.**
+C'est la seule option qui teste le trigger **tel qu'il sera livre**.
+
+**Ne PAS etendre `AbstractPostgresIntegrationTest`** (`src/test/java/.../support/`) : ce patron
+pointe sur la base de dev `localhost:5433/oct_invoice` avec **Flyway desactive**, et sa Javadoc
+impose des tests **read-only** — or le test SoD doit faire un `INSERT` qui viole le trigger.
+Il est inadapte ici.
+
+`SodRoleConstraintTest` sera le **premier test Testcontainers du projet** : pas de patron interne
+a copier. Verifie : les artefacts sont **deja dans `pom.xml`** (`testcontainers.version=1.20.4`,
+`junit-jupiter` + `postgresql`, scope test) -> **aucune dependance a ajouter** ; Docker tourne
+(29.1.2). Le conteneur rejoue V1..V47 (~1-2 min ajoutees au gate : accepte).
+
 - [ ] **Step 1: Ecrire le test qui echoue**
 
-Creer `src/test/java/com/oct/invoicesystem/domain/user/SodRoleConstraintTest.java` :
+Creer `src/test/java/com/oct/invoicesystem/domain/user/SodRoleConstraintTest.java`.
+
+Le squelette ci-dessous est une **intention** : ecrire le test complet et compilable.
+Points non negociables — `@Container` + `PostgreSQLContainer`, `spring.flyway.enabled=true`,
+`ddl-auto=none` (c'est Flyway qui construit le schema, pas Hibernate), et **pas**
+d'`@ActiveProfiles("test")` sur le datasource (le `@DynamicPropertySource` doit gagner ; si le
+profil `test` est necessaire pour les autres proprietes — cles JWT, AES, MinIO — le garder mais
+verifier que le datasource et Flyway sont bien surcharges).
 
 ```java
 package com.oct.invoicesystem.domain.user;
@@ -75,16 +109,44 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+/**
+ * Verifie la separation des taches AA/DAF telle que LIVREE par la migration V47.
+ *
+ * <p>Tourne sur un PostgreSQL jetable (Testcontainers) avec Flyway ACTIVE, et non sur le H2
+ * du profil {@code test} : H2 ne sait pas executer le trigger PL/pgSQL de V47, et le profil
+ * de test desactive Flyway ({@code application-test.yml}), donc ni le trigger ni le seed
+ * {@code aa2} n'y existeraient. Le conteneur rejoue toutes les migrations, ce qui teste la
+ * migration reelle et permet l'INSERT destructif sans toucher la base de developpement.</p>
+ */
+@Testcontainers
 @SpringBootTest
-@ActiveProfiles("test")
 class SodRoleConstraintTest {
+
+    @Container
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:18-alpine");
+
+    @DynamicPropertySource
+    static void datasource(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
+        registry.add("spring.flyway.enabled", () -> "true");
+        registry.add("spring.jpa.hibernate.ddl-auto", () -> "none");
+        registry.add("spring.jpa.properties.hibernate.dialect",
+                () -> "org.hibernate.dialect.PostgreSQLDialect");
+    }
 
     @Autowired
     private JdbcTemplate jdbc;
@@ -125,10 +187,22 @@ class SodRoleConstraintTest {
 }
 ```
 
+> **Si le conteneur ne demarre pas** (image absente, Docker down) : ne PAS rabattre le test sur
+> H2 et ne PAS le neutraliser par un `assumeTrue` silencieux — ce serait rendre le trigger
+> non teste. Remonter le blocage.
+
+> **Si les migrations echouent sur le conteneur vierge** (une migration anterieure supposant un
+> etat de la base de dev) : c'est un vrai defaut a remonter, pas a contourner en desactivant
+> Flyway.
+
 - [ ] **Step 2: Lancer le test pour verifier qu'il echoue**
 
 Run: `./mvnw test -Dtest=SodRoleConstraintTest`
-Expected: FAIL — `dafAccountMustNotHoldAssistantComptableRole` attend 0 mais trouve 1 ; `fallbackAssistantComptableAccountExists` attend 1 mais trouve 0 ; `databaseRejectsAaDafRoleCumulation` ne leve rien (l'INSERT passe).
+Expected: FAIL — `dafAccountMustNotHoldAssistantComptableRole` attend 0 mais trouve 1 ;
+`fallbackAssistantComptableAccountExists` attend 1 mais trouve 0 ;
+`databaseRejectsAaDafRoleCumulation` ne leve rien (l'INSERT passe).
+Le conteneur doit demarrer et V1..V46 s'appliquer : si le test echoue au demarrage du contexte
+plutot que sur les assertions, c'est un probleme d'infra, pas le rouge attendu.
 
 - [ ] **Step 3: Ecrire la migration V47**
 
@@ -219,18 +293,19 @@ CREATE TRIGGER trg_enforce_sod_aa_daf
 - [ ] **Step 4: Lancer le test pour verifier qu'il passe**
 
 Run: `./mvnw test -Dtest=SodRoleConstraintTest`
-Expected: PASS (3/3).
-
-Si l'app de test utilise une base distincte de `oct_invoice`, Flyway rejoue V47 dessus — les
-trois tests doivent passer sans intervention manuelle.
+Expected: PASS (3/3). Le conteneur rejoue V1..V47 : les trois tests doivent passer sans aucune
+intervention manuelle sur une base (c'est tout l'interet du conteneur jetable).
 
 - [ ] **Step 5: Verifier la base de developpement**
 
-Run:
+La base de dev n'est PAS touchee par le test (le conteneur est jetable). V47 s'y appliquera au
+prochain demarrage du backend — c'est verifie en Task 5 (Step 2), pas ici.
+
+Verification optionnelle a ce stade, seulement si le backend a deja ete redemarre :
 ```bash
 "/c/Program Files/PostgreSQL/18/bin/psql.exe" "postgresql://postgres:dany@localhost:5433/oct_invoice" -c "SELECT u.username, string_agg(r.name, ', ' ORDER BY r.name) AS roles FROM users u JOIN user_roles ur ON ur.user_id=u.id JOIN roles r ON r.id=ur.role_id WHERE u.username IN ('aa','aa2','daf') GROUP BY u.username ORDER BY u.username;"
 ```
-Expected (apres redemarrage backend / application Flyway) :
+Expected (apres application de V47) :
 ```
  aa   | ROLE_ASSISTANT_COMPTABLE
  aa2  | ROLE_ASSISTANT_COMPTABLE
@@ -240,8 +315,12 @@ Expected (apres redemarrage backend / application Flyway) :
 - [ ] **Step 6: Gate complet**
 
 Run: `./mvnw test`
-Expected: 0 failure, 0 error. Si des tests supposaient le cumul AA+DAF sur `daf`, les corriger
-ici (c'est attendu : ils encodaient la violation SoD).
+Expected: 0 failure, 0 error.
+
+Rappel du contexte verifie : les autres tests tournent sous H2 **avec Flyway desactive**, donc
+V47 ne les atteint pas — aucun d'eux ne devrait bouger. Si des tests supposaient malgre tout le
+cumul AA+DAF sur `daf` (fixtures Java construisant l'utilisateur en dur), les corriger ici :
+c'est attendu, ils encodaient la violation SoD.
 
 - [ ] **Step 7: Loguer PROB-115 dans le registre**
 
