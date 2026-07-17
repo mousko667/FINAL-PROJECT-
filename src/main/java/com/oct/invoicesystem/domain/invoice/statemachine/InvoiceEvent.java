@@ -5,6 +5,7 @@ package com.oct.invoicesystem.domain.invoice.statemachine;
  */
 public enum InvoiceEvent {
     SUBMIT,
+    ASSIGN_AA,
     ASSIGN_REVIEWER,
     VALIDATE_N1,
     VALIDATE_N2,

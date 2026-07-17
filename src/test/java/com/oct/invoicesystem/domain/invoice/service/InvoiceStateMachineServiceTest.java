@@ -176,7 +176,9 @@ class InvoiceStateMachineServiceTest {
 
     @Test
     void assignReviewer_WithCorrectRole_Success() {
-        invoice.setStatus(InvoiceStatus.SOUMIS);
+        // AA control is now mandatory before ASSIGN_REVIEWER: the invoice must already be
+        // in EN_CONTROLE_AA (assigned via ASSIGN_AA) before an N1 reviewer can be assigned.
+        invoice.setStatus(InvoiceStatus.EN_CONTROLE_AA);
         mockUserRole("ROLE_VALIDATEUR_N1_INFO");
 
         invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.ASSIGN_REVIEWER, null);
@@ -184,11 +186,40 @@ class InvoiceStateMachineServiceTest {
 
     @Test
     void assignReviewer_WithWrongRole_ThrowsWorkflowException() {
+        invoice.setStatus(InvoiceStatus.EN_CONTROLE_AA);
+        mockUserRole("ROLE_ASSISTANT_COMPTABLE");
+
+        assertThrows(WorkflowException.class, () ->
+            invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.ASSIGN_REVIEWER, null)
+        );
+    }
+
+    @Test
+    void assignReviewer_FromSoumisDirectly_ThrowsWorkflowException() {
+        // AA control is mandatory: SOUMIS no longer transitions directly to EN_VALIDATION_N1.
+        invoice.setStatus(InvoiceStatus.SOUMIS);
+        mockUserRole("ROLE_VALIDATEUR_N1_INFO");
+
+        assertThrows(WorkflowException.class, () ->
+            invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.ASSIGN_REVIEWER, null)
+        );
+    }
+
+    @Test
+    void assignAa_WithCorrectRole_Success() {
         invoice.setStatus(InvoiceStatus.SOUMIS);
         mockUserRole("ROLE_ASSISTANT_COMPTABLE");
 
-        assertThrows(WorkflowException.class, () -> 
-            invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.ASSIGN_REVIEWER, null)
+        invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.ASSIGN_AA, null);
+    }
+
+    @Test
+    void assignAa_WithWrongRole_ThrowsWorkflowException() {
+        invoice.setStatus(InvoiceStatus.SOUMIS);
+        mockUserRole("ROLE_VALIDATEUR_N1_INFO");
+
+        assertThrows(WorkflowException.class, () ->
+            invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.ASSIGN_AA, null)
         );
     }
 

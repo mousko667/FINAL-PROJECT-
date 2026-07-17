@@ -3,6 +3,7 @@ package com.oct.invoicesystem.domain.invoice.model;
 public enum InvoiceStatus {
     BROUILLON("Brouillon", "Draft"),
     SOUMIS("Soumis", "Submitted"),
+    EN_CONTROLE_AA("En controle AA", "Under AA review"),
     EN_VALIDATION_N1("En validation N1", "Under review L1"),
     EN_VALIDATION_N2("En validation N2", "Under review L2"),
     VALIDE("Valide", "Validated"),

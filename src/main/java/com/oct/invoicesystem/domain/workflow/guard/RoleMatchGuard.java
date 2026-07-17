@@ -44,6 +44,15 @@ public class RoleMatchGuard implements Guard<InvoiceStatus, InvoiceEvent> {
         InvoiceEvent event = context.getEvent();
         String requiredRole = null;
 
+        if (event == InvoiceEvent.ASSIGN_AA) {
+            boolean isAa = user.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ASSISTANT_COMPTABLE"));
+            if (!isAa) {
+                log.warn("RoleMatchGuard: user {} is not ROLE_ASSISTANT_COMPTABLE", userId);
+            }
+            return isAa;
+        }
+
         if (event == InvoiceEvent.ASSIGN_REVIEWER || event == InvoiceEvent.VALIDATE_N1) {
             requiredRole = dept.getN1Role();
         } else if (event == InvoiceEvent.VALIDATE_N2) {

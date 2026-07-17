@@ -106,9 +106,14 @@ class ApprovalControllerTest {
         perform(post("/api/v1/invoices/{id}/submit", invoice.getId()), assistant)
                 .andExpect(status().isOk());
 
-        // SOUMIS → EN_VALIDATION_N1
-        perform(post("/api/v1/invoices/{id}/workflow/assign", invoice.getId()), n1Drh)
-                .andExpect(status().isOk());
+        // AA control is now mandatory: SOUMIS → EN_CONTROLE_AA before N1 assignment.
+        assignAa(invoice, assistant);
+
+        // EN_CONTROLE_AA → EN_VALIDATION_N1. The /workflow/assign HTTP endpoint still only knows
+        // the pre-AA-control states (SOUMIS/EN_VALIDATION_N2); wiring it to EN_CONTROLE_AA is
+        // service/endpoint-layer work out of scope here, so drive the transition directly through
+        // the state machine (same mechanism ApprovalServiceImpl.assignReviewer uses internally).
+        assignReviewerViaStateMachine(invoice, n1Drh);
 
         // EN_VALIDATION_N1 → VALIDE  (DRH has no N2)
         perform(post("/api/v1/invoices/{id}/workflow/validate-n1", invoice.getId()),
@@ -132,9 +137,10 @@ class ApprovalControllerTest {
         Invoice updated = invoiceRepository.findById(invoice.getId()).orElseThrow();
         assertEquals(InvoiceStatus.ARCHIVE, updated.getStatus());
 
-        // 6 transitions recorded in history (each sendEvent / HTTP call = 1 entry)
+        // 7 transitions recorded in history (each sendEvent / HTTP call = 1 entry; the AA control
+        // step SOUMIS -> EN_CONTROLE_AA adds one entry versus the pre-AA-control flow).
         long historyCount = invoiceStatusHistoryRepository.countByInvoiceId(invoice.getId());
-        assertEquals(6, historyCount, "Expected 6 history entries for DRH single-level lifecycle");
+        assertEquals(7, historyCount, "Expected 7 history entries for DRH single-level lifecycle");
 
         // 2 approval steps: N1 + DAF
         long stepCount = approvalStepRepository.countByInvoiceId(invoice.getId());
@@ -153,9 +159,13 @@ class ApprovalControllerTest {
         perform(post("/api/v1/invoices/{id}/submit", invoice.getId()), assistant)
                 .andExpect(status().isOk());
 
-        // SOUMIS → EN_VALIDATION_N1  (N1 assigns self)
-        perform(post("/api/v1/invoices/{id}/workflow/assign", invoice.getId()), n1Info)
-                .andExpect(status().isOk());
+        // AA control is now mandatory: SOUMIS → EN_CONTROLE_AA before N1 assignment.
+        assignAa(invoice, assistant);
+
+        // EN_CONTROLE_AA → EN_VALIDATION_N1  (N1 assigns self). See p3_16 comment: the
+        // /workflow/assign endpoint doesn't yet know EN_CONTROLE_AA (Task 3 scope), so drive the
+        // transition directly through the state machine.
+        assignReviewerViaStateMachine(invoice, n1Info);
 
         // EN_VALIDATION_N1 → EN_VALIDATION_N2  (INFO has N2 so validate-n1 goes to N2, not VALIDE)
         perform(post("/api/v1/invoices/{id}/workflow/validate-n1", invoice.getId()),
@@ -203,9 +213,12 @@ class ApprovalControllerTest {
         perform(post("/api/v1/invoices/{id}/submit", invoice.getId()), assistant)
                 .andExpect(status().isOk());
 
-        // Assign N1
-        perform(post("/api/v1/invoices/{id}/workflow/assign", invoice.getId()), n1Drh)
-                .andExpect(status().isOk());
+        // AA control is now mandatory: SOUMIS → EN_CONTROLE_AA before N1 assignment.
+        assignAa(invoice, assistant);
+
+        // Assign N1 (see p3_16 comment: drive directly through the state machine since
+        // /workflow/assign doesn't yet know EN_CONTROLE_AA)
+        assignReviewerViaStateMachine(invoice, n1Drh);
 
         // Reject with predefined reason code + detail
         RejectRequest rejectRequest = RejectRequest.builder()
@@ -236,7 +249,11 @@ class ApprovalControllerTest {
         Invoice invoice = createInvoice(drhDept, assistant);
 
         // Put invoice in SOUMIS so assign is callable
-        invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.SUBMIT, 
+        invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.SUBMIT,
+                java.util.Map.of(WorkflowExtendedStateKeys.USER_ID, assistant.getId()));
+
+        // AA control is now mandatory: SOUMIS → EN_CONTROLE_AA before N1 assignment.
+        invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.ASSIGN_AA,
                 java.util.Map.of(WorkflowExtendedStateKeys.USER_ID, assistant.getId()));
 
         // AUDITEUR trying to assign reviewer → 403 (needs ROLE_VALIDATEUR_N1_DRH)
@@ -341,14 +358,39 @@ class ApprovalControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
-    /** Brings a fresh DRH invoice to EN_VALIDATION_N1 (submit + N1 self-assign), ready to reject. */
+    /**
+     * Brings a fresh DRH invoice to EN_VALIDATION_N1 (submit + AA control + N1 self-assign),
+     * ready to reject.
+     */
     private Invoice submitAndAssignN1Drh() throws Exception {
         Invoice invoice = createInvoice(drhDept, assistant);
         perform(post("/api/v1/invoices/{id}/submit", invoice.getId()), assistant)
                 .andExpect(status().isOk());
-        perform(post("/api/v1/invoices/{id}/workflow/assign", invoice.getId()), n1Drh)
-                .andExpect(status().isOk());
+        assignAa(invoice, assistant);
+        assignReviewerViaStateMachine(invoice, n1Drh);
         return invoice;
+    }
+
+    /**
+     * Drives the mandatory AA control step (SOUMIS → EN_CONTROLE_AA) directly through the state
+     * machine service, since the assistant-comptable HTTP endpoint for ASSIGN_AA is out of scope
+     * for this task (introduced separately at the service/endpoint layer).
+     */
+    private void assignAa(Invoice invoice, User assistantUser) {
+        invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.ASSIGN_AA,
+                java.util.Map.of(WorkflowExtendedStateKeys.USER_ID, assistantUser.getId()));
+    }
+
+    /**
+     * Drives EN_CONTROLE_AA → EN_VALIDATION_N1 directly through the state machine service. The
+     * /workflow/assign HTTP endpoint (ApprovalServiceImpl.assignReviewer) does not yet recognize
+     * EN_CONTROLE_AA as a valid source state — wiring it up is service/endpoint-layer work
+     * reserved for a later task — so tests exercise the transition the same way
+     * p3_19_wrongRole_Returns403ForAllWorkflowActions already does for ASSIGN_REVIEWER.
+     */
+    private void assignReviewerViaStateMachine(Invoice invoice, User n1Approver) {
+        invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.ASSIGN_REVIEWER,
+                java.util.Map.of(WorkflowExtendedStateKeys.USER_ID, n1Approver.getId()));
     }
 
     // ──────────────────────────────────────────────────────────────────────────

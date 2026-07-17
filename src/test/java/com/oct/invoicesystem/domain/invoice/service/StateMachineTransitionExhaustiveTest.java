@@ -47,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * Valid transitions tested:
  *   T1  BROUILLON       → SOUMIS           (SUBMIT)
- *   T2  SOUMIS          → EN_VALIDATION_N1 (ASSIGN_REVIEWER)
+ *   T2  SOUMIS          → EN_CONTROLE_AA   (ASSIGN_AA)
  *   T3  EN_VALIDATION_N1→ EN_VALIDATION_N2 (VALIDATE_N1, two-level dept)
  *   T4  EN_VALIDATION_N1→ VALIDE           (VALIDATE_N1, single-level dept)
  *   T5  EN_VALIDATION_N2→ VALIDE           (VALIDATE_N2)
@@ -59,12 +59,18 @@ import static org.junit.jupiter.api.Assertions.*;
  *   T11 VALIDE          → REJETE           (REJECT)
  *   T12 REJETE          → SOUMIS           (RESUBMIT)
  *
+ * AA control transitions tested (mandatory between SOUMIS and EN_VALIDATION_N1):
+ *   AA1 SOUMIS          → EN_CONTROLE_AA   (ASSIGN_AA)
+ *   AA2 EN_CONTROLE_AA  → EN_VALIDATION_N1 (ASSIGN_REVIEWER)
+ *   AA3 EN_CONTROLE_AA  → REJETE           (REJECT)
+ *
  * Invalid transitions tested:
- *   I1  BROUILLON → ARCHIVE   (direct archive blocked — not AUTO_ARCHIVE)
- *   I2  SOUMIS    → VALIDE    (must go through N1)
- *   I3  BROUILLON → REJETE    (cannot reject a draft)
- *   I4  ARCHIVE   → SOUMIS    (terminal state, no way back)
- *   I5  PAYE      → REJETE    (cannot reject a paid invoice)
+ *   I1  BROUILLON → ARCHIVE           (direct archive blocked — not AUTO_ARCHIVE)
+ *   I2  SOUMIS    → VALIDE            (must go through N1)
+ *   I3  BROUILLON → REJETE            (cannot reject a draft)
+ *   I4  ARCHIVE   → SOUMIS            (terminal state, no way back)
+ *   I5  PAYE      → REJETE            (cannot reject a paid invoice)
+ *   I6  SOUMIS    → EN_VALIDATION_N1  (ASSIGN_REVIEWER, AA control now mandatory)
  */
 @SpringBootTest(classes = TestConfig.class)
 @ActiveProfiles("test")
@@ -129,15 +135,51 @@ class StateMachineTransitionExhaustiveTest {
         assertEquals(InvoiceStatus.SOUMIS, reload(inv).getStatus());
     }
 
-    // ── Valid transition T2: SOUMIS → EN_VALIDATION_N1 ───────────────────────
+    // ── Valid transition T2: SOUMIS → EN_CONTROLE_AA ─────────────────────────
 
     @Test
-    @DisplayName("T2 SOUMIS → EN_VALIDATION_N1 via ASSIGN_REVIEWER")
-    void t2_soumis_to_en_validation_n1() {
+    @DisplayName("T2 SOUMIS → EN_CONTROLE_AA via ASSIGN_AA")
+    void t2_soumis_to_en_controle_aa() {
         Invoice inv = advanceTo(InvoiceStatus.SOUMIS, drhDept, assistant, n1Drh);
+        auth(assistant);
+        sendEvent(inv.getId(), InvoiceEvent.ASSIGN_AA, Map.of(WorkflowExtendedStateKeys.USER_ID, assistant.getId()));
+        assertEquals(InvoiceStatus.EN_CONTROLE_AA, reload(inv).getStatus());
+    }
+
+    // ── AA control mandatory between SOUMIS and EN_VALIDATION_N1 ─────────────
+
+    @Test
+    @DisplayName("AA control is mandatory between SOUMIS and EN_VALIDATION_N1")
+    void aaControlIsMandatoryBetweenSoumisAndValidationN1() {
+        // SOUMIS no longer leads directly to EN_VALIDATION_N1: ASSIGN_REVIEWER from SOUMIS is rejected.
+        Invoice inv = advanceTo(InvoiceStatus.SOUMIS, drhDept, assistant, n1Drh);
+        auth(n1Drh);
+        assertThrows(WorkflowException.class, () ->
+                sendEvent(inv.getId(), InvoiceEvent.ASSIGN_REVIEWER, Map.of(WorkflowExtendedStateKeys.USER_ID, n1Drh.getId())),
+                "ASSIGN_REVIEWER from SOUMIS must be rejected: AA control is mandatory first");
+
+        // SOUMIS -> EN_CONTROLE_AA via ASSIGN_AA (performed by the assistant comptable)
+        auth(assistant);
+        sendEvent(inv.getId(), InvoiceEvent.ASSIGN_AA, Map.of(WorkflowExtendedStateKeys.USER_ID, assistant.getId()));
+        assertEquals(InvoiceStatus.EN_CONTROLE_AA, reload(inv).getStatus());
+
+        // EN_CONTROLE_AA -> EN_VALIDATION_N1 via ASSIGN_REVIEWER
         auth(n1Drh);
         sendEvent(inv.getId(), InvoiceEvent.ASSIGN_REVIEWER, Map.of(WorkflowExtendedStateKeys.USER_ID, n1Drh.getId()));
         assertEquals(InvoiceStatus.EN_VALIDATION_N1, reload(inv).getStatus());
+    }
+
+    @Test
+    @DisplayName("EN_CONTROLE_AA -> REJETE via REJECT")
+    void enControleAaToRejete() {
+        Invoice inv = advanceTo(InvoiceStatus.SOUMIS, drhDept, assistant, n1Drh);
+        auth(assistant);
+        sendEvent(inv.getId(), InvoiceEvent.ASSIGN_AA, Map.of(WorkflowExtendedStateKeys.USER_ID, assistant.getId()));
+        assertEquals(InvoiceStatus.EN_CONTROLE_AA, reload(inv).getStatus());
+
+        sendEvent(inv.getId(), InvoiceEvent.REJECT,
+                Map.of(WorkflowExtendedStateKeys.USER_ID, assistant.getId(), "rejectionReason", "Missing supporting documents"));
+        assertEquals(InvoiceStatus.REJETE, reload(inv).getStatus());
     }
 
     // ── Valid transition T3: EN_VALIDATION_N1 → EN_VALIDATION_N2 (two-level) ─
@@ -347,6 +389,12 @@ class StateMachineTransitionExhaustiveTest {
         auth(submitter);
         sendEvent(inv.getId(), InvoiceEvent.SUBMIT, Map.of(WorkflowExtendedStateKeys.USER_ID, sid));
         if (target == InvoiceStatus.SOUMIS) return inv;
+
+        // AA control is now mandatory between SOUMIS and EN_VALIDATION_N1: the assistant comptable
+        // must forward the invoice via ASSIGN_AA before any N1 reviewer can be assigned.
+        auth(assistant);
+        sendEvent(inv.getId(), InvoiceEvent.ASSIGN_AA, Map.of(WorkflowExtendedStateKeys.USER_ID, assistant.getId()));
+        if (target == InvoiceStatus.EN_CONTROLE_AA) return inv;
 
         // For a two-level dept the N1 steps (ASSIGN_REVIEWER + VALIDATE_N1) must be performed by
         // the N1 validator, regardless of which approver the caller ultimately targets (callers
