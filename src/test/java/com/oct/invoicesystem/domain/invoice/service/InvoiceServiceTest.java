@@ -272,4 +272,89 @@ class InvoiceServiceTest {
 
         assertThat(rows.get(0).get(10)).isEqualTo("-");
     }
+
+    // ---- N9: departmental scoping for validators (AA/DAF keep the global view) ----
+
+    private User userWithRole(String roleName, UUID departmentId) {
+        User u = new User();
+        u.setId(UUID.randomUUID());
+        u.setUsername(roleName.toLowerCase());
+        u.setPassword("x");
+        u.setActive(true);
+        u.setDepartmentId(departmentId);
+        u.setUserRoles(java.util.Set.of(
+                com.oct.invoicesystem.domain.user.model.UserRole.builder()
+                        .role(com.oct.invoicesystem.domain.user.model.Role.builder().name(roleName).build())
+                        .user(u)
+                        .build()));
+        return u;
+    }
+
+    private Invoice invoiceInDepartment(UUID departmentId) {
+        Department d = new Department();
+        d.setId(departmentId);
+        Invoice inv = Invoice.builder().department(d).supplierName("ACME")
+                .amount(new BigDecimal("1000")).currency("XAF").status(InvoiceStatus.SOUMIS)
+                .issueDate(LocalDate.now()).dueDate(LocalDate.now().plusDays(30)).build();
+        inv.setId(UUID.randomUUID());
+        return inv;
+    }
+
+    @Test
+    @DisplayName("N9: un validateur ne peut PAS lire une facture d'un autre departement (403)")
+    void getByIdScoped_validatorOtherDepartment_throwsAccessDenied() {
+        UUID drhDept = UUID.randomUUID();
+        UUID infoDept = UUID.randomUUID();
+        User drhValidator = userWithRole("ROLE_VALIDATEUR_N1_DRH", drhDept);
+        Invoice infoInvoice = invoiceInDepartment(infoDept);
+        when(invoiceRepository.findByIdAndDeletedAtIsNull(infoInvoice.getId()))
+                .thenReturn(Optional.of(infoInvoice));
+
+        assertThrows(org.springframework.security.access.AccessDeniedException.class,
+                () -> invoiceService.getByIdScoped(infoInvoice.getId(), drhValidator));
+    }
+
+    @Test
+    @DisplayName("N9: un validateur PEUT lire une facture de son propre departement")
+    void getByIdScoped_validatorOwnDepartment_returnsInvoice() {
+        UUID drhDept = UUID.randomUUID();
+        User drhValidator = userWithRole("ROLE_VALIDATEUR_N1_DRH", drhDept);
+        Invoice drhInvoice = invoiceInDepartment(drhDept);
+        when(invoiceRepository.findByIdAndDeletedAtIsNull(drhInvoice.getId()))
+                .thenReturn(Optional.of(drhInvoice));
+
+        Invoice result = invoiceService.getByIdScoped(drhInvoice.getId(), drhValidator);
+
+        assertThat(result).isSameAs(drhInvoice);
+    }
+
+    @Test
+    @DisplayName("N9: le DAF garde la vue globale (peut lire une facture de tout departement)")
+    void getByIdScoped_dafGlobalView_returnsAnyDepartmentInvoice() {
+        User daf = userWithRole("ROLE_DAF", UUID.randomUUID());
+        Invoice otherDeptInvoice = invoiceInDepartment(UUID.randomUUID());
+        when(invoiceRepository.findByIdAndDeletedAtIsNull(otherDeptInvoice.getId()))
+                .thenReturn(Optional.of(otherDeptInvoice));
+
+        Invoice result = invoiceService.getByIdScoped(otherDeptInvoice.getId(), daf);
+
+        assertThat(result).isSameAs(otherDeptInvoice);
+    }
+
+    @Test
+    @DisplayName("N9: listInvoicesScoped force le departement du validateur, ignore le filtre fourni")
+    void listInvoicesScoped_validatorForcedToOwnDepartment() {
+        UUID drhDept = UUID.randomUUID();
+        UUID attemptedInfoDept = UUID.randomUUID();
+        User drhValidator = userWithRole("ROLE_VALIDATEUR_N1_DRH", drhDept);
+        when(invoiceRepository.findAllWithFilters(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(java.util.List.of()));
+
+        invoiceService.listInvoicesScoped(null, attemptedInfoDept, null, null, null, null, 0, 20,
+                "issueDate,asc", drhValidator);
+
+        // The validator's own department (drhDept) must be used, NOT the attempted INFO filter.
+        verify(invoiceRepository).findAllWithFilters(
+                any(), org.mockito.ArgumentMatchers.eq(drhDept), any(), any(), any(), any(), any());
+    }
 }

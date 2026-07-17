@@ -53,6 +53,7 @@ public class DelegationService {
         if (toDate.isBefore(fromDate)) {
             throw new ValidationException("La date de fin doit être après la date de début");
         }
+        validateDelegableDepartment(delegator, departmentCode);
         ApprovalDelegation delegation = ApprovalDelegation.builder()
                 .delegator(delegator)
                 .delegatee(delegatee)
@@ -65,6 +66,49 @@ public class DelegationService {
         log.info("Delegation created: {} delegates to {} for dept {} from {} to {}",
                 delegator.getUsername(), delegatee.getUsername(), departmentCode, fromDate, toDate);
         return delegationRepository.save(delegation);
+    }
+
+    /**
+     * Validates that {@code departmentCode} can legitimately be delegated by {@code delegator}
+     * (audit finding N13). The delegation department code mirrors the role whose approvals it
+     * transfers ({@code "DAF"} transfers the final Bon à Payer gate; {@code "INFO"}, {@code "DRH"}…
+     * transfer that department's validator approvals). Two abuses are blocked here:
+     *
+     * <ul>
+     *   <li><b>Fabricating the DAF power.</b> {@code "DAF"} is only delegable by a delegator who
+     *       actually holds {@code ROLE_DAF}. Previously an admin (no financial rights) could mint
+     *       the Bon à Payer for a third party via {@code POST /delegations}, and any validator could
+     *       self-delegate {@code "DAF"} via {@code /delegations/mine} — both are now rejected.</li>
+     *   <li><b>Delegating a foreign department.</b> A department code must exist, and the delegator
+     *       must actually hold a validator role for that department; you cannot delegate approvals
+     *       you do not possess.</li>
+     * </ul>
+     */
+    private void validateDelegableDepartment(User delegator, String departmentCode) {
+        if (departmentCode == null || departmentCode.isBlank()) {
+            throw new ValidationException("error.delegation.department_required");
+        }
+        java.util.Set<String> roles = delegator.getAuthorities().stream()
+                .map(org.springframework.security.core.GrantedAuthority::getAuthority)
+                .collect(java.util.stream.Collectors.toSet());
+
+        if ("DAF".equals(departmentCode)) {
+            if (!roles.contains("ROLE_DAF")) {
+                throw new ValidationException("error.delegation.daf_requires_daf_role");
+            }
+            return;
+        }
+        // Any other code must be a real department the delegator actually validates for.
+        boolean departmentExists = departmentRepository.findByCode(departmentCode).isPresent();
+        if (!departmentExists) {
+            throw new ValidationException("error.delegation.invalid_department");
+        }
+        boolean holdsValidatorRoleForDept = roles.stream()
+                .anyMatch(r -> r.equals("ROLE_VALIDATEUR_N1_" + departmentCode)
+                        || r.equals("ROLE_VALIDATEUR_N2_" + departmentCode));
+        if (!holdsValidatorRoleForDept) {
+            throw new ValidationException("error.delegation.not_delegator_role");
+        }
     }
 
     public List<ApprovalDelegation> getActiveDelegationsForDepartment(String departmentCode) {

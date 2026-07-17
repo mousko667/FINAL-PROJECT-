@@ -100,12 +100,19 @@ class InvoiceControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "DAF")
+    @WithMockUser(roles = "DAF", username = "daf")
     void listInvoices_AsAuthorizedRole_Returns200() throws Exception {
         // ADMIN is intentionally excluded from the invoice list (separation of duties:
-        // admins manage the system, not financial data). DAF is an authorized financial role.
+        // admins manage the system, not financial data). DAF is an authorized financial role
+        // and keeps the global (unscoped) view under the N9 department-scoping change.
+        User daf = new User();
+        daf.setId(UUID.randomUUID());
+        daf.setUsername("daf");
+        daf.setPassword("x");
+        daf.setActive(true);
+        when(userRepository.findByUsername("daf")).thenReturn(Optional.of(daf));
         PagedResponse<Invoice> response = new PagedResponse<>(List.of(sampleInvoice()), 0, 20, 1, 1, true);
-        when(invoiceService.listInvoices(any(), any(), any(), any(), any(), any(), anyInt(), anyInt(), anyString()))
+        when(invoiceService.listInvoicesScoped(any(), any(), any(), any(), any(), any(), anyInt(), anyInt(), anyString(), any()))
                 .thenReturn(response);
 
         mockMvc.perform(get("/api/v1/invoices"))

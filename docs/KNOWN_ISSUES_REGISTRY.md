@@ -1296,3 +1296,43 @@
 - **Tests :** classes ciblees vertes (`AuditControllerTest`, `PaymentServiceTest`, `ReportServiceTest`, `InvoiceControllerExportPdfTest`, `CashFlowProjectionIntegrationTest`) ; log runtime `GET /api/v1/reports/cash-flow | Status: 200`. En marge, 5 tests etaient desynchronises par le travail PDF (non lies a ce bug) et ont ete realignes : `AuditControllerTest` (2 paths errones `/api/v1/audit` -> `/audit-logs`, `/audit-logs` -> `/audit-logs/system` pour matcher le stub `searchLogsWithActionFilter`), `PaymentServiceTest` (stub `findAll()` -> `findAll(any(Specification))` apres refacto `exportPayments`), `ReportServiceTest.generateCompliancePdf` (stub manquant `tabularExportService.export(...)` -> NPE `buf null` corrige), `InvoiceControllerExportPdfTest` (titre attendu `Factures` -> `Liste des factures`).
 - **Regle preventive :** NE JAMAIS retirer les `CAST(:param AS <type>)` sur les parametres nullable des requetes JPQL/native ciblant PostgreSQL — le CAST est obligatoire pour que le type soit determinable au prepare meme quand la valeur est null (PROB-038/054/108, meme famille). Avant de committer une modif de `findAllWithFilters` (ou toute requete a params nullable), lancer `CashFlowProjectionIntegrationTest` (test PostgreSQL reel dedie a ce piege).
 - **Fichiers modifies :** `src/main/java/com/oct/invoicesystem/domain/invoice/repository/InvoiceRepository.java` (fix prod) ; tests realignes : `src/test/java/com/oct/invoicesystem/domain/audit/controller/AuditControllerTest.java`, `.../payment/service/PaymentServiceTest.java`, `.../report/service/ReportServiceTest.java`, `.../invoice/controller/InvoiceControllerExportPdfTest.java`. Aucune migration Flyway.
+
+### [PROB-109] N9 — Validateurs sans cloisonnement departemental (lecture/export factures d'autres depts)
+
+- **Severite :** 🔴 Critique (SoD / IDOR de perimetre) — un validateur lisait/exportait les factures et le matching de TOUS les departements.
+- **Decouvert :** 2026-07-17 — QA_AUDIT_EXHAUSTIF finding N9, confirme runtime (drh lisait une facture INFO en 200).
+- **Cause racine :** `InvoiceController` gardait ses lectures par `isAuthenticated() and !SUPPLIER and !ADMIN` (tout validateur passe), et `InvoiceService.getById`/`listInvoices` ne filtraient par aucun scope de departement — le `departmentId` etait un filtre optionnel fourni par l'appelant, jamais impose selon le role.
+- **Solution appliquee (decision user : CLOISONNER) :** au niveau service, `InvoiceService.departmentScopeFor(User)` retourne `null` pour AA/DAF (vue globale) ou `user.getDepartmentId()` sinon (validateur). Variantes scoped : `getByIdScoped` (403 si la facture n'est pas du dept du validateur), `listInvoicesScoped` et `buildExportRowsScoped` (forcent le dept du validateur, ignorent le filtre fourni). `InvoiceController` cable ces variantes sur list/getById/history/matching/export/pdf via `securityHelper.currentUser`. Admin reste exclu par les gardes existantes.
+- **Tests :** `InvoiceServiceTest` : validateur DRH -> facture INFO = AccessDenied ; validateur -> facture de son dept = OK ; DAF -> tout dept = OK ; `listInvoicesScoped` force le dept du validateur (ArgumentCaptor). `InvoiceControllerTest` realigne (DAF stub `listInvoicesScoped`). Classes ciblees 594/0/0.
+- **Regle preventive :** un filtre de perimetre (departement, proprietaire) doit etre IMPOSE au niveau service selon le role de l'appelant, jamais laisse en parametre optionnel controle par le client. Toute lecture de facture par un validateur passe par `getByIdScoped`.
+- **Fichiers :** `InvoiceService.java`, `InvoiceController.java`, tests `InvoiceServiceTest`, `InvoiceControllerTest`. Aucune migration.
+
+### [PROB-110] N3 — Journal d'audit combine sans scope (DAF lit le systeme, admin lit le financier)
+
+- **Severite :** 🔴 Critique (SoD, PRD L40/L76) — `/audit-logs` et `/audit-logs/export` renvoyaient le journal complet aux deux roles.
+- **Decouvert :** 2026-07-17 — finding N3, confirme runtime (contenu identique admin/DAF, evenements systeme visibles par DAF).
+- **Cause racine :** `AuditController.searchLogs` (GET racine) et `exportLogs` appelaient `auditService.searchLogs(...)` SANS filtre d'action, contrairement a `/system`, `/financial`, `/summary/export` qui filtrent par ensemble d'actions.
+- **Solution appliquee :** helper `allowedActionsForCurrentUser(Authentication)` = `SYSTEM_ACTIONS` si ROLE_ADMIN, sinon `FINANCIAL_ACTIONS` (DAF). `searchLogs` et `exportLogs` basculent sur `searchLogsWithActionFilter(...)` avec cet ensemble (meme pattern que `/summary/export`). ADMIN ne voit plus le financier, DAF ne voit plus le systeme, y compris a l'export fichier.
+- **Tests :** `AuditControllerTest` : admin -> actions capturees contiennent LOGIN/USER_CREATE/SECURITY et PAS PAYMENT/BON_A_PAYER ; DAF -> inverse. Paths corriges (`/audit-logs`, `/audit-logs/system`).
+- **Regle preventive :** tout endpoint d'audit accessible a plusieurs roles doit router par ensemble d'actions autorisees du role courant ; ne jamais exposer `searchLogs` (non filtre) directement a un endpoint multi-role.
+- **Fichiers :** `AuditController.java`, test `AuditControllerTest`. Aucune migration.
+
+### [PROB-111] N13 — Delegation transferant le pouvoir DAF / departement etranger sans garde
+
+- **Severite :** 🟠 Majeur (SoD) — un admin (aucun droit financier) pouvait fabriquer le Bon a Payer pour un tiers via `POST /delegations` ; un validateur pouvait self-deleguer `deptCode="DAF"` ou un departement qu'il ne valide pas.
+- **Decouvert :** 2026-07-17 — finding N13, confirme par lecture de code (chemin exploitable via `checkRole` qui accepte toute delegation `deptCode="DAF"`).
+- **Cause racine :** `DelegationService.createDelegation` ne validait que delegant != delegataire et coherence des dates ; `departmentCode` etait accepte tel quel (aucune verif que le code existe ni que le delegant detient le role delegue).
+- **Solution appliquee (decision user : BLOQUER + exiger le role) :** `validateDelegableDepartment(delegator, departmentCode)` applique aux 2 voies (`createDelegation` byIds admin + `createSelfDelegation`) : `departmentCode` non vide ; `"DAF"` uniquement si le delegant detient reellement `ROLE_DAF` ; tout autre code doit exister comme departement ET le delegant doit detenir `ROLE_VALIDATEUR_N1/N2_<CODE>`. Clefs i18n `error.delegation.*` (FR echappe \uXXXX + EN).
+- **Tests :** `DelegationServiceTest` : DAF par non-DAF = refus ; DAF par DAF = OK ; departement etranger = refus ; departement inexistant = refus ; cas valides realignes (delegant porte le role du dept, `DepartmentRepository` mocke).
+- **Regle preventive :** une delegation ne peut transferer que des droits que le delegant possede reellement ; valider le `departmentCode` (existence + possession du role) a la creation, pas seulement a la consommation.
+- **Fichiers :** `DelegationService.java`, test `DelegationServiceTest`, `messages_fr/en.properties`. Aucune migration.
+
+### [PROB-112] N25 — Matching 3-voies (financier) ouvert a tous les validateurs
+
+- **Severite :** 🟡 Mineur (SoD, coherence spec) — le rapprochement 3-voies (activite financiere AA/DAF) etait accessible a tous les validateurs N1/N2.
+- **Decouvert :** 2026-07-17 — finding N25.
+- **Cause racine :** `MatchingQueryController` (`/matching`, `/{id}/lines`) garde par `isAuthenticated() and !SUPPLIER and !ADMIN` (tout staff).
+- **Solution appliquee (decision user : RESERVER a AA+DAF) :** `@PreAuthorize("hasAnyRole('ASSISTANT_COMPTABLE', 'DAF')")` sur les lectures matching. (Volet frontend — pages matching + menu — traite separement.)
+- **Tests :** `MatchingQueryControllerIntegrationTest` : validateur DRH -> 403 ; DAF -> 200 ; AA -> 200 ; SUPPLIER/ADMIN -> 403 (inchange).
+- **Regle preventive :** le matching 3-voies est une activite AA/DAF ; ne pas l'ouvrir aux roles validateurs de departement.
+- **Fichiers :** `MatchingQueryController.java`, test `MatchingQueryControllerIntegrationTest`. Aucune migration.

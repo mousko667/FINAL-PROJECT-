@@ -158,12 +158,80 @@ public class InvoiceService {
     }
 
     /**
+     * Fetches one invoice by id, enforcing departmental scoping for validators (audit finding N9).
+     *
+     * <p>Assistant Comptable and DAF keep the global view (they operate cross-department by design);
+     * any other authenticated reader (a department validator N1/N2) may only read invoices of their
+     * own department. This is the service-layer counterpart to the controller {@code @PreAuthorize}
+     * guards, so a validator cannot read/export another department's invoice by guessing its id.</p>
+     *
+     * @param invoiceId   invoice identifier
+     * @param currentUser the authenticated reader whose scope is enforced
+     * @return the invoice when in scope
+     * @throws org.springframework.security.access.AccessDeniedException when a scoped validator
+     *         requests an invoice outside their department
+     */
+    @Transactional(readOnly = true)
+    public Invoice getByIdScoped(UUID invoiceId, User currentUser) {
+        Invoice invoice = getById(invoiceId);
+        UUID scope = departmentScopeFor(currentUser);
+        if (scope != null
+                && (invoice.getDepartment() == null || !scope.equals(invoice.getDepartment().getId()))) {
+            throw new org.springframework.security.access.AccessDeniedException("error.access_denied");
+        }
+        return invoice;
+    }
+
+    /**
+     * Returns the department id a reader is confined to, or {@code null} when the reader has the
+     * global cross-department view (audit finding N9). Global readers are Assistant Comptable and
+     * DAF; every other staff reader (department validators N1/N2) is confined to their own
+     * {@link User#getDepartmentId()}. Admin never reaches these read paths (excluded by the
+     * controller guards), so it is not special-cased here.
+     */
+    private UUID departmentScopeFor(User currentUser) {
+        if (currentUser == null) {
+            return null;
+        }
+        boolean globalView = currentUser.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(a -> ROLE_ASSISTANT_COMPTABLE.equals(a) || "ROLE_DAF".equals(a));
+        return globalView ? null : currentUser.getDepartmentId();
+    }
+
+    /**
      * Lists invoices with optional filters and pagination.
      *
      * @param status optional status
      * @param sort sort pattern field,direction
      * @return paged invoice data
      */
+    /**
+     * Lists invoices with departmental scoping enforced for validators (audit finding N9).
+     *
+     * <p>Assistant Comptable and DAF keep the global view; any other reader (a department validator)
+     * is confined to their own department regardless of the {@code departmentId} filter they pass —
+     * the caller-supplied department is overridden by the reader's own department so a validator can
+     * never list another department's invoices.</p>
+     */
+    @Transactional(readOnly = true)
+    public PagedResponse<Invoice> listInvoicesScoped(
+            InvoiceStatus status,
+            UUID departmentId,
+            LocalDate fromDate,
+            LocalDate toDate,
+            String reference,
+            UUID supplierId,
+            int page,
+            int size,
+            String sort,
+            User currentUser
+    ) {
+        UUID scope = departmentScopeFor(currentUser);
+        UUID effectiveDepartment = scope != null ? scope : departmentId;
+        return listInvoices(status, effectiveDepartment, fromDate, toDate, reference, supplierId, page, size, sort);
+    }
+
     @Transactional(readOnly = true)
     public PagedResponse<Invoice> listInvoices(
             InvoiceStatus status,
@@ -235,6 +303,20 @@ public class InvoiceService {
      * matching result. The workflow status is localized via {@code invoice.status.<name>} so the export
      * shows human-readable labels, never the raw enum.</p>
      */
+    /**
+     * Departmentally-scoped variant of {@link #buildExportRows} (audit finding N9): a validator can
+     * only export their own department's invoices, so the caller-supplied department filter is
+     * overridden by the reader's own department. Assistant Comptable and DAF keep the global export.
+     */
+    @Transactional(readOnly = true)
+    public List<java.util.List<String>> buildExportRowsScoped(
+            InvoiceStatus status, UUID departmentId, LocalDate fromDate, LocalDate toDate, String reference,
+            org.springframework.context.MessageSource messageSource, java.util.Locale locale, User currentUser) {
+        UUID scope = departmentScopeFor(currentUser);
+        UUID effectiveDepartment = scope != null ? scope : departmentId;
+        return buildExportRows(status, effectiveDepartment, fromDate, toDate, reference, messageSource, locale);
+    }
+
     @Transactional(readOnly = true)
     public List<java.util.List<String>> buildExportRows(
             InvoiceStatus status, UUID departmentId, LocalDate fromDate, LocalDate toDate, String reference,

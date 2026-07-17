@@ -84,8 +84,11 @@ public class InvoiceController {
             @RequestParam(required = false) String reference,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "issueDate,asc") String sort) {
-        PagedResponse<Invoice> paged = invoiceService.listInvoices(status, department, from, to, reference, null, page, size, sort);
+            @RequestParam(defaultValue = "issueDate,asc") String sort,
+            Authentication authentication) {
+        // N9: validators are confined to their own department; AA/DAF keep the global view.
+        User currentUser = securityHelper.currentUser(authentication);
+        PagedResponse<Invoice> paged = invoiceService.listInvoicesScoped(status, department, from, to, reference, null, page, size, sort, currentUser);
         List<InvoiceDTO> mapped = paged.getContent().stream().map(invoiceMapper::toDto).toList();
         return ResponseEntity.ok(ApiResponse.success(
                 new PagedResponse<>(mapped, paged.getPage(), paged.getSize(), paged.getTotalElements(), paged.getTotalPages(), paged.isLast())
@@ -108,8 +111,10 @@ public class InvoiceController {
         var fmt = com.oct.invoicesystem.shared.export.TabularExportService.Format.from(format);
         // Build rows inside the service transaction so the lazy Department association can be read.
         // Headers + rows come from the single invoice-export source of truth (11 columns).
+        // N9: a validator exports only their own department; AA/DAF export globally.
+        User currentUser = securityHelper.currentUser(authentication);
         List<String> headers = invoiceService.invoiceExportHeaders(messageSource, locale);
-        List<List<String>> rows = invoiceService.buildExportRows(status, department, from, to, reference, messageSource, locale);
+        List<List<String>> rows = invoiceService.buildExportRowsScoped(status, department, from, to, reference, messageSource, locale, currentUser);
         String period = null;
         if (from != null || to != null) {
             String fromStr = from != null ? from.toString() : "...";
@@ -135,8 +140,11 @@ public class InvoiceController {
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER') and !hasRole('ADMIN')")
     @Operation(summary = "Get invoice by ID", description = "Retrieves a single invoice")
-    public ResponseEntity<ApiResponse<InvoiceDTO>> getInvoiceById(@PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.success(invoiceMapper.toDto(invoiceService.getById(id))));
+    public ResponseEntity<ApiResponse<InvoiceDTO>> getInvoiceById(@PathVariable UUID id,
+            Authentication authentication) {
+        // N9: a validator may only read invoices of their own department (AA/DAF: global).
+        User currentUser = securityHelper.currentUser(authentication);
+        return ResponseEntity.ok(ApiResponse.success(invoiceMapper.toDto(invoiceService.getByIdScoped(id, currentUser))));
     }
 
     @GetMapping("/duplicate-check")
@@ -186,7 +194,10 @@ public class InvoiceController {
     @GetMapping("/{id}/matching")
     @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER') and !hasRole('ADMIN')")
     @Operation(summary = "Get invoice matching result", description = "Retrieves the latest three-way matching result for an invoice")
-    public ResponseEntity<ApiResponse<MatchingResultDTO>> getMatchingResult(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<MatchingResultDTO>> getMatchingResult(@PathVariable UUID id,
+            Authentication authentication) {
+        // N9: enforce departmental scope on the invoice before exposing its matching result.
+        invoiceService.getByIdScoped(id, securityHelper.currentUser(authentication));
         ThreeWayMatchingResult result = invoiceService.getMatchingResult(id);
         return ResponseEntity.ok(ApiResponse.success(toMatchingDto(result)));
     }
@@ -221,7 +232,10 @@ public class InvoiceController {
     @GetMapping("/{id}/history")
     @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER') and !hasRole('ADMIN')")
     @Operation(summary = "Get invoice status history", description = "Retrieves the full status transition history for an invoice")
-    public ResponseEntity<ApiResponse<List<InvoiceHistoryDTO>>> getInvoiceHistory(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<List<InvoiceHistoryDTO>>> getInvoiceHistory(@PathVariable UUID id,
+            Authentication authentication) {
+        // N9: enforce departmental scope before exposing an invoice's history.
+        invoiceService.getByIdScoped(id, securityHelper.currentUser(authentication));
         List<InvoiceHistoryDTO> history = invoiceService.getInvoiceHistory(id);
         return ResponseEntity.ok(ApiResponse.success(history));
     }
@@ -337,7 +351,9 @@ public class InvoiceController {
     @GetMapping("/{id}/export/pdf")
     @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER') and !hasRole('ADMIN')")
     @Operation(summary = "Export invoice as PDF", description = "Generates a compliance-grade PDF for an invoice (AA, DAF, Admin, Validators)")
-    public ResponseEntity<byte[]> exportPdf(@PathVariable UUID id) {
+    public ResponseEntity<byte[]> exportPdf(@PathVariable UUID id, Authentication authentication) {
+        // N9: a validator can only export the PDF of an invoice in their own department.
+        invoiceService.getByIdScoped(id, securityHelper.currentUser(authentication));
         byte[] pdfBytes = invoicePdfService.generatePdf(id);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);

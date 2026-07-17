@@ -97,8 +97,21 @@ public class AuditController {
     }
 
     /**
-     * Legacy combined endpoint — kept for backwards compatibility, accessible to both roles
-     * but each role only sees their own subset (enforced at service layer).
+     * Returns the audit action set the current user is allowed to see, enforcing the system/financial
+     * separation of duties (audit finding N3, PROB-065): ADMIN sees only system/security actions,
+     * DAF sees only financial actions. Without this, the combined endpoint leaked both journals to
+     * both roles (DAF reading the system journal, admin reading the financial one).
+     */
+    private List<String> allowedActionsForCurrentUser(org.springframework.security.core.Authentication authentication) {
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        return isAdmin ? SYSTEM_ACTIONS : FINANCIAL_ACTIONS;
+    }
+
+    /**
+     * Legacy combined endpoint — accessible to both roles, but each role only sees its own action
+     * subset (system for ADMIN, financial for DAF), enforced here via the allowed-action filter so
+     * the two journals never cross (audit finding N3).
      */
     @GetMapping
     @PreAuthorize("hasRole('ADMIN') or hasRole('DAF')")
@@ -111,10 +124,13 @@ public class AuditController {
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant from,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant to,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "20") int size,
+            org.springframework.security.core.Authentication authentication
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<AuditLogDTO> result = auditService.searchLogs(userId, entityType, entityId, action, from, to, pageable);
+        // N3: route to the role-scoped action set (like /summary/export) instead of the unfiltered search.
+        Page<AuditLogDTO> result = auditService.searchLogsWithActionFilter(
+                userId, entityType, entityId, action, allowedActionsForCurrentUser(authentication), from, to, pageable);
         return ApiResponse.success(PagedResponse.of(result), "audit.retrieved");
     }
 
@@ -141,8 +157,11 @@ public class AuditController {
         java.util.Locale loc = locale != null ? locale : java.util.Locale.getDefault();
         // Force ASC sort by createdAt for export, as requested by the user
         Pageable pageable = PageRequest.of(0, 10000, Sort.by(Sort.Direction.ASC, "createdAt"));
+        // N3: export only the role-scoped action set (ADMIN=system, DAF=financial), never the
+        // unfiltered journal — otherwise the export leaks the other role's journal to a file.
         java.util.List<AuditLogDTO> logs =
-                auditService.searchLogs(null, entityType, null, action, from, to, pageable).getContent();
+                auditService.searchLogsWithActionFilter(null, entityType, null, action,
+                        allowedActionsForCurrentUser(authentication), from, to, pageable).getContent();
         java.util.List<String> headers = java.util.List.of(
                 messageSource.getMessage("export.header.audit.date", null, loc),
                 messageSource.getMessage("export.header.audit.user", null, loc),

@@ -33,7 +33,7 @@ public class MatchingQueryController {
     private final ThreeWayMatchingService matchingService;
 
     @GetMapping
-    @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER') and !hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ASSISTANT_COMPTABLE', 'DAF')")
     @Operation(summary = "Liste des rapprochements", description = "Dernier résultat de rapprochement par facture, filtrable par statut/recherche.")
     public ResponseEntity<ApiResponse<PagedResponse<MatchingSummaryDTO>>> list(
             @RequestParam(required = false) MatchingStatus status,
@@ -46,7 +46,7 @@ public class MatchingQueryController {
     }
 
     @GetMapping("/{invoiceId}/lines")
-    @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER') and !hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ASSISTANT_COMPTABLE', 'DAF')")
     @Operation(summary = "Comparaison ligne-à-ligne", description = "Recompose la comparaison PO/GRN/facture par ligne pour une facture.")
     public ResponseEntity<ApiResponse<MatchingDetailDTO>> lines(@PathVariable UUID invoiceId) {
         return ResponseEntity.ok(ApiResponse.success(service.getLines(invoiceId)));

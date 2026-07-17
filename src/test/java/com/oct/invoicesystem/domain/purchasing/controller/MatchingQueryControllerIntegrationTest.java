@@ -37,6 +37,20 @@ class MatchingQueryControllerIntegrationTest {
     }
 
     @Test
+    @WithMockUser(authorities = "ROLE_VALIDATEUR_N1_DRH")
+    void list_asValidator_returns403() throws Exception {
+        // N25: the 3-way matching (a financial activity) is reserved to AA + DAF; department
+        // validators must no longer reach it.
+        mockMvc.perform(get("/api/v1/matching")).andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "DAF")
+    void list_asDaf_returns200() throws Exception {
+        mockMvc.perform(get("/api/v1/matching")).andExpect(status().isOk());
+    }
+
+    @Test
     void list_anonymous_returns401() throws Exception {
         mockMvc.perform(get("/api/v1/matching")).andExpect(status().isUnauthorized());
     }
