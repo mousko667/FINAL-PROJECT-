@@ -114,7 +114,8 @@ class PaymentServiceTest {
         WorkflowException ex = assertThrows(WorkflowException.class, 
                 () -> paymentService.recordPayment(invoice.getId(), request, assistantAdmin.getId()));
         
-        assertTrue(ex.getMessage().contains("BON_A_PAYER"));
+        // N17: the service throws the i18n key; resolution happens in GlobalExceptionHandler.
+        assertTrue(ex.getMessage().contains("error.payment.only_bon_a_payer"));
         verify(paymentRepository, never()).save(any());
     }
 
@@ -126,7 +127,8 @@ class PaymentServiceTest {
         WorkflowException ex = assertThrows(WorkflowException.class,
                 () -> paymentService.recordPayment(invoice.getId(), request, assistantAdmin.getId()));
 
-        assertTrue(ex.getMessage().contains("Payment already recorded"));
+        // N17: the service now throws the i18n key; GlobalExceptionHandler.resolve() localizes it.
+        assertTrue(ex.getMessage().contains("error.payment.already_recorded"));
         verify(paymentRepository, never()).save(any());
     }
 

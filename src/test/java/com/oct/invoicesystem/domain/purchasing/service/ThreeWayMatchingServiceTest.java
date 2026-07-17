@@ -353,7 +353,7 @@ class ThreeWayMatchingServiceTest {
         // When & Then
         assertThatThrownBy(() -> threeWayMatchingService.recordOverride(invoiceId, testUser, shortReason))
                 .isInstanceOf(ValidationException.class)
-                .hasMessageContaining("at least 10 characters");
+                .hasMessageContaining("error.matching.override_reason_too_short");
     }
 
     @Test
@@ -370,7 +370,7 @@ class ThreeWayMatchingServiceTest {
         // When & Then
         assertThatThrownBy(() -> threeWayMatchingService.recordOverride(invoiceId, testUser, overrideReason))
                 .isInstanceOf(ValidationException.class)
-                .hasMessageContaining("only override MISMATCH");
+                .hasMessageContaining("error.matching.only_mismatch_overridable");
     }
 
     @Test

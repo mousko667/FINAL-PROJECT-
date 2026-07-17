@@ -272,12 +272,14 @@ class PaymentControllerTest {
         );
 
         mockMvc.perform(post("/api/v1/payments/invoice/" + invoice.getId())
+                        .header("Accept-Language", "en")
                         .with(SecurityMockMvcRequestPostProcessors.authentication(
                                 new UsernamePasswordAuthenticationToken(assistant, null, java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ASSISTANT_COMPTABLE")))))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Payment can only be recorded for invoices in BON_A_PAYER status"));
+                // N17: the business message is now an i18n key resolved by locale (EN requested here).
+                .andExpect(jsonPath("$.message").value("Payment can only be recorded for invoices in BON_A_PAYER status."));
     }
 
     @Test
@@ -408,12 +410,14 @@ class PaymentControllerTest {
         invoiceRepository.save(freshInvoice);
 
         mockMvc.perform(post("/api/v1/payments/invoice/" + invoice.getId())
+                        .header("Accept-Language", "en")
                         .with(SecurityMockMvcRequestPostProcessors.authentication(
                                 new UsernamePasswordAuthenticationToken(assistant, null, java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ASSISTANT_COMPTABLE")))))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Payment already recorded for this invoice"));
+                // N17: business message resolved via locale (EN requested here).
+                .andExpect(jsonPath("$.message").value("Payment already recorded for this invoice."));
     }
 
     // ──────────────────────────────────────────────────────────────────────────

@@ -77,11 +77,11 @@ public class PaymentServiceImpl implements PaymentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Invoice not found id: " + invoiceId));
 
         if (invoice.getStatus() != InvoiceStatus.BON_A_PAYER) {
-            throw new WorkflowException("Payment can only be recorded for invoices in BON_A_PAYER status");
+            throw new WorkflowException("error.payment.only_bon_a_payer");
         }
 
         if (paymentRepository.existsByInvoiceId(invoiceId)) {
-            throw new WorkflowException("Payment already recorded for this invoice");
+            throw new WorkflowException("error.payment.already_recorded");
         }
 
         User recordedBy = userRepository.findById(userId)

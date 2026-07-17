@@ -87,7 +87,7 @@ public class InvoiceService {
                 .orElseThrow(() -> new ResourceNotFoundException("Invoice not found with id: " + invoiceId));
 
         if (existing.getStatus() != InvoiceStatus.BROUILLON && existing.getStatus() != InvoiceStatus.REJETE) {
-            throw new WorkflowException("Only BROUILLON or REJETE invoices can be updated");
+            throw new WorkflowException("error.invoice.only_brouillon_rejete_updatable");
         }
 
         existing.setSupplier(updatedInvoice.getSupplier());
@@ -139,7 +139,7 @@ public class InvoiceService {
         Invoice invoice = invoiceRepository.findByIdAndDeletedAtIsNull(invoiceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Invoice not found with id: " + invoiceId));
         if (invoice.getStatus() != InvoiceStatus.BROUILLON) {
-            throw new WorkflowException("Only BROUILLON invoices can be deleted");
+            throw new WorkflowException("error.invoice.only_brouillon_deletable");
         }
         invoice.setDeletedAt(Instant.now());
         invoiceRepository.save(invoice);
@@ -401,7 +401,7 @@ public class InvoiceService {
 
     private Department resolveDepartment(Department department) {
         if (department == null || department.getId() == null) {
-            throw new ValidationException("Department is required");
+            throw new ValidationException("error.invoice.department_required");
         }
         return departmentRepository.findById(department.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Department not found with id: " + department.getId()));
@@ -415,7 +415,7 @@ public class InvoiceService {
                 .map(GrantedAuthority::getAuthority)
                 .anyMatch(ROLE_ASSISTANT_COMPTABLE::equals);
         if (!allowed) {
-            throw new ValidationException("Only ASSISTANT_COMPTABLE can create and submit invoices");
+            throw new ValidationException("error.invoice.only_aa_can_create");
         }
     }
 
@@ -429,10 +429,10 @@ public class InvoiceService {
             invoice.setSupplierBankDetails(supplier.getBankDetails());
         } else {
             if (invoice.getSupplierName() == null || invoice.getSupplierName().trim().isEmpty()) {
-                throw new ValidationException("Supplier name is required when no supplier is linked");
+                throw new ValidationException("error.invoice.supplier_name_required");
             }
             if (invoice.getSupplierEmail() == null || invoice.getSupplierEmail().trim().isEmpty()) {
-                throw new ValidationException("Supplier email is required when no supplier is linked");
+                throw new ValidationException("error.invoice.supplier_email_required");
             }
         }
     }

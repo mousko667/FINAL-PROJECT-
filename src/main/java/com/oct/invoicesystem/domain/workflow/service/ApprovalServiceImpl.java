@@ -52,7 +52,7 @@ public class ApprovalServiceImpl implements ApprovalService {
             createOrUpdateStep(invoice, 1, currentUser, "Validation N1 - " + invoice.getDepartment().getCode(), null, null, ApprovalStepStatus.PENDING);
             invoiceStateMachineService.sendEvent(invoiceId, InvoiceEvent.ASSIGN_REVIEWER, null);
         } else if (invoice.getStatus() == InvoiceStatus.EN_VALIDATION_N1 && invoice.getDepartment().isRequiresN2()) {
-            throw new WorkflowException("Cannot assign N2 while still in N1 validation");
+            throw new WorkflowException("error.approval.cannot_assign_n2_in_n1");
         } else if (invoice.getStatus() == InvoiceStatus.EN_VALIDATION_N2) {
             checkRole(currentUser, invoice.getDepartment().getN2Role());
             createOrUpdateStep(invoice, 2, currentUser, "Validation N2 - " + invoice.getDepartment().getCode(), null, null, ApprovalStepStatus.PENDING);
@@ -69,7 +69,7 @@ public class ApprovalServiceImpl implements ApprovalService {
         User currentUser = getCurrentUser();
 
         if (invoice.getStatus() != InvoiceStatus.EN_VALIDATION_N1) {
-            throw new WorkflowException("Invoice is not in N1 validation state");
+            throw new WorkflowException("error.approval.not_in_n1_state");
         }
         checkRole(currentUser, invoice.getDepartment().getN1Role());
         ensureNotSubmitter(invoice, currentUser);
@@ -86,7 +86,7 @@ public class ApprovalServiceImpl implements ApprovalService {
         User currentUser = getCurrentUser();
 
         if (invoice.getStatus() != InvoiceStatus.EN_VALIDATION_N2) {
-            throw new WorkflowException("Invoice is not in N2 validation state");
+            throw new WorkflowException("error.approval.not_in_n2_state");
         }
         checkRole(currentUser, invoice.getDepartment().getN2Role());
         ensureNotSubmitter(invoice, currentUser);
@@ -104,7 +104,7 @@ public class ApprovalServiceImpl implements ApprovalService {
         User currentUser = getCurrentUser();
 
         if (invoice.getStatus() != InvoiceStatus.VALIDE) {
-            throw new WorkflowException("Invoice is not ready for DAF approval (status must be VALIDE)");
+            throw new WorkflowException("error.approval.not_ready_for_daf");
         }
         checkRole(currentUser, "ROLE_DAF");
         ensureNotSubmitter(invoice, currentUser);
@@ -209,7 +209,7 @@ public class ApprovalServiceImpl implements ApprovalService {
         if (authentication != null && authentication.getPrincipal() instanceof User userPrincipal) {
             return userPrincipal;
         }
-        throw new WorkflowException("No authenticated user found");
+        throw new WorkflowException("error.approval.no_authenticated_user");
     }
 
     private void checkRole(User user, String requiredRole) {
@@ -235,7 +235,7 @@ public class ApprovalServiceImpl implements ApprovalService {
         if (invoice.getSubmittedBy() != null
                 && approver != null
                 && invoice.getSubmittedBy().getId().equals(approver.getId())) {
-            throw new WorkflowException("Approver cannot approve their own submitted invoice");
+            throw new WorkflowException("error.approval.approver_is_submitter");
         }
     }
 
@@ -243,7 +243,7 @@ public class ApprovalServiceImpl implements ApprovalService {
         ApprovalStep n1Step = approvalStepRepository.findByInvoiceIdAndStepOrder(invoiceId, 1).orElse(null);
         if (n1Step != null && n1Step.getApprover() != null && approver != null 
                 && n1Step.getApprover().getId().equals(approver.getId())) {
-            throw new WorkflowException("N2 approver cannot be the same user who performed N1 validation");
+            throw new WorkflowException("error.approval.n2_same_as_n1");
         }
     }
 

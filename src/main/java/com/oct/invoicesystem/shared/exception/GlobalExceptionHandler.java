@@ -32,18 +32,24 @@ public class GlobalExceptionHandler {
 
     private final MessageSource messageSource;
 
+    // An i18n key looks like "error.invoice.document_required": dot-separated segments of
+    // [A-Za-z0-9_], at least one dot, and no whitespace. Plain human sentences (which contain
+    // spaces) never match, so they are returned unchanged.
+    private static final java.util.regex.Pattern I18N_KEY =
+            java.util.regex.Pattern.compile("^[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)+$");
+
     /**
      * Translates an exception message that is an i18n key (e.g. "error.invoice.document_required")
-     * into the caller's language. Plain human-readable messages (no dot-separated key shape) and
-     * unknown keys are returned unchanged, so nothing is lost when a message isn't a key.
+     * into the caller's language. Keys are recognized by shape (dot-separated, no spaces) rather
+     * than by "has no space" — the previous heuristic returned any multi-word message verbatim,
+     * which left ~40 business messages in raw English regardless of Accept-Language (audit finding
+     * N17). Non-key messages and unknown keys are returned unchanged, so nothing is lost.
      */
     private String resolve(String message) {
-        if (message == null || message.isBlank() || message.contains(" ")) return message;
-        try {
-            return messageSource.getMessage(message, null, message, LocaleContextHolder.getLocale());
-        } catch (RuntimeException ex) {
+        if (message == null || message.isBlank() || !I18N_KEY.matcher(message).matches()) {
             return message;
         }
+        return messageSource.getMessage(message, null, message, LocaleContextHolder.getLocale());
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
@@ -56,10 +62,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleValidationException(MethodArgumentNotValidException ex) {
         List<String> errors = new ArrayList<>();
         for (FieldError error : ex.getBindingResult().getFieldErrors()) {
-            errors.add(error.getField() + ": " + error.getDefaultMessage());
+            // N17/N23: resolve the field message too — it is often an i18n key (validation.*).
+            errors.add(error.getField() + ": " + resolve(error.getDefaultMessage()));
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error("Validation failed", errors));
+                .body(ApiResponse.error(resolve("error.validation_failed"), errors));
     }
 
     @ExceptionHandler(WorkflowException.class)
@@ -77,10 +84,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiResponse<Void>> handleConstraintViolationException(ConstraintViolationException ex) {
         List<String> errors = ex.getConstraintViolations().stream()
-                .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
+                .map(violation -> violation.getPropertyPath() + ": " + resolve(violation.getMessage()))
                 .toList();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error("Validation failed", errors));
+                .body(ApiResponse.error(resolve("error.validation_failed"), errors));
     }
 
     @ExceptionHandler({

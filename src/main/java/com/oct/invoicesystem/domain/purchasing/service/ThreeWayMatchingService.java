@@ -217,14 +217,14 @@ public class ThreeWayMatchingService {
      */
     public ThreeWayMatchingResult recordOverride(java.util.UUID invoiceId, com.oct.invoicesystem.domain.user.model.User overriddenBy, String reason) {
         if (reason == null || reason.length() < 10) {
-            throw new ValidationException("Override reason must be at least 10 characters");
+            throw new ValidationException("error.matching.override_reason_too_short");
         }
 
         ThreeWayMatchingResult existing = matchingResultRepository.findByInvoiceId(invoiceId)
             .orElseThrow(() -> new ResourceNotFoundException("No matching result found for invoice"));
 
         if (!existing.getStatus().equals(MatchingStatus.MISMATCH)) {
-            throw new ValidationException("Can only override MISMATCH results");
+            throw new ValidationException("error.matching.only_mismatch_overridable");
         }
 
         ThreeWayMatchingResult override = ThreeWayMatchingResult.builder()
