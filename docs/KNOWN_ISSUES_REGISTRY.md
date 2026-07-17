@@ -1367,3 +1367,64 @@
 - **PERIMETRE / follow-up :** ~48 messages anglais restants (webhook/SSRF, checksum documents, import CSV, PO, connecteurs, access-requests, relations fournisseur) NON convertis — techniques/internes, hors chemin metier visible ; la racine etant corrigee, il suffit de les basculer sur des cles au fil de l'eau. `DelegationService` porte encore des messages **francais en dur** (non traduits en EN) = N23, a traiter separement.
 - **Regle preventive :** ne JAMAIS lever une exception metier avec du texte en dur — toujours une cle i18n (`error.<domaine>.<cas>`) + valeurs FR/EN. Une "cle" se reconnait a sa forme (segments pointes), pas a l'absence d'espace. Les messages a partie dynamique (`"... " + status`) ne sont pas traduisibles par `resolve()` (qui ne passe pas d'arguments) — les laisser ou introduire un mecanisme parametre.
 - **Fichiers :** `shared/exception/GlobalExceptionHandler.java`, `workflow/service/ApprovalServiceImpl.java`, `payment/service/PaymentServiceImpl.java`, `invoice/service/InvoiceService.java`, `purchasing/service/ThreeWayMatchingService.java`, `i18n/messages_fr.properties`, `i18n/messages_en.properties`, + 3 tests. Aucune migration Flyway.
+
+## PROB-115 — Cumul de roles AA+DAF sur le compte `daf` (violation SoD)
+
+**Date:** 2026-07-17
+**Gravite:** Majeur (separation des taches)
+**Statut:** Corrige (V47)
+
+**Symptome:** Le compte `daf` portait `ROLE_ASSISTANT_COMPTABLE` ET `ROLE_DAF` (seul compte du
+systeme a cumuler deux roles metier). Le DAF pouvait ainsi approuver le bon a payer de factures
+qu'il avait lui-meme saisies.
+
+**Cause racine:** Attribution de roles non contrainte. Aucun `UserServiceImpl` ne centralise
+l'ecriture des roles (elle passe par `User`, `UserMapper`, `UserCsvService`), donc aucun point
+unique ou poser une garde applicative.
+
+**Nuance importante (verifiee 2026-07-17):** ce cumul n'existe dans AUCUNE migration.
+`V34__seed_test_users.sql` (l.156) n'attribue que `role_daf` au compte `daf`. Le cumul provient
+d'une attribution MANUELLE jamais versionnee dans la base de developpement. Consequences :
+sur une base neuve le DELETE de V47 est un no-op ; sur la base de dev il est le seul moyen
+versionne de corriger la derive ; et le TRIGGER est le vrai apport durable.
+
+**Solution:** V47 — retrait du role AA sur `daf`, seed d'un second AA (`aa2`) comme repli (la
+delegation est departementale et ne peut pas couvrir l'AA, transverse), et trigger
+`trg_enforce_sod_aa_daf` rejetant tout futur cumul AA+DAF sur `user_roles` (couvre aussi
+l'import CSV).
+
+**Regle preventive:** Toute paire de roles incompatible (SoD) doit etre gardee en base, pas
+seulement dans le service : les chemins d'ecriture sont multiples (API, import CSV, seed).
+
+### Sous-probleme — `SodRoleConstraintTest` est HORS du gate (decision deliberee)
+
+**Symptome:** Testcontainers ne demarre aucun conteneur sur cette machine :
+`IllegalStateException: Could not find a valid Docker environment`, cause par un
+`BadRequestException (Status 400)` dont le corps `/info` est vide
+(`{"ID":"","Containers":0,...,"ServerVersion":""}`).
+
+**Cause racine:** Docker Desktop 29 renvoie une enveloppe `/info` vide a tout client HTTP tiers
+(signature : le label `com.docker.desktop.address` dans la reponse). Le demon est sain — le CLI
+Docker voit bien les 5 conteneurs OCT. Diagnostic etabli en changeant 5 variables sans jamais
+changer la reponse (identique au caractere pres) :
+  * transport : npipe ET tcp://localhost:2375
+  * docker-java : 3.4.0 (Testcontainers 1.20.4) ET 3.4.2 (Testcontainers 1.21.3, derniere publiee)
+  * DOCKER_API_VERSION : 1.44 (minimale du serveur) ET 1.52 (reelle du serveur)
+Aucune de ces variables n'etant la cause, la piste "configuration Testcontainers" est epuisee.
+
+**Solution:** le test porte `@Tag("requires-docker")`, exclu du gate via `<excludedGroups>` dans
+la config surefire du `pom.xml`. La retrogradation de Docker a ete ecartee (risque sur les 5
+conteneurs OCT a 3 semaines de la soutenance, pour un seul test). Le bump Testcontainers
+1.20.4 -> 1.21.3 est conserve : il est en scope test, sans regression possible, et utile le jour
+ou Docker cooperera.
+
+**Comment relancer le test (il reste au depot et executable a la demande):**
+```
+./mvnw test -Prequires-docker -Dtest=SodRoleConstraintTest
+```
+
+**Regle preventive:** Un test qui ne peut pas tourner doit etre EXCLU explicitement (tag +
+profil documente), jamais neutralise par un `assumeTrue` silencieux ni rabattu sur H2 : un test
+qui se skippe tout seul en vert est un test menteur, et il aurait ici masque le trigger meme
+qu'il verifie. En attendant, V47 est verifiee en runtime sur la base de dev (Task 5 du plan),
+ou le cumul existe reellement et ou le DELETE a un effet observable.

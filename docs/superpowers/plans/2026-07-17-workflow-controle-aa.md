@@ -91,6 +91,37 @@ a copier. Verifie : les artefacts sont **deja dans `pom.xml`** (`testcontainers.
 `junit-jupiter` + `postgresql`, scope test) -> **aucune dependance a ajouter** ; Docker tourne
 (29.1.2). Le conteneur rejoue V1..V47 (~1-2 min ajoutees au gate : accepte).
 
+### AMENDEMENT 2 (2026-07-17) — le test SoD est finalement HORS GATE (PROB-115)
+
+**L'amendement ci-dessus n'a pas pu etre applique tel quel : Testcontainers ne demarre aucun
+conteneur sur cette machine.** Docker Desktop 29 renvoie une enveloppe `/info` vide (HTTP 400) a
+tout client HTTP tiers, alors que le CLI Docker fonctionne. Diagnostic etabli en changeant 5
+variables sans jamais changer la reponse (identique au caractere pres) : npipe ET tcp:2375 ;
+docker-java 3.4.0 ET 3.4.2 (Testcontainers 1.20.4 ET 1.21.3, la derniere publiee) ;
+`DOCKER_API_VERSION` 1.44 ET 1.52. La piste "config Testcontainers" est **epuisee** — ne pas la
+re-explorer.
+
+**Decision du porteur du projet : OPTION D — le test sort du gate**, la retrogradation de Docker
+etant ecartee (risque sur les 5 conteneurs OCT a 3 semaines de la soutenance, pour un seul test).
+
+- Mecanisme : `@Tag("requires-docker")` sur la classe + `<excludedGroups>requires-docker</excludedGroups>`
+  dans la config surefire du `pom.xml`. **Exclusion explicite**, PAS d'`assumeTrue` silencieux, PAS
+  de repli sur H2 (un test qui se skippe tout seul en vert masquerait le trigger qu'il verifie).
+- Le bump `testcontainers.version` 1.20.4 -> **1.21.3** est conserve (scope test, sans regression).
+- **Commande exacte pour relancer le test** (il reste au depot et executable a la demande) :
+
+```bash
+./mvnw test -Prequires-docker -Dtest=SodRoleConstraintTest
+```
+
+- **Verification de V47** : elle se fait en **runtime a la Task 5** sur la base de dev reelle —
+  plus probant qu'un conteneur vierge, car c'est la que le cumul AA+DAF existe vraiment et donc
+  que le `DELETE` a un effet observable.
+- **Le cumul AA+DAF n'est dans AUCUNE migration** (`V34:156` ne donne que `role_daf`) : c'est une
+  derive manuelle de la base de dev. Le test le reproduit donc artificiellement (trigger desactive
+  le temps de l'INSERT) pour que l'assertion de nettoyage soit falsifiable — le rouge attendu au
+  Step 2 ci-dessous est donc **inobservable tel qu'ecrit**.
+
 - [ ] **Step 1: Ecrire le test qui echoue**
 
 Creer `src/test/java/com/oct/invoicesystem/domain/user/SodRoleConstraintTest.java`.
