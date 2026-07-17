@@ -176,6 +176,7 @@ public class SupplierPortalController {
         stats.put("submittedCount", statusCounts.getOrDefault(InvoiceStatus.SOUMIS.name(), 0L));
         stats.put("pendingCount",
                 statusCounts.getOrDefault(InvoiceStatus.SOUMIS.name(), 0L)
+                        + statusCounts.getOrDefault(InvoiceStatus.EN_CONTROLE_AA.name(), 0L)
                         + statusCounts.getOrDefault(InvoiceStatus.EN_VALIDATION_N1.name(), 0L)
                         + statusCounts.getOrDefault(InvoiceStatus.EN_VALIDATION_N2.name(), 0L));
         stats.put("approvedCount",

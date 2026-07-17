@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oct.invoicesystem.domain.auth.dto.LoginRequest;
 import com.oct.invoicesystem.domain.auth.dto.SupplierRegistrationRequest;
 import com.oct.invoicesystem.domain.invoice.dto.InvoiceCreateRequest;
+import com.oct.invoicesystem.domain.invoice.model.Invoice;
 import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
+import com.oct.invoicesystem.domain.invoice.repository.InvoiceRepository;
 import com.oct.invoicesystem.domain.supplier.model.SupplierDocumentType;
 import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.domain.user.repository.UserRepository;
@@ -53,6 +55,9 @@ class SupplierPortalIntegrationTest {
 
     @Autowired
     private RoleRepository roleRepository;
+
+    @Autowired
+    private InvoiceRepository invoiceRepository;
 
     @org.springframework.boot.test.mock.mockito.MockBean
     private com.oct.invoicesystem.domain.storage.service.MinioStorageService minioStorageService;
@@ -136,14 +141,17 @@ class SupplierPortalIntegrationTest {
                 "Service delivery for March"
         );
 
-        mockMvc.perform(post("/api/v1/supplier/invoices")
+        String submitResponse = mockMvc.perform(post("/api/v1/supplier/invoices")
                         .header("Authorization", authHeader)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invoiceReq)))
                 .andDo(print())
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.status").value(InvoiceStatus.BROUILLON.name()))
-                .andExpect(jsonPath("$.data.amount").value(1500.50));
+                .andExpect(jsonPath("$.data.amount").value(1500.50))
+                .andReturn().getResponse().getContentAsString();
+
+        String referenceNumber = objectMapper.readTree(submitResponse).get("data").get("referenceNumber").asText();
 
         // 5. Track Status (List Invoices)
         mockMvc.perform(get("/api/v1/supplier/invoices")
@@ -165,13 +173,18 @@ class SupplierPortalIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.filename").value("tax_cert.pdf"));
 
-        // 7. Get Dashboard Stats
+        // 7. Get Dashboard Stats - an invoice under AA control must still count as pending
+        Invoice invoice = invoiceRepository.findByReferenceNumber(referenceNumber).orElseThrow();
+        invoice.setStatus(InvoiceStatus.EN_CONTROLE_AA);
+        invoiceRepository.save(invoice);
+
         mockMvc.perform(get("/api/v1/supplier/dashboard")
                         .header("Authorization", authHeader))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.statusCounts").exists())
-                .andExpect(jsonPath("$.data.matchingStatusBreakdown").exists());
+                .andExpect(jsonPath("$.data.matchingStatusBreakdown").exists())
+                .andExpect(jsonPath("$.data.pendingCount").value(1));
 
         // 8. Get Profile
         mockMvc.perform(get("/api/v1/supplier/profile")
