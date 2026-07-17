@@ -270,6 +270,33 @@ class ApprovalServiceTest {
     }
 
     @Test
+    void reject_FromSoumis_ThrowsWorkflowException() {
+        invoice.setStatus(InvoiceStatus.SOUMIS);
+        mockSecurityContext("ROLE_ASSISTANT_COMPTABLE");
+        when(invoiceRepository.findByIdAndDeletedAtIsNull(invoice.getId())).thenReturn(Optional.of(invoice));
+
+        assertThrows(WorkflowException.class, () -> approvalService.reject(invoice.getId(), "reason"));
+    }
+
+    @Test
+    void reject_FromEnControleAA_WithAssistantComptableRole_Success() {
+        invoice.setStatus(InvoiceStatus.EN_CONTROLE_AA);
+        mockSecurityContext("ROLE_ASSISTANT_COMPTABLE");
+        when(invoiceRepository.findByIdAndDeletedAtIsNull(invoice.getId())).thenReturn(Optional.of(invoice));
+
+        ApprovalStep existingStep = new ApprovalStep();
+        when(approvalStepRepository.findByInvoiceIdAndStepOrder(invoice.getId(), 0)).thenReturn(Optional.of(existingStep));
+        when(approvalStepRepository.save(any(ApprovalStep.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        approvalService.reject(invoice.getId(), "Piece justificative manquante");
+
+        verify(approvalStepRepository).save(existingStep);
+        assertEquals(ApprovalStepStatus.REJECTED, existingStep.getStatus());
+        assertEquals("Piece justificative manquante", existingStep.getRejectionReason());
+        verify(invoiceStateMachineService).sendEvent(eq(invoice.getId()), eq(InvoiceEvent.REJECT), anyMap());
+    }
+
+    @Test
     void getApprovalSteps_mapsEntityFieldsToTypedDto() {
         UUID invoiceId = UUID.randomUUID();
         User approver = new User();

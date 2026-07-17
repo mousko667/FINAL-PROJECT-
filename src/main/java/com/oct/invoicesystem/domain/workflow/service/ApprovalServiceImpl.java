@@ -146,7 +146,11 @@ public class ApprovalServiceImpl implements ApprovalService {
         int stepOrder;
         String stepName;
         String requiredRole;
-        if (invoice.getStatus() == InvoiceStatus.EN_VALIDATION_N1) {
+        if (invoice.getStatus() == InvoiceStatus.EN_CONTROLE_AA) {
+            stepOrder = 0;
+            stepName = "Controle AA";
+            requiredRole = "ROLE_ASSISTANT_COMPTABLE";
+        } else if (invoice.getStatus() == InvoiceStatus.EN_VALIDATION_N1) {
             stepOrder = 1;
             stepName = "Validation N1 - " + invoice.getDepartment().getCode();
             requiredRole = invoice.getDepartment().getN1Role();

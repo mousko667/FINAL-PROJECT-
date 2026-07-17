@@ -117,7 +117,7 @@ public class ApprovalController {
     }
 
     @PostMapping("/reject")
-    @PreAuthorize("hasRole('DAF') " +
+    @PreAuthorize("hasRole('DAF') or hasRole('ASSISTANT_COMPTABLE') " +
                   "or hasAuthority('ROLE_VALIDATEUR_N1_DRH') or hasAuthority('ROLE_VALIDATEUR_N1_DG') " +
                   "or hasAuthority('ROLE_VALIDATEUR_N1_INFO') or hasAuthority('ROLE_VALIDATEUR_N1_TERM') " +
                   "or hasAuthority('ROLE_VALIDATEUR_N1_COM') or hasAuthority('ROLE_VALIDATEUR_N1_QHSSE') " +
