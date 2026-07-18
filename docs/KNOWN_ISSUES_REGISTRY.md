@@ -1564,3 +1564,29 @@ override DAF/ADMIN** (viole CLAUDE.md Phase 9 / WORKFLOW §11).
 par grep que chaque regle a un point d'application reel, sinon la brancher ou la documenter comme
 reference. Ne jamais garder une garde de workflow sur un seul evenement (`SUBMIT`) quand la meme
 invariante doit tenir sur les chemins de retour (`RESUBMIT`).
+
+## PROB-119 — Notifications rejet/BAP ciblaient le mauvais destinataire interne (N5)
+**Date:** 2026-07-18
+**Root cause:** `EmailNotificationListener.onInvoiceRejected/onBonAPayer` et leurs équivalents
+`PersistNotificationListener` ciblaient `invoice.getSubmittedBy()` en supposant que c'est l'Assistant
+Comptable. Pour une facture soumise via le portail fournisseur, `submittedBy` = le compte fournisseur :
+aucun Assistant Comptable n'était prévenu de reprendre le dossier, et le fournisseur recevait le mail
+interne (mauvais template).
+**Solution:** Helper `resolveAccountingRecipients(Invoice)` dans les deux listeners : renvoie
+`[submittedBy]` si le soumetteur porte `ROLE_ASSISTANT_COMPTABLE`, sinon
+`findActiveUsersByRoleName("ROLE_ASSISTANT_COMPTABLE")`. Rejet et BAP ciblent désormais ce résultat.
+**Preventive rule:** Ne jamais présumer le rôle de `submittedBy` : une facture portail est soumise par
+le fournisseur. Résoudre le destinataire métier par son rôle, pas par le champ soumetteur.
+
+## PROB-120 — Le fournisseur n'était pas notifié au Bon à Payer (N6)
+**Date:** 2026-07-18
+**Root cause:** `onBonAPayer` (email ET in-app) n'appelait aucun `notifySupplier` /
+`findActiveUsersBySupplierId`, contrairement à `onInvoiceRejected`/`onInvoicePayed`. Le fournisseur
+n'était jamais informé de l'approbation de sa facture — violation de la matrice §7 (« Invoice approved
+(BON_A_PAYER) → Supplier »).
+**Solution:** Ajout du versant fournisseur sur BAP : email nouveau template
+`supplier-invoice-approved.html` + notification in-app (`findActiveUsersBySupplierId`,
+`NotificationType.APPROVAL`).
+**Preventive rule:** Tout événement de cycle de vie visible côté fournisseur (soumission, rejet,
+approbation, paiement) doit déclencher une notification fournisseur ; vérifier la matrice §7 à chaque
+nouvel événement.
