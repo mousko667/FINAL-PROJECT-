@@ -53,7 +53,7 @@ export default function AdminBackupsPage() {
 
   return (
     <PageRoleGuard allowedRoles={['ROLE_ADMIN']}>
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="space-y-6">
         <PageHeader
           title={<span className="flex items-center gap-2"><HardDrive className="w-6 h-6" aria-hidden />{t('admin.backups.title')}</span>}
           subtitle={t('admin.backups.description')}

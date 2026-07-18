@@ -100,7 +100,7 @@ function IntegrationsPage() {
   })
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6">
       <PageHeader
         title={t('admin.integrations.title')}
         subtitle={t('admin.integrations.subtitle')}

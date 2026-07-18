@@ -56,7 +56,7 @@ export default function PaymentAlertRulesPage() {
 
   return (
     <PageRoleGuard allowedRoles={['ROLE_DAF', 'ROLE_ASSISTANT_COMPTABLE']}>
-      <div className="max-w-3xl mx-auto space-y-6">
+      <div className="space-y-6">
         <PageHeader
           title={
             <span className="flex items-center gap-3">

@@ -40,7 +40,7 @@ export default function AdminRetentionDispositionPage() {
 
   return (
     <PageRoleGuard allowedRoles={['ROLE_ADMIN']}>
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="space-y-6">
         <PageHeader
           title={t('retentionDisposition.title', 'Contrôles de purge')}
           subtitle={t('retentionDisposition.subtitle', 'Documents de facture ayant dépassé la durée de rétention et en attente de décision.')}

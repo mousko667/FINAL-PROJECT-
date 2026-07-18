@@ -157,7 +157,7 @@ function InvoiceCreatePageInner() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6">
       <PageHeader title={t('invoice.new', 'New Invoice')} />
 
       {/* Step indicators */}

@@ -201,7 +201,7 @@ export default function ArchiveFolderTree({ selectedFolderId, onSelectFolder }: 
   }
 
   return (
-    <div className="w-64 shrink-0 border-r bg-ground/50 flex flex-col h-full min-h-[500px]">
+    <div className="w-full md:w-64 shrink-0 border-b md:border-b-0 md:border-r bg-ground/50 flex flex-col max-h-[30vh] md:max-h-none md:h-full md:min-h-[500px]">
       <div className="p-4 border-b flex items-center justify-between bg-surface">
         <h2 className="font-semibold text-ink">{t('archiveFolders.title')}</h2>
         {isAdmin && !isCreating && (

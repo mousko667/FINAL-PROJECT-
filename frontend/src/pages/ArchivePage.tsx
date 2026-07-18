@@ -75,7 +75,7 @@ export default function ArchivePage() {
 
   return (
     <PageRoleGuard allowedRoles={['ROLE_DAF', 'ROLE_ASSISTANT_COMPTABLE']}>
-      <div className="flex h-[calc(100vh-4rem)]">
+      <div className="flex flex-col md:flex-row h-[calc(100vh-4rem)]">
         {/* Sidebar Tree */}
         <ArchiveFolderTree 
           selectedFolderId={selectedFolderId}
@@ -83,7 +83,7 @@ export default function ArchivePage() {
         />
 
         {/* Main Content */}
-        <div className="flex-1 space-y-6 p-6 overflow-y-auto">
+        <div className="flex-1 space-y-6 p-6 overflow-y-auto min-w-0">
           <PageHeader
             title={t('archive.title', 'Archive Numérique')}
             subtitle={

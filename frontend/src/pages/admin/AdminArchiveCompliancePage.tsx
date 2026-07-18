@@ -71,7 +71,7 @@ export default function AdminArchiveCompliancePage() {
 
   return (
     <PageRoleGuard allowedRoles={['ROLE_ADMIN']}>
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="space-y-6">
         <PageHeader
           title={t('archiveCompliance.title', 'Conformité des archives')}
           subtitle={t('archiveCompliance.subtitle', "État de conformité du dépôt d'archives documentaires. Aucune donnée financière.")}

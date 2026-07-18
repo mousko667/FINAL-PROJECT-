@@ -1668,3 +1668,16 @@ avant de clore un correctif de routage, chercher TOUS les listeners de l'événe
   horizontalement ; la page ne defile jamais horizontalement.
 - **Regle preventive** : ne jamais mettre overflow-hidden sur un conteneur direct de table
   large. Utiliser le composant ui/Table (qui gere overflow-x-auto) ou un wrapper overflow-x-auto.
+## PROB-126 - Sidebar archives non-responsive + largeurs max-w incoherentes (N22)
+
+- **Date** : 2026-07-18
+- **Finding** : N22 (audit exhaustif).
+- **Cause racine** : ArchiveFolderTree en w-64 shrink-0 (largeur fixe non-responsive) provoquait
+  un scroll horizontal sur ecran etroit ; largeurs max-w-* des pages non systematiques.
+  (Le sous-point "item selectionne invisible" etait un symptome du token primary casse, deja
+  corrige par PROB-124 / N11-N19.)
+- **Solution** : rendre la sidebar archives responsive (largeur reductible / repli selon breakpoint) ;
+  harmoniser les max-w PAR TYPE de page (formulaire 2xl, detail 4-5xl, liste pleine largeur) la ou
+  c'etait manifestement incoherent, sans forcer une largeur unique.
+- **Regle preventive** : pas de largeur fixe non-responsive sur une sidebar ; choisir max-w par
+  type de page selon une convention documentee, pas au cas par cas arbitraire.

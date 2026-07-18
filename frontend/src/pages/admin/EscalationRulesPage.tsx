@@ -55,7 +55,7 @@ export default function EscalationRulesPage() {
 
   return (
     <PageRoleGuard allowedRoles={['ROLE_ADMIN', 'ROLE_DAF']}>
-      <div className="max-w-3xl mx-auto space-y-6">
+      <div className="space-y-6">
         <PageHeader
           title={t('escalationRules.title', 'Escalation Rules')}
           subtitle={t('escalationRules.subtitle', 'Configure how long after a missed deadline an approval is escalated.')}

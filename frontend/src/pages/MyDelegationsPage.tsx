@@ -70,7 +70,7 @@ export default function MyDelegationsPage() {
   const isActive = (d: Delegation) => d.fromDate <= today && d.toDate >= today
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6">
       <PageHeader
         title={
           <span className="flex items-center gap-2">

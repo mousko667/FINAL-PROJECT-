@@ -66,7 +66,7 @@ function AdminAnnouncementsPage() {
   const inputCls = 'w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6">
       <PageHeader
         title={<span className="flex items-center gap-2"><Megaphone className="w-6 h-6" aria-hidden /> {t('admin.announcements.title', 'Annonces système')}</span>}
         subtitle={t('admin.announcements.subtitle', 'Messages affichés sur les tableaux de bord de tous les utilisateurs.')}
