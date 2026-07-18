@@ -1,5 +1,6 @@
 package com.oct.invoicesystem.domain.notification.event.listener;
 
+import com.oct.invoicesystem.domain.invoice.model.Invoice;
 import com.oct.invoicesystem.domain.invoice.repository.InvoiceRepository;
 import com.oct.invoicesystem.domain.notification.event.*;
 import com.oct.invoicesystem.domain.user.model.User;
@@ -56,10 +57,15 @@ public class WebSocketNotificationListener {
     @EventListener
     public void onInvoiceRejected(InvoiceRejectedEvent event) {
         invoiceRepository.findById(event.getInvoiceId()).ifPresent(invoice -> {
-            User submitter = invoice.getSubmittedBy();
-            if (submitter != null) {
-                String payload = buildPayload("REJECTION", "Facture rejetée / Invoice rejected", invoice.getReferenceNumber());
-                sendToUser(submitter, payload);
+            // Assistant(s) Comptable résolus (N5) — pas le fournisseur pour une facture portail
+            String payload = buildPayload("REJECTION", "Facture rejetée / Invoice rejected", invoice.getReferenceNumber());
+            resolveAccountingRecipients(invoice).forEach(user -> sendToUser(user, payload));
+
+            // Fournisseur (push temps réel) (N5)
+            if (invoice.getSupplier() != null) {
+                String supplierPayload = buildPayload("REJECTION", "Votre facture a été rejetée / Your invoice was rejected", invoice.getReferenceNumber());
+                userRepository.findActiveUsersBySupplierId(invoice.getSupplier().getId())
+                        .forEach(user -> sendToUser(user, supplierPayload));
             }
         });
     }
@@ -68,12 +74,32 @@ public class WebSocketNotificationListener {
     @EventListener
     public void onBonAPayer(BonAPayerEvent event) {
         invoiceRepository.findById(event.getInvoiceId()).ifPresent(invoice -> {
-            User submitter = invoice.getSubmittedBy();
-            if (submitter != null) {
-                String payload = buildPayload("APPROVAL", "Bon à Payer accordé / BAP issued", invoice.getReferenceNumber());
-                sendToUser(submitter, payload);
+            // Assistant(s) Comptable résolus (N5)
+            String payload = buildPayload("APPROVAL", "Bon à Payer accordé / BAP issued", invoice.getReferenceNumber());
+            resolveAccountingRecipients(invoice).forEach(user -> sendToUser(user, payload));
+
+            // Fournisseur (push temps réel) (N6)
+            if (invoice.getSupplier() != null) {
+                String supplierPayload = buildPayload("APPROVAL", "Votre facture a été approuvée pour paiement / Your invoice was approved for payment", invoice.getReferenceNumber());
+                userRepository.findActiveUsersBySupplierId(invoice.getSupplier().getId())
+                        .forEach(user -> sendToUser(user, supplierPayload));
             }
         });
+    }
+
+    /**
+     * Résout le(s) destinataire(s) interne(s) « Assistant Comptable » d'une facture.
+     * Si le soumetteur porte {@code ROLE_ASSISTANT_COMPTABLE} (facture interne), il est seul
+     * destinataire ; sinon (facture portail : soumetteur = compte fournisseur), on cible tous les
+     * AA actifs. Aligné sur EmailNotificationListener / PersistNotificationListener (N5).
+     */
+    private List<User> resolveAccountingRecipients(Invoice invoice) {
+        User submitter = invoice.getSubmittedBy();
+        if (submitter != null && submitter.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ASSISTANT_COMPTABLE".equals(a.getAuthority()))) {
+            return List.of(submitter);
+        }
+        return userRepository.findActiveUsersByRoleName("ROLE_ASSISTANT_COMPTABLE");
     }
 
     /**
