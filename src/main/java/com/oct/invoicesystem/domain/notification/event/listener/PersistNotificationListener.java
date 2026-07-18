@@ -72,41 +72,59 @@ public class PersistNotificationListener {
     }
 
     /**
-     * Persist a rejection notification for the invoice submitter.
+     * Persist a rejection notification for internal and portal invoices (N5).
      */
     @Async
     @EventListener
     public void onInvoiceRejected(InvoiceRejectedEvent event) {
         log.info("Persisting notification for InvoiceRejectedEvent {}", event.getInvoiceId());
         invoiceRepository.findById(event.getInvoiceId()).ifPresent(invoice -> {
-            User submitter = invoice.getSubmittedBy();
-            if (submitter != null) {
-                save(submitter, invoice,
-                        "Facture rejetée",
-                        "Invoice rejected",
-                        "Votre facture " + invoice.getReferenceNumber() + " a été rejetée. Motif : " + event.getReason(),
-                        "Your invoice " + invoice.getReferenceNumber() + " was rejected. Reason: " + event.getReason(),
-                        NotificationType.REJECTION);
+            // Assistant(s) Comptable résolus (N5)
+            resolveAccountingRecipients(invoice).forEach(user -> save(user, invoice,
+                    "Facture rejetée",
+                    "Invoice rejected",
+                    "La facture " + invoice.getReferenceNumber() + " a été rejetée. Motif : " + event.getReason(),
+                    "Invoice " + invoice.getReferenceNumber() + " was rejected. Reason: " + event.getReason(),
+                    NotificationType.REJECTION));
+
+            // Fournisseur (in-app) (N5)
+            if (invoice.getSupplier() != null) {
+                userRepository.findActiveUsersBySupplierId(invoice.getSupplier().getId()).forEach(user ->
+                        save(user, invoice,
+                                "Facture rejetée",
+                                "Invoice rejected",
+                                "Votre facture " + invoice.getReferenceNumber() + " a été rejetée. Motif : " + event.getReason(),
+                                "Your invoice " + invoice.getReferenceNumber() + " was rejected. Reason: " + event.getReason(),
+                                NotificationType.REJECTION));
             }
         });
     }
 
     /**
-     * Persist a BON_A_PAYER notification for the invoice submitter.
+     * Persist a BON_A_PAYER notification for internal and portal invoices (N5/N6).
      */
     @Async
     @EventListener
     public void onBonAPayer(BonAPayerEvent event) {
         log.info("Persisting notification for BonAPayerEvent {}", event.getInvoiceId());
         invoiceRepository.findById(event.getInvoiceId()).ifPresent(invoice -> {
-            User submitter = invoice.getSubmittedBy();
-            if (submitter != null) {
-                save(submitter, invoice,
-                        "Bon à Payer accordé",
-                        "BAP issued",
-                        "Votre facture " + invoice.getReferenceNumber() + " a reçu le Bon à Payer.",
-                        "Your invoice " + invoice.getReferenceNumber() + " has received the BAP approval.",
-                        NotificationType.APPROVAL);
+            // Assistant(s) Comptable résolus (N5)
+            resolveAccountingRecipients(invoice).forEach(user -> save(user, invoice,
+                    "Bon à Payer accordé",
+                    "BAP issued",
+                    "La facture " + invoice.getReferenceNumber() + " a reçu le Bon à Payer.",
+                    "Invoice " + invoice.getReferenceNumber() + " has received the BAP approval.",
+                    NotificationType.APPROVAL));
+
+            // Fournisseur (in-app) (N6)
+            if (invoice.getSupplier() != null) {
+                userRepository.findActiveUsersBySupplierId(invoice.getSupplier().getId()).forEach(user ->
+                        save(user, invoice,
+                                "Facture approuvée pour paiement",
+                                "Invoice approved for payment",
+                                "Votre facture " + invoice.getReferenceNumber() + " a été approuvée pour paiement.",
+                                "Your invoice " + invoice.getReferenceNumber() + " has been approved for payment.",
+                                NotificationType.APPROVAL));
             }
         });
     }
@@ -179,6 +197,21 @@ public class PersistNotificationListener {
                         "La facture " + invoice.getReferenceNumber() + " a dépassé son délai d'approbation et vous est escaladée. Action requise.",
                         "Invoice " + invoice.getReferenceNumber() + " has exceeded its approval deadline and has been escalated to you. Action required.",
                         NotificationType.DEADLINE)));
+    }
+
+    /**
+     * Résout le(s) destinataire(s) interne(s) « Assistant Comptable » d'une facture.
+     * Si le soumetteur porte {@code ROLE_ASSISTANT_COMPTABLE} (facture interne), il est seul
+     * destinataire ; sinon (facture portail : soumetteur = compte fournisseur), on cible tous les
+     * AA actifs.
+     */
+    private List<User> resolveAccountingRecipients(Invoice invoice) {
+        User submitter = invoice.getSubmittedBy();
+        if (submitter != null && submitter.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ASSISTANT_COMPTABLE".equals(a.getAuthority()))) {
+            return List.of(submitter);
+        }
+        return userRepository.findActiveUsersByRoleName("ROLE_ASSISTANT_COMPTABLE");
     }
 
     private void save(User user, Invoice invoice,
