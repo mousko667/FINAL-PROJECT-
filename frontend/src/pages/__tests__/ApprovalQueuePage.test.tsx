@@ -60,6 +60,11 @@ describe('ApprovalQueuePage RoleGuard', () => {
     expect(await screen.findByText('roleGuard.unauthorized')).toBeInTheDocument()
   })
 
+  it("affiche roleGuard.unauthorized pour l'administrateur (SoD)", async () => {
+    renderPage(['ROLE_ADMIN'])
+    expect(await screen.findByText('roleGuard.unauthorized')).toBeInTheDocument()
+  })
+
   it('affiche le contenu avec le bon rôle', async () => {
     renderPage(['ROLE_DAF'])
     expect(screen.queryByText('roleGuard.unauthorized')).toBeNull()

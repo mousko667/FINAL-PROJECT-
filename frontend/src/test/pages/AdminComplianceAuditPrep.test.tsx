@@ -34,12 +34,32 @@ vi.mock('@/services/apiClient', () => ({
   },
 }))
 
+import { Provider } from 'react-redux'
+import { configureStore } from '@reduxjs/toolkit'
+import authReducer from '@/store/slices/authSlice'
+
+const makeStore = () =>
+  configureStore({
+    reducer: { auth: authReducer },
+    preloadedState: {
+      auth: {
+        user: { id: '1', username: 'admin', email: 'admin@oct.fr', roles: ['ROLE_ADMIN'] },
+        accessToken: 'token',
+        refreshToken: null,
+        isAuthenticated: true,
+      },
+    },
+  })
+
 function renderPage() {
+  const store = makeStore()
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter><AdminCompliancePage /></MemoryRouter>
-    </QueryClientProvider>
+    <Provider store={store}>
+      <QueryClientProvider client={qc}>
+        <MemoryRouter><AdminCompliancePage /></MemoryRouter>
+      </QueryClientProvider>
+    </Provider>
   )
 }
 
