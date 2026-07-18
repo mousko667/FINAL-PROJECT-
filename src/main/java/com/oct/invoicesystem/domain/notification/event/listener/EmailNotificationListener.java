@@ -90,10 +90,10 @@ public class EmailNotificationListener {
             Map<String, Object> vars = buildCommonVariables(invoice);
             vars.put("reason", event.getReason());
 
-            // Notify AA submitter
-            User submitter = invoice.getSubmittedBy();
-            if (submitter != null) {
-                notifyUsers(List.of(submitter), "Facture rejetée / Invoice rejected", "invoice-rejected", vars);
+            // Notify the resolved Assistant(s) Comptable (N5)
+            List<User> accounting = resolveAccountingRecipients(invoice);
+            if (!accounting.isEmpty()) {
+                notifyUsers(accounting, "Facture rejetée / Invoice rejected", "invoice-rejected", vars);
             }
 
             // Notify supplier
@@ -108,11 +108,17 @@ public class EmailNotificationListener {
     public void onBonAPayer(BonAPayerEvent event) {
         log.info("Handling BonAPayerEvent for invoice {}", event.getInvoiceId());
         invoiceRepository.findById(event.getInvoiceId()).ifPresent(invoice -> {
-            User submitter = invoice.getSubmittedBy();
-            if (submitter != null) {
-                notifyUsers(List.of(submitter), "Bon À Payer accordé / BAP issued", "invoice-approved",
-                        buildCommonVariables(invoice));
+            Map<String, Object> vars = buildCommonVariables(invoice);
+
+            // Notify the resolved Assistant(s) Comptable (N5)
+            List<User> accounting = resolveAccountingRecipients(invoice);
+            if (!accounting.isEmpty()) {
+                notifyUsers(accounting, "Bon À Payer accordé / BAP issued", "invoice-approved", vars);
             }
+
+            // Notify supplier: invoice approved for payment (N6)
+            notifySupplier(invoice, "Votre facture a été approuvée pour paiement / Your invoice was approved for payment",
+                    "supplier-invoice-approved", vars);
         });
     }
 
@@ -155,6 +161,21 @@ public class EmailNotificationListener {
     }
 
     // ── Helpers ──
+
+    /**
+     * Résout le(s) destinataire(s) interne(s) « Assistant Comptable » d'une facture.
+     * Si le soumetteur porte {@code ROLE_ASSISTANT_COMPTABLE} (facture interne saisie par un AA),
+     * il est seul destinataire — il suit son propre dossier. Sinon (facture portail : le soumetteur
+     * est le compte fournisseur), on cible tous les AA actifs.
+     */
+    private List<User> resolveAccountingRecipients(Invoice invoice) {
+        User submitter = invoice.getSubmittedBy();
+        if (submitter != null && submitter.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ASSISTANT_COMPTABLE".equals(a.getAuthority()))) {
+            return List.of(submitter);
+        }
+        return userRepository.findActiveUsersByRoleName("ROLE_ASSISTANT_COMPTABLE");
+    }
 
     private Map<String, Object> buildCommonVariables(Invoice invoice) {
         Map<String, Object> vars = new HashMap<>();

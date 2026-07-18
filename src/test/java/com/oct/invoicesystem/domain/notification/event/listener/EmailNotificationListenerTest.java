@@ -5,7 +5,11 @@ import com.oct.invoicesystem.domain.invoice.model.Invoice;
 import com.oct.invoicesystem.domain.invoice.repository.InvoiceRepository;
 import com.oct.invoicesystem.domain.notification.event.*;
 import com.oct.invoicesystem.domain.notification.service.EmailService;
+import com.oct.invoicesystem.domain.supplier.model.Supplier;
+import com.oct.invoicesystem.domain.supplier.repository.SupplierRepository;
+import com.oct.invoicesystem.domain.user.model.Role;
 import com.oct.invoicesystem.domain.user.model.User;
+import com.oct.invoicesystem.domain.user.model.UserRole;
 import com.oct.invoicesystem.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -28,13 +33,22 @@ class EmailNotificationListenerTest {
     @Mock EmailService emailService;
     @Mock InvoiceRepository invoiceRepository;
     @Mock UserRepository userRepository;
+    @Mock SupplierRepository supplierRepository;
 
     @InjectMocks
     EmailNotificationListener listener;
 
     private Invoice invoice;
     private User n1User;
-    private User submitter;
+    private User aaSubmitter;
+
+    private static User withRole(User u, String roleName) {
+        u.setUserRoles(Set.of(UserRole.builder()
+                .role(Role.builder().name(roleName).build())
+                .user(u)
+                .build()));
+        return u;
+    }
 
     @BeforeEach
     void setUp() {
@@ -43,32 +57,29 @@ class EmailNotificationListenerTest {
         dept.setN1Role("ROLE_VALIDATEUR_N1_DRH");
         dept.setRequiresN2(false);
 
-        submitter = User.builder()
+        aaSubmitter = withRole(User.builder()
                 .id(UUID.randomUUID())
                 .username("assistant")
                 .email("assistant@oct.ga")
-                .password("x")
-                .firstName("A")
-                .lastName("B")
-                .build();
+                .password("x").firstName("A").lastName("B")
+                .build(), "ROLE_ASSISTANT_COMPTABLE");
 
         n1User = User.builder()
                 .id(UUID.randomUUID())
                 .username("n1")
                 .email("n1@oct.ga")
-                .password("x")
-                .firstName("N")
-                .lastName("One")
+                .password("x").firstName("N").lastName("One")
                 .build();
 
         invoice = Invoice.builder()
                 .id(UUID.randomUUID())
                 .referenceNumber("FAC-2026-00001")
                 .supplierName("Acme")
+                .supplierEmail("supplier@acme.ga")
                 .amount(BigDecimal.valueOf(100_000))
                 .currency("XAF")
                 .department(dept)
-                .submittedBy(submitter)
+                .submittedBy(aaSubmitter)
                 .build();
     }
 
@@ -79,12 +90,7 @@ class EmailNotificationListenerTest {
 
         listener.onInvoiceSubmitted(new InvoiceSubmittedEvent(this, invoice.getId()));
 
-        verify(emailService).sendEmailToUsers(
-                eq(List.of("n1@oct.ga")),
-                anyString(),
-                anyString(),
-                anyMap()
-        );
+        verify(emailService).sendEmailToUsers(eq(List.of("n1@oct.ga")), anyString(), anyString(), anyMap());
     }
 
     @Test
@@ -94,32 +100,63 @@ class EmailNotificationListenerTest {
         verifyNoInteractions(emailService);
     }
 
+    // ── N5 : rejet, facture INTERNE (submitter = AA) → cet AA seul + fournisseur ──
     @Test
-    void onInvoiceRejected_sendsEmailToSubmitter() {
+    void onInvoiceRejected_internalInvoice_sendsToSubmitterAndSupplier() {
         when(invoiceRepository.findById(invoice.getId())).thenReturn(Optional.of(invoice));
 
         listener.onInvoiceRejected(new InvoiceRejectedEvent(this, invoice.getId(), "Missing docs"));
 
-        verify(emailService).sendEmailToUsers(
-                eq(List.of("assistant@oct.ga")),
-                anyString(),
-                eq("invoice-rejected"),
-                anyMap()
-        );
+        // AA interne (le submitter lui-même), pas d'appel à findActiveUsersByRoleName
+        verify(emailService).sendEmailToUsers(eq(List.of("assistant@oct.ga")), anyString(), eq("invoice-rejected"), anyMap());
+        verify(userRepository, never()).findActiveUsersByRoleName("ROLE_ASSISTANT_COMPTABLE");
+        // fournisseur
+        verify(emailService).sendEmailToUsers(eq(List.of("supplier@acme.ga")), anyString(), eq("supplier-invoice-rejected"), anyMap());
     }
 
+    // ── N5 : rejet, facture PORTAIL (submitter = fournisseur, non-AA) → AA résolus + fournisseur ──
     @Test
-    void onBonAPayer_sendsEmailToSubmitter() {
+    void onInvoiceRejected_portalInvoice_resolvesActiveAAs() {
+        User portalSubmitter = User.builder()
+                .id(UUID.randomUUID()).username("supplier").email("supplier@acme.ga")
+                .password("x").firstName("S").lastName("Up").build(); // aucun rôle AA
+        invoice.setSubmittedBy(portalSubmitter);
+        when(invoiceRepository.findById(invoice.getId())).thenReturn(Optional.of(invoice));
+        when(userRepository.findActiveUsersByRoleName("ROLE_ASSISTANT_COMPTABLE")).thenReturn(List.of(aaSubmitter));
+
+        listener.onInvoiceRejected(new InvoiceRejectedEvent(this, invoice.getId(), "Missing docs"));
+
+        // interne = AA actifs, PAS le fournisseur, via le template interne
+        verify(emailService).sendEmailToUsers(eq(List.of("assistant@oct.ga")), anyString(), eq("invoice-rejected"), anyMap());
+        // fournisseur reçoit SON template (et pas le template interne)
+        verify(emailService).sendEmailToUsers(eq(List.of("supplier@acme.ga")), anyString(), eq("supplier-invoice-rejected"), anyMap());
+    }
+
+    // ── N6 : BAP, facture INTERNE → AA seul (template interne) + fournisseur (nouveau template) ──
+    @Test
+    void onBonAPayer_internalInvoice_notifiesSubmitterAndSupplier() {
         when(invoiceRepository.findById(invoice.getId())).thenReturn(Optional.of(invoice));
 
         listener.onBonAPayer(new BonAPayerEvent(this, invoice.getId()));
 
-        verify(emailService).sendEmailToUsers(
-                eq(List.of("assistant@oct.ga")),
-                anyString(),
-                eq("invoice-approved"),
-                anyMap()
-        );
+        verify(emailService).sendEmailToUsers(eq(List.of("assistant@oct.ga")), anyString(), eq("invoice-approved"), anyMap());
+        verify(emailService).sendEmailToUsers(eq(List.of("supplier@acme.ga")), anyString(), eq("supplier-invoice-approved"), anyMap());
+    }
+
+    // ── N5+N6 : BAP, facture PORTAIL → AA résolus + fournisseur ──
+    @Test
+    void onBonAPayer_portalInvoice_resolvesAAsAndNotifiesSupplier() {
+        User portalSubmitter = User.builder()
+                .id(UUID.randomUUID()).username("supplier").email("supplier@acme.ga")
+                .password("x").firstName("S").lastName("Up").build();
+        invoice.setSubmittedBy(portalSubmitter);
+        when(invoiceRepository.findById(invoice.getId())).thenReturn(Optional.of(invoice));
+        when(userRepository.findActiveUsersByRoleName("ROLE_ASSISTANT_COMPTABLE")).thenReturn(List.of(aaSubmitter));
+
+        listener.onBonAPayer(new BonAPayerEvent(this, invoice.getId()));
+
+        verify(emailService).sendEmailToUsers(eq(List.of("assistant@oct.ga")), anyString(), eq("invoice-approved"), anyMap());
+        verify(emailService).sendEmailToUsers(eq(List.of("supplier@acme.ga")), anyString(), eq("supplier-invoice-approved"), anyMap());
     }
 
     @Test
