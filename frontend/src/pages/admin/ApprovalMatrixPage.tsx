@@ -4,6 +4,9 @@ import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import { Loader2, CheckCircle, Save } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { PageRoleGuard } from '@/components/auth/RoleGuard'
+
+const ADMIN_ROLES = ['ROLE_ADMIN']
 
 interface Department {
   id: string
@@ -37,7 +40,7 @@ const ROLE_VALUES_N2 = [
   'ROLE_VALIDATEUR_N2_TECH',
 ]
 
-export default function ApprovalMatrixPage() {
+function ApprovalMatrixPage() {
   const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
   const [saved, setSaved] = useState(false)
@@ -142,5 +145,14 @@ export default function ApprovalMatrixPage() {
         {t('admin.approvalMatrix.hint')}
       </p>
     </div>
+  )
+}
+
+
+export default function ApprovalMatrixPageWrapper() {
+  return (
+    <PageRoleGuard allowedRoles={ADMIN_ROLES}>
+      <ApprovalMatrixPage />
+    </PageRoleGuard>
   )
 }

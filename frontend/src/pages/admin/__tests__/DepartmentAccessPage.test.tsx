@@ -3,6 +3,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import DepartmentAccessPage from '../DepartmentAccessPage'
 import { departmentAccessService } from '@/services/departmentAccessService'
 
+vi.mock('@/components/auth/RoleGuard', () => ({
+  PageRoleGuard: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}))
+
 vi.mock('@/services/departmentAccessService')
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (k: string) => k, i18n: { language: 'fr' } }),

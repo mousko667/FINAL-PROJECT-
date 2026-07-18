@@ -7,6 +7,9 @@ import { ROLE_OPTIONS } from '@/constants/roles'
 import { Loader2, Check, ShieldCheck, AlertCircle } from 'lucide-react'
 import { Panel } from '@/components/ui/Panel'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { PageRoleGuard } from '@/components/auth/RoleGuard'
+
+const ADMIN_ROLES = ['ROLE_ADMIN']
 
 interface User {
   id: string
@@ -32,7 +35,7 @@ interface Role {
  * PUT /users/{id}/roles (replaces the user's roles). Edits are staged per row and persisted
  * with an explicit per-row Save button (one PUT with the final role list). ADMIN only.
  */
-export default function AdminPermissionMatrixPage() {
+function AdminPermissionMatrixPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
 
@@ -195,5 +198,14 @@ export default function AdminPermissionMatrixPage() {
         </Panel>
       )}
     </div>
+  )
+}
+
+
+export default function AdminPermissionMatrixPageWrapper() {
+  return (
+    <PageRoleGuard allowedRoles={ADMIN_ROLES}>
+      <AdminPermissionMatrixPage />
+    </PageRoleGuard>
   )
 }

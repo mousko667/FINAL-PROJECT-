@@ -10,6 +10,9 @@ import RetentionComplianceCard from '@/components/audit/RetentionComplianceCard'
 import { formatDateTime } from '@/lib/format'
 import { Panel } from '@/components/ui/Panel'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { PageRoleGuard } from '@/components/auth/RoleGuard'
+
+const ADMIN_ROLES = ['ROLE_ADMIN']
 
 interface AuditLog {
   id: string
@@ -149,7 +152,7 @@ function AnomalyPanel() {
   )
 }
 
-export default function AdminAuditPage() {
+function AdminAuditPage() {
   const { t } = useTranslation()
   const [tab, setTab] = useState<'journal' | 'summary'>('journal')
   const [filters, setFilters] = useState<AuditFilters>({ page: 0, size: 20 })
@@ -344,5 +347,14 @@ export default function AdminAuditPage() {
       </>
       )}
     </div>
+  )
+}
+
+
+export default function AdminAuditPageWrapper() {
+  return (
+    <PageRoleGuard allowedRoles={ADMIN_ROLES}>
+      <AdminAuditPage />
+    </PageRoleGuard>
   )
 }

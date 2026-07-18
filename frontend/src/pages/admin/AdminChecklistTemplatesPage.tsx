@@ -5,6 +5,9 @@ import apiClient from '@/services/apiClient'
 import { Loader2, Plus, Trash2, Save, X, GripVertical } from 'lucide-react'
 import { Panel } from '@/components/ui/Panel'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { PageRoleGuard } from '@/components/auth/RoleGuard'
+
+const ADMIN_ROLES = ['ROLE_ADMIN']
 
 interface Department { id: string; code: string; nameEn: string; nameFr: string }
 
@@ -27,7 +30,7 @@ interface EditorState {
 
 const emptyEditor = (): EditorState => ({ name: '', departmentId: '', active: true, items: [] })
 
-export default function AdminChecklistTemplatesPage() {
+function AdminChecklistTemplatesPage() {
   const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
   const [editor, setEditor] = useState<EditorState | null>(null)
@@ -236,5 +239,14 @@ export default function AdminChecklistTemplatesPage() {
         </Panel>
       )}
     </div>
+  )
+}
+
+
+export default function AdminChecklistTemplatesPageWrapper() {
+  return (
+    <PageRoleGuard allowedRoles={ADMIN_ROLES}>
+      <AdminChecklistTemplatesPage />
+    </PageRoleGuard>
   )
 }

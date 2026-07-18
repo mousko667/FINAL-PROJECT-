@@ -7,6 +7,9 @@ import { type AccessRequest, StatusBadge } from '@/pages/MyAccessRequestsPage'
 import { ShieldCheck, Loader2, Check, X } from 'lucide-react'
 import { Panel } from '@/components/ui/Panel'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { PageRoleGuard } from '@/components/auth/RoleGuard'
+
+const ADMIN_ROLES = ['ROLE_ADMIN']
 
 type StatusFilter = 'PENDING' | 'APPROVED' | 'REJECTED' | 'ALL'
 
@@ -14,7 +17,7 @@ type StatusFilter = 'PENDING' | 'APPROVED' | 'REJECTED' | 'ALL'
  * P11-17 — admin review queue. Lists access requests (filterable by status) and lets an admin
  * approve (adds the requested role to the requester) or reject (with an optional comment). ADMIN only.
  */
-export default function AdminAccessRequestsPage() {
+function AdminAccessRequestsPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
 
@@ -138,5 +141,14 @@ export default function AdminAccessRequestsPage() {
         </Panel>
       )}
     </div>
+  )
+}
+
+
+export default function AdminAccessRequestsPageWrapper() {
+  return (
+    <PageRoleGuard allowedRoles={ADMIN_ROLES}>
+      <AdminAccessRequestsPage />
+    </PageRoleGuard>
   )
 }

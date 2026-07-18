@@ -8,6 +8,9 @@ import { Loader2, Plus, Pencil, LockOpen, UserCheck, UserX, Upload, X, AlertCirc
 import { ExportMenu } from '@/components/ui/ExportMenu'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { PageRoleGuard } from '@/components/auth/RoleGuard'
+
+const ADMIN_ROLES = ['ROLE_ADMIN']
 
 interface ImportRowError { line: number; username: string; message: string }
 interface ImportResult { totalRows: number; created: number; failed: number; errors: ImportRowError[] }
@@ -264,7 +267,7 @@ function EditUserModal({ user, onClose }: EditUserModalProps) {
   )
 }
 
-export default function AdminUsersPage() {
+function AdminUsersPage() {
   const { t } = useTranslation()
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [from, setFrom] = useState('')
@@ -377,5 +380,14 @@ export default function AdminUsersPage() {
 
       {editingUser && <EditUserModal user={editingUser} onClose={() => setEditingUser(null)} />}
     </div>
+  )
+}
+
+
+export default function AdminUsersPageWrapper() {
+  return (
+    <PageRoleGuard allowedRoles={ADMIN_ROLES}>
+      <AdminUsersPage />
+    </PageRoleGuard>
   )
 }

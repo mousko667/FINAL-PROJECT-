@@ -7,6 +7,9 @@ import { formatDate, formatDateTime } from '@/lib/format'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Panel } from '@/components/ui/Panel'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { PageRoleGuard } from '@/components/auth/RoleGuard'
+
+const ADMIN_ROLES = ['ROLE_ADMIN']
 
 interface Incident { id: string; title: string; severity: string; status: string; reportedAt: string }
 interface ChecklistItem { id: string; framework: string; label: string; completed: boolean }
@@ -14,7 +17,7 @@ interface CalendarEntry { id: string; title: string; dueDate: string; completed:
 interface BackupStatus { lastBackupAt: string | null; status: string; detail: string | null }
 
 /** M14 — security & compliance console (ADMIN): backup, incidents, SOX/IFRS checklist, calendar. */
-export default function AdminCompliancePage() {
+function AdminCompliancePage() {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const inputCls = 'border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
@@ -191,5 +194,14 @@ export default function AdminCompliancePage() {
         onCancel={() => setDeleteCalendarTargetId(null)}
       />
     </div>
+  )
+}
+
+
+export default function AdminCompliancePageWrapper() {
+  return (
+    <PageRoleGuard allowedRoles={ADMIN_ROLES}>
+      <AdminCompliancePage />
+    </PageRoleGuard>
   )
 }

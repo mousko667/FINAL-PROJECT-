@@ -6,6 +6,9 @@ import type { ApiResponse, PagedResponse } from '@/types/invoice'
 import { Loader2, CheckCircle, XCircle, GitBranch, Plus } from 'lucide-react'
 import { Panel } from '@/components/ui/Panel'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { PageRoleGuard } from '@/components/auth/RoleGuard'
+
+const ADMIN_ROLES = ['ROLE_ADMIN']
 
 interface Department {
   id: string
@@ -28,7 +31,7 @@ function RoleLabel({ role }: { role?: string }) {
   )
 }
 
-export default function AdminDepartmentsPage() {
+function AdminDepartmentsPage() {
   const { t, i18n } = useTranslation()
 
   const { data, isLoading } = useQuery({
@@ -130,5 +133,14 @@ export default function AdminDepartmentsPage() {
         {t('admin.departments.matrixNote', 'Pour modifier les chaînes d\'approbation, utilisez la Matrice d\'approbation.')}
       </p>
     </div>
+  )
+}
+
+
+export default function AdminDepartmentsPageWrapper() {
+  return (
+    <PageRoleGuard allowedRoles={ADMIN_ROLES}>
+      <AdminDepartmentsPage />
+    </PageRoleGuard>
   )
 }

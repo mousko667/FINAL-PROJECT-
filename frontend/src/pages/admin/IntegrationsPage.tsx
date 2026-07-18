@@ -7,6 +7,9 @@ import { IntegrationConnectors } from '@/components/admin/IntegrationConnectors'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { formatDateTime } from '@/lib/format'
+import { PageRoleGuard } from '@/components/auth/RoleGuard'
+
+const ADMIN_ROLES = ['ROLE_ADMIN']
 
 interface Webhook {
   id: string
@@ -42,7 +45,7 @@ const EVENT_TYPES = [
   'INVOICE_APPROVED', 'INVOICE_PAID', 'INVOICE_ARCHIVED',
 ]
 
-export default function IntegrationsPage() {
+function IntegrationsPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [showForm, setShowForm] = useState(false)
@@ -289,5 +292,14 @@ export default function IntegrationsPage() {
         onCancel={() => setDeleteTargetId(null)}
       />
     </div>
+  )
+}
+
+
+export default function IntegrationsPageWrapper() {
+  return (
+    <PageRoleGuard allowedRoles={ADMIN_ROLES}>
+      <IntegrationsPage />
+    </PageRoleGuard>
   )
 }

@@ -9,6 +9,9 @@ import { useMutation } from '@tanstack/react-query'
 import { ROLE_OPTIONS } from '@/constants/roles'
 import { Panel } from '@/components/ui/Panel'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { PageRoleGuard } from '@/components/auth/RoleGuard'
+
+const ADMIN_ROLES = ['ROLE_ADMIN']
 
 // Matches the backend DepartmentCreateRequest: code, nameFr, nameEn, requiresN2, n1Role, n2Role (+ optional budget via update).
 const departmentSchema = z.object({
@@ -23,7 +26,7 @@ const departmentSchema = z.object({
 
 type DepartmentFormData = z.infer<typeof departmentSchema>
 
-export default function AdminDepartmentFormPage() {
+function AdminDepartmentFormPage() {
   const navigate = useNavigate()
   const { t } = useTranslation()
 
@@ -175,5 +178,14 @@ export default function AdminDepartmentFormPage() {
         </form>
       </Panel>
     </div>
+  )
+}
+
+
+export default function AdminDepartmentFormPageWrapper() {
+  return (
+    <PageRoleGuard allowedRoles={ADMIN_ROLES}>
+      <AdminDepartmentFormPage />
+    </PageRoleGuard>
   )
 }

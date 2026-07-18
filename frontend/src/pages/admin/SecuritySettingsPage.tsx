@@ -5,6 +5,9 @@ import { Shield, CheckCircle, Clock, Lock, Key, Users, Trash2, Loader2, AlertCir
 import apiClient from '@/services/apiClient'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { PageRoleGuard } from '@/components/auth/RoleGuard'
+
+const ADMIN_ROLES = ['ROLE_ADMIN']
 
 interface ActiveSession {
   id: string
@@ -34,7 +37,7 @@ interface SecurityHealth {
   webhookDeliverySuccessRate: number
 }
 
-export default function SecuritySettingsPage() {
+function SecuritySettingsPage() {
   const { t, i18n } = useTranslation()
   const dateLocale = i18n.language === 'en' ? 'en-GB' : 'fr-FR'
   const queryClient = useQueryClient()
@@ -303,5 +306,14 @@ export default function SecuritySettingsPage() {
         onCancel={() => setRevokeTargetUserId(null)}
       />
     </div>
+  )
+}
+
+
+export default function SecuritySettingsPageWrapper() {
+  return (
+    <PageRoleGuard allowedRoles={ADMIN_ROLES}>
+      <SecuritySettingsPage />
+    </PageRoleGuard>
   )
 }

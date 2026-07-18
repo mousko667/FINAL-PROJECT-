@@ -6,6 +6,9 @@ import { Megaphone, Loader2, Trash2, Plus } from 'lucide-react'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Panel } from '@/components/ui/Panel'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { PageRoleGuard } from '@/components/auth/RoleGuard'
+
+const ADMIN_ROLES = ['ROLE_ADMIN']
 
 interface Announcement {
   id: string
@@ -18,7 +21,7 @@ interface Announcement {
 }
 
 /** M2 — admin management of system announcements (create / toggle / delete). */
-export default function AdminAnnouncementsPage() {
+function AdminAnnouncementsPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [title, setTitle] = useState('')
@@ -139,5 +142,14 @@ export default function AdminAnnouncementsPage() {
         onCancel={() => setDeleteTargetId(null)}
       />
     </div>
+  )
+}
+
+
+export default function AdminAnnouncementsPageWrapper() {
+  return (
+    <PageRoleGuard allowedRoles={ADMIN_ROLES}>
+      <AdminAnnouncementsPage />
+    </PageRoleGuard>
   )
 }

@@ -9,6 +9,9 @@ import { Loader2, ArrowLeft } from 'lucide-react'
 import type { ApiResponse, PagedResponse } from '@/types/invoice'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { ROLE_OPTIONS, DEPT_REQUIRED_ROLES } from '@/constants/roles'
+import { PageRoleGuard } from '@/components/auth/RoleGuard'
+
+const ADMIN_ROLES = ['ROLE_ADMIN']
 
 interface Department { id: string; code: string; nameEn: string; nameFr: string }
 
@@ -30,7 +33,7 @@ const userSchema = z.object({
 
 type UserFormData = z.infer<typeof userSchema>
 
-export default function AdminUserFormPage() {
+function AdminUserFormPage() {
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
 
@@ -282,5 +285,14 @@ export default function AdminUserFormPage() {
         </div>
       </form>
     </div>
+  )
+}
+
+
+export default function AdminUserFormPageWrapper() {
+  return (
+    <PageRoleGuard allowedRoles={ADMIN_ROLES}>
+      <AdminUserFormPage />
+    </PageRoleGuard>
   )
 }

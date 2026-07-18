@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { departmentAccessService, type DepartmentAccess } from '@/services/departmentAccessService'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { PageRoleGuard } from '@/components/auth/RoleGuard'
 
-export default function DepartmentAccessPage() {
+const ADMIN_ROLES = ['ROLE_ADMIN']
+
+function DepartmentAccessPage() {
   const { t, i18n } = useTranslation()
   const [data, setData] = useState<DepartmentAccess[]>([])
   const [loading, setLoading] = useState(true)
@@ -88,5 +91,14 @@ export default function DepartmentAccessPage() {
         </div>
       )}
     </div>
+  )
+}
+
+
+export default function DepartmentAccessPageWrapper() {
+  return (
+    <PageRoleGuard allowedRoles={ADMIN_ROLES}>
+      <DepartmentAccessPage />
+    </PageRoleGuard>
   )
 }
