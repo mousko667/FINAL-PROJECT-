@@ -21,8 +21,14 @@ public class RejectionReasonGuard implements Guard<InvoiceStatus, InvoiceEvent> 
             rejectionReason = (String) reasonObj;
         }
 
-        if (rejectionReason == null || rejectionReason.trim().length() < 10) {
-            throw new ValidationException("Rejection reason is mandatory and must contain at least 10 characters");
+        // A rejection reason is always a predefined code (optionally followed by a free-text
+        // detail), composed as "[CODE] detail" upstream in ApprovalController. A predefined code
+        // is a structured reason on its own, so the guard only enforces that the reason is present.
+        // The minimum-length rule for the free-text detail (only meaningful for the AUTRE code) is
+        // owned by ApprovalController; applying a length threshold to the composed "[CODE]" string
+        // here wrongly rejected short but valid codes such as "[DOUBLON]" (9 chars). See PROB-117.
+        if (rejectionReason == null || rejectionReason.trim().isEmpty()) {
+            throw new ValidationException("Rejection reason is mandatory");
         }
 
         return true;

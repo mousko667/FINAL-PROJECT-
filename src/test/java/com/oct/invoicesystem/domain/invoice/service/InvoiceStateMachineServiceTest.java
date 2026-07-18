@@ -254,15 +254,30 @@ class InvoiceStateMachineServiceTest {
     }
 
     @Test
-    void reject_WithShortReason_ThrowsWorkflowException() {
+    void reject_WithBlankReason_ThrowsWorkflowException() {
+        // N2 (PROB-117): the guard only enforces that a reason is present. The minimum-length rule
+        // for the free-text detail is owned by ApprovalController (only the AUTRE code requires it).
+        // A predefined code such as "[DOUBLON]" is a structured reason on its own and must pass.
         invoice.setStatus(InvoiceStatus.EN_VALIDATION_N1);
         mockUserRole("ROLE_VALIDATEUR_N1_INFO");
 
         Map<String, Object> vars = new HashMap<>();
-        vars.put("rejectionReason", "short");
-        assertThrows(WorkflowException.class, () -> 
+        vars.put("rejectionReason", "   ");
+        assertThrows(WorkflowException.class, () ->
             invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.REJECT, vars)
         );
+    }
+
+    @Test
+    void reject_WithPredefinedCodeOnly_Success() {
+        // N2 (PROB-117): "[DOUBLON]" (9 chars) used to be denied by the old 10-char guard.
+        invoice.setStatus(InvoiceStatus.EN_VALIDATION_N1);
+        mockUserRole("ROLE_VALIDATEUR_N1_INFO");
+
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("rejectionReason", "[DOUBLON]");
+
+        invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.REJECT, vars);
     }
 
     @Test

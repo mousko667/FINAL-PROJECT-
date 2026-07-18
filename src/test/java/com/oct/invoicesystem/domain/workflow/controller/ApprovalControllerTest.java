@@ -335,6 +335,26 @@ class ApprovalControllerTest {
     }
 
     @Test
+    void reject_withPredefinedCodeAndNoDetail_succeeds() throws Exception {
+        // N2 (PROB-117): a predefined code is a structured reason on its own; the 10-char minimum
+        // must NOT apply to the composed "[CODE]" string. "[DOUBLON]" is 9 chars and used to fail.
+        Invoice invoice = submitAndAssignN1Drh();
+
+        RejectRequest req = RejectRequest.builder()
+                .reasonCode(RejectionReasonCode.DOUBLON)
+                .rejectionReason(null)
+                .build();
+        perform(post("/api/v1/invoices/{id}/workflow/reject", invoice.getId()), n1Drh, req)
+                .andExpect(status().isOk());
+
+        String stored = approvalStepRepository.findByInvoiceIdOrderByStepOrderAsc(invoice.getId()).stream()
+                .map(s -> s.getRejectionReason())
+                .filter(java.util.Objects::nonNull)
+                .findFirst().orElseThrow();
+        assertEquals("[DOUBLON]", stored);
+    }
+
+    @Test
     void reject_withOtherCodeAndNoDetail_returns400() throws Exception {
         Invoice invoice = submitAndAssignN1Drh();
 
