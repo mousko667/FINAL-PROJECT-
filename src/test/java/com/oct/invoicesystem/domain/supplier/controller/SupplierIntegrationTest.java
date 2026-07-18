@@ -379,4 +379,84 @@ class SupplierIntegrationTest {
                 .forEach(supplierDocumentRepository::delete);
         supplierRepository.deleteById(java.util.UUID.fromString(id));
     }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // N7 (SoD) : le DAF valide/paie mais n'administre PAS le référentiel fournisseur.
+    // Il perd l'accès lecture au référentiel (détail, liste, export, documents,
+    // contrats, communications) et ne garde que /performance (analytics financier).
+    // ──────────────────────────────────────────────────────────────────────────
+
+    @Test
+    @WithMockUser(roles = "DAF")
+    void n7_dafIsForbiddenOnSupplierReferentialReads() throws Exception {
+        // Un supplier réel est créé par un ADMIN (helper) puis lu par le DAF → 403 attendu.
+        String id = createSupplier("N7 SoD Co", "TAX-N7-001", "n7.sod@example.com");
+        try {
+            // GET /{id} — détail
+            mockMvc.perform(get("/api/v1/suppliers/{id}", id))
+                    .andExpect(status().isForbidden());
+            // GET / — liste/recherche
+            mockMvc.perform(get("/api/v1/suppliers"))
+                    .andExpect(status().isForbidden());
+            // GET /export
+            mockMvc.perform(get("/api/v1/suppliers/export"))
+                    .andExpect(status().isForbidden());
+            // GET /{id}/documents
+            mockMvc.perform(get("/api/v1/suppliers/{id}/documents", id))
+                    .andExpect(status().isForbidden());
+            // GET /{supplierId}/contracts
+            mockMvc.perform(get("/api/v1/suppliers/{supplierId}/contracts", id))
+                    .andExpect(status().isForbidden());
+            // GET /{supplierId}/communications
+            mockMvc.perform(get("/api/v1/suppliers/{supplierId}/communications", id))
+                    .andExpect(status().isForbidden());
+        } finally {
+            cleanupSupplier(id);
+        }
+    }
+
+    @Test
+    @WithMockUser(roles = "ASSISTANT_COMPTABLE")
+    void n7_assistantComptableStillReadsSupplierReferential() throws Exception {
+        // Non-régression : l'AA garde l'accès lecture (détail + liste).
+        String id = createSupplier("N7 AA Co", "TAX-N7-AA-001", "n7.aa@example.com");
+        try {
+            mockMvc.perform(get("/api/v1/suppliers/{id}", id))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true));
+            mockMvc.perform(get("/api/v1/suppliers").param("taxId", "TAX-N7-AA-001"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true));
+        } finally {
+            cleanupSupplier(id);
+        }
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void n7_adminStillReadsSupplierDetail() throws Exception {
+        // Non-régression : l'ADMIN garde l'accès lecture au détail (il administre le référentiel).
+        String id = createSupplier("N7 Admin Co", "TAX-N7-ADM-001", "n7.adm@example.com");
+        try {
+            mockMvc.perform(get("/api/v1/suppliers/{id}", id))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true));
+        } finally {
+            cleanupSupplier(id);
+        }
+    }
+
+    @Test
+    @WithMockUser(roles = "DAF")
+    void n7_dafKeepsPerformanceAccess() throws Exception {
+        // /performance reste accessible au DAF : ici supplier sans facture → 404 (pas 403).
+        // Le 404 (et non 403) prouve que l'autorisation DAF passe toujours sur /performance.
+        String id = createSupplier("N7 Perf Co", "TAX-N7-PERF-001", "n7.perf@example.com");
+        try {
+            mockMvc.perform(get("/api/v1/suppliers/{id}/performance", id))
+                    .andExpect(status().isNotFound());
+        } finally {
+            cleanupSupplier(id);
+        }
+    }
 }

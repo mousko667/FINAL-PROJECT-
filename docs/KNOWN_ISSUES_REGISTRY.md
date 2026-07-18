@@ -1613,3 +1613,26 @@ avant de clore un correctif de routage, chercher TOUS les listeners de l'Ã©vÃ©ne
 - **Symptôme** : L'admin avait accès à ces pages financières, ce qui viole la séparation des devoirs (SoD).
 - **Cause** : Manque de PageRoleGuard restrictif sur ces deux vues financières.
 - **Statut** : Fermé. PageRoleGuard ajouté avec exclusion de l'admin et inclusion exhaustive des rôles validateurs.
+
+## PROB-123 â€” Le DAF accedait en lecture au referentiel fournisseur (SoD)
+
+- **Date** : 2026-07-18
+- **Finding** : N7 (audit exhaustif 2026-07-17).
+- **Cause racine** : les @PreAuthorize backend des lectures du referentiel fournisseur
+  autorisaient ROLE_DAF (detail, liste, export, documents, contrats, communications),
+  alors que le frontend (pages PageRoleGuard AA-only + menu AA-only) et la regle SoD
+  l'excluaient deja. Le garde-fou reel (backend) etait plus permissif que l'UI.
+- **Separation des taches** : le DAF valide et paie les factures ; il n'administre pas
+  le referentiel fournisseur (administre par ADMIN + ASSISTANT_COMPTABLE).
+- **Solution** : retrait de 'DAF' de 6 @PreAuthorize :
+  - SupplierController : getSupplier, searchSuppliers, exportSuppliers, listSupplierDocuments.
+  - SupplierRelationshipController : GET /contracts, GET /communications.
+  GET /performance CONSERVE pour le DAF (analytics financier, Module 11).
+- **Regle preventive** : toute surface du referentiel fournisseur exclut le DAF cote
+  backend ET frontend. Le DAF ne garde que l'analytics /performance. Verifier la
+  coherence back/front des @PreAuthorize a chaque ajout d'endpoint fournisseur.
+- **Note de perimetre (revue 2026-07-18)** : les endpoints d'ANALYTICS financier qui
+  nomment un fournisseur restent volontairement ouverts au DAF et n'entrent PAS dans N7 :
+  GET /reports/supplier/{id}/payments, GET /reports/aging/buckets,
+  GET /reports/supplier/{id}/performance et GET /suppliers/{id}/performance. N7 ne vise
+  que le REFERENTIEL administratif (fiche, coordonnees, documents, contrats, communications).

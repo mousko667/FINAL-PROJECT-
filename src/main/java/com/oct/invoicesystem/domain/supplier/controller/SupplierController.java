@@ -72,13 +72,13 @@ public class SupplierController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE', 'DAF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
     public ApiResponse<SupplierResponse> getSupplier(@PathVariable UUID id) {
         return ApiResponse.success(supplierService.getSupplier(id));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE', 'DAF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
     public ApiResponse<PagedResponse<SupplierResponse>> searchSuppliers(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String taxId,
@@ -92,7 +92,7 @@ public class SupplierController {
     }
 
     @GetMapping("/export")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE', 'DAF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
     public ResponseEntity<byte[]> exportSuppliers(@RequestParam(defaultValue = "csv") String format,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant from,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant to,
@@ -168,7 +168,7 @@ public class SupplierController {
     }
 
     @GetMapping("/{id}/documents")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE', 'DAF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
     public ApiResponse<List<Map<String, Object>>> listSupplierDocuments(@PathVariable UUID id) {
         supplierService.getSupplier(id);
         List<Map<String, Object>> documents = supplierService.listDocuments(id).stream()

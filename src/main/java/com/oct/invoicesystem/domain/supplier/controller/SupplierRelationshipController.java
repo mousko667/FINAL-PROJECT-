@@ -29,7 +29,7 @@ public class SupplierRelationshipController {
 
     // ── Contracts ──
     @GetMapping("/contracts")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE', 'DAF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
     public ResponseEntity<ApiResponse<List<SupplierContractDTO.Response>>> listContracts(@PathVariable UUID supplierId) {
         return ResponseEntity.ok(ApiResponse.success(service.listContracts(supplierId)));
     }
@@ -54,7 +54,7 @@ public class SupplierRelationshipController {
 
     // ── Communications ──
     @GetMapping("/communications")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE', 'DAF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
     public ResponseEntity<ApiResponse<List<SupplierCommunicationDTO.Response>>> listComms(@PathVariable UUID supplierId) {
         return ResponseEntity.ok(ApiResponse.success(service.listCommunications(supplierId)));
     }
