@@ -117,7 +117,7 @@ export default function ReportBuilderPage() {
           </div>
         </form>
 
-        <div className="bg-surface rounded-[4px] border overflow-hidden">
+        <div className="bg-surface rounded-[4px] border overflow-x-auto">
           {isLoading ? (
             <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-ink-faint" /></div>
           ) : defs.length === 0 ? (

@@ -256,7 +256,7 @@ function AdminAuditPage() {
       </Panel>
 
       {/* Table */}
-      <Panel className="overflow-hidden">
+      <Panel className="overflow-x-auto">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-6 h-6 animate-spin text-ink-faint" />

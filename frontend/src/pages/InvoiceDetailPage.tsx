@@ -443,7 +443,7 @@ export default function InvoiceDetailPage() {
 
           {/* Line Items */}
           {invoice.lineItems && invoice.lineItems.length > 0 && (
-            <Panel className="overflow-hidden" title={t('invoice.lineItems')}>
+            <Panel className="overflow-x-auto" title={t('invoice.lineItems')}>
               <div className="-m-5">
               <table className="w-full text-sm">
                 <thead className="bg-ground">

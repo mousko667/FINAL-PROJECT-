@@ -156,7 +156,7 @@ export default function AdminDelegationsPage() {
         {dept && (
           <>
             {/* Active delegations list */}
-            <Panel className="overflow-hidden">
+            <Panel className="overflow-x-auto">
               <div className="px-5 py-4 border-b border-hairline bg-ground">
                 <h2 className="font-semibold text-ink">
                   {t('admin.delegations.activeTitle', 'Active delegations')} — {dept}

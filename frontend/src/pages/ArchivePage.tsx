@@ -136,7 +136,7 @@ export default function ArchivePage() {
         </div>
 
         {/* Results */}
-        <div className="bg-surface rounded-[4px] border border-hairline overflow-hidden">
+        <div className="bg-surface rounded-[4px] border border-hairline overflow-x-auto">
           {isLoading ? (
             <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
           ) : invoices.length === 0 ? (

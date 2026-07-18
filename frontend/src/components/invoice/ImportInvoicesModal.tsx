@@ -110,7 +110,7 @@ export function ImportInvoicesModal({ onClose, onImported }: ImportInvoicesModal
                 </span>
               </div>
 
-              <div className="border border-hairline rounded-[4px] overflow-hidden">
+              <div className="border border-hairline rounded-[4px] overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead className="bg-ground border-b text-ink-soft">
                     <tr>

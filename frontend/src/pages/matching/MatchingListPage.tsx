@@ -60,7 +60,7 @@ export default function MatchingListPage() {
         ) : !data || data.content.length === 0 ? (
           <p className="text-sm text-ink-faint">{t('matching.empty')}</p>
         ) : (
-          <Panel className="overflow-hidden">
+          <Panel className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-ground">
                 <tr>

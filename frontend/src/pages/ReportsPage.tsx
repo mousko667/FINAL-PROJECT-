@@ -33,7 +33,7 @@ function KpiCard({ title, value, sub, icon }: { title: string; value: string | n
 function Section({ title, defaultOpen = true, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
   const [open, setOpen] = useState(defaultOpen)
   return (
-    <div className="bg-surface rounded-[4px] border border-hairline shadow-sm overflow-hidden">
+    <div className="bg-surface rounded-[4px] border border-hairline shadow-sm overflow-x-auto">
       <button
         onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between px-5 py-4 text-left font-semibold text-ink hover:bg-ground transition-colors"

@@ -63,7 +63,7 @@ export default function AdminRetentionDispositionPage() {
             <p className="text-xs text-ink-soft">{t('retentionDisposition.emptyHint', 'Tous les documents archivés sont dans leur durée de rétention.')}</p>
           </div>
         ) : (
-          <div className="bg-surface rounded-[4px] border border-hairline overflow-hidden">
+          <div className="bg-surface rounded-[4px] border border-hairline overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-ground text-left text-xs text-ink-soft">
                 <tr>

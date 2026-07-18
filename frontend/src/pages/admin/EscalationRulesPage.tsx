@@ -114,7 +114,7 @@ export default function EscalationRulesPage() {
         ) : isLoading ? (
           <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
         ) : (
-          <div className="bg-surface rounded-[4px] border border-hairline overflow-hidden">
+          <div className="bg-surface rounded-[4px] border border-hairline overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-ground border-b">
                 <tr>

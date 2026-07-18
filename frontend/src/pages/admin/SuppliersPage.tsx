@@ -131,7 +131,7 @@ function SuppliersPageInner() {
         </div>
       </div>
 
-      <div className="bg-surface rounded-[4px] border border-hairline overflow-hidden">
+      <div className="bg-surface rounded-[4px] border border-hairline overflow-x-auto">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />

@@ -87,7 +87,7 @@ export default function MatchingDetailPage() {
               }
             />
 
-            <Panel className="overflow-hidden">
+            <Panel className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-ground">
                   <tr>

@@ -294,7 +294,7 @@ export default function PaymentsPage() {
 
         {/* Invoices awaiting payment */}
         {(invoicesLoading || pendingInvoices.length > 0) && (
-          <Panel className="overflow-hidden">
+          <Panel className="overflow-x-auto">
             <div className="flex items-center gap-2 px-5 py-3 border-b border-hairline bg-pos-bg">
               <DollarSign className="w-4 h-4 text-pos" />
               <h2 className="font-semibold text-pos text-sm">
@@ -397,7 +397,7 @@ export default function PaymentsPage() {
         )}
 
         {/* Payment history */}
-        <Panel className="overflow-hidden">
+        <Panel className="overflow-x-auto">
           <div className="flex items-center gap-2 px-5 py-3 border-b border-hairline flex-wrap">
             <FileText className="w-4 h-4 text-ink-faint" />
             <h2 className="font-semibold text-ink text-sm">{t('payments.history', 'Historique des paiements')}</h2>

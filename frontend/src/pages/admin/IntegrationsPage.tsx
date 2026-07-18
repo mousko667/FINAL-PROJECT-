@@ -183,7 +183,7 @@ function IntegrationsPage() {
       )}
 
       {/* Webhooks list */}
-      <div className="bg-surface rounded-[4px] border border-hairline overflow-hidden">
+      <div className="bg-surface rounded-[4px] border border-hairline overflow-x-auto">
         {isLoading ? (
           <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
         ) : !webhooks?.length ? (
@@ -239,7 +239,7 @@ function IntegrationsPage() {
 
       {/* Delivery log for the selected webhook */}
       {logsWebhookId && (
-        <div className="bg-surface rounded-[4px] border border-hairline overflow-hidden">
+        <div className="bg-surface rounded-[4px] border border-hairline overflow-x-auto">
           <div className="flex items-center justify-between px-5 py-3 border-b bg-ground">
             <h2 className="font-semibold text-ink flex items-center gap-2 text-sm">
               <ScrollText className="w-4 h-4 text-ink-soft" /> {t('admin.integrations.deliveryLog', 'Delivery log')}

@@ -99,7 +99,7 @@ function AdminAnnouncementsPage() {
         </form>
       </Panel>
 
-      <Panel className="overflow-hidden">
+      <Panel className="overflow-x-auto">
         {isLoading ? (
           <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-ink-faint" /></div>
         ) : announcements.length === 0 ? (

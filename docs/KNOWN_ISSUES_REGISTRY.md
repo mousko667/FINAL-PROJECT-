@@ -1654,3 +1654,17 @@ avant de clore un correctif de routage, chercher TOUS les listeners de l'événe
   declare hsl(var(--x)). Ne jamais ecrire var(--x) nu pour une couleur. Verifier en clair ET
   sombre apres tout changement de token (une couleur redevenue visible peut reveler une
   couleur en dur redondante posee pour compenser le bug).
+## PROB-125 - Tables larges coupees par un conteneur overflow-hidden (N20)
+
+- **Date** : 2026-07-18
+- **Finding** : N20 (audit exhaustif).
+- **Cause racine** : des tableaux larges etaient enroules dans un conteneur (Panel ou div)
+  en overflow-hidden, qui recoupait les colonnes au lieu d'offrir un defilement horizontal.
+  Le composant ui/Table.tsx a pourtant deja overflow-x-auto sur son conteneur ; le blocage
+  venait du PARENT overflow-hidden.
+- **Solution** : sur les conteneurs de tables larges, remplacer overflow-hidden par
+  overflow-x-auto (ou ajouter un wrapper overflow-x-auto autour de la table seule), comme le
+  pattern de reference AdminPermissionMatrixPage (Panel overflow-x-auto). La table defile
+  horizontalement ; la page ne defile jamais horizontalement.
+- **Regle preventive** : ne jamais mettre overflow-hidden sur un conteneur direct de table
+  large. Utiliser le composant ui/Table (qui gere overflow-x-auto) ou un wrapper overflow-x-auto.

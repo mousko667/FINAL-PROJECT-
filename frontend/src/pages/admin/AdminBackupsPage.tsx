@@ -97,7 +97,7 @@ export default function AdminBackupsPage() {
           </div>
         )}
 
-        <Panel className="overflow-hidden">
+        <Panel className="overflow-x-auto">
           {backupsLoading ? (
             <div className="flex justify-center p-8">
               <Loader2 className="w-6 h-6 animate-spin text-ink-faint" />
@@ -138,7 +138,7 @@ export default function AdminBackupsPage() {
         </Panel>
 
         {/* Audit History Card */}
-        <Panel className="overflow-hidden mt-8">
+        <Panel className="overflow-x-auto mt-8">
           <div className="px-6 py-4 border-b border-hairline flex items-center gap-2">
             <Activity className="w-5 h-5 text-ink-faint" />
             <h2 className="text-lg font-semibold text-ink">

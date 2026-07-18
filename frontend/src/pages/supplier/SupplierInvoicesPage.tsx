@@ -295,7 +295,7 @@ export default function SupplierInvoicesPage() {
       </Panel>
 
       {/* Table */}
-      <Panel className="overflow-hidden">
+      <Panel className="overflow-x-auto">
         {isLoading ? (
           <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
         ) : invoices.length === 0 ? (
