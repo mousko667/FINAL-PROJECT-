@@ -1,2 +1,45 @@
-/mvnw text eol=lf
+# Normalisation des fins de ligne — dépôt hébergé sur Windows (core.autocrlf=true).
+# L'index reste en LF ; le working tree peut être en CRLF côté Windows.
+
+# Défaut : laisser git détecter le texte et normaliser en LF dans l'index.
+* text=auto eol=lf
+
+# Scripts qui DOIVENT garder des fins de ligne natives Windows.
 *.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Wrapper Maven POSIX : toujours LF.
+/mvnw text eol=lf
+
+# Sources / config : normaliser en LF (déterministe, indépendant de la plateforme).
+*.java   text eol=lf
+*.ts     text eol=lf
+*.tsx    text eol=lf
+*.js     text eol=lf
+*.jsx    text eol=lf
+*.css    text eol=lf
+*.html   text eol=lf
+*.xml    text eol=lf
+*.yml    text eol=lf
+*.yaml   text eol=lf
+*.json   text eol=lf
+*.sql    text eol=lf
+*.md     text eol=lf
+*.properties text eol=lf
+
+# Fichiers contenant un octet NUL → traités comme binaires (pas de normalisation
+# de fins de ligne, évite le churn cosmétique au merge). Voir docs/KNOWN_ISSUES_REGISTRY.md
+# (octet NUL intentionnel : append via heredoc bash, jamais Edit).
+docs/KNOWN_ISSUES_REGISTRY.md -text
+
+# Binaires courants — jamais de conversion.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+*.ico binary
+*.jar binary
+*.woff binary
+*.woff2 binary
