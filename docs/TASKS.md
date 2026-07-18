@@ -129,6 +129,10 @@ Requirements. They supersede the old "Known Gaps — Must Be Fixed" section form
 
 ---
 
+> **Fix (Task 19, N4+N21, 2026-07-18, PROB-121 + PROB-122)** � Ajout de PageRoleGuard sur 14 pages d'administration (N4) avec ['ROLE_ADMIN'] et sur ApprovalQueuePage / InvoiceListPage (N21) avec les r�les de validation appropri�s (excluant l'admin). La s�curit� UI est maintenant uniforme.
+
+---
+
 ## B. OUT OF SCOPE (assumed) — Module 12 Integration
 
 Per `docs/REQUIREMENTS-MATRIX.md` Module 12, confirmed with the project owner on 2026-06-12,
@@ -706,4 +710,5 @@ connectors + webhooks + status). These remain normal tracked items, not scope ex
 - Vérification = rendu d'écran + endpoints + chemins nominaux cliqués + lecture de code ciblée. **Tous les cas d'erreur et toutes les combinaisons rôle×champ n'ont pas été exhaustivement exercés.**
 - « Responsive » testé à 390px (rendu OK) mais pas la qualité visuelle mobile complète.
 - Les connecteurs M12 sont un **cadre** : aucun système externe réel n'a été contacté.
+
 

@@ -1604,3 +1604,12 @@ findActiveUsersBySupplierId. Tests portail + interne ajoutÃ©s (4 â†’ 6).
 **Preventive rule:** Un Ã©vÃ©nement de domaine peut avoir plusieurs @EventListener dispersÃ©s ;
 avant de clore un correctif de routage, chercher TOUS les listeners de l'Ã©vÃ©nement
 (grep sur le type d'Ã©vÃ©nement), pas seulement ceux nommÃ©s dans le spec.
+### PROB-121: 14 pages admin sans garde (N4)
+- **Symptôme** : L'accès aux URL des pages admin était possible pour des non-admins sans redirection ni message d'erreur d'autorisation.
+- **Cause** : Les pages manquaient du composant PageRoleGuard avec les rôles ADMIN_ROLES.
+- **Statut** : Fermé. PageRoleGuard ajouté.
+
+### PROB-122: Garde insuffisante sur ApprovalQueue et InvoiceList (N21)
+- **Symptôme** : L'admin avait accès à ces pages financières, ce qui viole la séparation des devoirs (SoD).
+- **Cause** : Manque de PageRoleGuard restrictif sur ces deux vues financières.
+- **Statut** : Fermé. PageRoleGuard ajouté avec exclusion de l'admin et inclusion exhaustive des rôles validateurs.
