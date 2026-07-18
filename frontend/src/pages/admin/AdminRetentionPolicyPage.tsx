@@ -41,7 +41,7 @@ export default function AdminRetentionPolicyPage() {
   })
 
   const formatDate = (iso?: string | null) =>
-    iso ? new Date(iso).toLocaleString(i18n.language) : t('retentionPolicy.never', 'Jamais')
+    iso ? new Date(iso).toLocaleString(i18n.language === 'en' ? 'en-US' : 'fr-FR') : t('retentionPolicy.never', 'Jamais')
 
   return (
     <PageRoleGuard allowedRoles={['ROLE_ADMIN']}>

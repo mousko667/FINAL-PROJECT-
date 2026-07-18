@@ -1681,3 +1681,14 @@ avant de clore un correctif de routage, chercher TOUS les listeners de l'événe
   c'etait manifestement incoherent, sans forcer une largeur unique.
 - **Regle preventive** : pas de largeur fixe non-responsive sur une sidebar ; choisir max-w par
   type de page selon une convention documentee, pas au cas par cas arbitraire.
+## PROB-127 - Dates en format US en mode EN (toLocaleString(i18n.language)) (N12)
+
+- **Date** : 2026-07-18
+- **Finding** : N12 (audit exhaustif).
+- **Cause racine** : 3 pages admin passaient i18n.language ("en"/"fr") tel quel a toLocaleString,
+  or "en" seul donne un format US ambigu au lieu d'un locale complet.
+- **Solution** : appliquer la convention deja presente dans PaymentsPage :
+  i18n.language === 'en' ? 'en-US' : 'fr-FR'. Fichiers : AdminArchiveCompliancePage,
+  AdminRetentionDispositionPage, AdminRetentionPolicyPage.
+- **Regle preventive** : ne jamais passer i18n.language brut a toLocale*(). Toujours mapper vers
+  un locale complet (en-US / fr-FR).

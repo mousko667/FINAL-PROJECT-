@@ -83,7 +83,7 @@ export default function AdminArchiveCompliancePage() {
           <>
             <p className="flex items-center gap-1.5 text-xs text-ink-faint">
               <ShieldCheck className="w-3.5 h-3.5" />
-              {t('archiveCompliance.generatedAt', 'Généré le')} {new Date(report.generatedAt).toLocaleString(i18n.language)}
+              {t('archiveCompliance.generatedAt', 'Généré le')} {new Date(report.generatedAt).toLocaleString(i18n.language === 'en' ? 'en-US' : 'fr-FR')}
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

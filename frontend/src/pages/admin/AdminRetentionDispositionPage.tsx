@@ -82,7 +82,7 @@ export default function AdminRetentionDispositionPage() {
                         ? <Link to={`/invoices/${doc.invoiceId}`} className="text-primary hover:underline">{doc.invoiceId.slice(0, 8)}</Link>
                         : <span className="text-ink-faint">—</span>}
                     </td>
-                    <td className="px-4 py-2 text-ink-soft">{new Date(doc.uploadedAt).toLocaleString(i18n.language)}</td>
+                    <td className="px-4 py-2 text-ink-soft">{new Date(doc.uploadedAt).toLocaleString(i18n.language === 'en' ? 'en-US' : 'fr-FR')}</td>
                     <td className="px-4 py-2">
                       <div className="flex items-center justify-end gap-2">
                         <button
