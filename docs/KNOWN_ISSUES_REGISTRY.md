@@ -1636,3 +1636,21 @@ avant de clore un correctif de routage, chercher TOUS les listeners de l'événe
   GET /reports/supplier/{id}/payments, GET /reports/aging/buckets,
   GET /reports/supplier/{id}/performance et GET /suppliers/{id}/performance. N7 ne vise
   que le REFERENTIEL administratif (fiche, coordonnees, documents, contrats, communications).
+## PROB-124 - Tokens shadcn de base non enveloppes dans hsl() (couleurs invisibles)
+
+- **Date** : 2026-07-18
+- **Findings** : N11 (audit exhaustif) + N19.
+- **Cause racine** : dans frontend/tailwind.config.js, les tokens shadcn de base (primary,
+  secondary, destructive, muted, accent, popover, card, border, input, ring, background,
+  foreground) referencaient la variable CSS en var(--x) au lieu de hsl(var(--x)). Comme les
+  variables CSS sont des triplets HSL bruts (ex. --primary: 213 64% 16%), bg-primary generait
+  background-color: 213 64% 16% (valeur invalide) -> couleur non appliquee. CTA et textes
+  invisibles (login, confirmation, ErrorBoundary, stepper) ; ~62 fichiers utilisant
+  text-primary/bg-primary/border-primary affectes.
+- **Solution** : envelopper les 12 tokens de base dans hsl(...) dans tailwind.config.js,
+  comme les tokens Registre recents (ground, surface, ink...) le font deja. Aucun des 62
+  fichiers consommateurs n'a change (fix centralise dans la config).
+- **Regle preventive** : tout token Tailwind adosse a une variable CSS HSL brute DOIT etre
+  declare hsl(var(--x)). Ne jamais ecrire var(--x) nu pour une couleur. Verifier en clair ET
+  sombre apres tout changement de token (une couleur redevenue visible peut reveler une
+  couleur en dur redondante posee pour compenser le bug).
