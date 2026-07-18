@@ -116,3 +116,6 @@ minio-data/
 uploads/
 tmp/
 temp/
+
+# Git worktrees (isolation binome — non suivi)
+.worktrees/
