@@ -7,6 +7,23 @@ import { Panel } from '@/components/ui/Panel'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Loader2, CheckCircle, Clock, AlertTriangle } from 'lucide-react'
 import { formatAmount, formatDate } from '@/lib/format'
+import { PageRoleGuard } from '@/components/auth/RoleGuard'
+
+const ALLOWED_ROLES = [
+  'ROLE_ASSISTANT_COMPTABLE',
+  'ROLE_DAF',
+  'ROLE_VALIDATEUR_N1_DRH',
+  'ROLE_VALIDATEUR_N1_DG',
+  'ROLE_VALIDATEUR_N1_INFO',
+  'ROLE_VALIDATEUR_N2_INFO',
+  'ROLE_VALIDATEUR_N1_TERM',
+  'ROLE_VALIDATEUR_N1_COM',
+  'ROLE_VALIDATEUR_N1_QHSSE',
+  'ROLE_VALIDATEUR_N1_INFRA',
+  'ROLE_VALIDATEUR_N2_INFRA',
+  'ROLE_VALIDATEUR_N1_TECH',
+  'ROLE_VALIDATEUR_N2_TECH'
+]
 
 interface PendingInvoice {
   id: string
@@ -50,7 +67,7 @@ function isSlaNearBreach(inv: PendingInvoice): boolean {
 
 const rowHoverTint = 'hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)] transition-colors'
 
-export default function ApprovalQueuePage() {
+function ApprovalQueuePage() {
   const { t, i18n } = useTranslation()
   const roles = useAppSelector((s) => s.auth.user?.roles ?? [])
   const departmentId = useAppSelector((s) => s.auth.user?.departmentId)
@@ -185,5 +202,14 @@ export default function ApprovalQueuePage() {
         {' '}{t('approvals.slaNote', 'SLA: 3 business days per approval level. Red = SLA breached. Amber = last day.')}
       </p>
     </div>
+  )
+}
+
+
+export default function ApprovalQueuePageWrapper() {
+  return (
+    <PageRoleGuard allowedRoles={ALLOWED_ROLES}>
+      <ApprovalQueuePage />
+    </PageRoleGuard>
   )
 }
