@@ -5,6 +5,7 @@ import com.oct.invoicesystem.domain.invoice.statemachine.InvoiceEvent;
 import com.oct.invoicesystem.domain.workflow.guard.DepartmentTransitionGuard;
 import com.oct.invoicesystem.domain.workflow.guard.DocumentRequiredGuard;
 import com.oct.invoicesystem.domain.workflow.guard.RejectionReasonGuard;
+import com.oct.invoicesystem.domain.workflow.guard.ResubmissionVersionGuard;
 import com.oct.invoicesystem.domain.workflow.guard.RoleMatchGuard;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
@@ -30,6 +31,7 @@ public class StateMachineConfig extends EnumStateMachineConfigurerAdapter<Invoic
     private final DocumentRequiredGuard documentRequiredGuard;
     private final RoleMatchGuard roleMatchGuard;
     private final RejectionReasonGuard rejectionReasonGuard;
+    private final ResubmissionVersionGuard resubmissionVersionGuard;
 
     @Override
     public void configure(StateMachineConfigurationConfigurer<InvoiceStatus, InvoiceEvent> config) throws Exception {
@@ -126,6 +128,7 @@ public class StateMachineConfig extends EnumStateMachineConfigurerAdapter<Invoic
                 .withExternal()
                 .source(InvoiceStatus.REJETE)
                 .target(InvoiceStatus.SOUMIS)
-                .event(InvoiceEvent.RESUBMIT);
+                .event(InvoiceEvent.RESUBMIT)
+                .guard(resubmissionVersionGuard);
     }
 }

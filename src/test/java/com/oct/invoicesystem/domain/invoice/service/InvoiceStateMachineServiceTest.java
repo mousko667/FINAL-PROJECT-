@@ -392,6 +392,30 @@ class InvoiceStateMachineServiceTest {
     }
 
     @Test
+    void resubmit_WithPurchaseOrderAndUnevaluableMatching_ThrowsWorkflowException() {
+        // N1-B (PROB-118): a MISMATCH rejected then resubmitted must be re-checked. The
+        // duplicate/matching gate previously ran only for SUBMIT, letting a rejected MISMATCH
+        // invoice slip back to SOUMIS without a DAF/ADMIN override (WORKFLOW §11). RESUBMIT must
+        // run the same matching gate as SUBMIT and fail closed when it cannot be evaluated.
+        invoice.setStatus(InvoiceStatus.REJETE);
+        UUID purchaseOrderId = UUID.randomUUID();
+        invoice.setPurchaseOrderId(purchaseOrderId);
+
+        when(matchingResultRepository.findByInvoiceId(invoice.getId())).thenReturn(Optional.empty());
+
+        PurchaseOrder po = PurchaseOrder.builder()
+                .id(purchaseOrderId)
+                .items(List.of())
+                .build();
+        when(purchaseOrderRepository.findByIdActive(purchaseOrderId)).thenReturn(Optional.of(po));
+        when(goodsReceiptNoteRepository.findByPurchaseOrderId(purchaseOrderId)).thenReturn(List.of());
+
+        assertThrows(WorkflowException.class, () ->
+            invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.RESUBMIT, null)
+        );
+    }
+
+    @Test
     void invalidTransition_FromSoumisToValidateN1_ThrowsWorkflowException() {
         invoice.setStatus(InvoiceStatus.SOUMIS);
         assertThrows(WorkflowException.class, () -> 

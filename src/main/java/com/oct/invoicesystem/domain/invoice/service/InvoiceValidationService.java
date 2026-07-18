@@ -12,6 +12,26 @@ import java.math.BigDecimal;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
+/**
+ * Reference catalogue of the ten invoice business rules of {@code docs/WORKFLOW.md} §8.
+ *
+ * <p><b>Enforcement note (N1, PROB-118):</b> most rules are enforced at their real entry point, not
+ * from this class:
+ * <ul>
+ *   <li>Rule 1 (document required) → {@code DocumentRequiredGuard} on SUBMIT.</li>
+ *   <li>Rule 2 (rejection reason) → {@code RejectionReasonGuard} on REJECT.</li>
+ *   <li>Rule 3 (approver ≠ submitter) → {@code ApprovalServiceImpl.ensureNotSubmitter}.</li>
+ *   <li><b>Rule 4 (resubmission requires a correction) → wired here via
+ *       {@code ResubmissionVersionGuard} on the RESUBMIT transition.</b></li>
+ *   <li>Rule 5 (DAF-only actions) → {@code @PreAuthorize("hasRole('DAF')")} on the endpoints.</li>
+ *   <li>Rule 6 (assistant creates/submits) → {@code @PreAuthorize} on the invoice endpoints.</li>
+ *   <li>Rule 7 (archive is automatic) → {@code InvoiceStateMachineServiceImpl} ARCHIVE guard.</li>
+ *   <li>Rules 8–10 → soft-delete policy, entity {@code BigDecimal} typing, reference generator.</li>
+ * </ul>
+ * Only {@link #validateResubmissionVersion(Integer, Integer)} is invoked from production code; the
+ * remaining methods document the rule contract and back the unit tests, so they must stay in sync
+ * with the enforcing components above.
+ */
 @Service
 public class InvoiceValidationService {
 

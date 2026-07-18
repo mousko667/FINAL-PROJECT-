@@ -115,6 +115,15 @@ public class Invoice {
     @Builder.Default
     private Integer version = 0;
 
+    /**
+     * Optimistic-lock {@link #version} captured at the moment the invoice was rejected (N1-A,
+     * PROB-118). Resubmission ({@code REJETE → SOUMIS}) requires {@code version} to have grown past
+     * this value, proving the invoice was actually corrected since the rejection. {@code null} when
+     * the invoice has never been rejected (or was rejected before this field existed).
+     */
+    @Column(name = "version_at_rejection")
+    private Integer versionAtRejection;
+
     @CreatedDate
     @Column(name = "created_at", updatable = false, nullable = false)
     private Instant createdAt;

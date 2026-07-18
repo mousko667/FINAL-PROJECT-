@@ -233,6 +233,11 @@ class ApprovalControllerTest {
         Invoice afterReject = invoiceRepository.findById(invoice.getId()).orElseThrow();
         assertEquals(InvoiceStatus.REJETE, afterReject.getStatus());
 
+        // N1-A (PROB-118): resubmission now requires a real correction since the rejection. Edit
+        // the invoice so its @Version grows past the version captured at rejection.
+        afterReject.setDescription("piece justificative ajoutee apres rejet");
+        invoiceRepository.saveAndFlush(afterReject);
+
         // Resubmit → SOUMIS
         perform(post("/api/v1/invoices/{id}/resubmit", invoice.getId()), assistant)
                 .andExpect(status().isOk());
@@ -376,6 +381,53 @@ class ApprovalControllerTest {
                 .build();
         perform(post("/api/v1/invoices/{id}/workflow/reject", invoice.getId()), n1Drh, req)
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void resubmit_withoutCorrection_isRejected() throws Exception {
+        // N1-A (PROB-118): a rejected invoice must not be resubmittable in a loop without any
+        // correction. The version at rejection is captured; RESUBMIT requires version > that value
+        // (i.e. the invoice was actually edited). No edit here → resubmit must be denied.
+        Invoice invoice = rejectDrhInvoice();
+
+        perform(post("/api/v1/invoices/{id}/resubmit", invoice.getId()), assistant)
+                .andExpect(status().isBadRequest());
+
+        Invoice reloaded = invoiceRepository.findById(invoice.getId()).orElseThrow();
+        assertEquals(InvoiceStatus.REJETE, reloaded.getStatus());
+    }
+
+    @Test
+    void resubmit_afterCorrection_succeeds() throws Exception {
+        // N1-A (PROB-118): once the invoice has been corrected (its version increments past the
+        // value captured at rejection), resubmission is allowed.
+        Invoice invoice = rejectDrhInvoice();
+
+        // Simulate a business correction: editing the invoice bumps the JPA @Version.
+        Invoice toEdit = invoiceRepository.findById(invoice.getId()).orElseThrow();
+        toEdit.setDescription("montant corrige apres rejet");
+        invoiceRepository.saveAndFlush(toEdit);
+
+        perform(post("/api/v1/invoices/{id}/resubmit", invoice.getId()), assistant)
+                .andExpect(status().isOk());
+
+        Invoice reloaded = invoiceRepository.findById(invoice.getId()).orElseThrow();
+        assertEquals(InvoiceStatus.SOUMIS, reloaded.getStatus());
+    }
+
+    /**
+     * Brings a fresh DRH invoice all the way to REJETE (submit → AA control → N1 self-assign →
+     * reject with a predefined code), ready to test the resubmission rules.
+     */
+    private Invoice rejectDrhInvoice() throws Exception {
+        Invoice invoice = submitAndAssignN1Drh();
+        RejectRequest req = RejectRequest.builder()
+                .reasonCode(RejectionReasonCode.PIECE_MANQUANTE)
+                .rejectionReason(null)
+                .build();
+        perform(post("/api/v1/invoices/{id}/workflow/reject", invoice.getId()), n1Drh, req)
+                .andExpect(status().isOk());
+        return invoice;
     }
 
     /**

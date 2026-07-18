@@ -81,7 +81,11 @@ public class InvoiceStateMachineServiceImpl implements InvoiceStateMachineServic
             }
         }
 
-        if (event.equals(InvoiceEvent.SUBMIT)) {
+        // The duplicate + three-way matching gate must run on BOTH first submission and
+        // resubmission. A MISMATCH invoice that is rejected then resubmitted must be re-checked
+        // and still requires a DAF/ADMIN override to proceed (WORKFLOW §11); running the gate only
+        // on SUBMIT let a rejected MISMATCH slip back to SOUMIS unchecked (N1-B, PROB-118).
+        if (event.equals(InvoiceEvent.SUBMIT) || event.equals(InvoiceEvent.RESUBMIT)) {
             // Duplicate detection — block if same supplier already has a non-rejected invoice
             // with the same description within the last 365 days
             performDuplicateCheck(invoice);

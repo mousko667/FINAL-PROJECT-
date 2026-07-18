@@ -1495,3 +1495,72 @@ dediee (pas dans le lot controle AA, deja scope).
 
 **Regle preventive:** un DOM d'apparence correcte peut cacher un affichage incomplet — toujours
 croiser l'UI avec l'etat reel en base lors d'une verif runtime (cf. [[verify-runtime-not-snapshot]]).
+
+---
+
+## PROB-117 — Rejet par code predefini casse (seuil 10 caracteres applique a `[CODE]`)
+
+**Date:** 2026-07-18 · **Severite:** critique (workflow) · **Finding audit:** N2
+
+**Symptome:** `POST /invoices/{id}/workflow/reject {"reasonCode":"DOUBLON"}` renvoyait HTTP 400
+(« Transition denied for event REJECT ») alors que `MONTANT_INCORRECT` passait. Le motif
+« doublon » (un des plus courants) etait inutilisable sans texte libre.
+
+**Cause racine:** `RejectionReasonGuard` testait `rejectionReason.trim().length() < 10` sur la chaine
+**composee** `[CODE] detail` construite par `ApprovalController.reject`. La longueur du seul `[CODE]`
+decidait donc du succes : `[MONTANT_INCORRECT]`=19 et `[PIECE_MANQUANTE]`=17 passaient, mais
+`[DOUBLON]`=9 et `[AUTRE]`=7 echouaient. La regle WORKFLOW §8-2 (« motif >= 10 car ») etait
+« satisfaite » par le padding des crochets, pas par un vrai motif.
+
+**Solution:** un code predefini EST un motif structure ; le guard ne valide plus la longueur mais
+seulement la presence (motif non vide). La seule contrainte de longueur utile — un detail libre
+>= 10 caracteres quand le code est `AUTRE` — reste appliquee dans `ApprovalController.reject`
+(deja correcte). Fichier: `domain/workflow/guard/RejectionReasonGuard.java`.
+
+**Preuve runtime:** reject `DOUBLON` (code seul) -> HTTP 200, motif `[DOUBLON]` persiste, statut
+REJETE ; `AUTRE` sans detail suffisant -> toujours 400.
+
+**Regle preventive:** ne jamais valider une contrainte metier sur une chaine deja **decoree/composee**
+par une couche superieure — valider la donnee humaine a sa source. Une validation dupliquee dans un
+guard ET un controller doit avoir une frontiere claire (le controller possede la regle de detail,
+le guard ne verifie que la presence).
+
+---
+
+## PROB-118 — Resoumission d'une facture rejetee sans controle (regles WORKFLOW §8 non branchees)
+
+**Date:** 2026-07-18 · **Severite:** critique (workflow) · **Finding audit:** N1
+
+**Symptome (A):** une facture REJETE pouvait etre resoumise en boucle **sans aucune correction**
+(viole WORKFLOW §8-4 : « updated since rejection, version incremented »).
+**Symptome (B):** une facture matching MISMATCH rejetee puis resoumise repassait a SOUMIS **sans
+override DAF/ADMIN** (viole CLAUDE.md Phase 9 / WORKFLOW §11).
+
+**Cause racine:**
+1. `InvoiceValidationService` (cense centraliser les 10 regles WORKFLOW §8) n'avait **aucun
+   appelant** dans `src/main` — code decoratif ; la regle de version de resoumission n'etait jamais
+   executee.
+2. La transition `REJETE --RESUBMIT--> SOUMIS` (`StateMachineConfig`) n'avait **aucun guard**.
+3. Le bloc doublon + three-way matching de `InvoiceStateMachineServiceImpl.sendEvent` etait garde
+   `if (event == SUBMIT)` **seulement** — jamais reexecute au RESUBMIT.
+
+**Solution:**
+- Symptome A : nouvelle colonne `invoices.version_at_rejection` (migration **V48**), capturee au
+  passage a REJETE dans `InvoiceStateChangeListener.preStateChange` (`version + 1`, car le save du
+  rejet incremente le `@Version` JPA). Nouveau `ResubmissionVersionGuard` cable sur la transition
+  RESUBMIT, delegant a `InvoiceValidationService.validateResubmissionVersion` (exige
+  `version > version_at_rejection`, donc une vraie edition depuis le rejet). Permissif si
+  `version_at_rejection` est null (factures rejetees avant le correctif).
+- Symptome B : la garde doublon/matching de `sendEvent` couvre desormais `SUBMIT || RESUBMIT`, donc
+  un MISMATCH resoumis exige toujours l'override DAF/ADMIN.
+- `InvoiceValidationService` reste un **catalogue de reference** documente (Javadoc de classe) : seule
+  `validateResubmissionVersion` est cablee ici, les 9 autres regles sont appliquees a leur vrai point
+  d'entree (guards, `@PreAuthorize`, `ensureNotSubmitter`, ARCHIVE auto).
+
+**Preuve runtime:** rejet -> `version_at_rejection` renseigne ; resubmit sans correction -> HTTP 400
+(« Transition denied for event RESUBMIT ») ; edition (version bump) puis resubmit -> HTTP 200 (SOUMIS).
+
+**Regle preventive:** un `@Service` qui « centralise des regles » sans appelant est un piege — verifier
+par grep que chaque regle a un point d'application reel, sinon la brancher ou la documenter comme
+reference. Ne jamais garder une garde de workflow sur un seul evenement (`SUBMIT`) quand la meme
+invariante doit tenir sur les chemins de retour (`RESUBMIT`).

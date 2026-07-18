@@ -51,6 +51,16 @@ public class InvoiceStateChangeListener extends StateMachineInterceptorAdapter<I
 
                     if (fromStatus != toStatus) {
                         invoice.setStatus(toStatus);
+
+                        // N1-A (PROB-118): capture the optimistic-lock version as it will be AFTER
+                        // this rejection is persisted (the save below increments @Version by one).
+                        // Resubmission then requires version > versionAtRejection, i.e. a real edit
+                        // since the rejection. Using version + 1 makes "just rejected, not yet
+                        // corrected" resolve to version == versionAtRejection (resubmit denied).
+                        if (toStatus == InvoiceStatus.REJETE && invoice.getVersion() != null) {
+                            invoice.setVersionAtRejection(invoice.getVersion() + 1);
+                        }
+
                         invoiceRepository.save(invoice);
 
                         UUID userId = (UUID) stateMachine.getExtendedState().getVariables().get(WorkflowExtendedStateKeys.USER_ID);

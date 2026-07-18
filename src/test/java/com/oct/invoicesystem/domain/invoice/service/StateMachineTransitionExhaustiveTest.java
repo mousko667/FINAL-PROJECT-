@@ -318,6 +318,13 @@ class StateMachineTransitionExhaustiveTest {
     @DisplayName("T12 REJETE → SOUMIS via RESUBMIT")
     void t12_rejete_to_soumis() {
         Invoice inv = advanceTo(InvoiceStatus.REJETE, drhDept, assistant, n1Drh);
+
+        // N1-A (PROB-118): resubmission requires a real correction since the rejection. Edit the
+        // invoice so its @Version grows past the version captured at rejection.
+        Invoice rejected = reload(inv);
+        rejected.setDescription("corrige apres rejet");
+        invoiceRepository.saveAndFlush(rejected);
+
         auth(assistant);
         sendEvent(inv.getId(), InvoiceEvent.RESUBMIT, Map.of(WorkflowExtendedStateKeys.USER_ID, assistant.getId()));
         assertEquals(InvoiceStatus.SOUMIS, reload(inv).getStatus());
