@@ -1590,3 +1590,17 @@ n'était jamais informé de l'approbation de sa facture — violation de la matr
 **Preventive rule:** Tout événement de cycle de vie visible côté fournisseur (soumission, rejet,
 approbation, paiement) doit déclencher une notification fournisseur ; vérifier la matrice §7 à chaque
 nouvel événement.
+
+## PROB-119b — N5 aussi présent sur le canal WebSocket (complément)
+**Date:** 2026-07-18
+**Root cause:** Les événements InvoiceRejectedEvent / BonAPayerEvent ont TROIS listeners
+(Email, Persist, WebSocket). Le correctif initial PROB-119/120 n'a traité que Email et Persist ;
+WebSocketNotificationListener poussait encore le toast temps réel vers submittedBy (= le compte
+fournisseur pour une facture portail), laissant le même bug N5 sur le canal live. Détecté par la
+revue finale whole-branch (le spec avait omis ce 3e listener sans l'exclure).
+**Solution:** Même helper resolveAccountingRecipients(invoice) appliqué dans
+WebSocketNotificationListener.onInvoiceRejected/onBonAPayer + push fournisseur via
+findActiveUsersBySupplierId. Tests portail + interne ajoutés (4 → 6).
+**Preventive rule:** Un événement de domaine peut avoir plusieurs @EventListener dispersés ;
+avant de clore un correctif de routage, chercher TOUS les listeners de l'événement
+(grep sur le type d'événement), pas seulement ceux nommés dans le spec.
