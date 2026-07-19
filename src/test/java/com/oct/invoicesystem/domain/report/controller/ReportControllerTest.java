@@ -361,4 +361,16 @@ class ReportControllerTest {
                         .param("from", "2026-01-01T00:00:00Z").param("to", "2026-12-31T00:00:00Z"))
                 .andExpect(status().isForbidden());
     }
+
+    // ─── N8 : /reports/summary était un alias mort de /kpis, retiré (PROB-130) ───
+
+    @Test
+    @WithMockUser(roles = "DAF")
+    void summary_isRemoved_returns404() throws Exception {
+        // /reports/summary était un doublon strict de /kpis (même DTO, même service), jamais
+        // appelé par le front. Retiré : l'endpoint n'existe plus → 404. /kpis reste couvert
+        // par les tests getKpis_* et n'est pas régressé.
+        mockMvc.perform(get("/api/v1/reports/summary"))
+                .andExpect(status().isNotFound());
+    }
 }

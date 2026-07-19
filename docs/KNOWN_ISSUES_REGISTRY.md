@@ -1730,3 +1730,22 @@ testée par p3_17) est CONSERVÉE.
 transition (state-machine + service) et vérifier la couverture de test avant de croire qu'une
 branche est cassée ou inatteignable. Une branche de service non appelée par l'UI et sans test
 est du code mort candidat à suppression, pas un bug à « rebrancher ».
+
+## PROB-130 — Endpoint alias mort /reports/summary (N8, lot backend)
+
+**Root cause :** `ReportController.getSummary()` (`GET /reports/summary`) était un alias strict de
+`getKpis()` (`GET /reports/kpis`) : même délégation à `reportService.getDashboardKpis()`, même
+`DashboardKpiDTO`. Le frontend utilise `/kpis` ; `/summary` n'était référencé nulle part (front,
+tests, back). Doublon d'API mort — un des points du finding d'audit N8 (« endpoints sans UI »).
+
+**Solution :** Retrait de la méthode `getSummary()` + `@GetMapping("/summary")` dans
+`ReportController`. `getDashboardKpis()` reste utilisé par `/kpis` et `ReportBuilderService`. Test
+`ReportControllerTest.summary_isRemoved_returns404` verrouille l'absence de l'endpoint (404). Les
+autres endpoints rapports orphelins (/activity, /payment-cycle, /supplier/{id}/payments) sont
+CONSERVÉS : ils seront câblés côté UI par le lot frontend (Antigravity). Le détail GRN
+(GET /goods-receipts/{id}) et l'édition annonce (PUT /announcements/{id}) existent déjà côté back et
+relèvent aussi du lot frontend.
+
+**Preventive rule :** Ne pas créer d'endpoint « alias » (même DTO, même service) d'un endpoint
+existant sans consommateur : c'est du code mort qui gonfle la surface d'API. Un endpoint sans appel
+front est soit à câbler (UI manquante), soit à retirer (redondant) — trancher, ne pas laisser traîner.

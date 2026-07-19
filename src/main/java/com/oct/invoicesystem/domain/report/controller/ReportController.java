@@ -50,13 +50,6 @@ public class ReportController {
         return ApiResponse.success(reportService.getDashboardKpis());
     }
 
-    @GetMapping("/summary")
-    @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
-    @Operation(summary = "Get report summary", description = "Alias for /kpis — invoice counts and metrics")
-    public ApiResponse<DashboardKpiDTO> getSummary() {
-        return ApiResponse.success(reportService.getDashboardKpis());
-    }
-
     @GetMapping("/activity")
     @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
     @Operation(summary = "Get recent invoice activity", description = "Returns recent invoice status changes for dashboard activity feeds")
