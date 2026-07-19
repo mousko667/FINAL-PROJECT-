@@ -19,6 +19,22 @@ interface GoodsReceipt {
   createdAt: string
 }
 
+interface GoodsReceiptDetail {
+  id: string
+  grnNumber: string
+  purchaseOrderId?: string
+  purchaseOrderNumber?: string
+  receivedByUsername: string
+  receiptDate: string
+  createdAt: string
+  items: Array<{
+    id: string
+    purchaseOrderItemId?: string
+    itemDescription: string
+    receivedQuantity: number
+  }>
+}
+
 interface PO { id: string; poNumber: string; supplierName?: string; totalAmount: number; currency?: string }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -39,6 +55,7 @@ export default function GoodsReceiptsPage() {
     notes: '',
     items: [{ description: '', quantityReceived: 1, unitPrice: 0 }],
   })
+  const [selectedGrnId, setSelectedGrnId] = useState<string | null>(null)
 
   const { data: grns, isLoading } = useQuery({
     queryKey: ['goods-receipts'],
@@ -55,6 +72,15 @@ export default function GoodsReceiptsPage() {
       return (Array.isArray(data.data) ? data.data : data.data?.content ?? []) as PO[]
     },
     enabled: showCreate,
+  })
+
+  const { data: grnDetail, isLoading: isLoadingDetail } = useQuery({
+    queryKey: ['goods-receipt', selectedGrnId],
+    queryFn: async () => {
+      const { data } = await apiClient.get<{ data: GoodsReceiptDetail }>(`/goods-receipts/${selectedGrnId}`)
+      return data.data
+    },
+    enabled: !!selectedGrnId,
   })
 
   const createMutation = useMutation({
@@ -182,6 +208,7 @@ export default function GoodsReceiptsPage() {
                   <th className="text-left px-4 py-3 font-medium text-ink-soft">{t('grn.receivedDate', 'Date de réception')}</th>
                   <th className="text-left px-4 py-3 font-medium text-ink-soft">{t('invoice.status', 'Statut')}</th>
                   <th className="text-left px-4 py-3 font-medium text-ink-soft">Notes</th>
+                  <th className="text-right px-4 py-3 font-medium text-ink-soft">{t('app.actions', 'Actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -201,12 +228,83 @@ export default function GoodsReceiptsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-ink-soft text-xs truncate max-w-xs">{grn.notes ?? '—'}</td>
+                    <td className="px-4 py-3 text-right">
+                      <button onClick={() => setSelectedGrnId(grn.id)} className="text-primary hover:underline text-xs font-medium">
+                        {t('app.view', 'Voir')}
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           )}
         </div>
+
+        {/* Detail Modal */}
+        {selectedGrnId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="bg-surface rounded-[4px] shadow-lg w-full max-w-2xl max-h-[90vh] flex flex-col">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-hairline">
+                <h3 className="font-semibold text-lg text-ink">{t('grn.details', 'Détails du bon de réception')}</h3>
+                <button onClick={() => setSelectedGrnId(null)} className="text-ink-faint hover:text-ink text-xl leading-none">&times;</button>
+              </div>
+              <div className="p-6 overflow-y-auto">
+                {isLoadingDetail ? (
+                  <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+                ) : !grnDetail ? (
+                  <div className="text-center py-8 text-ink-soft">{t('app.error')}</div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-ink-faint uppercase">{t('grn.grnNumber', 'N° GRN')}</p>
+                        <p className="font-medium text-ink mt-1">{grnDetail.grnNumber}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-ink-faint uppercase">{t('invoice.purchaseOrder', 'Bon de commande')}</p>
+                        <p className="font-medium text-ink mt-1">{grnDetail.purchaseOrderNumber ?? '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-ink-faint uppercase">{t('grn.receivedDate', 'Date de réception')}</p>
+                        <p className="font-medium text-ink mt-1">{formatDate(grnDetail.receiptDate)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-ink-faint uppercase">{t('reports.recentActivity.changedBy', 'Créé par')}</p>
+                        <p className="font-medium text-ink mt-1">{grnDetail.receivedByUsername}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-ink mb-3">{t('grn.items', 'Articles')}</h4>
+                      <div className="border border-hairline rounded-[4px] overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead className="bg-ground border-b border-hairline">
+                            <tr>
+                              <th className="text-left px-4 py-2 font-medium text-ink-soft">{t('invoice.description', 'Description')}</th>
+                              <th className="text-right px-4 py-2 font-medium text-ink-soft">{t('invoice.quantity', 'Qté')}</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-hairline">
+                            {grnDetail.items?.map(item => (
+                              <tr key={item.id} className="hover:bg-ground">
+                                <td className="px-4 py-2 text-ink">{item.itemDescription}</td>
+                                <td className="px-4 py-2 text-right num text-ink">{item.receivedQuantity}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="px-6 py-4 border-t border-hairline flex justify-end">
+                <button onClick={() => setSelectedGrnId(null)} className="px-4 py-2 border border-hairline rounded-[4px] text-sm hover:bg-ground">
+                  {t('grn.close', 'Fermer')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </PageRoleGuard>
   )

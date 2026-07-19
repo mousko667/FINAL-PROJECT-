@@ -29,6 +29,7 @@ function AdminAnnouncementsPage() {
   const [severity, setSeverity] = useState('INFO')
   const [formError, setFormError] = useState<string | null>(null)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
+  const [editId, setEditId] = useState<string | null>(null)
 
   const { data: announcements = [], isLoading } = useQuery<Announcement[]>({
     queryKey: ['announcements', 'all'],
@@ -46,6 +47,12 @@ function AdminAnnouncementsPage() {
     onError: () => setFormError(t('admin.announcements.createError', 'Échec de la création.')),
   })
 
+  const update = useMutation({
+    mutationFn: () => apiClient.put(`/announcements/${editId}`, { title, body, severity }),
+    onSuccess: () => { setEditId(null); setTitle(''); setBody(''); setSeverity('INFO'); setFormError(null); invalidate() },
+    onError: () => setFormError(t('admin.announcements.updateError', 'Échec de la mise à jour.')),
+  })
+
   const toggle = useMutation({
     mutationFn: ({ id, active }: { id: string; active: boolean }) =>
       apiClient.patch(`/announcements/${id}/active?active=${active}`),
@@ -60,7 +67,8 @@ function AdminAnnouncementsPage() {
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim() || !body.trim()) { setFormError(t('admin.announcements.incomplete', 'Titre et message requis.')); return }
-    create.mutate()
+    if (editId) update.mutate()
+    else create.mutate()
   }
 
   const inputCls = 'w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30'
@@ -91,11 +99,19 @@ function AdminAnnouncementsPage() {
           </select>
         </div>
         {formError && <p className="text-sm text-crit">{formError}</p>}
-        <button type="submit" disabled={create.isPending}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
-          {create.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-          {t('admin.announcements.create', 'Publier')}
-        </button>
+        <div>
+          <button type="submit" disabled={create.isPending || update.isPending}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+            {create.isPending || update.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+            {editId ? t('admin.announcements.update', 'Mettre à jour') : t('admin.announcements.create', 'Publier')}
+          </button>
+          {editId && (
+            <button type="button" onClick={() => { setEditId(null); setTitle(''); setBody(''); setSeverity('INFO'); setFormError(null) }}
+              className="ml-3 inline-flex items-center px-4 py-2 bg-ground border border-hairline text-ink rounded-[4px] text-sm font-medium hover:bg-surface">
+              {t('app.cancel', 'Annuler')}
+            </button>
+          )}
+        </div>
         </form>
       </Panel>
 
@@ -123,7 +139,9 @@ function AdminAnnouncementsPage() {
                       {a.active ? t('admin.announcements.active', 'Actif') : t('admin.announcements.inactive', 'Inactif')}
                     </button>
                   </td>
-                  <td className="px-4 py-2.5 text-right">
+                  <td className="px-4 py-2.5 text-right flex items-center justify-end gap-3">
+                    <button onClick={() => { setEditId(a.id); setTitle(a.title); setBody(a.body); setSeverity(a.severity); setFormError(null); window.scrollTo({top: 0, behavior: 'smooth'}) }} 
+                      className="text-primary hover:underline text-xs font-medium">{t('app.edit', 'Éditer')}</button>
                     <button onClick={() => setDeleteTargetId(a.id)} className="text-ink-faint hover:text-crit"><Trash2 className="w-4 h-4" /></button>
                   </td>
                 </tr>

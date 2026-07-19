@@ -474,7 +474,33 @@
     "daysOverdue": "Days Overdue",
     "amountDue": "Amount Due (XAF)",
     "dataExports": "Data Exports",
-    "noBottlenecks": "No SLA breaches detected — all approvals are within the 3-day SLA."
+    "noBottlenecks": "No SLA breaches detected — all approvals are within the 3-day SLA.",
+    "paymentCycle": {
+      "title": "Payment Cycle",
+      "desc": "Average times between different stages of an invoice lifecycle.",
+      "avgSubToBap": "Submission to BAP",
+      "avgBapToPay": "BAP to Payment",
+      "avgSchedToProc": "Scheduled to Processed",
+      "avgTotal": "Total Cycle",
+      "invoicesCount": "{{count}} invoices"
+    },
+    "supplierHistory": {
+      "title": "Payment History",
+      "desc": "Payment history for a specific supplier.",
+      "selectLabel": "Supplier",
+      "amount": "Amount Paid",
+      "method": "Payment Method",
+      "date": "Payment Date",
+      "reference": "Reference"
+    },
+    "recentActivity": {
+      "title": "Recent Activity",
+      "desc": "Latest invoice status changes.",
+      "date": "Date",
+      "transition": "From → To",
+      "changedBy": "Changed by",
+      "reason": "Reason"
+    }
   },
   "role": {
     "admin": "Administrator",
@@ -681,7 +707,9 @@
       "body": "Message",
       "severity": "Severity",
       "create": "Publish",
+      "update": "Update",
       "createError": "Creation failed.",
+      "updateError": "Update failed.",
       "incomplete": "Title and message are required.",
       "statusCol": "Active",
       "active": "Active",
@@ -1278,7 +1306,10 @@
     "grnNumber": "GRN No.",
     "receivedDate": "Received Date",
     "empty": "No goods receipt notes recorded",
-    "qtyPlaceholder": "Qty"
+    "qtyPlaceholder": "Qty",
+    "details": "Goods Receipt Details",
+    "items": "Items",
+    "close": "Close"
   },
   "register": {
     "supplierOnly": {

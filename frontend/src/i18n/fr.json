@@ -474,7 +474,33 @@
     "daysOverdue": "Jours de retard",
     "amountDue": "Montant dû (XAF)",
     "dataExports": "Exports de données",
-    "noBottlenecks": "Aucun dépassement de SLA détecté — toutes les approbations respectent le SLA de 3 jours."
+    "noBottlenecks": "Aucun dépassement de SLA détecté — toutes les approbations respectent le SLA de 3 jours.",
+    "paymentCycle": {
+      "title": "Cycle de paiement",
+      "desc": "Délais moyens entre les différentes étapes du cycle de vie d'une facture.",
+      "avgSubToBap": "Soumission à BAP",
+      "avgBapToPay": "BAP à Paiement",
+      "avgSchedToProc": "Planifié à Traité",
+      "avgTotal": "Cycle total",
+      "invoicesCount": "{{count}} factures"
+    },
+    "supplierHistory": {
+      "title": "Historique des paiements",
+      "desc": "Historique des paiements effectués pour un fournisseur spécifique.",
+      "selectLabel": "Fournisseur",
+      "amount": "Montant payé",
+      "method": "Mode de paiement",
+      "date": "Date de paiement",
+      "reference": "Référence"
+    },
+    "recentActivity": {
+      "title": "Activité récente",
+      "desc": "Derniers changements de statuts des factures.",
+      "date": "Date",
+      "transition": "De → À",
+      "changedBy": "Modifié par",
+      "reason": "Motif"
+    }
   },
   "role": {
     "admin": "Administrateur",
@@ -681,7 +707,9 @@
       "body": "Message",
       "severity": "Niveau",
       "create": "Publier",
+      "update": "Mettre à jour",
       "createError": "Échec de la création.",
+      "updateError": "Échec de la mise à jour.",
       "incomplete": "Titre et message requis.",
       "statusCol": "Actif",
       "active": "Actif",
@@ -1278,7 +1306,10 @@
     "grnNumber": "N° GRN",
     "receivedDate": "Date de réception",
     "empty": "Aucun bon de réception enregistré",
-    "qtyPlaceholder": "Qté"
+    "qtyPlaceholder": "Qté",
+    "details": "Détails du bon de réception",
+    "items": "Articles",
+    "close": "Fermer"
   },
   "register": {
     "supplierOnly": {

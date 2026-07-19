@@ -51,6 +51,10 @@ export default function ReportsPage() {
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
   const [perfSupplierId, setPerfSupplierId] = useState('')
+  
+  const [fromDateCycle, setFromDateCycle] = useState('')
+  const [toDateCycle, setToDateCycle] = useState('')
+  const [supplierHistoryId, setSupplierHistoryId] = useState('')
 
   // Reports are DAF / Assistant Comptable only. Gate every fetch on the role so
   // the page doesn't fire calls the backend will 403 before PageRoleGuard hides it.
@@ -123,6 +127,38 @@ export default function ReportsPage() {
     queryFn: () => reportService.getSupplierPerformance(perfSupplierId),
     enabled: canView && !!perfSupplierId,
     retry: false,
+  })
+
+  const { data: paymentCycle, isLoading: cycleLoading } = useQuery({
+    queryKey: ['payment-cycle', fromDateCycle, toDateCycle],
+    queryFn: async () => {
+      const { data } = await apiClient.get<{ data: { invoicesPaidCount: number; avgSubmissionToBapDays: number|null; avgBapToPaymentDays: number|null; avgScheduledToProcessedDays: number|null; avgTotalCycleDays: number|null } }>(
+        '/reports/payment-cycle',
+        { params: { from: fromDateCycle ? new Date(fromDateCycle).toISOString() : undefined, to: toDateCycle ? new Date(toDateCycle).toISOString() : undefined } }
+      )
+      return data.data
+    },
+    enabled: canView,
+  })
+
+  const { data: supplierHistory, isLoading: supplierHistoryLoading } = useQuery({
+    queryKey: ['supplier-payments', supplierHistoryId],
+    queryFn: async () => {
+      const { data } = await apiClient.get<{ data: Array<{ paymentId: string; invoiceReference: string; amountPaid: number; paymentMethod: string; paymentDate: string; paymentReference: string }> }>(
+        `/reports/supplier/${supplierHistoryId}/payments`
+      )
+      return data.data
+    },
+    enabled: canView && !!supplierHistoryId,
+  })
+
+  const { data: recentActivity, isLoading: recentActivityLoading } = useQuery({
+    queryKey: ['recent-activity'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<{ data: Array<{ id: string; invoiceId: string; referenceNumber: string; fromStatus: string; toStatus: string; changedBy: string; changedByUsername: string; changeReason: string; changedAt: string }> }>('/reports/activity?limit=20')
+      return data.data
+    },
+    enabled: canView,
   })
 
   const excelMutation = useMutation({
@@ -351,6 +387,141 @@ export default function ReportsPage() {
                 <Bar dataKey="totalAmount" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
+          )}
+        </Section>
+
+        {/* Payment Cycle */}
+        <Section title={t('reports.paymentCycle.title')} defaultOpen={false}>
+          <p className="text-sm text-ink-soft mb-4">{t('reports.paymentCycle.desc')}</p>
+          <div className="flex flex-wrap items-end gap-4 mb-6">
+            <div>
+              <label className="block text-xs font-medium text-ink-soft uppercase tracking-wide mb-1">{t('reports.startDate')}</label>
+              <input type="date" value={fromDateCycle} onChange={e => setFromDateCycle(e.target.value)}
+                className="border rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-ink-soft uppercase tracking-wide mb-1">{t('reports.endDate')}</label>
+              <input type="date" value={toDateCycle} onChange={e => setToDateCycle(e.target.value)}
+                className="border rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+            </div>
+          </div>
+          {cycleLoading ? (
+            <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+          ) : !paymentCycle ? (
+            <p className="text-sm text-center text-ink-soft py-4">{t('reports.noData')}</p>
+          ) : (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <KpiCard
+                title={t('reports.paymentCycle.avgSubToBap')}
+                value={paymentCycle.avgSubmissionToBapDays != null ? `${paymentCycle.avgSubmissionToBapDays.toFixed(1)} ${t('dashboard.days')}` : '—'}
+                icon={<Clock className="w-5 h-5 text-ink-soft" />}
+              />
+              <KpiCard
+                title={t('reports.paymentCycle.avgBapToPay')}
+                value={paymentCycle.avgBapToPaymentDays != null ? `${paymentCycle.avgBapToPaymentDays.toFixed(1)} ${t('dashboard.days')}` : '—'}
+                icon={<Clock className="w-5 h-5 text-ink-soft" />}
+              />
+              <KpiCard
+                title={t('reports.paymentCycle.avgSchedToProc')}
+                value={paymentCycle.avgScheduledToProcessedDays != null ? `${paymentCycle.avgScheduledToProcessedDays.toFixed(1)} ${t('dashboard.days')}` : '—'}
+                icon={<Clock className="w-5 h-5 text-ink-soft" />}
+              />
+              <KpiCard
+                title={t('reports.paymentCycle.avgTotal')}
+                value={paymentCycle.avgTotalCycleDays != null ? `${paymentCycle.avgTotalCycleDays.toFixed(1)} ${t('dashboard.days')}` : '—'}
+                sub={t('reports.paymentCycle.invoicesCount', { count: paymentCycle.invoicesPaidCount })}
+                icon={<Clock className="w-5 h-5 text-ink-soft" />}
+              />
+            </div>
+          )}
+        </Section>
+
+        {/* Supplier Payment History */}
+        <Section title={t('reports.supplierHistory.title')} defaultOpen={false}>
+          <p className="text-sm text-ink-soft mb-4">{t('reports.supplierHistory.desc')}</p>
+          <div className="mb-4 max-w-md">
+            <label className="block text-xs font-medium text-ink-soft uppercase tracking-wide mb-1">
+              {t('reports.supplierHistory.selectLabel')}
+            </label>
+            <select
+              value={supplierHistoryId}
+              onChange={e => setSupplierHistoryId(e.target.value)}
+              className="w-full border rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            >
+              <option value="">{t('reports.supplierPerformance.selectPlaceholder')}</option>
+              {(perfSuppliers ?? []).map(s => (
+                <option key={s.id} value={s.id}>{s.companyName}</option>
+              ))}
+            </select>
+          </div>
+          {!supplierHistoryId ? (
+            <p className="text-sm text-center text-ink-soft py-4">{t('reports.supplierPerformance.prompt')}</p>
+          ) : supplierHistoryLoading ? (
+            <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+          ) : !supplierHistory?.length ? (
+            <p className="text-sm text-center text-ink-soft py-4">{t('reports.noData')}</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-hairline text-left text-ink-soft">
+                    <th className="px-3 py-2 font-medium">{t('invoice.reference')}</th>
+                    <th className="px-3 py-2 font-medium">{t('reports.supplierHistory.date')}</th>
+                    <th className="px-3 py-2 font-medium">{t('reports.supplierHistory.method')}</th>
+                    <th className="px-3 py-2 font-medium">{t('reports.supplierHistory.reference')}</th>
+                    <th className="px-3 py-2 font-medium text-right">{t('reports.supplierHistory.amount')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-hairline">
+                  {supplierHistory.map(p => (
+                    <tr key={p.paymentId} className="hover:bg-ground">
+                      <td className="px-3 py-2 font-medium text-ink">{p.invoiceReference}</td>
+                      <td className="px-3 py-2 text-ink-soft">{new Date(p.paymentDate).toLocaleDateString()}</td>
+                      <td className="px-3 py-2 text-ink-soft">{t(`invoice.paymentMethods.${p.paymentMethod}`, p.paymentMethod)}</td>
+                      <td className="px-3 py-2 text-ink-soft">{p.paymentReference}</td>
+                      <td className="px-3 py-2 text-right num text-ink">{formatAmount(p.amountPaid)} XAF</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Section>
+
+        {/* Recent Activity */}
+        <Section title={t('reports.recentActivity.title')} defaultOpen={false}>
+          <p className="text-sm text-ink-soft mb-4">{t('reports.recentActivity.desc')}</p>
+          {recentActivityLoading ? (
+            <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+          ) : !recentActivity?.length ? (
+            <p className="text-sm text-center text-ink-soft py-4">{t('reports.noData')}</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-hairline text-left text-ink-soft">
+                    <th className="px-3 py-2 font-medium">{t('reports.recentActivity.date', 'Date')}</th>
+                    <th className="px-3 py-2 font-medium">{t('invoice.reference')}</th>
+                    <th className="px-3 py-2 font-medium">{t('reports.recentActivity.transition', 'De → À')}</th>
+                    <th className="px-3 py-2 font-medium">{t('reports.recentActivity.changedBy')}</th>
+                    <th className="px-3 py-2 font-medium">{t('reports.recentActivity.reason')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-hairline">
+                  {recentActivity.map(a => (
+                    <tr key={a.id} className="hover:bg-ground">
+                      <td className="px-3 py-2 text-ink-soft">{new Date(a.changedAt).toLocaleString()}</td>
+                      <td className="px-3 py-2 font-medium text-ink">{a.referenceNumber}</td>
+                      <td className="px-3 py-2 text-ink-soft">
+                        {t(`status.${a.fromStatus}`, a.fromStatus)} → <span className="font-medium text-ink">{t(`status.${a.toStatus}`, a.toStatus)}</span>
+                      </td>
+                      <td className="px-3 py-2 text-ink-soft">{a.changedByUsername}</td>
+                      <td className="px-3 py-2 text-ink-faint truncate max-w-[200px]">{a.changeReason ?? '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </Section>
 
