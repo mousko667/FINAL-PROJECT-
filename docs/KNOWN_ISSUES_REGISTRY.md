@@ -1709,3 +1709,24 @@ les `{...}` depuis le bundle selon la locale, donc le message livré est déjà 
 être une clé i18n entre accolades `{...}` — jamais une phrase en dur. Les clés existantes
 écrites sans accolades (ex. `"validation.session_timeout_min"`) fonctionnent seulement parce
 que `resolve()` les rattrape par forme ; ne pas s'appuyer là-dessus pour les nouveaux DTO.
+
+## PROB-129 — Branche morte cannot_assign_n2_in_n1 dans assignReviewer (N10)
+
+**Root cause :** `ApprovalServiceImpl.assignReviewer` contenait une branche
+`EN_VALIDATION_N1 && requiresN2` levant `error.approval.cannot_assign_n2_in_n1`. Le finding
+d'audit N10 la lisait comme rendant le passage N1→N2 inatteignable. En réalité le passage N1→N2
+se fait via `validateN1()` + state-machine (transition T3 EN_VALIDATION_N1→EN_VALIDATION_N2,
+testée : StateMachineTransitionExhaustiveTest T3, ApprovalControllerTest.p3_17). La branche
+était donc du code mort : jamais appelée par l'UI (InvoiceActionPanel n'invoque ASSIGN_REVIEWER
+que depuis EN_CONTROLE_AA), non testée, au message conceptuellement trompeur.
+
+**Solution :** Retrait de la branche (ApprovalServiceImpl:56-57) — le cas EN_VALIDATION_N1
+retombe dans le else final (cannot_assign_from_state), comportement observable inchangé (une
+WorkflowException → 400 dans les deux cas). Retrait de la clé i18n cannot_assign_n2_in_n1
+(messages_fr + messages_en) devenue inutilisée. La branche EN_VALIDATION_N2 (self-assign N2,
+testée par p3_17) est CONSERVÉE.
+
+**Preventive rule :** Avant de « corriger » un finding de workflow, tracer le VRAI chemin de
+transition (state-machine + service) et vérifier la couverture de test avant de croire qu'une
+branche est cassée ou inatteignable. Une branche de service non appelée par l'UI et sans test
+est du code mort candidat à suppression, pas un bug à « rebrancher ».

@@ -138,6 +138,21 @@ class ApprovalServiceTest {
     }
 
     @Test
+    void assignReviewer_WhenEnValidationN1_TwoLevelDept_ThrowsGenericWorkflowException() {
+        // N10 : la branche morte cannot_assign_n2_in_n1 a été retirée. Un assignReviewer en
+        // EN_VALIDATION_N1 (même pour un dept 2-niveaux, requiresN2=true dans le setup) doit
+        // retomber sur le message générique cannot_assign_from_state — le workflow N1→N2 réel
+        // passe par validateN1 + state-machine, pas par assignReviewer.
+        mockSecurityContext("ROLE_VALIDATEUR_N1_INFO");
+        invoice.setStatus(InvoiceStatus.EN_VALIDATION_N1);
+        when(invoiceRepository.findByIdAndDeletedAtIsNull(invoice.getId())).thenReturn(Optional.of(invoice));
+
+        assertThatThrownBy(() -> approvalService.assignReviewer(invoice.getId()))
+                .isInstanceOf(WorkflowException.class)
+                .hasMessage("error.approval.cannot_assign_from_state");
+    }
+
+    @Test
     void assignAA_movesSoumisToEnControleAA_whenUserIsAssistantComptable() {
         mockSecurityContext("ROLE_ASSISTANT_COMPTABLE");
         when(invoiceRepository.findByIdAndDeletedAtIsNull(invoice.getId())).thenReturn(Optional.of(invoice));
