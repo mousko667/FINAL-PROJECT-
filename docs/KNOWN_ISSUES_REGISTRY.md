@@ -1692,3 +1692,20 @@ avant de clore un correctif de routage, chercher TOUS les listeners de l'événe
   AdminRetentionDispositionPage, AdminRetentionPolicyPage.
 - **Regle preventive** : ne jamais passer i18n.language brut a toLocale*(). Toujours mapper vers
   un locale complet (en-US / fr-FR).
+
+## PROB-128 — Messages de validation PaymentRequest figés en anglais (N23)
+
+**Root cause :** `PaymentRequest` déclarait ses 4 messages Bean Validation en anglais
+littéral (`@NotNull(message = "Amount paid is required")`, etc.). Contenant des espaces, ces
+chaînes ne matchent pas la regex `I18N_KEY` de `GlobalExceptionHandler.resolve()` et sont
+renvoyées verbatim, quelle que soit la locale `Accept-Language`.
+
+**Solution :** Remplacer les 4 messages par des clés entre accolades
+`{validation.payment.*}` (dto/PaymentRequest.java) + ajouter ces clés dans
+`i18n/messages_fr.properties` et `i18n/messages_en.properties`. Bean Validation interpole
+les `{...}` depuis le bundle selon la locale, donc le message livré est déjà traduit.
+
+**Preventive rule :** Tout message d'annotation Bean Validation destiné à l'utilisateur DOIT
+être une clé i18n entre accolades `{...}` — jamais une phrase en dur. Les clés existantes
+écrites sans accolades (ex. `"validation.session_timeout_min"`) fonctionnent seulement parce
+que `resolve()` les rattrape par forme ; ne pas s'appuyer là-dessus pour les nouveaux DTO.

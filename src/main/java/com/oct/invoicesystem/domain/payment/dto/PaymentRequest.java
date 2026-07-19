@@ -8,14 +8,14 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 public record PaymentRequest(
-        @NotNull(message = "Amount paid is required")
-        @Positive(message = "Amount paid must be positive")
+        @NotNull(message = "{validation.payment.amount_required}")
+        @Positive(message = "{validation.payment.amount_positive}")
         BigDecimal amountPaid,
 
-        @NotNull(message = "Payment method is required")
+        @NotNull(message = "{validation.payment.method_required}")
         PaymentMethod paymentMethod,
 
-        @NotNull(message = "Payment date is required")
+        @NotNull(message = "{validation.payment.date_required}")
         Instant paymentDate,
 
         String reference,

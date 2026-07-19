@@ -478,4 +478,40 @@ class PaymentControllerTest {
                                         new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))))))
                 .andExpect(status().isForbidden());
     }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // N23 (i18n) : les messages de validation de PaymentRequest doivent être
+    // renvoyés dans la langue de l'appelant (Accept-Language), pas figés en anglais.
+    // ──────────────────────────────────────────────────────────────────────────
+
+    @Test
+    void recordPayment_validationMessages_localizedInFrench() throws Exception {
+        mockMvc.perform(post("/api/v1/payments/invoice/" + invoice.getId())
+                        .header("Accept-Language", "fr")
+                        .with(SecurityMockMvcRequestPostProcessors.authentication(
+                                new UsernamePasswordAuthenticationToken(assistant, null, java.util.List.of(
+                                        new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ASSISTANT_COMPTABLE")))))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                // Le message français doit apparaître ; l'anglais littéral ne doit PAS.
+                .andExpect(jsonPath("$.errors", org.hamcrest.Matchers.hasItem(
+                        org.hamcrest.Matchers.containsString("obligatoire"))))
+                .andExpect(jsonPath("$.errors", org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem(
+                        org.hamcrest.Matchers.containsString("Payment method is required")))));
+    }
+
+    @Test
+    void recordPayment_validationMessages_localizedInEnglish() throws Exception {
+        mockMvc.perform(post("/api/v1/payments/invoice/" + invoice.getId())
+                        .header("Accept-Language", "en")
+                        .with(SecurityMockMvcRequestPostProcessors.authentication(
+                                new UsernamePasswordAuthenticationToken(assistant, null, java.util.List.of(
+                                        new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ASSISTANT_COMPTABLE")))))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors", org.hamcrest.Matchers.hasItem(
+                        org.hamcrest.Matchers.containsString("is required"))));
+    }
 }
