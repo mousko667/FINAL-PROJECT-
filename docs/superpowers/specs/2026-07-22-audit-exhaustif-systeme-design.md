@@ -15,6 +15,10 @@ zéro problème résiduel. Finalité : système livrable pour soutenance — zé
 - **Machine à états** : BROUILLON→SOUMIS→EN_VALIDATION_N1→[EN_VALIDATION_N2]→VALIDE→BON_A_PAYER→PAYE→ARCHIVE.
 - Docker (5 services) actuellement **éteint** — à relancer pour l'audit runtime/visuel.
 - Playwright MCP disponible → audit visuel piloté par l'agent (pas de captures fournies à la main).
+- chrome-devtools MCP installé (scope projet) → profils CPU/mémoire + panneau Performance pour la P4 (perf).
+- **Accessibilité (P2/P4)** : pas de plugin a11y dédié → **injecter axe-core manuellement** dans la page
+  via Playwright (script CDN ou inline), puis lire les violations (contraste, ARIA, focus, labels).
+  L'audit a11y devient ainsi mesurable au lieu d'être fait « à l'œil ».
 - Historique : audits antérieurs (QA_AUDIT_EXHAUSTIF, SOD_AUDIT, findings N1→N25 tous traités).
   Ce nouvel audit **repart à neuf** et vise l'exhaustivité, pas l'incrément. Prochain PROB = PROB-131.
 
