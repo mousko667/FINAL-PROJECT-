@@ -294,6 +294,17 @@ public class SupplierPortalController {
     }
 
     private Invoice toInvoice(InvoiceCreateRequest request, UUID actorId, UUID supplierId) {
+        // AUDIT-002: the portal used to copy request.purchaseOrderId() verbatim, so a supplier could
+        // create an invoice against ANOTHER supplier's purchase order (proven in runtime: 201
+        // Created). Refuse at the source, with a message that reveals nothing about that order —
+        // not even whether it exists. Submission-time matching enforces the same rule again.
+        // The allowed set is exactly what the PO selector offers (listOpenBySupplier), so the API
+        // and the form can never disagree on what this supplier may invoice against.
+        if (request.purchaseOrderId() != null
+                && purchaseOrderService.listOpenBySupplier(supplierId).stream()
+                        .noneMatch(po -> request.purchaseOrderId().equals(po.getId()))) {
+            throw new ValidationException("matching.po.not_owned");
+        }
         Department department = new Department();
         department.setId(request.departmentId());
         User actor = new User();

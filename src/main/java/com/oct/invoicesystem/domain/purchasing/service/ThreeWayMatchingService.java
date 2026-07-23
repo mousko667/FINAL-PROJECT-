@@ -41,6 +41,7 @@ public class ThreeWayMatchingService {
     private final MatchingComparator matchingComparator;
     private final ThreeWayMatchingLineResolutionRepository resolutionRepository;
     private final PurchaseOrderItemRepository poItemRepository;
+    private final MatchingResultRecorder matchingResultRecorder;
 
     /**
      * Perform three-way matching between invoice, PO, and GRN.
@@ -74,10 +75,22 @@ public class ThreeWayMatchingService {
             .discrepancyNotes(generateDiscrepancyNotes(invoice, purchaseOrder, goodsReceiptNote, config))
             .build();
 
-        log.info("Matching result for invoice {} with PO {}: {}", 
+        log.info("Matching result for invoice {} with PO {}: {}",
             invoice.getId(), purchaseOrder.getId(), status);
 
-        return matchingResultRepository.save(result);
+        // AUDIT-034: recorded in its own transaction so a MISMATCH — which blocks the submission by
+        // rolling the caller back — still leaves its audit trail behind.
+        //
+        // Only the MISMATCH path needs the isolated transaction: it is the one the caller rolls
+        // back. MATCHED/PARTIAL commit normally with the caller, so routing them through
+        // REQUIRES_NEW would buy nothing and would break on a caller whose own fixtures are not
+        // committed yet (the independent transaction only sees COMMITTED rows — a foreign-key
+        // violation otherwise). No fallback on the MISMATCH path on purpose: catching the failure
+        // leaves the caller's transaction marked rollback-only anyway, so it would fail the whole
+        // matching rather than lose a single audit row.
+        return status == MatchingStatus.MISMATCH
+                ? matchingResultRecorder.record(result)
+                : matchingResultRepository.save(result);
     }
 
     /**

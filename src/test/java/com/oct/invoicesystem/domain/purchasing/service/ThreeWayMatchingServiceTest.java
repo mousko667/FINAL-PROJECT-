@@ -46,6 +46,10 @@ class ThreeWayMatchingServiceTest {
     @Mock
     private MatchingConfigRepository matchingConfigRepository;
 
+    /** AUDIT-034: the result is now persisted through its own REQUIRES_NEW transaction. */
+    @Mock
+    private com.oct.invoicesystem.domain.purchasing.service.MatchingResultRecorder matchingResultRecorder;
+
     @Spy
     private MatchingComparator matchingComparator = new MatchingComparator();
 
@@ -80,8 +84,13 @@ class ThreeWayMatchingServiceTest {
 
         when(matchingConfigRepository.findByIsActiveTrue()).thenReturn(Optional.of(activeConfig));
         
-        // Mock save to return the argument passed to it
-        when(matchingResultRepository.save(any(com.oct.invoicesystem.domain.purchasing.model.ThreeWayMatchingResult.class)))
+        // Mock the recorder to return the argument passed to it (AUDIT-034: match() persists via
+        // MatchingResultRecorder so a MISMATCH rollback cannot erase the audit trail).
+        org.mockito.Mockito.lenient()
+                .when(matchingResultRecorder.record(any(com.oct.invoicesystem.domain.purchasing.model.ThreeWayMatchingResult.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        org.mockito.Mockito.lenient()
+                .when(matchingResultRepository.save(any(com.oct.invoicesystem.domain.purchasing.model.ThreeWayMatchingResult.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
     }
 

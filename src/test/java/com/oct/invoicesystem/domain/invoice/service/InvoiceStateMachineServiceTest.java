@@ -14,6 +14,7 @@ import com.oct.invoicesystem.domain.purchasing.model.PurchaseOrder;
 import com.oct.invoicesystem.domain.purchasing.repository.GoodsReceiptNoteRepository;
 import com.oct.invoicesystem.domain.purchasing.repository.PurchaseOrderRepository;
 import com.oct.invoicesystem.domain.purchasing.repository.ThreeWayMatchingResultRepository;
+import com.oct.invoicesystem.domain.supplier.model.Supplier;
 import com.oct.invoicesystem.domain.user.model.Role;
 import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.domain.user.model.UserRole;
@@ -172,6 +173,72 @@ class InvoiceStateMachineServiceTest {
         assertThrows(WorkflowException.class, () ->
             invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.SUBMIT, null)
         );
+    }
+
+    @Test
+    void submit_WithPurchaseOrderOfAnotherSupplier_IsRefusedWithoutLeakingAnything() {
+        // AUDIT-002: proven in runtime — an invoice could be matched against a THIRD PARTY's
+        // purchase order, and the 400 handed back that party's PO total plus its GRN number and
+        // date. Ownership is now compared BEFORE the matching runs, and the message is a generic
+        // i18n key that reveals nothing — not even whether the order exists.
+        invoice.setDocuments(List.of(new InvoiceDocument()));
+        UUID purchaseOrderId = UUID.randomUUID();
+        invoice.setPurchaseOrderId(purchaseOrderId);
+
+        Supplier invoiceSupplier = new Supplier();
+        invoiceSupplier.setId(UUID.randomUUID());
+        invoice.setSupplier(invoiceSupplier);
+
+        Supplier otherSupplier = new Supplier();
+        otherSupplier.setId(UUID.randomUUID());
+
+        when(matchingResultRepository.findByInvoiceId(invoice.getId())).thenReturn(Optional.empty());
+        PurchaseOrder foreignPo = PurchaseOrder.builder()
+                .id(purchaseOrderId)
+                .supplier(otherSupplier)
+                .items(List.of())
+                .build();
+        when(purchaseOrderRepository.findByIdActive(purchaseOrderId)).thenReturn(Optional.of(foreignPo));
+
+        WorkflowException ex = assertThrows(WorkflowException.class, () ->
+            invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.SUBMIT, null)
+        );
+
+        // Generic key only: no PO total, no GRN number, no supplier name.
+        org.assertj.core.api.Assertions.assertThat(ex.getMessage()).isEqualTo("matching.po.not_owned");
+        // The matching must not even have been attempted against the foreign order.
+        org.mockito.Mockito.verify(goodsReceiptNoteRepository, org.mockito.Mockito.never())
+                .findByPurchaseOrderId(purchaseOrderId);
+    }
+
+    @Test
+    void submit_WithOwnPurchaseOrder_PassesTheOwnershipGate() {
+        // Counter-proof: same setup, matching supplier ids — the ownership gate lets it through and
+        // the flow reaches the matching itself (which then fails for lack of a matching config).
+        // Without this, the test above would also pass if the gate simply refused everything.
+        invoice.setDocuments(List.of(new InvoiceDocument()));
+        UUID purchaseOrderId = UUID.randomUUID();
+        invoice.setPurchaseOrderId(purchaseOrderId);
+
+        Supplier owner = new Supplier();
+        owner.setId(UUID.randomUUID());
+        invoice.setSupplier(owner);
+
+        when(matchingResultRepository.findByInvoiceId(invoice.getId())).thenReturn(Optional.empty());
+        PurchaseOrder ownPo = PurchaseOrder.builder()
+                .id(purchaseOrderId)
+                .supplier(owner)
+                .items(List.of())
+                .build();
+        when(purchaseOrderRepository.findByIdActive(purchaseOrderId)).thenReturn(Optional.of(ownPo));
+        when(goodsReceiptNoteRepository.findByPurchaseOrderId(purchaseOrderId)).thenReturn(List.of());
+
+        WorkflowException ex = assertThrows(WorkflowException.class, () ->
+            invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.SUBMIT, null)
+        );
+        org.assertj.core.api.Assertions.assertThat(ex.getMessage()).isNotEqualTo("matching.po.not_owned");
+        // Proof the gate was passed: the flow went on to look for the GRN.
+        org.mockito.Mockito.verify(goodsReceiptNoteRepository).findByPurchaseOrderId(purchaseOrderId);
     }
 
     @Test

@@ -183,6 +183,17 @@ public class InvoiceStateMachineServiceImpl implements InvoiceStateMachineServic
             var po = purchaseOrderRepository.findByIdActive(invoice.getPurchaseOrderId())
                 .orElseThrow(() -> new WorkflowException("Referenced purchase order not found or has been deleted"));
 
+            // AUDIT-002: ownership BEFORE matching. Without this, an invoice could be matched — and
+            // pass — against another supplier's purchase order, and the discrepancy message handed
+            // that third party's PO total and GRN number back to the caller. The refusal message is
+            // deliberately generic: it must not confirm the PO exists, nor leak anything about it.
+            if (invoice.getSupplier() != null && po.getSupplier() != null
+                    && !invoice.getSupplier().getId().equals(po.getSupplier().getId())) {
+                log.warn("Invoice {} references purchase order {} owned by another supplier — refused",
+                    invoice.getId(), po.getId());
+                throw new WorkflowException("matching.po.not_owned");
+            }
+
             // Fetch GRN if matching configuration requires it
             var grn = goodsReceiptNoteRepository.findByPurchaseOrderId(po.getId()).stream().findFirst().orElse(null);
 
@@ -195,10 +206,12 @@ public class InvoiceStateMachineServiceImpl implements InvoiceStateMachineServic
 
             // Throw exception if MISMATCH
             if (result.getStatus().equals(MatchingStatus.MISMATCH)) {
-                throw new WorkflowException(
-                    String.format("Invoice matching failed with MISMATCH status. Discrepancies: %s. An override is required to proceed.",
-                        result.getDiscrepancyNotes())
-                );
+                // AUDIT-034: the discrepancy notes are an INTERNAL artefact — they carry the PO
+                // total and the GRN number/date. Returning them in the API message leaked those
+                // figures to whoever submitted the invoice. The client gets a generic i18n message;
+                // the detail stays available to authorized roles via GET /invoices/{id}/matching.
+                log.info("Matching MISMATCH for invoice {}: {}", invoice.getId(), result.getDiscrepancyNotes());
+                throw new WorkflowException("matching.mismatch.override_required");
             }
 
             log.info("Matching check passed for invoice {} with status {}", invoice.getId(), result.getStatus());

@@ -46,23 +46,31 @@ class ThreeWayMatchingResultRepositoryTest {
      */
     @Test
     void findLatestPerInvoice_withSeededRow_searchPredicatesEvaluated() {
+        // AUDIT-034: MISMATCH results are now written in their own transaction, so rows committed
+        // by other tests can be present. Assert on the DELTA this test creates, never on absolute
+        // counts — otherwise the test measures the rest of the suite instead of the query.
+        long baseNoSearch = repository.findLatestPerInvoice(null, null, PageRequest.of(0, 20)).getTotalElements();
+        long baseAcme = repository.findLatestPerInvoice(null, "ACME", PageRequest.of(0, 20)).getTotalElements();
+        long baseMismatch = repository.findLatestPerInvoice(MatchingStatus.MISMATCH, null, PageRequest.of(0, 20)).getTotalElements();
+
         seedOneMatchingResult();
 
         Page<ThreeWayMatchingResult> noSearch =
                 repository.findLatestPerInvoice(null, null, PageRequest.of(0, 20));
-        assertThat(noSearch.getTotalElements()).isEqualTo(1);
+        assertThat(noSearch.getTotalElements()).isEqualTo(baseNoSearch + 1);
 
         Page<ThreeWayMatchingResult> matchingSearch =
                 repository.findLatestPerInvoice(null, "ACME", PageRequest.of(0, 20));
-        assertThat(matchingSearch.getTotalElements()).isEqualTo(1);
+        assertThat(matchingSearch.getTotalElements()).isEqualTo(baseAcme + 1);
 
         Page<ThreeWayMatchingResult> noMatchSearch =
                 repository.findLatestPerInvoice(null, "ZZZNOMATCH", PageRequest.of(0, 20));
         assertThat(noMatchSearch.getTotalElements()).isZero();
 
+        // The seeded row is MATCHED, so filtering on MISMATCH must not pick it up.
         Page<ThreeWayMatchingResult> wrongStatus =
                 repository.findLatestPerInvoice(MatchingStatus.MISMATCH, null, PageRequest.of(0, 20));
-        assertThat(wrongStatus.getTotalElements()).isZero();
+        assertThat(wrongStatus.getTotalElements()).isEqualTo(baseMismatch);
     }
 
     /** Seed minimal du graphe FK requis (user, department, supplier, invoice, PO, résultat). */

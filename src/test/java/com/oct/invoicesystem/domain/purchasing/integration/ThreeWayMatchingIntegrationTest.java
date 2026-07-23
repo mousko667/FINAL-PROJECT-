@@ -113,11 +113,14 @@ class ThreeWayMatchingIntegrationTest {
             return userRepository.save(u);
         });
 
-        // Create test supplier
+        // Create test supplier. AUDIT-034: testCompleteThreeWayMatchingWorkflow has to COMMIT its
+        // fixtures (the isolated audit transaction only sees committed rows), so the unique keys of
+        // this fixture must not collide with the next test's — hence the per-run suffix.
+        String runTag = UUID.randomUUID().toString().substring(0, 8);
         Supplier supplier = Supplier.builder()
-                .companyName("Test Supplier")
-                .contactEmail("supplier@test.com")
-                .taxId("12345678")
+                .companyName("Test Supplier " + runTag)
+                .contactEmail("supplier." + runTag + "@test.com")
+                .taxId("TAX-" + runTag)
                 .build();
         supplier = supplierRepository.save(supplier);
         supplierId = supplier.getId();
@@ -240,10 +243,21 @@ class ThreeWayMatchingIntegrationTest {
         invoice = invoiceRepository.save(invoice);
         UUID invoiceId = invoice.getId();
 
-        // Step 5: Submit Invoice - this should trigger matching and result in MISMATCH
+        // AUDIT-034: the MISMATCH result is recorded in its own transaction so it survives the
+        // rollback that rejects the submission. That transaction only sees COMMITTED rows, so the
+        // fixtures above — created inside this test's transaction — must be flushed and committed
+        // first, otherwise the isolated insert hits a foreign key on rows nobody else can see yet.
+        org.springframework.test.context.transaction.TestTransaction.flagForCommit();
+        org.springframework.test.context.transaction.TestTransaction.end();
+        org.springframework.test.context.transaction.TestTransaction.start();
+
+        // Step 5: Submit Invoice - this should trigger matching and result in MISMATCH.
+        // AUDIT-034: the message is now a generic i18n key — it must NOT carry the discrepancy
+        // notes, which leak the PO total and the GRN number/date (AUDIT-002).
         mockMvc.perform(post("/api/v1/invoices/{id}/submit", invoiceId))
                 .andExpect(status().isBadRequest()) // Blocked due to MISMATCH
-                .andExpect(jsonPath("$.message", containsString("MISMATCH")));
+                .andExpect(jsonPath("$.message", org.hamcrest.Matchers.not(containsString("PO total"))))
+                .andExpect(jsonPath("$.message", org.hamcrest.Matchers.not(containsString("GRN"))));
 
         // Step 6: Verify matching result is MISMATCH
         var matchingResult = matchingResultRepository.findByInvoiceId(invoiceId)
