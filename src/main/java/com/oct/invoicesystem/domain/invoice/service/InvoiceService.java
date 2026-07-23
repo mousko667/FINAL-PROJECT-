@@ -340,8 +340,8 @@ public class InvoiceService {
                 i.getSupplierEmail() == null ? "" : i.getSupplierEmail(),
                 i.getAmount() == null ? "" : i.getAmount().toPlainString(),
                 i.getCurrency() == null ? "" : i.getCurrency(),
-                i.getStatus() == null ? "" : messageSource.getMessage(
-                        "invoice.status." + i.getStatus().name().toLowerCase(), null, locale),
+                com.oct.invoicesystem.shared.i18n.InvoiceStatusLabels.localize(
+                        messageSource, i.getStatus(), locale),
                 i.getDepartment() == null ? "" : i.getDepartment().getCode(),
                 i.getIssueDate() == null ? "" : i.getIssueDate().toString(),
                 i.getDueDate() == null ? "" : i.getDueDate().toString(),

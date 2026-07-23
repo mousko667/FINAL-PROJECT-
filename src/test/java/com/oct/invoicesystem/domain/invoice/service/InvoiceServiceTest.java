@@ -235,7 +235,10 @@ class InvoiceServiceTest {
         when(matchingResultRepository.findLatestStatusByInvoiceIds(java.util.List.of(invId)))
                 .thenReturn(java.util.List.<Object[]>of(new Object[]{invId, "MATCHED"}));
         org.springframework.context.MessageSource ms = org.mockito.Mockito.mock(org.springframework.context.MessageSource.class);
-        when(ms.getMessage(org.mockito.ArgumentMatchers.eq("invoice.status.valide"), any(), any())).thenReturn("Validée");
+        // The export resolves labels through InvoiceStatusLabels, which always supplies a default
+        // message (AUDIT-039), so the 4-arg overload is the one exercised here.
+        when(ms.getMessage(org.mockito.ArgumentMatchers.eq("invoice.status.valide"), any(), any(), any()))
+                .thenReturn("Validée");
 
         var rows = invoiceService.buildExportRows(null, null, null, null, null, ms, java.util.Locale.FRENCH);
 
@@ -266,7 +269,8 @@ class InvoiceServiceTest {
         when(matchingResultRepository.findLatestStatusByInvoiceIds(java.util.List.of(invId)))
                 .thenReturn(java.util.List.of());   // no matching result
         org.springframework.context.MessageSource ms = org.mockito.Mockito.mock(org.springframework.context.MessageSource.class);
-        when(ms.getMessage(any(String.class), any(), any())).thenReturn("Soumise");
+        // 4-arg overload: InvoiceStatusLabels always passes a default message (AUDIT-039).
+        when(ms.getMessage(any(String.class), any(), any(), any())).thenReturn("Soumise");
 
         var rows = invoiceService.buildExportRows(null, null, null, null, null, ms, java.util.Locale.FRENCH);
 

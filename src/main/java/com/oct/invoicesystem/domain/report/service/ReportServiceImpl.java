@@ -277,7 +277,9 @@ public class ReportServiceImpl implements ReportService {
                     (invoice.getAmount() == null ? "" : invoice.getAmount().toPlainString())
                             + " " + (invoice.getCurrency() == null ? "" : invoice.getCurrency()))));
             summary.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("report.excel.header.status", null, locale)).setBold()));
-            summary.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(messageSource.getMessage("invoice.status." + invoice.getStatus().name().toLowerCase(), null, locale))));
+            summary.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(
+                    com.oct.invoicesystem.shared.i18n.InvoiceStatusLabels.localize(
+                            messageSource, invoice.getStatus(), locale))));
             document.add(summary);
 
             document.add(new Paragraph("\n"));
@@ -294,8 +296,10 @@ public class ReportServiceImpl implements ReportService {
                 auditTable.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(formatter.format(h.getChangedAt()))));
                 auditTable.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(h.getChangedBy().getUsername())));
                 
-                String fromStatusLabel = messageSource.getMessage("invoice.status." + h.getFromStatus().toLowerCase(), null, locale);
-                String toStatusLabel = messageSource.getMessage("invoice.status." + h.getToStatus().toLowerCase(), null, locale);
+                String fromStatusLabel = com.oct.invoicesystem.shared.i18n.InvoiceStatusLabels.localize(
+                        messageSource, h.getFromStatus(), locale);
+                String toStatusLabel = com.oct.invoicesystem.shared.i18n.InvoiceStatusLabels.localize(
+                        messageSource, h.getToStatus(), locale);
                 auditTable.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(fromStatusLabel + " -> " + toStatusLabel)));
                 
                 auditTable.addCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(h.getChangeReason() != null ? h.getChangeReason() : "")));
@@ -337,7 +341,8 @@ public class ReportServiceImpl implements ReportService {
                 i.getAmount() == null ? "" : i.getAmount().toPlainString(),
                 i.getCurrency() == null ? "" : i.getCurrency(),
                 i.getIssueDate() == null ? "" : i.getIssueDate().toString(),
-                messageSource.getMessage("invoice.status." + (i.getStatus() == null ? "brouillon" : i.getStatus().name().toLowerCase()), null, locale)
+                com.oct.invoicesystem.shared.i18n.InvoiceStatusLabels.localize(
+                        messageSource, i.getStatus(), locale)
         )).toList();
 
         byte[] pdfBytes = tabularExportService.export(

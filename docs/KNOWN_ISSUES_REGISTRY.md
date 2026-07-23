@@ -1749,3 +1749,30 @@ relèvent aussi du lot frontend.
 **Preventive rule :** Ne pas créer d'endpoint « alias » (même DTO, même service) d'un endpoint
 existant sans consommateur : c'est du code mort qui gonfle la surface d'API. Un endpoint sans appel
 front est soit à câbler (UI manquante), soit à retirer (redondant) — trancher, ne pas laisser traîner.
+
+## PROB-131 — Cle i18n invoice.status.en_controle_aa absente : 3 exports en HTTP 500 (AUDIT-039)
+
+**Root cause :** Les libelles de statut sont resolus par une cle construite dynamiquement
+(`"invoice.status." + status.name().toLowerCase()`). Le statut `EN_CONTROLE_AA` a ete ajoute a
+l'enum `InvoiceStatus` sans que la cle correspondante soit ajoutee aux catalogues i18n : 9 cles
+declarees pour 10 valeurs. Les 5 sites d'appel utilisaient la surcharge
+`getMessage(code, args, locale)` **sans valeur de repli**, qui leve `NoSuchMessageException` —
+donc HTTP 500. Une seule facture dans cet etat suffisait a casser l'export entier
+(`/invoices/export?format=csv`, `format=xlsx`, `/reports/export/excel`), en FR comme en EN.
+La parite FR/EN mesuree en P1 (310 cles de chaque cote) etait reelle mais ne pouvait pas detecter
+le defaut : **les deux catalogues etaient incomplets de la meme facon**.
+
+**Solution :** (1) Ajout de `invoice.status.en_controle_aa` aux deux catalogues (FR
+"En controle AA" en echappement ô, EN "Under AA review"). (2) Correctif de robustesse :
+nouveau helper `shared/i18n/InvoiceStatusLabels` qui passe systematiquement un `defaultMessage`
+(le libelle porte par l'enum), de sorte qu'une cle absente degrade en libelle brut au lieu de
+renvoyer une 500 ; les 5 sites d'appel (`InvoiceService:343`, `ReportServiceImpl:280,297,298,340`)
+y sont migres. Corrige au passage un NPE latent (`invoice.getStatus()` deref sans garde a
+ReportServiceImpl:280) et un repli semantiquement faux (statut nul rendu "brouillon" a :340,
+desormais chaine vide, coherent avec InvoiceService).
+
+**Preventive rule :** Une cle i18n construite dynamiquement depuis un enum DOIT etre couverte par
+un test parametre sur `@EnumSource` verifiant l'existence de la cle dans **les deux** catalogues
+(`InvoiceStatusLabelsTest`) — une comparaison de parite FR/EN ne detecte jamais une cle absente des
+deux cotes. Et tout `getMessage` sur une cle dynamique doit fournir un `defaultMessage` : un
+libelle manquant est un defaut d'affichage, jamais une raison de renvoyer une 500.
