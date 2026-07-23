@@ -39,7 +39,10 @@ interface MfaSetupData {
 // Roles that require MFA (per CLAUDE.md security constraints)
 const MFA_REQUIRED_ROLES = [
   'ROLE_DAF', 'ROLE_ADMIN',
-  'ROLE_VALIDATEUR_N1_DRH', 'ROLE_VALIDATEUR_N1_DG', 'ROLE_VALIDATEUR_N1_FIN',
+  // AUDIT-016: ROLE_VALIDATEUR_N1_FIN was removed from the system (see constants/roles.ts and
+  // V5__seed_roles_and_admin.sql) but lingered here. No user carries it, so nothing changes
+  // functionally — it just contradicted the source of truth.
+  'ROLE_VALIDATEUR_N1_DRH', 'ROLE_VALIDATEUR_N1_DG',
   'ROLE_VALIDATEUR_N1_INFO', 'ROLE_VALIDATEUR_N2_INFO',
   'ROLE_VALIDATEUR_N1_TERM', 'ROLE_VALIDATEUR_N1_COM',
   'ROLE_VALIDATEUR_N1_QHSSE', 'ROLE_VALIDATEUR_N1_INFRA',

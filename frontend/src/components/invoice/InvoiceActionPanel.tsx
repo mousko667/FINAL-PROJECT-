@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { apiErrorMessage } from '@/types/apiError'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAppSelector } from '@/store/hooks'
@@ -182,7 +183,7 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
       {mutation.isError && (
         <p className="mt-2 text-xs text-crit">
           {(() => {
-            const key = (mutation.error as any)?.response?.data?.message
+            const key = apiErrorMessage(mutation.error)
             if (!key) return t('app.error', 'Action failed. Please try again.')
             // Try to translate backend i18n key, fallback to raw message
             const translated = t(key)

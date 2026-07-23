@@ -55,9 +55,12 @@ function renderPage() {
 }
 
 describe('InvoiceCreatePage department name locale (RT-5)', () => {
-  afterEach(() => {
+  // i18n is a module-level singleton shared by every test file, and changeLanguage is async: not
+  // awaiting the reset let the switch land after the next test had already rendered, which showed
+  // up as an intermittent failure of the "fr" case. Await it so the state is restored for good.
+  afterEach(async () => {
     cleanup()
-    i18n.changeLanguage('fr')
+    await i18n.changeLanguage('fr')
   })
 
   it('shows the French department name when i18n.language is fr (default)', async () => {

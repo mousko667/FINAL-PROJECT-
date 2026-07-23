@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { apiErrorMessage } from '@/types/apiError'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
@@ -181,7 +182,7 @@ export default function GoodsReceiptsPage() {
 
             {createMutation.isError && (
               <p className="text-xs text-crit bg-crit-bg p-2 rounded border border-crit/30">
-                {(createMutation.error as any)?.response?.data?.message ?? t('app.error')}
+                {apiErrorMessage(createMutation.error) ?? t('app.error')}
               </p>
             )}
 

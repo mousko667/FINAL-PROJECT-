@@ -42,7 +42,20 @@ export interface PagedResponse<T> {
 
 // Hooks
 
-export function useSuppliers(filters: Record<string, any> = {}) {
+/** Filters accepted by GET /suppliers (AUDIT-016: was `Record<string, any>` in a public signature). */
+export interface SupplierFilters {
+  page?: number
+  size?: number
+  name?: string
+  taxId?: string
+  status?: Supplier['status'] | ''
+  category?: SupplierCategory | ''
+  /** ISO-8601 instants, as the backend binds them with @DateTimeFormat(ISO.DATE_TIME). */
+  from?: string
+  to?: string
+}
+
+export function useSuppliers(filters: SupplierFilters = {}) {
   return useQuery({
     queryKey: ['suppliers', filters],
     queryFn: async () => {

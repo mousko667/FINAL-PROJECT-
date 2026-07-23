@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { apiErrorMessage } from '@/types/apiError'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
@@ -143,7 +144,7 @@ function RecordPaymentModal({ invoice, onClose, onSuccess }: {
 
         {mutation.isError && (
           <p className="text-xs text-crit bg-crit-bg p-2 rounded border border-crit/30">
-            {(mutation.error as any)?.response?.data?.message ?? t('app.error')}
+            {apiErrorMessage(mutation.error) ?? t('app.error')}
           </p>
         )}
 
@@ -509,9 +510,11 @@ export default function PaymentsPage() {
                             </button>
                             {processMutation.isError && processMutation.variables === p.id && (
                               <span className="text-xs text-crit">
-                                {(processMutation.error as any)?.response?.data?.message
-                                  ? t((processMutation.error as any).response.data.message)
-                                  : t('app.error', 'Une erreur est survenue')}
+                                {t(
+                                  apiErrorMessage(processMutation.error) ??
+                                    'app.error',
+                                  'Une erreur est survenue',
+                                )}
                               </span>
                             )}
                           </div>

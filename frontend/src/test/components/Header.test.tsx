@@ -43,9 +43,11 @@ function renderHeader(path = '/dashboard') {
 }
 
 describe('Header', () => {
-  afterEach(() => {
+  // changeLanguage is async and i18n is shared across test files: without awaiting, the reset can
+  // land after the next test has rendered (intermittent failures).
+  afterEach(async () => {
     cleanup()
-    i18n.changeLanguage('fr')
+    await i18n.changeLanguage('fr')
   })
 
   it('renders the French dashboard breadcrumb by default', () => {
