@@ -25,18 +25,18 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DepartmentService {
 
+    /** Fields a client may sort the department list by (AUDIT-010). */
+    private static final java.util.Set<String> SORTABLE_FIELDS = java.util.Set.of(
+            "code", "nameFr", "nameEn", "createdAt", "updatedAt", "budget");
+
     private final DepartmentRepository departmentRepository;
     private final DepartmentMapper departmentMapper;
 
     @Transactional(readOnly = true)
     public PagedResponse<DepartmentDTO> getDepartments(int page, int size, String sort) {
-        String[] sortParams = sort.split(",");
-        String sortBy = sortParams[0];
-        Sort.Direction direction = sortParams.length > 1 && sortParams[1].equalsIgnoreCase("desc")
-                ? Sort.Direction.DESC
-                : Sort.Direction.ASC;
-
-        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        // AUDIT-010: ?sort=zzz returned 500 here too (proven in runtime).
+        Pageable pageable = PageRequest.of(page, size,
+                com.oct.invoicesystem.shared.util.SortWhitelist.resolve(sort, SORTABLE_FIELDS, "code"));
         Page<Department> deptsPage = departmentRepository.findAll(pageable);
 
         List<DepartmentDTO> dtos = deptsPage.getContent().stream()

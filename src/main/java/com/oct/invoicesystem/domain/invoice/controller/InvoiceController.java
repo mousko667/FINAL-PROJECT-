@@ -68,6 +68,10 @@ public class InvoiceController {
     private final ThreeWayMatchingService threeWayMatchingService;
     private final InvoicePdfService invoicePdfService;
     private final InvoiceMapper invoiceMapper;
+    /** Fields the pending-validation queue may be sorted by (AUDIT-010). */
+    private static final java.util.Set<String> PENDING_QUEUE_SORTABLE_FIELDS = java.util.Set.of(
+            "createdAt", "updatedAt", "issueDate", "dueDate", "amount", "status", "referenceNumber");
+
     private final SecurityHelper securityHelper;
     private final com.oct.invoicesystem.shared.export.TabularExportService tabularExportService;
     private final com.oct.invoicesystem.domain.invoice.service.InvoiceImportService invoiceImportService;
@@ -179,11 +183,10 @@ public class InvoiceController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt,asc") String sort) {
-        String[] sortParams = sort.split(",");
-        Sort.Direction direction = sortParams.length > 1 && "desc".equalsIgnoreCase(sortParams[1])
-                ? Sort.Direction.DESC
-                : Sort.Direction.ASC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortParams[0]));
+        // AUDIT-010: third site of the same defect.
+        Pageable pageable = PageRequest.of(page, size,
+                com.oct.invoicesystem.shared.util.SortWhitelist.resolve(
+                        sort, PENDING_QUEUE_SORTABLE_FIELDS, "createdAt"));
         Page<Invoice> pending = invoiceService.getPendingValidationQueue(pageable);
         List<InvoiceDTO> mapped = pending.getContent().stream().map(invoiceMapper::toDto).toList();
         return ResponseEntity.ok(ApiResponse.success(

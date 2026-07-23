@@ -41,6 +41,15 @@ public class InvoiceService {
 
     private static final String ROLE_ASSISTANT_COMPTABLE = "ROLE_ASSISTANT_COMPTABLE";
 
+    /**
+     * Fields a client may sort the invoice list by (AUDIT-010). Scalar columns only: relation paths
+     * such as {@code department.nameFr} would pull in unintended joins, and bank details are never
+     * sortable surface.
+     */
+    private static final java.util.Set<String> SORTABLE_FIELDS = java.util.Set.of(
+            "createdAt", "updatedAt", "issueDate", "dueDate", "amount", "status",
+            "referenceNumber", "supplierName", "currency");
+
     private final InvoiceRepository invoiceRepository;
     private final DepartmentRepository departmentRepository;
     private final UserRepository userRepository;
@@ -277,12 +286,11 @@ public class InvoiceService {
             int size,
             String sort
     ) {
-        String[] sortParams = sort.split(",");
-        String sortBy = sortParams[0];
-        Sort.Direction direction = sortParams.length > 1 && "desc".equalsIgnoreCase(sortParams[1])
-                ? Sort.Direction.DESC
-                : Sort.Direction.ASC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        // AUDIT-010: an unknown sort field used to reach Sort.by and produce a 500 — reachable from
+        // the supplier portal (GET /api/v1/supplier/invoices?sort=zzz returned 500 with a SUPPLIER
+        // token). Unknown fields now fall back to the default silently.
+        Pageable pageable = PageRequest.of(page, size,
+                com.oct.invoicesystem.shared.util.SortWhitelist.resolve(sort, SORTABLE_FIELDS, "createdAt"));
         Page<Invoice> invoices = invoiceRepository.findAllWithFilters(
                 status,
                 departmentId,

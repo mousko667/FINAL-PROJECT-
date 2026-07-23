@@ -75,6 +75,14 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
     @Query("SELECT i FROM Invoice i WHERE i.deletedAt IS NULL AND i.dueDate < :today AND i.status NOT IN ('PAYE', 'ARCHIVE')")
     List<Invoice> findOverdueInvoices(@Param("today") LocalDate today);
 
+    // AUDIT-037: the queue returned 500 for all 11 validator roles
+    // (LazyInitializationException on Department#getCode). The finding blamed a missing
+    // @Transactional(readOnly = true) on the service method, but git history shows that annotation
+    // has been there since the method was written: the real cause is here. The controller maps the
+    // Page<Invoice> to InvoiceDTO AFTER the service transaction has closed, so the lazy
+    // department/supplier proxies can no longer be resolved. The two neighbouring list queries
+    // (:43 and :61) work precisely because they carry this @EntityGraph — this one did not.
+    @EntityGraph(attributePaths = {"department", "supplier"})
     @Query("""
             SELECT i
             FROM Invoice i
