@@ -139,4 +139,19 @@ public class ApprovalController {
         approvalService.reject(invoiceId, composed);
         return ResponseEntity.ok(ApiResponse.success(null, "action.reject.success"));
     }
+
+    /**
+     * AUDIT-030 (D3) : archivage explicite d'une facture payee. Le paiement laisse desormais la
+     * facture au statut PAYE ; l'archivage est une decision de gestion documentaire, reservee a
+     * l'assistant comptable et au DAF. ROLE_ADMIN en est exclu (separation des devoirs).
+     */
+    @PostMapping("/archive")
+    @PreAuthorize("hasAnyRole('ASSISTANT_COMPTABLE','DAF')")
+    @Operation(summary = "Archiver la facture",
+               description = "Archive une facture au statut PAYE (action documentaire explicite, distincte du paiement)")
+    public ResponseEntity<ApiResponse<Void>> archive(
+            @Parameter(description = "UUID of the invoice") @PathVariable UUID invoiceId) {
+        approvalService.archive(invoiceId);
+        return ResponseEntity.ok(ApiResponse.success(null, "action.archive.success"));
+    }
 }

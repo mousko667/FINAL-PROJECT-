@@ -67,6 +67,8 @@ class PaymentServiceTest {
         invoice = new Invoice();
         invoice.setId(UUID.randomUUID());
         invoice.setStatus(InvoiceStatus.BON_A_PAYER);
+        // AUDIT-029 : le paiement doit desormais correspondre exactement au montant facture.
+        invoice.setAmount(new BigDecimal("1000.00"));
 
         assistantAdmin = new User();
         assistantAdmin.setId(UUID.randomUUID());
@@ -103,7 +105,8 @@ class PaymentServiceTest {
         assertEquals(request.amountPaid(), dto.amountPaid());
         
         verify(invoiceStateMachineService).sendEvent(eq(invoice.getId()), eq(InvoiceEvent.RECORD_PAYMENT), anyMap());
-        verify(invoiceStateMachineService).sendEvent(eq(invoice.getId()), eq(InvoiceEvent.ARCHIVE), anyMap());
+        // AUDIT-030 : le paiement laisse la facture en PAYE ; il n'archive plus.
+        verify(invoiceStateMachineService, never()).sendEvent(eq(invoice.getId()), eq(InvoiceEvent.ARCHIVE), anyMap());
     }
 
     @Test
@@ -117,6 +120,69 @@ class PaymentServiceTest {
         // N17: the service throws the i18n key; resolution happens in GlobalExceptionHandler.
         assertTrue(ex.getMessage().contains("error.payment.only_bon_a_payer"));
         verify(paymentRepository, never()).save(any());
+    }
+
+    /**
+     * AUDIT-029 (D2) : le paiement integral est obligatoire. Un reglement partiel doit etre refuse,
+     * sans quoi la garde existsByInvoiceId fermerait definitivement la facture sur un solde partiel
+     * — c'est exactement le defaut constate en P3 (1 XAF soldant une facture de 600 000 XAF).
+     */
+    @Test
+    void recordPayment_FailsIfAmountDoesNotMatchInvoiceAmount() {
+        when(invoiceRepository.findByIdAndDeletedAtIsNull(invoice.getId())).thenReturn(Optional.of(invoice));
+        when(paymentRepository.existsByInvoiceId(invoice.getId())).thenReturn(false);
+
+        // Facture de 1000.00 reglee par 1 XAF : le scenario exact d'AUDIT-029.
+        PaymentRequest partial = new PaymentRequest(
+                new BigDecimal("1"), PaymentMethod.VIREMENT, Instant.now(), "REF-PARTIAL", null);
+
+        WorkflowException ex = assertThrows(WorkflowException.class,
+                () -> paymentService.recordPayment(invoice.getId(), partial, assistantAdmin.getId()));
+
+        assertTrue(ex.getMessage().contains("error.payment.amount_must_match_invoice"));
+        verify(paymentRepository, never()).save(any());
+        verify(invoiceStateMachineService, never()).sendEvent(any(), any(), anyMap());
+    }
+
+    /** AUDIT-029 : un sur-paiement est refuse au meme titre qu'un reglement partiel. */
+    @Test
+    void recordPayment_FailsIfAmountExceedsInvoiceAmount() {
+        when(invoiceRepository.findByIdAndDeletedAtIsNull(invoice.getId())).thenReturn(Optional.of(invoice));
+        when(paymentRepository.existsByInvoiceId(invoice.getId())).thenReturn(false);
+
+        PaymentRequest excessive = new PaymentRequest(
+                new BigDecimal("1500.00"), PaymentMethod.VIREMENT, Instant.now(), "REF-OVER", null);
+
+        WorkflowException ex = assertThrows(WorkflowException.class,
+                () -> paymentService.recordPayment(invoice.getId(), excessive, assistantAdmin.getId()));
+
+        assertTrue(ex.getMessage().contains("error.payment.amount_must_match_invoice"));
+        verify(paymentRepository, never()).save(any());
+    }
+
+    /**
+     * AUDIT-029 : la comparaison porte sur la VALEUR, pas sur l'echelle decimale. 1000 et 1000.00
+     * sont le meme montant — compareTo, jamais equals (BigDecimal.equals distingue les echelles).
+     */
+    @Test
+    void recordPayment_AcceptsSameAmountWithDifferentScale() {
+        when(invoiceRepository.findByIdAndDeletedAtIsNull(invoice.getId())).thenReturn(Optional.of(invoice));
+        when(paymentRepository.existsByInvoiceId(invoice.getId())).thenReturn(false);
+        when(userRepository.findById(assistantAdmin.getId())).thenReturn(Optional.of(assistantAdmin));
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(a -> {
+            Payment p = a.getArgument(0);
+            p.setId(UUID.randomUUID());
+            return p;
+        });
+
+        // Facture a 1000.00, reglement saisi "1000" : meme valeur, echelle differente.
+        PaymentRequest sameValue = new PaymentRequest(
+                new BigDecimal("1000"), PaymentMethod.VIREMENT, Instant.now(), "REF-SCALE", null);
+
+        PaymentDTO dto = paymentService.recordPayment(invoice.getId(), sameValue, assistantAdmin.getId());
+
+        assertNotNull(dto);
+        verify(invoiceStateMachineService).sendEvent(eq(invoice.getId()), eq(InvoiceEvent.RECORD_PAYMENT), anyMap());
     }
 
     @Test
@@ -198,7 +264,8 @@ class PaymentServiceTest {
         assertNotNull(dto.processedDate());
         verify(remittanceAdviceService).generateRemittanceAdvice(any(), eq(assistantAdmin.getId()));
         verify(invoiceStateMachineService).sendEvent(eq(invoice.getId()), eq(InvoiceEvent.RECORD_PAYMENT), anyMap());
-        verify(invoiceStateMachineService).sendEvent(eq(invoice.getId()), eq(InvoiceEvent.ARCHIVE), anyMap());
+        // AUDIT-030 : le paiement laisse la facture en PAYE ; il n'archive plus.
+        verify(invoiceStateMachineService, never()).sendEvent(eq(invoice.getId()), eq(InvoiceEvent.ARCHIVE), anyMap());
     }
 
     @Test
@@ -240,7 +307,9 @@ class PaymentServiceTest {
         assertEquals(PaymentStatus.PROCESSED, dto.status());
         assertNotNull(dto.processedDate());
         verify(remittanceAdviceService).generateRemittanceAdvice(eq(paymentId), eq(assistantAdmin.getId()));
-        verify(invoiceStateMachineService).sendEvent(eq(invoice.getId()), eq(InvoiceEvent.ARCHIVE), anyMap());
+        verify(invoiceStateMachineService).sendEvent(eq(invoice.getId()), eq(InvoiceEvent.RECORD_PAYMENT), anyMap());
+        // AUDIT-030 : le traitement d'un paiement planifie n'archive plus non plus.
+        verify(invoiceStateMachineService, never()).sendEvent(eq(invoice.getId()), eq(InvoiceEvent.ARCHIVE), anyMap());
     }
 
     @Test

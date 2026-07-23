@@ -5,6 +5,7 @@ import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
 import com.oct.invoicesystem.domain.invoice.repository.InvoiceRepository;
 import com.oct.invoicesystem.domain.invoice.service.InvoiceStateMachineService;
 import com.oct.invoicesystem.domain.invoice.statemachine.InvoiceEvent;
+import com.oct.invoicesystem.domain.invoice.statemachine.WorkflowExtendedStateKeys;
 import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.domain.workflow.model.ApprovalDelegation;
 import com.oct.invoicesystem.domain.workflow.model.ApprovalStep;
@@ -167,6 +168,26 @@ public class ApprovalServiceImpl implements ApprovalService {
 
         createOrUpdateStep(invoice, stepOrder, currentUser, stepName, null, rejectionReason, ApprovalStepStatus.REJECTED);
         invoiceStateMachineService.sendEvent(invoiceId, InvoiceEvent.REJECT, Map.of("rejectionReason", rejectionReason != null ? rejectionReason : ""));
+    }
+
+    /**
+     * Archive une facture payee (PAYE -> ARCHIVE). Depuis AUDIT-030 (D3), l'archivage n'est plus
+     * declenche par le paiement : c'est une action documentaire explicite. Aucune etape
+     * d'approbation n'est creee — l'archivage ne fait pas partie du circuit de validation BAP,
+     * il le suit. La tracabilite est assuree par l'historique de statut de la machine a etats.
+     */
+    @Override
+    @Transactional
+    public void archive(UUID invoiceId) {
+        Invoice invoice = getInvoice(invoiceId);
+
+        if (invoice.getStatus() != InvoiceStatus.PAYE) {
+            throw new WorkflowException("error.invoice.archive_requires_paid");
+        }
+
+        User currentUser = getCurrentUser();
+        invoiceStateMachineService.sendEvent(invoiceId, InvoiceEvent.ARCHIVE,
+                Map.of(WorkflowExtendedStateKeys.USER_ID, currentUser.getId()));
     }
 
     @Override

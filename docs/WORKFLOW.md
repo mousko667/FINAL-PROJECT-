@@ -53,7 +53,7 @@ The "Bon à Payer" (BAP) is OCT's process for authorizing supplier invoice payme
 [EN_VALIDATION_N2] ──validate_n2──────────────────→ [VALIDE]
 [VALIDE] ────bon_a_payer (DAF approval)───────────→ [BON_A_PAYER]
 [BON_A_PAYER] ──record_payment────────────────────→ [PAYE]
-[PAYE] ──────archive (automatic)──────────────────→ [ARCHIVE]
+[PAYE] ──────archive (explicit action: AA or DAF)─→ [ARCHIVE]
 
 Rejection (from AA control or any review state):
 [EN_CONTROLE_AA] ──reject──→ [REJETE]
@@ -121,15 +121,23 @@ Resubmission:
 - **From:** BON_A_PAYER
 - **To:** PAYE
 - **Actor:** ASSISTANT_COMPTABLE
-- **Guard:** Payment reference, date, and method provided
-- **Side effects:** Auto-trigger archive transition
+- **Guard:** Payment reference, date, and method provided **and `amountPaid` equal to the invoice
+  amount** — partial settlements are refused (AUDIT-029, decision D2)
+- **Side effects:** Remittance advice generated, `InvoicePayedEvent` published. **No archiving:**
+  the invoice stays in PAYE, which is a resting, filterable state.
 
-### archive (automatic)
+### archive (explicit action)
 - **From:** PAYE
 - **To:** ARCHIVE
-- **Actor:** System (triggered automatically after PAYE)
-- **Guard:** None
+- **Actor:** ASSISTANT_COMPTABLE or DAF (ADMIN excluded — no financial access)
+- **Endpoint:** `POST /api/v1/invoices/{id}/workflow/archive`
+- **Guard:** The invoice must be in PAYE
 - **Side effects:** None
+
+> ⚠ LESSON LEARNED (AUDIT-030, 2026-07-23): archiving used to be chained onto the payment in the
+> same transaction (~23 ms), so PAYE was never observable even though the UI offered a "Paid"
+> filter. Archiving is a documentary decision, not a side effect of a payment.
+> See docs/KNOWN_ISSUES_REGISTRY.md for full context.
 
 ### reject
 - **From:** EN_CONTROLE_AA, EN_VALIDATION_N1, EN_VALIDATION_N2, VALIDE
@@ -230,7 +238,7 @@ Notifications flow to both internal staff and suppliers at appropriate stages.
 4. Resubmission requires the invoice to have been modified (version > version at rejection)
 5. The DAF approves ALL invoices regardless of department (final gate)
 6. Only the ASSISTANT_COMPTABLE can create and submit invoices
-7. Archiving happens automatically — no manual archive action
+7. Archiving is an explicit action on a PAYE invoice (AA or DAF) — never an automatic side effect of payment
 8. Financial records are never hard-deleted — soft delete only
 9. All monetary amounts stored in XAF (Central African Franc) by default
 10. Reference number format: `FAC-{YYYY}-{NNNNN}` — resets each year

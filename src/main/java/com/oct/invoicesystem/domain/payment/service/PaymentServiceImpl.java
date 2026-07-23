@@ -84,6 +84,14 @@ public class PaymentServiceImpl implements PaymentService {
             throw new WorkflowException("error.payment.already_recorded");
         }
 
+        // AUDIT-029 (D2) : paiement integral obligatoire. Les reglements partiels sont ecartes,
+        // donc le montant paye doit correspondre exactement au montant facture — sans quoi
+        // existsByInvoiceId ci-dessus fermerait definitivement la facture sur un solde partiel.
+        if (request.amountPaid() == null || invoice.getAmount() == null
+                || request.amountPaid().compareTo(invoice.getAmount()) != 0) {
+            throw new WorkflowException("error.payment.amount_must_match_invoice");
+        }
+
         User recordedBy = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
@@ -111,8 +119,13 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     /**
-     * Effets de bord d'un paiement execute : avis de paiement, evenement metier, transitions
-     * BON_A_PAYER -> PAYE puis PAYE -> ARCHIVE. Partage par la creation directe et processPayment.
+     * Effets de bord d'un paiement execute : avis de paiement, evenement metier, transition
+     * BON_A_PAYER -> PAYE. Partage par la creation directe et processPayment.
+     *
+     * <p>AUDIT-030 (D3) : le paiement laisse desormais la facture au statut {@code PAYE}, qui
+     * devient un etat de repos observable et filtrable. L'archivage n'est plus un effet de bord du
+     * paiement : c'est une action documentaire explicite
+     * ({@code POST /api/v1/invoices/{id}/workflow/archive}).</p>
      */
     private void finalizePayment(Payment payment, UUID userId) {
         UUID invoiceId = payment.getInvoice().getId();
@@ -128,12 +141,6 @@ public class PaymentServiceImpl implements PaymentService {
 
         invoiceStateMachineService.sendEvent(invoiceId, InvoiceEvent.RECORD_PAYMENT,
                 Map.of(WorkflowExtendedStateKeys.USER_ID, userId));
-
-        invoiceStateMachineService.sendEvent(invoiceId, InvoiceEvent.ARCHIVE,
-                Map.of(
-                        WorkflowExtendedStateKeys.USER_ID, userId,
-                        WorkflowExtendedStateKeys.AUTO_ARCHIVE, true
-                ));
     }
 
     @Override

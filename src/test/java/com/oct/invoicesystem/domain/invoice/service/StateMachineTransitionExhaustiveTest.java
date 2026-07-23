@@ -53,7 +53,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *   T5  EN_VALIDATION_N2→ VALIDE           (VALIDATE_N2)
  *   T6  VALIDE          → BON_A_PAYER      (BON_A_PAYER)
  *   T7  BON_A_PAYER     → PAYE             (RECORD_PAYMENT)
- *   T8  PAYE            → ARCHIVE          (ARCHIVE with AUTO_ARCHIVE=true)
+ *   T8  PAYE            → ARCHIVE          (ARCHIVE, action explicite depuis PAYE)
  *   T9  EN_VALIDATION_N1→ REJETE           (REJECT)
  *   T10 EN_VALIDATION_N2→ REJETE           (REJECT)
  *   T11 VALIDE          → REJETE           (REJECT)
@@ -65,7 +65,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *   AA3 EN_CONTROLE_AA  → REJETE           (REJECT)
  *
  * Invalid transitions tested:
- *   I1  BROUILLON → ARCHIVE           (direct archive blocked — not AUTO_ARCHIVE)
+ *   I1  BROUILLON → ARCHIVE           (archive bloque — statut source != PAYE)
  *   I2  SOUMIS    → VALIDE            (must go through N1)
  *   I3  BROUILLON → REJETE            (cannot reject a draft)
  *   I4  ARCHIVE   → SOUMIS            (terminal state, no way back)
@@ -267,12 +267,14 @@ class StateMachineTransitionExhaustiveTest {
     // ── Valid transition T8: PAYE → ARCHIVE ──────────────────────────────────
 
     @Test
-    @DisplayName("T8 PAYE → ARCHIVE via ARCHIVE (AUTO_ARCHIVE=true)")
+    @DisplayName("T8 PAYE → ARCHIVE via ARCHIVE (action explicite, AUDIT-030)")
     void t8_paye_to_archive() {
         Invoice inv = advanceTo(InvoiceStatus.PAYE, drhDept, assistant, n1Drh);
         auth(daf);
+        // AUDIT-030 : plus de drapeau AUTO_ARCHIVE — l'archivage est une action explicite,
+        // seule la provenance depuis PAYE est exigee.
         sendEvent(inv.getId(), InvoiceEvent.ARCHIVE,
-                Map.of(WorkflowExtendedStateKeys.USER_ID, daf.getId(), WorkflowExtendedStateKeys.AUTO_ARCHIVE, true));
+                Map.of(WorkflowExtendedStateKeys.USER_ID, daf.getId()));
         assertEquals(InvoiceStatus.ARCHIVE, reload(inv).getStatus());
     }
 
@@ -333,14 +335,16 @@ class StateMachineTransitionExhaustiveTest {
     // ── Invalid transition I1: BROUILLON → ARCHIVE (manual archive blocked) ──
 
     @Test
-    @DisplayName("I1 BROUILLON → ARCHIVE blocked (auto-archive only)")
+    @DisplayName("I1 BROUILLON → ARCHIVE blocked (seule une facture PAYE est archivable)")
     void i1_brouillon_to_archive_blocked() {
         Invoice inv = invoice(drhDept);
         auth(daf);
+        // AUDIT-030 : la garde ne teste plus le drapeau AUTO_ARCHIVE mais le statut source.
+        // La propriete protegee est inchangee : on n'archive que ce qui a ete paye.
         assertThrows(WorkflowException.class, () ->
                 sendEvent(inv.getId(), InvoiceEvent.ARCHIVE,
                         Map.of(WorkflowExtendedStateKeys.USER_ID, daf.getId())),
-                "Manual ARCHIVE must be rejected with WorkflowException");
+                "ARCHIVE depuis BROUILLON must be rejected with WorkflowException");
     }
 
     // ── Invalid transition I2: SOUMIS → VALIDE (skipping N1) ─────────────────
@@ -478,7 +482,7 @@ class StateMachineTransitionExhaustiveTest {
         if (target == InvoiceStatus.PAYE) return inv;
 
         sendEvent(inv.getId(), InvoiceEvent.ARCHIVE,
-                Map.of(WorkflowExtendedStateKeys.USER_ID, daf.getId(), WorkflowExtendedStateKeys.AUTO_ARCHIVE, true));
+                Map.of(WorkflowExtendedStateKeys.USER_ID, daf.getId()));
         return inv;
     }
 

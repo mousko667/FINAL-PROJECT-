@@ -69,6 +69,7 @@ class ApprovalControllerTest {
     private User n2Info;
     private User daf;
     private User auditeur;
+    private User admin;
     private Department drhDept;
     private Department infoDept;
 
@@ -86,6 +87,7 @@ class ApprovalControllerTest {
         n2Info    = createUser("n2_info_test","ROLE_VALIDATEUR_N2_INFO");
         daf       = createUser("daf_test",    "ROLE_DAF");
         auditeur  = createUser("audit_test",  "ROLE_AUDITEUR");
+        admin     = createUser("admin_test",  "ROLE_ADMIN");
     }
 
     @AfterEach
@@ -129,9 +131,7 @@ class ApprovalControllerTest {
         invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.RECORD_PAYMENT, 
                 java.util.Map.of(WorkflowExtendedStateKeys.USER_ID, daf.getId()));
         invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.ARCHIVE, 
-                java.util.Map.of(
-                        WorkflowExtendedStateKeys.USER_ID, daf.getId(),
-                        WorkflowExtendedStateKeys.AUTO_ARCHIVE, true));
+                java.util.Map.of(WorkflowExtendedStateKeys.USER_ID, daf.getId()));
 
         // Final state
         Invoice updated = invoiceRepository.findById(invoice.getId()).orElseThrow();
@@ -190,9 +190,7 @@ class ApprovalControllerTest {
         invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.RECORD_PAYMENT, 
                 java.util.Map.of(WorkflowExtendedStateKeys.USER_ID, daf.getId()));
         invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.ARCHIVE, 
-                java.util.Map.of(
-                        WorkflowExtendedStateKeys.USER_ID, daf.getId(),
-                        WorkflowExtendedStateKeys.AUTO_ARCHIVE, true));
+                java.util.Map.of(WorkflowExtendedStateKeys.USER_ID, daf.getId()));
 
         Invoice updated = invoiceRepository.findById(invoice.getId()).orElseThrow();
         assertEquals(InvoiceStatus.ARCHIVE, updated.getStatus());
@@ -466,6 +464,105 @@ class ApprovalControllerTest {
     }
 
     // ──────────────────────────────────────────────────────────────────────────
+    // AUDIT-030 (D3) : l'archivage est une action explicite, plus un effet du paiement
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Le paiement laisse la facture au statut PAYE : c'est desormais un etat de repos observable,
+     * ce qui rend enfin utile le filtre « Paye » de l'interface. C'est le coeur d'AUDIT-030, ou la
+     * facture passait de BON_A_PAYER a ARCHIVE en ~23 ms sans jamais etre consultable en PAYE.
+     */
+    @Test
+    void recordPayment_leavesInvoiceInPaye_notArchive() {
+        Invoice invoice = advanceToBonAPayer();
+
+        invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.RECORD_PAYMENT,
+                java.util.Map.of(WorkflowExtendedStateKeys.USER_ID, daf.getId()));
+
+        assertEquals(InvoiceStatus.PAYE,
+                invoiceRepository.findById(invoice.getId()).orElseThrow().getStatus(),
+                "Le paiement doit laisser la facture en PAYE, sans archivage automatique");
+    }
+
+    /** L'action d'archivage explicite fait bien passer une facture PAYE en ARCHIVE. */
+    @Test
+    void archive_explicitAction_movesPayeToArchive() throws Exception {
+        Invoice invoice = advanceToBonAPayer();
+        invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.RECORD_PAYMENT,
+                java.util.Map.of(WorkflowExtendedStateKeys.USER_ID, daf.getId()));
+
+        perform(post("/api/v1/invoices/{id}/workflow/archive", invoice.getId()), daf)
+                .andExpect(status().isOk());
+
+        assertEquals(InvoiceStatus.ARCHIVE,
+                invoiceRepository.findById(invoice.getId()).orElseThrow().getStatus());
+    }
+
+    /** Une facture qui n'a pas ete payee ne peut pas etre archivee. */
+    @Test
+    void archive_refusedWhenInvoiceNotPaid() throws Exception {
+        Invoice invoice = advanceToBonAPayer();
+
+        perform(post("/api/v1/invoices/{id}/workflow/archive", invoice.getId()), daf)
+                .andExpect(status().is4xxClientError());
+
+        assertEquals(InvoiceStatus.BON_A_PAYER,
+                invoiceRepository.findById(invoice.getId()).orElseThrow().getStatus());
+    }
+
+    /**
+     * SoD, critere d'audit central : ROLE_ADMIN n'a AUCUN acces financier. L'archivage etant une
+     * nouvelle surface d'action sur une facture payee, l'exclusion de l'ADMIN doit etre prouvee
+     * explicitement — c'est la regle projet n°1, et les findings AUDIT-018/019 portent sur ce point.
+     */
+    @Test
+    void archive_forbiddenForAdmin() throws Exception {
+        Invoice invoice = advanceToBonAPayer();
+        invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.RECORD_PAYMENT,
+                java.util.Map.of(WorkflowExtendedStateKeys.USER_ID, daf.getId()));
+
+        perform(post("/api/v1/invoices/{id}/workflow/archive", invoice.getId()), admin)
+                .andExpect(status().isForbidden());
+
+        assertEquals(InvoiceStatus.PAYE,
+                invoiceRepository.findById(invoice.getId()).orElseThrow().getStatus());
+    }
+
+    /** SoD : l'auditeur (role sans pouvoir d'action) ne peut pas archiver. */
+    @Test
+    void archive_forbiddenForUnauthorizedRole() throws Exception {
+        Invoice invoice = advanceToBonAPayer();
+        invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.RECORD_PAYMENT,
+                java.util.Map.of(WorkflowExtendedStateKeys.USER_ID, daf.getId()));
+
+        perform(post("/api/v1/invoices/{id}/workflow/archive", invoice.getId()), auditeur)
+                .andExpect(status().isForbidden());
+
+        assertEquals(InvoiceStatus.PAYE,
+                invoiceRepository.findById(invoice.getId()).orElseThrow().getStatus());
+    }
+
+    /** Amene une facture DRH (mono-niveau) jusqu'au statut BON_A_PAYER. */
+    private Invoice advanceToBonAPayer() {
+        try {
+            Invoice invoice = createInvoice(drhDept, assistant);
+            perform(post("/api/v1/invoices/{id}/submit", invoice.getId()), assistant)
+                    .andExpect(status().isOk());
+            assignAa(invoice, assistant);
+            assignReviewerViaStateMachine(invoice, n1Drh);
+            perform(post("/api/v1/invoices/{id}/workflow/validate-n1", invoice.getId()),
+                    n1Drh, new ApprovalRequest("N1 OK"))
+                    .andExpect(status().isOk());
+            perform(post("/api/v1/invoices/{id}/workflow/bon-a-payer", invoice.getId()),
+                    daf, new ApprovalRequest("BAP OK"))
+                    .andExpect(status().isOk());
+            return invoice;
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to advance invoice to BON_A_PAYER", e);
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
     // Helpers
     // ──────────────────────────────────────────────────────────────────────────
 
@@ -506,7 +603,8 @@ class ApprovalControllerTest {
                 "ROLE_VALIDATEUR_N1_INFO",
                 "ROLE_VALIDATEUR_N2_INFO",
                 "ROLE_DAF",
-                "ROLE_AUDITEUR"
+                "ROLE_AUDITEUR",
+                "ROLE_ADMIN"
         }) {
             if (roleRepository.findByName(name).isEmpty()) {
                 roleRepository.save(Role.builder().name(name).description(name).build());

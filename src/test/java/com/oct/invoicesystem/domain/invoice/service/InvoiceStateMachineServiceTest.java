@@ -381,8 +381,8 @@ class InvoiceStateMachineServiceTest {
     @Test
     void archive_Success() {
         invoice.setStatus(InvoiceStatus.PAYE);
-        invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.ARCHIVE,
-                Map.of(WorkflowExtendedStateKeys.AUTO_ARCHIVE, true));
+        // AUDIT-030 : archivage explicite depuis PAYE, sans drapeau AUTO_ARCHIVE.
+        invoiceStateMachineService.sendEvent(invoice.getId(), InvoiceEvent.ARCHIVE, null);
     }
 
     @Test

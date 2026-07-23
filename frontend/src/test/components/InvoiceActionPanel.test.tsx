@@ -114,9 +114,39 @@ describe('InvoiceActionPanel', () => {
   })
 
   it('renders nothing for wrong role+status combo', () => {
-    const { container } = renderPanel(makeInvoice('PAYE'), assistantUser)
-    // No action panel rendered (or rendered empty)
+    // AUDIT-030: PAYE + AA is now a VALID combo (explicit archiving), so this case uses a
+    // genuinely invalid one — an N1 validator has nothing to do on an already-archived invoice.
+    renderPanel(makeInvoice('ARCHIVE'), validateur1)
     expect(screen.queryByRole('button')).toBeNull()
+  })
+
+  // AUDIT-030 (D3): archiving became an explicit action on a PAYE invoice, reserved to AA/DAF.
+  it('shows the Archive action for ASSISTANT_COMPTABLE on a PAYE invoice', () => {
+    renderPanel(makeInvoice('PAYE'), assistantUser)
+    expect(screen.getByText(/archiver/i)).toBeDefined()
+  })
+
+  it('shows the Archive action for DAF on a PAYE invoice', () => {
+    renderPanel(makeInvoice('PAYE'), dafUser)
+    expect(screen.getByText(/archiver/i)).toBeDefined()
+  })
+
+  it('does NOT show the Archive action to a validator on a PAYE invoice', () => {
+    // Restitue la couverture de l'ancien cas « PAYE + role non habilite » : l'archivage est
+    // reserve a AA et DAF, un validateur N1 ne doit voir aucune action sur une facture payee.
+    renderPanel(makeInvoice('PAYE'), validateur1)
+    expect(screen.queryByRole('button')).toBeNull()
+  })
+
+  it('posts to the explicit archive endpoint when Archive is clicked', async () => {
+    vi.mocked(apiClient.post).mockResolvedValueOnce({ data: { data: null } } as never)
+    renderPanel(makeInvoice('PAYE'), dafUser)
+
+    fireEvent.click(screen.getByText(/archiver/i))
+
+    await waitFor(() =>
+      expect(apiClient.post).toHaveBeenCalledWith('/invoices/inv-1/workflow/archive', {}),
+    )
   })
 
   it('opens reject dialog when Reject is clicked', () => {

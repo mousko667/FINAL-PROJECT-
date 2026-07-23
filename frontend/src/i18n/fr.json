@@ -1264,7 +1264,8 @@
       "scheduled": "Planifié",
       "processed": "Exécuté"
     },
-    "notesPlaceholder": "Informations complémentaires sur le paiement..."
+    "notesPlaceholder": "Informations complémentaires sur le paiement...",
+    "fullAmountRequired": "Le montant doit correspondre au montant total de la facture."
   },
   "paymentAlerts": {
     "title": "Règles d'alerte de paiement",

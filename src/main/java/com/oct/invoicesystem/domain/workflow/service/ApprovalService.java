@@ -22,6 +22,15 @@ public interface ApprovalService {
     void validateN2(UUID invoiceId, String comment);
     void bonAPayer(UUID invoiceId, String comment);
     void reject(UUID invoiceId, String rejectionReason);
+
+    /**
+     * Archive une facture payee (PAYE -> ARCHIVE). Action documentaire explicite, distincte du
+     * paiement depuis AUDIT-030 (D3) : le reglement laisse la facture au statut PAYE, etat de
+     * repos observable, et l'archivage releve d'une decision de gestion documentaire.
+     *
+     * @param invoiceId la facture a archiver ; elle doit etre au statut PAYE
+     */
+    void archive(UUID invoiceId);
     List<ApprovalStepResponse> getApprovalSteps(UUID invoiceId);
     ValidatorStatsResponse getValidatorStats(UUID approverId);
 }

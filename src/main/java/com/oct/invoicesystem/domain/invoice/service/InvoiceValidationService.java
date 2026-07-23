@@ -25,7 +25,8 @@ import java.util.regex.Pattern;
  *       {@code ResubmissionVersionGuard} on the RESUBMIT transition.</b></li>
  *   <li>Rule 5 (DAF-only actions) → {@code @PreAuthorize("hasRole('DAF')")} on the endpoints.</li>
  *   <li>Rule 6 (assistant creates/submits) → {@code @PreAuthorize} on the invoice endpoints.</li>
- *   <li>Rule 7 (archive is automatic) → {@code InvoiceStateMachineServiceImpl} ARCHIVE guard.</li>
+ *   <li>Rule 7 (archive is an explicit action on a PAYE invoice) → {@code ApprovalService.archive}
+ *       plus the {@code InvoiceStateMachineServiceImpl} ARCHIVE guard (source status must be PAYE).</li>
  *   <li>Rules 8–10 → soft-delete policy, entity {@code BigDecimal} typing, reference generator.</li>
  * </ul>
  * Only {@link #validateResubmissionVersion(Integer, Integer)} is invoked from production code; the

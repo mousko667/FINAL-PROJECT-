@@ -216,8 +216,13 @@ class PaymentControllerTest {
         invoice = invoiceRepository.save(invoice);
     }
 
+    /**
+     * AUDIT-030 (D3) : le paiement laisse desormais la facture au statut PAYE. L'archivage n'est
+     * plus un effet de bord du reglement mais une action documentaire explicite
+     * (POST /workflow/archive). Ce test assertait auparavant ARCHIVE.
+     */
     @Test
-    void recordPayment_SuccessAndTriggersArchive() throws Exception {
+    void recordPayment_SuccessAndLeavesInvoiceInPaye() throws Exception {
         PaymentRequest req = new PaymentRequest(
                 new BigDecimal("1500.00"),
                 PaymentMethod.VIREMENT,
@@ -235,9 +240,30 @@ class PaymentControllerTest {
                 .andExpect(jsonPath("$.data.amountPaid").value(1500.00))
                 .andExpect(jsonPath("$.data.reference").value("REFXYZ"));
 
-        // Verify status changed to ARCHIVE
+        // AUDIT-030 : PAYE est desormais un etat de repos observable, pas un etat traverse en 23 ms.
         Invoice updatedInvoice = invoiceRepository.findById(invoice.getId()).orElseThrow();
-        assertEquals(InvoiceStatus.ARCHIVE, updatedInvoice.getStatus());
+        assertEquals(InvoiceStatus.PAYE, updatedInvoice.getStatus());
+    }
+
+    /**
+     * AUDIT-029 (D2) : paiement integral obligatoire. Le scenario exact constate en P3 — 1 XAF
+     * soldant une facture de plusieurs centaines de milliers — doit desormais etre refuse, et la
+     * facture rester en BON_A_PAYER (aucun paiement enregistre, donc aucun blocage definitif).
+     */
+    @Test
+    void recordPayment_RejectsPartialAmount() throws Exception {
+        PaymentRequest partial = new PaymentRequest(
+                new BigDecimal("1"), PaymentMethod.VIREMENT, Instant.now(), "REF-PARTIAL", null);
+
+        mockMvc.perform(post("/api/v1/payments/invoice/" + invoice.getId())
+                        .with(SecurityMockMvcRequestPostProcessors.authentication(
+                                new UsernamePasswordAuthenticationToken(assistant, null, java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ASSISTANT_COMPTABLE")))))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(partial)))
+                .andExpect(status().is4xxClientError());
+
+        Invoice unchanged = invoiceRepository.findById(invoice.getId()).orElseThrow();
+        assertEquals(InvoiceStatus.BON_A_PAYER, unchanged.getStatus());
     }
 
     @Test

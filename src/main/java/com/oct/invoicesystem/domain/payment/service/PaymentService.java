@@ -19,7 +19,8 @@ public interface PaymentService {
 
     /**
      * Marque un paiement planifie (SCHEDULED) comme execute (PROCESSED) et finalise :
-     * generation de l'avis de paiement, publication de l'evenement, transitions PAYE puis ARCHIVE.
+     * generation de l'avis de paiement, publication de l'evenement, transition vers PAYE.
+     * Depuis AUDIT-030 (D3), l'archivage n'est plus enchaine ici : c'est une action explicite.
      *
      * @throws com.oct.invoicesystem.shared.exception.ResourceNotFoundException si le paiement est introuvable
      * @throws com.oct.invoicesystem.shared.exception.WorkflowException si le paiement n'est pas SCHEDULED

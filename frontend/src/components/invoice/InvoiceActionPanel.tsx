@@ -54,6 +54,10 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
           return apiClient.post(`${base}/reject`, { reasonCode: code, rejectionReason: reason })
         case 'BON_A_PAYER':
           return apiClient.post(`${base}/bon-a-payer`, {})
+        case 'ARCHIVE':
+          // AUDIT-030 : l'archivage n'est plus declenche par le paiement, c'est une action
+          // documentaire explicite sur une facture au statut PAYE.
+          return apiClient.post(`${base}/archive`, {})
         default:
           throw new Error('Unknown action: ' + action)
       }
@@ -130,6 +134,12 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
   }
 
   // Payment recording is handled via PaymentsPage modal — see PaymentsPage.tsx
+
+  // AUDIT-030 (D3): archiving a paid invoice is now an explicit documentary action, no longer a
+  // side effect of the payment. Reserved to AA and DAF — ADMIN has no financial access (SoD).
+  if ((isAA || isDaf) && status === 'PAYE') {
+    buttons.push({ action: 'ARCHIVE', label: t('invoice.archive', 'Archive'), variant: 'secondary' })
+  }
 
   // Admin-only actions (removed due to SoD Rule #1)
 

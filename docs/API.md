@@ -101,6 +101,10 @@
 | POST | `/invoices/{id}/bon-a-payer` | DAF, ADMIN | Status = VALIDE | VALIDE → BON_A_PAYER |
 | POST | `/invoices/{id}/reject` | N1, N2, DAF, ADMIN | Reason required | Any review state → REJETE |
 | POST | `/invoices/{id}/resubmit` | ASSISTANT_COMPTABLE | Modified since rejection | REJETE → SOUMIS |
+| POST | `/invoices/{id}/workflow/archive` | ASSISTANT_COMPTABLE, DAF | Status = PAYE | PAYE → ARCHIVE |
+
+> Archiving is an **explicit** action since AUDIT-030: recording a payment leaves the invoice in
+> `PAYE`. ADMIN is deliberately excluded (no financial access).
 
 ### Reject body (reason is mandatory)
 ```json

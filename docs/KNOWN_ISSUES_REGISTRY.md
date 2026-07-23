@@ -1819,3 +1819,71 @@ requete, la construction de l'entite DOIT etre factorisee dans un utilitaire com
 `private` dans un seul des deux controleurs garantit que l'autre chemin oubliera un champ, en
 silence. Et tout champ declare par un DTO doit etre soit persiste, soit rejete explicitement :
 jamais accepte puis ignore.
+
+
+---
+
+## PROB-133 — Paiement d'un montant quelconque soldant definitivement une facture (AUDIT-029)
+
+**Date :** 2026-07-23 · **Phase :** P6 vague 1, lot V1-C · **Severite :** P1 (controle financier absent)
+
+**Symptome :** une facture de 600 000 XAF etait soldee ET archivee par un paiement de **1 XAF**.
+Reproduit par les deux chemins de paiement (immediat et planifie puis traite).
+
+**Root cause :** `PaymentServiceImpl.recordPayment` verifiait le statut (`BON_A_PAYER`), l'absence de
+paiement anterieur (`existsByInvoiceId`) et la positivite du montant (`@Positive` sur le DTO), mais
+**jamais** que le montant paye corresponde au montant facture. La combinaison avec `existsByInvoiceId`
+rendait le defaut irreversible : le premier paiement, quel que soit son montant, interdisait tout
+paiement complementaire. Le contraste avec `PaymentRequest`, qui porte bien `@Positive`, montre que
+la regle existait ailleurs : c'etait une omission, pas un choix.
+
+**Solution :** controle explicite dans `recordPayment`, place **avant** toute ecriture :
+`request.amountPaid().compareTo(invoice.getAmount()) != 0` leve
+`WorkflowException("error.payment.amount_must_match_invoice")` (cle i18n FR + EN). Decision de
+cadrage D2 : paiement integral obligatoire, reglements partiels ecartes du perimetre. Cote interface,
+le champ « montant paye » de `PaymentsPage` passe en **lecture seule** (pre-rempli par la facture).
+
+**Preventive rule :** `compareTo`, JAMAIS `equals`, pour comparer deux `BigDecimal` — `equals`
+distingue les echelles, donc `1000` et `1000.00` seraient tenus pour differents et un paiement
+legitime serait refuse. Un test dedie couvre ce cas exact. Plus generalement : lorsqu'une garde rend
+une operation NON REJOUABLE (ici `existsByInvoiceId`), la validation du montant doit etre exhaustive
+au premier passage — il n'y a pas de seconde chance.
+
+---
+
+## PROB-134 — Statut PAYE jamais observable, archivage automatique du paiement (AUDIT-030)
+
+**Date :** 2026-07-23 · **Phase :** P6 vague 1, lot V1-C · **Severite :** P2 (etat documente jamais atteignable)
+
+**Symptome :** aucune facture ne pouvait etre consultee au statut « Paye », alors que l'interface
+propose ce filtre, que `InvoiceStatus` le declare et que `CLAUDE.md §5` documente
+`BON_A_PAYER -> PAYE -> ARCHIVE` comme trois etapes distinctes. Preuve : historique de
+`FAC-2026-00030`, `BON_A_PAYER->PAYE` a 23:39:45.559877 puis `PAYE->ARCHIVE` a 23:39:45.589620 —
+**29 ms d'ecart**. Le denombrement par statut ne renvoyait aucune ligne `PAYE`.
+
+**Root cause :** `PaymentServiceImpl.finalizePayment` emettait `RECORD_PAYMENT` **puis
+immediatement** `ARCHIVE` dans la meme transaction. `PAYE` etait donc traverse mais n'etait jamais un
+etat de repos. La machine a etats etait correcte : le defaut etait dans l'enchainement applicatif.
+L'archivage est de surcroit une decision de gestion documentaire, discutable comme effet automatique
+d'un paiement.
+
+**Solution (decision D3) :** `finalizePayment` n'emet plus que `RECORD_PAYMENT`. L'archivage devient
+une action explicite : `POST /api/v1/invoices/{id}/workflow/archive`, reservee a AA et DAF (**ADMIN
+exclu — pas d'acces financier**), exposee dans `InvoiceActionPanel` sur une facture `PAYE`. Le
+drapeau `AUTO_ARCHIVE` n'ayant plus aucun emetteur, il est **retire** de
+`WorkflowExtendedStateKeys` ; la garde d'archivage teste desormais le **statut source**
+(`status != PAYE` -> refus), ce qui est plus strict que l'ancienne version puisque celle-ci faisait
+confiance a l'appelant pour poser le drapeau.
+
+**Effet de bord verifie (pas une regression) :** une facture payee mais non encore archivee
+n'apparait plus dans `/archive` et ne peut pas etre classee dans un dossier
+(`InvoiceRepository.searchArchived`, `ArchiveFolderServiceImpl.assignInvoiceToFolder` exigent
+`status = 'ARCHIVE'`). C'est le comportement **voulu** : le classement documentaire depend desormais
+d'une action humaine. Les rapports (aging, cash-flow), les retards et les compteurs du portail
+excluent ou cumulent `PAYE` et `ARCHIVE` de facon symetrique : aucun d'eux n'est affecte.
+
+**Preventive rule :** ne jamais enchainer deux transitions d'etat dans la meme transaction quand
+l'etat intermediaire est expose a l'utilisateur (filtre, rapport, tableau de bord). Un etat que
+l'interface propose de filtrer doit etre un etat de repos, sans quoi le filtre est structurellement
+vide. Symptome revelateur a chercher : un `group by status` qui ne renvoie jamais la valeur
+concernee.

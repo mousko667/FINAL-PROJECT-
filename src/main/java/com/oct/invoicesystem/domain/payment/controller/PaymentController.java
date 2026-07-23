@@ -39,7 +39,7 @@ public class PaymentController {
 
     @PostMapping("/invoice/{invoiceId}")
     @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
-    @Operation(summary = "Record a new payment for an invoice (Triggers Archive)")
+    @Operation(summary = "Record a new payment for an invoice (full amount only; moves it to PAYE)")
     public ResponseEntity<ApiResponse<PaymentDTO>> recordPayment(
             @PathVariable UUID invoiceId,
             @Valid @RequestBody PaymentRequest request,
@@ -61,7 +61,7 @@ public class PaymentController {
 
     @PostMapping("/{paymentId}/process")
     @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
-    @Operation(summary = "Mark a scheduled payment as processed (triggers remittance + archive)")
+    @Operation(summary = "Mark a scheduled payment as processed (triggers remittance; moves the invoice to PAYE)")
     public ResponseEntity<ApiResponse<PaymentDTO>> processPayment(
             @PathVariable UUID paymentId,
             @AuthenticationPrincipal User currentUser) {

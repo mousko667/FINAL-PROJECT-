@@ -112,11 +112,19 @@ function RecordPaymentModal({ invoice, onClose, onSuccess }: {
               className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-gold-deep/30" />
           </div>
 
+          {/* AUDIT-029 (D2) : le paiement intégral est obligatoire — les règlements partiels sont
+              hors périmètre. Le montant est donc imposé par la facture et non saisissable : un
+              champ libre inviterait à l'erreur exactement là où le défaut s'est produit (1 XAF
+              soldant une facture de 600 000 XAF). Le backend refuse tout écart. */}
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.amount', 'Montant payé')} ({invoice.currency}) *</label>
-            <input type="number" step="0.01" value={form.amountPaid}
-              onChange={e => setForm(p => ({ ...p, amountPaid: Number(e.target.value) }))}
-              className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-gold-deep/30" />
+            <label htmlFor="payment-amount" className="block text-sm font-medium text-ink-soft mb-1">
+              {t('invoice.amount', 'Montant payé')} ({invoice.currency}) *
+            </label>
+            <input id="payment-amount" type="number" step="0.01" value={form.amountPaid} readOnly
+              className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-ground text-ink-soft focus:outline-none" />
+            <p className="mt-1 text-xs text-ink-faint">
+              {t('payments.fullAmountRequired', 'Le montant doit correspondre au montant total de la facture.')}
+            </p>
           </div>
 
           <div>

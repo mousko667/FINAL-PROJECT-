@@ -73,12 +73,15 @@ public class InvoiceStateMachineServiceImpl implements InvoiceStateMachineServic
         Invoice invoice = invoiceRepository.findByIdAndDeletedAtIsNull(invoiceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Invoice not found with id " + invoiceId));
 
-        if (event.equals(InvoiceEvent.ARCHIVE)) {
-            boolean automaticArchive = variables != null
-                    && Boolean.TRUE.equals(variables.get(WorkflowExtendedStateKeys.AUTO_ARCHIVE));
-            if (!automaticArchive) {
-                throw new WorkflowException("Archive transition is automatic and can only be triggered by payment processing");
-            }
+        // AUDIT-030 (D3) : l'archivage n'est plus un effet de bord du paiement mais une action
+        // documentaire explicite. La garde ne teste donc plus le drapeau AUTO_ARCHIVE (que plus
+        // aucun appelant n'emet) mais la seule propriete qu'elle protegeait reellement : on
+        // n'archive que ce qui a ete paye. Elle est plus stricte que l'ancienne, qui faisait
+        // confiance a l'appelant pour poser le drapeau. Le refus generique de transition (plus
+        // bas) attraperait aussi le cas, mais avec un message technique non traduit : ce refus-ci
+        // rend une cle i18n exploitable par l'interface.
+        if (event.equals(InvoiceEvent.ARCHIVE) && invoice.getStatus() != InvoiceStatus.PAYE) {
+            throw new WorkflowException("error.invoice.archive_requires_paid");
         }
 
         // The duplicate + three-way matching gate must run on BOTH first submission and
