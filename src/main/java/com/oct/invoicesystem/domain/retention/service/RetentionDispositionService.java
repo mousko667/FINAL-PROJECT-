@@ -36,13 +36,28 @@ public class RetentionDispositionService {
     public List<RetentionPendingDocumentDTO> listPendingExpired() {
         RetentionPolicy policy = retentionPolicyService.getEntity();
         Instant cutoff = Instant.now().minus(policy.getRetentionYears() * 365L, ChronoUnit.DAYS);
-        return invoiceDocumentRepository
-                .findByUploadedAtBeforeAndRetentionDisposition(cutoff, RetentionDisposition.PENDING)
-                .stream()
+        // AUDIT-009: proposed purges must stay visible, otherwise the DAF has nothing to confirm.
+        return java.util.stream.Stream.of(RetentionDisposition.PENDING, RetentionDisposition.PURGE_PROPOSED)
+                .flatMap(d -> invoiceDocumentRepository
+                        .findByUploadedAtBeforeAndRetentionDisposition(cutoff, d).stream())
                 .map(this::toDto)
                 .toList();
     }
 
+    /**
+     * Records a retention disposition, enforcing the two-man rule on destruction (AUDIT-009, D5).
+     *
+     * <p>{@code RETAINED} and {@code PURGE_PROPOSED} are ADMIN decisions. {@code PURGED} — the one
+     * that condemns a financial supporting document — is reserved to the DAF, and only on a document
+     * the ADMIN has already moved to {@code PURGE_PROPOSED}: proposer and confirmer are therefore
+     * always two distinct roles.</p>
+     *
+     * @param docId  document to dispose of
+     * @param target requested disposition
+     * @param actor  authenticated decision maker
+     * @return the document's new disposition state
+     * @throws ValidationException when the target or the current state forbids the transition
+     */
     public RetentionPendingDocumentDTO setDisposition(UUID docId, RetentionDisposition target, User actor) {
         if (target == RetentionDisposition.PENDING) {
             throw new ValidationException("retention.disposition.invalid_target");
@@ -51,6 +66,20 @@ public class RetentionDispositionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Document not found with id " + docId));
 
         RetentionDisposition previous = doc.getRetentionDisposition();
+        boolean isDaf = hasRole(actor, "ROLE_DAF");
+        if (target == RetentionDisposition.PURGED) {
+            // Second man: only the DAF confirms, and only what the ADMIN has proposed.
+            if (!isDaf) {
+                throw new ValidationException("retention.disposition.purge_requires_daf");
+            }
+            if (previous != RetentionDisposition.PURGE_PROPOSED) {
+                throw new ValidationException("retention.disposition.purge_not_proposed");
+            }
+        } else if (isDaf && !hasRole(actor, "ROLE_ADMIN")) {
+            // First man: proposing (or retaining) stays an ADMIN act, so the DAF cannot do both.
+            throw new ValidationException("retention.disposition.proposal_requires_admin");
+        }
+
         doc.setRetentionDisposition(target);
         doc.setRetentionDispositionAt(Instant.now());
         doc.setRetentionDispositionBy(actor);
@@ -61,6 +90,12 @@ public class RetentionDispositionService {
                 previous != null ? previous.name() : null, target.name(), null, null);
 
         return toDto(saved);
+    }
+
+    private boolean hasRole(User user, String role) {
+        return user != null && user.getAuthorities().stream()
+                .map(org.springframework.security.core.GrantedAuthority::getAuthority)
+                .anyMatch(role::equals);
     }
 
     private RetentionPendingDocumentDTO toDto(InvoiceDocument d) {

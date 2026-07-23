@@ -76,8 +76,9 @@ export default function AdminMatchingConfigPage() {
     saveMutation.mutate()
   }
 
+  // AUDIT-008 / D5: tolerance thresholds are a financial control — DAF only, never ADMIN.
   return (
-    <PageRoleGuard allowedRoles={['ROLE_ADMIN']}>
+    <PageRoleGuard allowedRoles={['ROLE_DAF']}>
       <div className="space-y-6 page-enter max-w-2xl">
         <PageHeader
           title={<span className="flex items-center gap-2"><SlidersHorizontal className="w-6 h-6" aria-hidden />{t('admin.matchingConfig.title', 'Three-Way Matching Configuration')}</span>}

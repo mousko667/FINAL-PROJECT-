@@ -3,6 +3,7 @@ package com.oct.invoicesystem.domain.checklist.controller;
 import com.oct.invoicesystem.domain.checklist.dto.ChecklistResponseRequest;
 import com.oct.invoicesystem.domain.checklist.dto.InvoiceChecklistDTO;
 import com.oct.invoicesystem.domain.checklist.service.ChecklistService;
+import com.oct.invoicesystem.domain.invoice.service.InvoiceService;
 import com.oct.invoicesystem.domain.user.model.User;
 import com.oct.invoicesystem.shared.response.ApiResponse;
 import com.oct.invoicesystem.shared.util.SecurityHelper;
@@ -34,22 +35,27 @@ public class InvoiceChecklistController {
 
     private final ChecklistService checklistService;
     private final SecurityHelper securityHelper;
+    private final InvoiceService invoiceService;
 
     @GetMapping
-    @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER')")
+    @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER') and !hasRole('ADMIN')")
     @Operation(summary = "Get the validation checklist for an invoice")
-    public ApiResponse<InvoiceChecklistDTO> get(@PathVariable UUID invoiceId) {
+    public ApiResponse<InvoiceChecklistDTO> get(@PathVariable UUID invoiceId, Authentication authentication) {
+        // AUDIT-007/018: the checklist follows the invoice's own access rule.
+        invoiceService.getByIdScoped(invoiceId, securityHelper.currentUser(authentication));
         return ApiResponse.success(checklistService.getInvoiceChecklist(invoiceId));
     }
 
     @PostMapping
-    @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER')")
+    @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER') and !hasRole('ADMIN')")
     @Operation(summary = "Record the validator's checklist answers for an invoice")
     public ApiResponse<InvoiceChecklistDTO> save(
             @PathVariable UUID invoiceId,
             @Valid @RequestBody ChecklistResponseRequest request,
             Authentication authentication) {
         User actor = securityHelper.currentUser(authentication);
+        // AUDIT-007/018: answering the checklist of another department's invoice is denied too.
+        invoiceService.getByIdScoped(invoiceId, actor);
         return ApiResponse.success(checklistService.saveResponse(invoiceId, request, actor), "checklist.response.saved");
     }
 }

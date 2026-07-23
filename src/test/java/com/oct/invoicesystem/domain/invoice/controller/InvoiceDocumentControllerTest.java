@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -38,6 +39,13 @@ class InvoiceDocumentControllerTest {
     @MockBean
     private InvoiceDocumentService invoiceDocumentService;
 
+    /** AUDIT-007/018: the controller now asks the invoice service to enforce the invoice's own scope. */
+    @MockBean
+    private com.oct.invoicesystem.domain.invoice.service.InvoiceService invoiceService;
+
+    @MockBean
+    private com.oct.invoicesystem.shared.util.SecurityHelper securityHelper;
+
     @Test
     @WithMockUser(roles = "ASSISTANT_COMPTABLE", username = "assistant")
     void upload_AsAssistant_Returns201() throws Exception {
@@ -63,15 +71,25 @@ class InvoiceDocumentControllerTest {
 
     @Test
     @WithMockUser(roles = "ADMIN")
-    void list_AsAdmin_Returns200() throws Exception {
+    void list_AsAdmin_Returns403() throws Exception {
+        // AUDIT-007/018: the admin has no financial access — an invoice's attachments follow the
+        // invoice's own rule, and GET /invoices/{id} already denies the admin.
         UUID invoiceId = UUID.randomUUID();
-        when(invoiceDocumentService.listByInvoice(invoiceId))
-                .thenReturn(List.of(sampleDocument(invoiceId, UUID.randomUUID())));
 
         mockMvc.perform(get("/api/v1/invoices/{invoiceId}/documents", invoiceId))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data[0].originalFilename").value("invoice.pdf"));
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "VALIDATEUR_N1_DRH", username = "drh")
+    void list_AsValidatorOfAnotherDepartment_Returns403() throws Exception {
+        // AUDIT-007: the invoice is denied to this validator, so its documents must be too.
+        UUID invoiceId = UUID.randomUUID();
+        when(invoiceService.getByIdScoped(eq(invoiceId), any()))
+                .thenThrow(new AccessDeniedException("error.access_denied"));
+
+        mockMvc.perform(get("/api/v1/invoices/{invoiceId}/documents", invoiceId))
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -100,16 +118,29 @@ class InvoiceDocumentControllerTest {
 
     @Test
     @WithMockUser(roles = "ADMIN")
-    void download_AsAdmin_Returns200() throws Exception {
+    void download_AsAdmin_Returns403() throws Exception {
+        // AUDIT-018: the download used to hand the admin a 15-min pre-signed MinIO URL to the
+        // invoice PDF. No pre-signed URL may ever be minted for a role without financial access.
         UUID invoiceId = UUID.randomUUID();
         UUID docId = UUID.randomUUID();
-        // P11-50: download now records an access-log entry via generateDownloadUrlAndLog.
-        when(invoiceDocumentService.generateDownloadUrlAndLog(eq(invoiceId), eq(docId), any(), any(), any()))
-                .thenReturn("http://localhost:9000/mock-url");
 
         mockMvc.perform(get("/api/v1/invoices/{invoiceId}/documents/{docId}/download", invoiceId, docId))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.url").value("http://localhost:9000/mock-url"));
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "VALIDATEUR_N1_DRH", username = "drh")
+    void download_AsValidatorOfAnotherDepartment_Returns403() throws Exception {
+        // AUDIT-007: scope is checked BEFORE the pre-signed URL is generated.
+        UUID invoiceId = UUID.randomUUID();
+        UUID docId = UUID.randomUUID();
+        when(invoiceService.getByIdScoped(eq(invoiceId), any()))
+                .thenThrow(new AccessDeniedException("error.access_denied"));
+
+        mockMvc.perform(get("/api/v1/invoices/{invoiceId}/documents/{docId}/download", invoiceId, docId))
+                .andExpect(status().isForbidden());
+        org.mockito.Mockito.verify(invoiceDocumentService, org.mockito.Mockito.never())
+                .generateDownloadUrlAndLog(any(), any(), any(), any(), any());
     }
 
     @Test

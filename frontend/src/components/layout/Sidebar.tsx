@@ -173,9 +173,10 @@ export default function Sidebar() {
           <NavItem to="/reports/builder" icon={FileText} label={t('reportBuilder.navTitle', 'Constructeur de rapports')} />
         </RoleGuard>
 
-        {/* Financial audit: DAF only */}
+        {/* Financial audit + matching thresholds: DAF only (AUDIT-008 / D5) */}
         <RoleGuard allowedRoles={['ROLE_DAF']} fallback={null}>
           <NavItem to="/financial-audit" icon={ScrollText} label={t('nav.financialAudit', 'Audit Financier')} />
+          <NavItem to="/admin/matching-config" icon={SlidersHorizontal} label={t('admin.matchingConfig.navTitle', 'Rapprochement')} />
         </RoleGuard>
 
         {/* Common */}
@@ -198,7 +199,8 @@ export default function Sidebar() {
           <NavItem to="/admin/audit" icon={ScrollText} label={t('nav.auditLog')} />
           <NavItem to="/admin/approval-matrix" icon={GitBranch} label={t('admin.approvalMatrix.title', 'Matrice d\'approbation')} />
           <NavItem to="/admin/delegations" icon={UserCheck} label={t('admin.delegations.title', 'Délégations')} />
-          <NavItem to="/admin/matching-config" icon={SlidersHorizontal} label={t('admin.matchingConfig.navTitle', 'Rapprochement')} />
+          {/* AUDIT-008 / D5: the "Rapprochement" entry (matching thresholds) is a financial
+              control — it moved to the DAF section above and is NOT available to the admin. */}
           <NavItem to="/admin/retention-policy" icon={Clock} label={t('retentionPolicy.navTitle', 'Rétention')} />
           <NavItem to="/admin/archive-compliance" icon={ShieldCheck} label={t('archiveCompliance.navTitle', 'Conformité archives')} />
           <NavItem to="/admin/retention-disposition" icon={Trash2} label={t('retentionDisposition.navTitle', 'Purge')} />

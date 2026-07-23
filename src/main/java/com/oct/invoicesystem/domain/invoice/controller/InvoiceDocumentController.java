@@ -4,7 +4,9 @@ import com.oct.invoicesystem.domain.invoice.dto.BulkUploadResultDTO;
 import com.oct.invoicesystem.domain.invoice.dto.InvoiceDocumentDTO;
 import com.oct.invoicesystem.domain.invoice.model.InvoiceDocument;
 import com.oct.invoicesystem.domain.invoice.service.InvoiceDocumentService;
+import com.oct.invoicesystem.domain.invoice.service.InvoiceService;
 import com.oct.invoicesystem.shared.response.ApiResponse;
+import com.oct.invoicesystem.shared.util.SecurityHelper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,6 +37,8 @@ import java.util.UUID;
 public class InvoiceDocumentController {
 
     private final InvoiceDocumentService invoiceDocumentService;
+    private final InvoiceService invoiceService;
+    private final SecurityHelper securityHelper;
 
     @PostMapping
     @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
@@ -63,9 +67,13 @@ public class InvoiceDocumentController {
     }
 
     @GetMapping
-    @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER')")
+    @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER') and !hasRole('ADMIN')")
     @Operation(summary = "List documents", description = "Lists all documents for an invoice")
-    public ResponseEntity<ApiResponse<List<InvoiceDocumentDTO>>> list(@PathVariable UUID invoiceId) {
+    public ResponseEntity<ApiResponse<List<InvoiceDocumentDTO>>> list(@PathVariable UUID invoiceId,
+            Authentication authentication) {
+        // AUDIT-007/018: an invoice's attachments follow the invoice's own access rule — if
+        // GET /invoices/{id} denies the reader, its documents must deny them too.
+        invoiceService.getByIdScoped(invoiceId, securityHelper.currentUser(authentication));
         List<InvoiceDocumentDTO> documents = invoiceDocumentService.listByInvoice(invoiceId)
                 .stream()
                 .map(this::toDto)
@@ -74,7 +82,7 @@ public class InvoiceDocumentController {
     }
 
     @GetMapping("/{docId}/download")
-    @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER')")
+    @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER') and !hasRole('ADMIN')")
     @Operation(summary = "Get download URL",
             description = "Re-verifies SHA-256 integrity, records an access-log entry, then returns a pre-signed URL")
     public ResponseEntity<ApiResponse<Map<String, String>>> download(
@@ -82,6 +90,8 @@ public class InvoiceDocumentController {
             @PathVariable UUID docId,
             Authentication authentication,
             HttpServletRequest request) throws Exception {
+        // AUDIT-007/018: same scope rule as the invoice itself, before any pre-signed URL is minted.
+        invoiceService.getByIdScoped(invoiceId, securityHelper.currentUser(authentication));
         // P11-50: log who downloaded what, when, and from where (append-only access trail).
         // Resolve the client IP the same way AuditLoggingFilter/RateLimitingFilter do (XFF-aware).
         String url = invoiceDocumentService.generateDownloadUrlAndLog(

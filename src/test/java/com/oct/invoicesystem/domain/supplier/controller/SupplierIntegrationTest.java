@@ -27,6 +27,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -60,7 +61,7 @@ class SupplierIntegrationTest {
     private DepartmentRepository departmentRepository;
 
     @Test
-    @WithMockUser(roles = "ADMIN")
+    @WithMockUser(roles = "ASSISTANT_COMPTABLE")
     void shouldCreateAndSuspendSupplier() throws Exception {
         // 1. Create Supplier
         SupplierCreateRequest createReq = new SupplierCreateRequest(
@@ -233,7 +234,7 @@ class SupplierIntegrationTest {
                 companyName, taxId, email, "+123456789", "BANK123", "123 Integration St");
 
         String createResponse = mockMvc.perform(post("/api/v1/suppliers")
-                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("admin").roles("ADMIN"))
+                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("assistant").roles("ASSISTANT_COMPTABLE"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createReq)))
                 .andExpect(status().isCreated())
@@ -249,7 +250,7 @@ class SupplierIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "admin", roles = "ADMIN")
+    @WithMockUser(username = "assistant", roles = "ASSISTANT_COMPTABLE")
     void shouldActivateSupplierAfterOnboardingDocumentsArePresent() throws Exception {
         SupplierCreateRequest createReq = new SupplierCreateRequest(
                 "Onboarded Integration",
@@ -268,13 +269,16 @@ class SupplierIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
 
         java.util.UUID supplierId = java.util.UUID.fromString(objectMapper.readTree(createResponse).get("data").get("id").asText());
-        User admin = userRepository.findByUsername("admin").orElseGet(() -> {
+        // AUDIT-009/D5: the supplier referential moved to the AA, so the authenticated actor of
+        // this test is "assistant". SecurityHelper.currentUser resolves it against the DB, so the
+        // account must exist here or activation answers 404 instead of exercising the rule.
+        User admin = userRepository.findByUsername("assistant").orElseGet(() -> {
             User u = new User();
-            u.setUsername("admin");
-            u.setEmail("admin@test.com");
+            u.setUsername("assistant");
+            u.setEmail("assistant@test.com");
             u.setPassword("password");
-            u.setFirstName("Admin");
-            u.setLastName("User");
+            u.setFirstName("Assistant");
+            u.setLastName("Comptable");
             u.setActive(true);
             return userRepository.save(u);
         });
@@ -311,7 +315,7 @@ class SupplierIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "admin", roles = "ADMIN")
+    @WithMockUser(username = "assistant", roles = "ASSISTANT_COMPTABLE")
     void shouldRejectActivationWhenOnboardingIsIncomplete() throws Exception {
         SupplierCreateRequest createReq = new SupplierCreateRequest(
                 "Incomplete Integration",
@@ -330,13 +334,13 @@ class SupplierIntegrationTest {
 
         java.util.UUID supplierId = java.util.UUID.fromString(objectMapper.readTree(createResponse).get("data").get("id").asText());
 
-        userRepository.findByUsername("admin").orElseGet(() -> {
+        userRepository.findByUsername("assistant").orElseGet(() -> {
             User u = new User();
-            u.setUsername("admin");
-            u.setEmail("admin@test.com");
+            u.setUsername("assistant");
+            u.setEmail("assistant@test.com");
             u.setPassword("password");
-            u.setFirstName("Admin");
-            u.setLastName("User");
+            u.setFirstName("Assistant");
+            u.setLastName("Comptable");
             u.setActive(true);
             return userRepository.save(u);
         });
@@ -348,7 +352,7 @@ class SupplierIntegrationTest {
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
+    @WithMockUser(roles = "ASSISTANT_COMPTABLE")
     void shouldPersistAndFilterByCategory() throws Exception {
         // B5: a supplier carries a spend-type category (GOODS/SERVICES/WORKS/CONSULTING) that
         // round-trips through create and acts as a directory filter.
@@ -434,13 +438,18 @@ class SupplierIntegrationTest {
 
     @Test
     @WithMockUser(roles = "ADMIN")
-    void n7_adminStillReadsSupplierDetail() throws Exception {
-        // Non-régression : l'ADMIN garde l'accès lecture au détail (il administre le référentiel).
-        String id = createSupplier("N7 Admin Co", "TAX-N7-ADM-001", "n7.adm@example.com");
+    void audit009_adminIsForbiddenOnTheWholeSupplierReferential() throws Exception {
+        // AUDIT-009 / piste O-3 / décision D5 : le référentiel fournisseur (coordonnées bancaires
+        // chiffrées incluses) revient entièrement à l'AA. L'ADMIN, sans accès financier, n'y a plus
+        // AUCUNE surface — ni lecture, ni écriture, ni suppression. Ceci REMPLACE le test N7
+        // « l'admin garde la lecture du détail », que D5 a explicitement révoqué.
+        String id = createSupplier("D5 Admin Co", "TAX-D5-ADM-001", "d5.adm@example.com");
         try {
-            mockMvc.perform(get("/api/v1/suppliers/{id}", id))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.success").value(true));
+            mockMvc.perform(get("/api/v1/suppliers/{id}", id)).andExpect(status().isForbidden());
+            mockMvc.perform(get("/api/v1/suppliers")).andExpect(status().isForbidden());
+            mockMvc.perform(get("/api/v1/suppliers/export")).andExpect(status().isForbidden());
+            mockMvc.perform(get("/api/v1/suppliers/{id}/documents", id)).andExpect(status().isForbidden());
+            mockMvc.perform(delete("/api/v1/suppliers/{id}", id)).andExpect(status().isForbidden());
         } finally {
             cleanupSupplier(id);
         }

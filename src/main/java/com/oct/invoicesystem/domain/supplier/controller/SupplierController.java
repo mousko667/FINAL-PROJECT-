@@ -58,13 +58,13 @@ public class SupplierController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
+    @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
     public ApiResponse<SupplierResponse> createSupplier(@Valid @RequestBody SupplierCreateRequest request) {
         return ApiResponse.success(supplierService.createSupplier(request));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
+    @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
     public ApiResponse<SupplierResponse> updateSupplier(
             @PathVariable UUID id,
             @Valid @RequestBody SupplierUpdateRequest request) {
@@ -72,13 +72,13 @@ public class SupplierController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
+    @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
     public ApiResponse<SupplierResponse> getSupplier(@PathVariable UUID id) {
         return ApiResponse.success(supplierService.getSupplier(id));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
+    @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
     public ApiResponse<PagedResponse<SupplierResponse>> searchSuppliers(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String taxId,
@@ -92,7 +92,7 @@ public class SupplierController {
     }
 
     @GetMapping("/export")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
+    @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
     public ResponseEntity<byte[]> exportSuppliers(@RequestParam(defaultValue = "csv") String format,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant from,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.Instant to,
@@ -138,7 +138,7 @@ public class SupplierController {
     private static String ns(String s) { return s == null ? "" : s; }
 
     @PatchMapping("/{id}/activate")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
+    @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
     public ApiResponse<Void> activateSupplier(@PathVariable UUID id, Authentication authentication) {
         log.info("Supplier {} activated by {}", id, authentication != null ? authentication.getName() : "unknown");
         supplierService.activateSupplier(id, securityHelper.currentUser(authentication));
@@ -146,7 +146,7 @@ public class SupplierController {
     }
 
     @PatchMapping("/{id}/suspend")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
+    @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
     public ApiResponse<Void> suspendSupplier(@PathVariable UUID id, Authentication authentication) {
         log.info("Supplier {} suspended by {}", id, authentication != null ? authentication.getName() : "unknown");
         supplierService.suspendSupplier(id);
@@ -155,7 +155,7 @@ public class SupplierController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
     public void softDeleteSupplier(@PathVariable UUID id) {
         supplierService.softDeleteSupplier(id);
     }
@@ -168,7 +168,7 @@ public class SupplierController {
     }
 
     @GetMapping("/{id}/documents")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
+    @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
     public ApiResponse<List<Map<String, Object>>> listSupplierDocuments(@PathVariable UUID id) {
         supplierService.getSupplier(id);
         List<Map<String, Object>> documents = supplierService.listDocuments(id).stream()
@@ -190,7 +190,7 @@ public class SupplierController {
 
     @PostMapping("/{id}/documents")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
+    @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
     public ApiResponse<Map<String, Object>> uploadSupplierDocument(
             @PathVariable UUID id,
             @RequestParam("file") MultipartFile file,

@@ -32,6 +32,8 @@ public class ApprovalController {
 
     private final ApprovalService approvalService;
     private final org.springframework.context.MessageSource messageSource;
+    private final com.oct.invoicesystem.domain.invoice.service.InvoiceService invoiceService;
+    private final com.oct.invoicesystem.shared.util.SecurityHelper securityHelper;
 
     @GetMapping("/rejection-reasons")
     @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER')")
@@ -47,10 +49,13 @@ public class ApprovalController {
     }
 
     @GetMapping("/steps")
-    @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER')")
+    @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER') and !hasRole('ADMIN')")
     @Operation(summary = "Get approval steps for an invoice")
     public ResponseEntity<ApiResponse<List<ApprovalStepResponse>>> getApprovalSteps(
-            @PathVariable UUID invoiceId) {
+            @PathVariable UUID invoiceId,
+            org.springframework.security.core.Authentication authentication) {
+        // AUDIT-007/018: the nominative approval trail follows the invoice's own access rule.
+        invoiceService.getByIdScoped(invoiceId, securityHelper.currentUser(authentication));
         return ResponseEntity.ok(ApiResponse.success(approvalService.getApprovalSteps(invoiceId)));
     }
 

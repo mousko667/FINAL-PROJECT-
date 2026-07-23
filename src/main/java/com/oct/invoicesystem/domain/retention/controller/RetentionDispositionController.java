@@ -29,15 +29,18 @@ public class RetentionDispositionController {
     private final RetentionDispositionService service;
 
     @GetMapping("/pending-documents")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "List documents past retention horizon still awaiting disposition")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DAF')")
+    @Operation(summary = "List documents past retention horizon still awaiting disposition",
+            description = "Includes purges proposed by the ADMIN and awaiting DAF confirmation (AUDIT-009)")
     public ApiResponse<List<RetentionPendingDocumentDTO>> pending() {
         return ApiResponse.success(service.listPendingExpired());
     }
 
     @PutMapping("/documents/{id}/disposition")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Set a document's retention disposition (RETAINED or PURGED)")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DAF')")
+    @Operation(summary = "Set a document's retention disposition",
+            description = "AUDIT-009 / D5 two-man rule: the ADMIN records RETAINED or PURGE_PROPOSED; "
+                    + "only the DAF confirms PURGED, and only on an already proposed document")
     public ApiResponse<RetentionPendingDocumentDTO> setDisposition(
             @PathVariable UUID id,
             @Valid @RequestBody RetentionDispositionRequest request,

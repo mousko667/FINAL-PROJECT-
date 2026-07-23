@@ -38,6 +38,23 @@ class RetentionDispositionServiceTest {
     @Mock AuditService auditService;
     @InjectMocks RetentionDispositionService service;
 
+    /** Builds an actor carrying the given role names, so the two-man rule (AUDIT-009) can be exercised. */
+    private User actorWithRoles(String... roleNames) {
+        User u = new User();
+        u.setId(UUID.randomUUID());
+        java.util.Set<com.oct.invoicesystem.domain.user.model.UserRole> roles = new java.util.HashSet<>();
+        for (String name : roleNames) {
+            com.oct.invoicesystem.domain.user.model.Role role =
+                    com.oct.invoicesystem.domain.user.model.Role.builder().id(UUID.randomUUID()).name(name).build();
+            com.oct.invoicesystem.domain.user.model.UserRole ur =
+                    new com.oct.invoicesystem.domain.user.model.UserRole();
+            ur.setRole(role);
+            roles.add(ur);
+        }
+        u.setUserRoles(roles);
+        return u;
+    }
+
     private InvoiceDocument doc(UUID id, RetentionDisposition disp) {
         Invoice inv = new Invoice();
         inv.setId(UUID.randomUUID());
@@ -72,8 +89,7 @@ class RetentionDispositionServiceTest {
         InvoiceDocument d = doc(id, RetentionDisposition.PENDING);
         when(invoiceDocumentRepository.findById(id)).thenReturn(Optional.of(d));
         when(invoiceDocumentRepository.save(any(InvoiceDocument.class))).thenAnswer(inv -> inv.getArgument(0));
-        User actor = new User();
-        actor.setId(UUID.randomUUID());
+        User actor = actorWithRoles("ROLE_ADMIN");
 
         RetentionPendingDocumentDTO dto = service.setDisposition(id, RetentionDisposition.RETAINED, actor);
 
@@ -85,17 +101,61 @@ class RetentionDispositionServiceTest {
     }
 
     @Test
-    void setDisposition_purged_setsField() {
+    void setDisposition_adminProposesPurge_thenDafConfirms_isTheOnlyPathToPurged() {
+        // AUDIT-009 / D5: destroying a financial supporting document takes two distinct roles.
         UUID id = UUID.randomUUID();
         InvoiceDocument d = doc(id, RetentionDisposition.PENDING);
         when(invoiceDocumentRepository.findById(id)).thenReturn(Optional.of(d));
         when(invoiceDocumentRepository.save(any(InvoiceDocument.class))).thenAnswer(inv -> inv.getArgument(0));
-        User actor = new User();
-        actor.setId(UUID.randomUUID());
 
-        RetentionPendingDocumentDTO dto = service.setDisposition(id, RetentionDisposition.PURGED, actor);
+        // Step 1 — the ADMIN proposes.
+        RetentionPendingDocumentDTO proposed =
+                service.setDisposition(id, RetentionDisposition.PURGE_PROPOSED, actorWithRoles("ROLE_ADMIN"));
+        assertThat(proposed.retentionDisposition()).isEqualTo(RetentionDisposition.PURGE_PROPOSED);
 
-        assertThat(dto.retentionDisposition()).isEqualTo(RetentionDisposition.PURGED);
+        // Step 2 — the DAF confirms, and only then does the document reach PURGED.
+        RetentionPendingDocumentDTO confirmed =
+                service.setDisposition(id, RetentionDisposition.PURGED, actorWithRoles("ROLE_DAF"));
+        assertThat(confirmed.retentionDisposition()).isEqualTo(RetentionDisposition.PURGED);
+    }
+
+    @Test
+    void setDisposition_adminCannotPurgeAlone() {
+        // The whole point of the finding: the technical admin must never destroy on their own.
+        UUID id = UUID.randomUUID();
+        InvoiceDocument d = doc(id, RetentionDisposition.PURGE_PROPOSED);
+        when(invoiceDocumentRepository.findById(id)).thenReturn(Optional.of(d));
+
+        assertThatThrownBy(() -> service.setDisposition(id, RetentionDisposition.PURGED, actorWithRoles("ROLE_ADMIN")))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("purge_requires_daf");
+        verify(invoiceDocumentRepository, never()).save(any());
+    }
+
+    @Test
+    void setDisposition_dafCannotPurgeWhatWasNeverProposed() {
+        // The DAF is the second man, not a shortcut: no proposal, no purge.
+        UUID id = UUID.randomUUID();
+        InvoiceDocument d = doc(id, RetentionDisposition.PENDING);
+        when(invoiceDocumentRepository.findById(id)).thenReturn(Optional.of(d));
+
+        assertThatThrownBy(() -> service.setDisposition(id, RetentionDisposition.PURGED, actorWithRoles("ROLE_DAF")))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("purge_not_proposed");
+        verify(invoiceDocumentRepository, never()).save(any());
+    }
+
+    @Test
+    void setDisposition_dafCannotProposeTheirOwnPurge() {
+        // Otherwise the DAF could propose then confirm, and the two-man rule would be cosmetic.
+        UUID id = UUID.randomUUID();
+        InvoiceDocument d = doc(id, RetentionDisposition.PENDING);
+        when(invoiceDocumentRepository.findById(id)).thenReturn(Optional.of(d));
+
+        assertThatThrownBy(() -> service.setDisposition(id, RetentionDisposition.PURGE_PROPOSED, actorWithRoles("ROLE_DAF")))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("proposal_requires_admin");
+        verify(invoiceDocumentRepository, never()).save(any());
     }
 
     @Test
@@ -113,8 +173,7 @@ class RetentionDispositionServiceTest {
     void setDisposition_unknownDoc_throwsNotFound() {
         UUID id = UUID.randomUUID();
         when(invoiceDocumentRepository.findById(id)).thenReturn(Optional.empty());
-        User actor = new User();
-        actor.setId(UUID.randomUUID());
+        User actor = actorWithRoles("ROLE_ADMIN");
 
         assertThatThrownBy(() -> service.setDisposition(id, RetentionDisposition.RETAINED, actor))
                 .isInstanceOf(ResourceNotFoundException.class);

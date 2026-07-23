@@ -34,7 +34,7 @@ public class MatchingConfigController {
     private final SecurityHelper securityHelper;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'ASSISTANT_COMPTABLE')")
+    @PreAuthorize("hasAnyRole('DAF', 'ASSISTANT_COMPTABLE')")
     @Operation(summary = "Get active matching configuration", description = "Retrieves the current active matching configuration")
     public ResponseEntity<ApiResponse<MatchingConfigDTO>> getActiveConfig() {
         MatchingConfig config = matchingConfigService.getActiveConfig();
@@ -43,8 +43,11 @@ public class MatchingConfigController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Update matching configuration", description = "Updates the matching tolerance and GRN requirements (ADMIN only)")
+    @PreAuthorize("hasRole('DAF')")
+    @Operation(summary = "Update matching configuration",
+            description = "Updates the matching tolerance and GRN requirements (DAF only — AUDIT-008/D5: "
+                    + "tolerance thresholds decide whether a billing discrepancy passes or blocks, so they are "
+                    + "a financial control and ADMIN, which has no financial access, must not set them)")
     public ResponseEntity<ApiResponse<MatchingConfigDTO>> updateConfig(
             @Valid @RequestBody MatchingConfigUpdateRequest request,
             Authentication authentication) {
