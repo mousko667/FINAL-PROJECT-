@@ -1984,3 +1984,149 @@ donnees, il faut relire le rendu**, car ses champs n'ont jamais ete confrontes a
 Corollaire de test : un mock de test qui sert une forme de payload que le backend ne produit pas
 rend le test vert sans rien prouver — ici l'unique test frontend de la page passait a l'identique
 avant et apres le correctif.
+
+
+---
+
+## PROB-137 — Les surfaces satellites d'une facture ne suivaient pas sa regle d'acces (AUDIT-007 / AUDIT-018)
+
+**Date :** 2026-07-23 · **Phase :** P6 vague 2, lot V2-A · **Severite :** P1 (SoD — acces financier effectif de l'ADMIN)
+
+**Symptome :** avec un jeton `admin`, `GET /api/v1/invoices/{id}` -> **403**, mais
+`GET /api/v1/invoices/{id}/documents` -> **200**, `.../documents/{docId}/download` -> **200**
+renvoyant une **URL MinIO presignee valide 15 min** vers le PDF de la facture, et
+`.../workflow/steps` -> **200** avec le circuit nominatif (qui a valide, quand, avec quel
+commentaire). Reproduit a l'identique avec un validateur d'un **autre departement** (jeton `drh`
+sur une facture Informatique). Le systeme refusait donc la facture et livrait ses pieces jointes.
+
+**Root cause :** ces endpoints se gardaient par `isAuthenticated() and !hasRole('SUPPLIER')` — une
+garde ecrite pour exclure le fournisseur, jamais mise a jour quand `InvoiceController` a recu
+`!hasRole('ADMIN')` et le cloisonnement departemental `getByIdScoped`. Deux surfaces du meme objet
+metier ont diverge parce que leur regle d'acces etait **dupliquee** au lieu d'etre derivee.
+
+**Solution :** les 4 surfaces (`/documents`, `/documents/{id}/download`, `/workflow/steps`,
+`/checklist` en GET **et** POST) appliquent la regle de la facture elle-meme : `!hasRole('ADMIN')`
+au controleur **et** `invoiceService.getByIdScoped()` au service. Sur le telechargement, le
+controle intervient **avant** la generation de l'URL presignee.
+
+**Preventive rule :** une ressource satellite (documents, circuit, checklist, historique) n'a pas
+de regle d'acces propre : elle **herite** de celle de sa ressource porteuse. Le test de
+non-regression a ecrire est toujours le meme — *si `GET /ressource/{id}` refuse, tout ce qui pend a
+`{id}` refuse aussi*. Corollaire : quand on durcit la garde d'un controleur, **enumerer tous les
+endpoints qui prennent le meme identifiant en chemin** avant de considerer le travail fait.
+
+---
+
+## PROB-138 — La propriete du bon de commande n'etait jamais verifiee (AUDIT-002 / AUDIT-034)
+
+**Date :** 2026-07-23 · **Phase :** P6 vague 2, lot V2-B · **Severite :** P1 (fuite inter-fournisseurs)
+
+**Symptome :** le compte `supplier` (fournisseur `40433645`) creait une facture contre
+`PO-2026-101`, qui appartient au fournisseur `cf24d2c9` — un **tiers** — et recevait
+**201 Created**. Par la voie interne, le rapprochement s'executait reellement contre ce PO et le
+message d'erreur HTTP 400 divulguait ses donnees : « PO total: 28905000.00 XAF; GRN: GRN-2026-101
+(received on 2026-06-20) ». Le montant du bon de commande et le numero/date du bon de reception
+d'un autre fournisseur etaient donc renvoyes a l'appelant.
+
+**Root cause :** deux defauts distincts sur le meme chemin. (1) `performMatchingCheck` chargeait le
+PO par `findByIdActive` **sans jamais comparer** `po.getSupplier().getId()` au fournisseur de la
+facture, alors que `PurchaseOrder` porte un `supplier_id` NON NUL — la donnee etait la, la
+comparaison manquait. (2) Le message d'erreur remontait `generateDiscrepancyNotes` **tel quel** :
+un artefact concu pour un usage interne, promu au rang de reponse d'API.
+
+**Solution :** (1) comparaison de propriete **avant** le rapprochement (le GRN n'est meme plus
+charge) ; (2) refus egalement a la creation dans le portail, restreint a `listOpenBySupplier` —
+exactement l'ensemble que propose le selecteur de PO, de sorte que l'API et le formulaire ne
+peuvent plus diverger ; (3) message remplace par une cle i18n generique qui ne confirme meme pas
+l'existence du PO.
+
+**Preventive rule :** des qu'une requete cite l'identifiant d'un objet appartenant a un tiers, la
+**propriete se verifie avant l'usage**, jamais apres — un controle a posteriori a deja fait fuiter
+la donnee via son message d'erreur. Corollaire : le detail technique d'un echec (notes d'ecart,
+diagnostic de rapprochement) appartient au **journal**, pas a la reponse HTTP ; l'API renvoie une
+cle generique et le detail reste consultable par les seuls roles habilites.
+
+---
+
+## PROB-139 — REQUIRES_NEW ne voit que les lignes commitees (AUDIT-034)
+
+**Date :** 2026-07-23 · **Phase :** P6 vague 2, lot V2-B · **Severite :** P2 (piste d'audit perdue)
+
+**Symptome :** `select count(*) from three_way_matching_results` = **0** apres quatre soumissions
+ayant toutes produit un MISMATCH, alors qu'un rapprochement reussi laissait bien sa ligne. Seuls
+les succes etaient traces ; les echecs — precisement les cas qu'un auditeur doit justifier —
+disparaissaient.
+
+**Root cause :** la `WorkflowException` levee pour bloquer la soumission faisait remonter le
+rollback jusqu'au `save` qui la precedait, dans la meme transaction.
+
+**Solution — et le piege rencontre en chemin :** le resultat est persiste par un bean **separe**
+(`MatchingResultRecorder`) en `Propagation.REQUIRES_NEW`. Bean separe **obligatoirement** :
+l'auto-invocation d'une methode privee ne passe pas par le proxy Spring, l'annotation serait restee
+inerte et le correctif aurait eu l'air pose sans rien changer. Mais la premiere version, appliquee
+a **tous** les statuts, a casse 4 tests d'integration : une transaction independante ne voit que
+les lignes **COMMITEES**, or ces tests creent leurs donnees dans leur propre transaction non
+commitee -> violation de cle etrangere. Un repli `catch` a ete tente puis **abandonne** : l'echec
+de la transaction interne marque deja la transaction appelante `rollback-only`, donc le repli
+faisait echouer tout le rapprochement au lieu de perdre une ligne d'audit. La correction retenue
+est de **limiter `REQUIRES_NEW` au seul chemin MISMATCH** — le seul que l'appelant rollback ;
+`MATCHED`/`PARTIAL` commitent avec lui et n'y gagnaient rien.
+
+**Preventive rule :** `REQUIRES_NEW` n'est pas un simple « ecris quand meme » — la transaction
+independante **ne voit pas** ce que l'appelant n'a pas commite. Ne l'appliquer qu'aux chemins qui
+en ont besoin, verifier que les entites referencees sont deja commitees, et ne jamais rattraper son
+echec par un repli dans la transaction appelante (elle est deja `rollback-only`). Corollaire de
+test : un test d'integration `@Transactional` **ne peut pas** exercer ce mecanisme sans commiter
+ses donnees au prealable.
+
+---
+
+## PROB-140 — Une garde ecrite en liste noire laissait passer un fournisseur externe (AUDIT-026)
+
+**Date :** 2026-07-23 · **Phase :** P6 vague 2, lot V2-C · **Severite :** P1 (cloisonnement)
+
+**Symptome :** balayage avec le compte `supplier` sur 8 pages staff : **4 atteintes sans
+redirection** — `/profile`, `/notifications`, `/access-requests` et `/my-delegations`. Les deux
+dernieres presentaient a un tiers **externe** la structure des roles de l'entreprise
+(« Administrateur », « DAF ») et un formulaire « Deleguez vos approbations a un collegue ». Le
+backend tenait (403 sur les appels), la fuite etait donc d'interface.
+
+**Root cause :** `ProtectedRoute` enumerait les prefixes **interdits**
+(`/admin`, `/dashboard`, `/invoices`, `/reports`) : tout chemin ajoute depuis l'ecriture de cette
+liste echappait au filtre. Ironie du dossier, la garde correcte existait deja — `StaffRoute` —
+mais n'etait **importee nulle part** (code mort, AUDIT-016).
+
+**Solution :** regle posee **positivement** — tout chemin ne commencant pas par `/supplier` est
+staff. `StaffRoute` supprime dans la foulee : une fois la regle inversee, il ferait doublon, donc
+une occasion de plus de diverger.
+
+**Preventive rule :** une regle d'autorisation s'ecrit en **liste blanche**. Une liste noire ne
+vaut que ce qu'elle valait le jour ou elle a ete ecrite : chaque route ajoutee ensuite est un trou
+silencieux, et rien dans le code ne signale l'oubli. Corollaire : du **code mort qui implemente un
+controle de securite** est un signal — s'il a ete ecrit, c'est que le besoin existait ; verifier
+qui aurait du l'appeler avant de le supprimer.
+
+---
+
+## PROB-141 — Tests instables : reset i18n asynchrone non attendu
+
+**Date :** 2026-07-23 · **Phase :** P6 vague 2, lot V2-C · **Severite :** P3 (fiabilite de la suite)
+
+**Symptome :** `InvoiceCreateDepartmentLocale.test.tsx` en echec sur une execution de la suite
+complete, **vert** sur les deux suivantes et vert en execution isolee. Aucun rapport avec le
+correctif en cours : l'ajout d'un fichier de tests avait simplement redistribue l'ordre entre
+workers.
+
+**Root cause :** `i18n` est un singleton de module partage par **tous** les fichiers de tests, et
+`i18n.changeLanguage()` est **asynchrone**. Quatre fichiers appelaient
+`afterEach(() => { i18n.changeLanguage('fr') })` **sans `await`** : le retour au francais pouvait
+atterrir apres que le test suivant ait deja rendu son composant, qui se retrouvait alors en anglais.
+
+**Solution :** `afterEach(async () => { await i18n.changeLanguage('fr') })` dans les **4** fichiers
+concernes (`ConfirmDialog`, `DocumentUploader`, `Header`, `InvoiceCreateDepartmentLocale`) — cause
+racine traitee partout, pas seulement dans le fichier qui a rougi.
+
+**Preventive rule :** tout `afterEach`/`beforeEach` qui restaure un **etat global asynchrone**
+(langue, horloge, store) doit etre `async` et `await`. Un test qui echoue une fois sur trois est un
+bug de test, pas du bruit : le corriger a la cause racine, et le corriger **dans tous les fichiers
+qui partagent le meme motif**, car ils sont tous des declencheurs potentiels.
