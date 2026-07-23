@@ -102,7 +102,11 @@ ocr:
 minio:
   endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
   access-key: ${MINIO_ACCESS_KEY:MinIO}
-  secret-key: ${MINIO_SECRET_KEY:dev-minio-secret-change-me}
+  # AUDIT-012: no default here. This block is SHARED by every profile, so a default meant a
+  # production deployment missing MINIO_SECRET_KEY would silently start the document store with a
+  # publicly known secret. Like JWT_PRIVATE_KEY and ENCRYPTION_KEY below, its absence must fail the
+  # startup instead. The dev convenience default now lives in the dev profile only.
+  secret-key: ${MINIO_SECRET_KEY}
   bucket: ${MINIO_BUCKET:oct-invoices}
   presigned-url-expiry-minutes: 15
 
@@ -213,6 +217,9 @@ app:
 
 minio:
   endpoint: http://localhost:9000
+  # AUDIT-012: the local convenience default lives here, in the dev profile ONLY — never in the
+  # shared block, where it would also apply to production.
+  secret-key: ${MINIO_SECRET_KEY:dev-minio-secret-change-me}
 
 logging:
   level:

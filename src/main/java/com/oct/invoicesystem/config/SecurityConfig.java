@@ -63,7 +63,14 @@ public class SecurityConfig {
                         "/api/v1/auth/mfa/validate"
                 ).permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                .requestMatchers("/actuator/**").permitAll()
+                // AUDIT-011: /actuator/** used to be wide open. Proven anonymously in runtime:
+                // /actuator/info returned the application version, /actuator/metrics the full list
+                // of metric names (connection pool, JVM, HTTP URIs) and /actuator/metrics/{name}
+                // their measured values — free reconnaissance on a financial system.
+                // /actuator/health stays public: the oct_backend container healthcheck depends on
+                // it, and its detail is already gated by show-details: when-authorized.
+                .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                .requestMatchers("/actuator/**").hasRole("ADMIN")
                 // The SockJS/STOMP handshake transport (/ws/**, incl. /ws/info) cannot carry a
                 // Bearer header, so it is permitted at the HTTP layer; authentication is enforced
                 // on the STOMP CONNECT frame by WebSocketAuthChannelInterceptor (JWT in connectHeaders).
