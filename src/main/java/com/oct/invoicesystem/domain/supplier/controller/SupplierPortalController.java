@@ -6,12 +6,16 @@ import com.oct.invoicesystem.domain.invoice.dto.InvoiceDTO;
 import com.oct.invoicesystem.domain.invoice.model.InvoiceDocument;
 import com.oct.invoicesystem.domain.invoice.model.InvoiceStatus;
 import com.oct.invoicesystem.domain.invoice.service.InvoiceDocumentService;
+import com.oct.invoicesystem.domain.invoice.service.InvoiceLineItemFactory;
 import com.oct.invoicesystem.domain.invoice.service.InvoiceService;
 import com.oct.invoicesystem.domain.invoice.service.InvoiceStateMachineService;
 import com.oct.invoicesystem.domain.invoice.model.Invoice;
 import com.oct.invoicesystem.domain.invoice.mapper.InvoiceMapper;
 import com.oct.invoicesystem.domain.invoice.statemachine.InvoiceEvent;
 import com.oct.invoicesystem.domain.invoice.statemachine.WorkflowExtendedStateKeys;
+import com.oct.invoicesystem.domain.purchasing.dto.PurchaseOrderItemDTO;
+import com.oct.invoicesystem.domain.purchasing.service.PurchaseOrderService;
+import com.oct.invoicesystem.domain.supplier.dto.SupplierPurchaseOrderDTO;
 import com.oct.invoicesystem.domain.supplier.dto.SupplierUpdateRequest;
 import com.oct.invoicesystem.domain.supplier.dto.SupplierResponse;
 import com.oct.invoicesystem.domain.supplier.model.Supplier;
@@ -57,6 +61,7 @@ public class SupplierPortalController {
     private final InvoiceStateMachineService invoiceStateMachineService;
     private final InvoiceDocumentService invoiceDocumentService;
     private final SupplierService supplierService;
+    private final PurchaseOrderService purchaseOrderService;
     private final MinioStorageService minioStorageService;
     private final SecurityHelper securityHelper;
     private final org.springframework.context.MessageSource messageSource;
@@ -240,6 +245,37 @@ public class SupplierPortalController {
         }
     }
 
+    /**
+     * Lists the purchase orders this supplier may invoice against, so the portal can offer a PO
+     * selector instead of leaving the field unreachable (audit finding AUDIT-001).
+     *
+     * <p>The scope comes from the authenticated supplier's own id, never from a request parameter,
+     * and only {@code OPEN} orders are returned. The response deliberately omits internal OCT data
+     * (creator, supplier id) — see {@link SupplierPurchaseOrderDTO}.</p>
+     */
+    @GetMapping("/purchase-orders")
+    @Operation(summary = "List own open purchase orders",
+            description = "Purchase orders this supplier can invoice against, used by the PO selector")
+    public ResponseEntity<ApiResponse<List<SupplierPurchaseOrderDTO>>> listMyPurchaseOrders(
+            Authentication authentication) {
+        UUID supplierId = getSupplierId(authentication);
+        List<SupplierPurchaseOrderDTO> result = purchaseOrderService.listOpenBySupplier(supplierId).stream()
+                .map(po -> new SupplierPurchaseOrderDTO(
+                        po.getId(),
+                        po.getPoNumber(),
+                        po.getTotalAmount(),
+                        po.getItems().stream()
+                                .map(i -> new PurchaseOrderItemDTO(
+                                        i.getId(),
+                                        i.getItemDescription(),
+                                        i.getQuantity(),
+                                        i.getUnitPrice(),
+                                        i.getLineTotal()))
+                                .toList()))
+                .toList();
+        return ResponseEntity.ok(ApiResponse.success(result));
+    }
+
     @GetMapping("/documents")
     @Operation(summary = "List supplier documents", description = "Lists all documents uploaded by this supplier")
     public ResponseEntity<ApiResponse<List<Map<String, Object>>>> listDocuments(Authentication authentication) {
@@ -266,7 +302,7 @@ public class SupplierPortalController {
         Supplier supplier = new Supplier();
         supplier.setId(supplierId);
 
-        return Invoice.builder()
+        Invoice invoice = Invoice.builder()
                 .department(department)
                 .submittedBy(actor)
                 .supplier(supplier)
@@ -278,6 +314,11 @@ public class SupplierPortalController {
                 .description(request.description())
                 .status(InvoiceStatus.BROUILLON)
                 .build();
+        // AUDIT-031: the portal used to drop request.lineItems() silently, so any portal invoice
+        // referencing a PO was rejected at submission ("Invoice or PO has no line items").
+        // Shares the internal path's implementation so the two cannot drift apart again.
+        InvoiceLineItemFactory.attachLineItems(invoice, request.lineItems());
+        return invoice;
     }
 
     private InvoiceDTO toDto(Invoice invoice) {

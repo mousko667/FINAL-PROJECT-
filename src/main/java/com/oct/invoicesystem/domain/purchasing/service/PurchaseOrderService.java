@@ -125,6 +125,22 @@ public class PurchaseOrderService {
         return purchaseOrderRepository.findBySupplierId(supplierId);
     }
 
+    /**
+     * Lists the purchase orders a supplier may still invoice against: their own, not soft-deleted,
+     * and still {@code OPEN}. Backs the supplier portal's PO selector (audit finding AUDIT-001).
+     *
+     * <p>The supplier scope is applied here, from the authenticated supplier's own id — never from
+     * a client-supplied parameter — so this surface cannot expose another supplier's orders.</p>
+     *
+     * @param supplierId the authenticated supplier's UUID
+     * @return the supplier's open POs, most recent first, with their items loaded
+     */
+    @Transactional(readOnly = true)
+    public List<PurchaseOrder> listOpenBySupplier(UUID supplierId) {
+        log.info("Listing open purchase orders for supplier {}", supplierId);
+        return purchaseOrderRepository.findOpenBySupplierId(supplierId);
+    }
+
     @Transactional(readOnly = true)
     public Page<PurchaseOrder> listAll(Pageable pageable) {
         return purchaseOrderRepository.findAllActive(pageable);

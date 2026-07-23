@@ -316,6 +316,7 @@
     "purchaseOrder": "Purchase Order",
     "noPO": "— No linked PO —",
     "poHint": "Linking a PO enables automatic three-way matching on submission.",
+    "poLines": "Lines carried over from the order",
     "duplicateWarning": "A similar invoice already exists for this supplier in the last 12 months. Please check before submitting.",
     "duplicateWarning_one": "A similar invoice already exists for this supplier in the last 12 months. Please check before submitting.",
     "duplicateWarning_other": "{{count}} similar invoices already exist for this supplier in the last 12 months. Please check before submitting.",

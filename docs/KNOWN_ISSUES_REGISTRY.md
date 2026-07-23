@@ -1776,3 +1776,46 @@ un test parametre sur `@EnumSource` verifiant l'existence de la cle dans **les d
 (`InvoiceStatusLabelsTest`) — une comparaison de parite FR/EN ne detecte jamais une cle absente des
 deux cotes. Et tout `getMessage` sur une cle dynamique doit fournir un `defaultMessage` : un
 libelle manquant est un defaut d'affichage, jamais une raison de renvoyer une 500.
+
+## PROB-132 — Portail fournisseur : lineItems jetes + aucun selecteur de PO (AUDIT-031 + AUDIT-001)
+
+**Root cause :** `SupplierPortalController.toInvoice` reutilisait le DTO `InvoiceCreateRequest`
+(qui declare bien `List<LineItem> lineItems`) mais ne recopiait jamais `request.lineItems()` : le
+portail acceptait le champ sans erreur, puis le jetait. Or `ThreeWayMatchingService.performMatching`
+leve `ValidationException("Invoice or PO has no line items")` des qu'un des deux cotes n'a pas de
+lignes. Consequence en chaine : **toute facture du portail referencant un PO etait refusee a la
+soumission**. La cause profonde est un **duplicata de logique** : `attachLineItems` etait une methode
+`private` d'`InvoiceController`, donc la voie interne la possedait et la voie portail non — les deux
+chemins d'admission avaient derive. En parallele, `purchaseOrderId` n'etait atteignable par AUCUN
+champ du formulaire fournisseur (7 champs, aucun BC) : le rattachement a un PO etait impossible
+depuis l'interface, donc le controle financier central etait structurellement contourne sur la voie
+fournisseur.
+
+**Solution :** (1) Extraction d'`attachLineItems` dans
+`domain/invoice/service/InvoiceLineItemFactory` ; les DEUX voies d'admission (InvoiceController et
+SupplierPortalController) appellent desormais la meme implementation, elles ne peuvent plus deriver.
+(2) Nouvel endpoint `GET /api/v1/supplier/purchase-orders` scope au fournisseur authentifie
+(`PurchaseOrderRepository.findOpenBySupplierId` : `supplier.id` + `deletedAt IS NULL` + statut
+`OPEN`), avec un DTO dedie `SupplierPurchaseOrderDTO` qui omet volontairement `createdBy` et
+`supplierId` (donnees internes OCT). (3) Selecteur de BC au formulaire du portail : la selection
+d'un PO prerempli le montant ET envoie les lignes du PO comme `lineItems` de la facture, de sorte
+que le rapprochement dispose de donnees ligne a ligne des deux cotes.
+
+**Ordre impose :** AUDIT-031 (persistance des lignes) DEVAIT preceder AUDIT-001 (selecteur de PO).
+Ajouter le selecteur en premier aurait produit des factures **systematiquement rejetees** a la
+soumission.
+
+**Piege de test rencontre (2 faux diagnostics ecartes) :** le test de parcours complet a d'abord
+echoue en 400 pour deux raisons SANS RAPPORT avec le correctif, chacune identifiee en lisant la
+cause reelle dans le journal plutot qu'en supposant : (a) le profil H2 de test ne seede aucune
+`matching_config` -> "No active matching configuration found" (le test doit la creer, avec
+`requireGrn=false`) ; (b) le test partage sa transaction avec le controleur, donc l'instance
+`Invoice` en cache de persistance gardait une collection `documents` vide et `DocumentRequiredGuard`
+refusait la transition -> il faut `entityManager.flush()/clear()` apres l'upload. La preuve que le
+correctif fonctionne est la ligne de journal `Matching check passed ... with status MATCHED`.
+
+**Preventive rule :** Quand deux chemins d'admission (interne / portail) partagent le meme DTO de
+requete, la construction de l'entite DOIT etre factorisee dans un utilitaire commun — un helper
+`private` dans un seul des deux controleurs garantit que l'autre chemin oubliera un champ, en
+silence. Et tout champ declare par un DTO doit etre soit persiste, soit rejete explicitement :
+jamais accepte puis ignore.

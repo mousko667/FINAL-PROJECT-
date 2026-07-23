@@ -393,28 +393,12 @@ public class InvoiceController {
 
     /**
      * Attaches optional invoice lines to a freshly built invoice so the three-way matching engine
-     * has line-level data to compare against the PO. The bidirectional link is set on each item and
-     * the cascade on {@code Invoice.items} persists them with the invoice.
+     * has line-level data to compare against the PO. Delegates to
+     * {@link com.oct.invoicesystem.domain.invoice.service.InvoiceLineItemFactory} so the supplier
+     * portal shares the exact same implementation (audit finding AUDIT-031).
      */
     private void attachLineItems(Invoice invoice, java.util.List<InvoiceCreateRequest.LineItem> lines) {
-        if (lines == null || lines.isEmpty()) {
-            return;
-        }
-        int lineNumber = 1;
-        for (InvoiceCreateRequest.LineItem line : lines) {
-            if (line == null) {
-                continue;
-            }
-            InvoiceItem item = InvoiceItem.builder()
-                    .invoice(invoice)
-                    .lineNumber(lineNumber++)
-                    .description(line.description())
-                    .quantity(line.quantity())
-                    .unitPrice(line.unitPrice())
-                    .totalPrice(line.totalPrice())
-                    .build();
-            invoice.getItems().add(item);
-        }
+        com.oct.invoicesystem.domain.invoice.service.InvoiceLineItemFactory.attachLineItems(invoice, lines);
     }
 
     private Invoice toInvoice(InvoiceUpdateRequest request, UUID actorId) {

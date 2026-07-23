@@ -12,6 +12,20 @@ import { PageHeader } from '@/components/ui/PageHeader'
 
 interface Department { id: string; code: string; nameEn: string; nameFr: string }
 
+/** A purchase order the supplier can invoice against (AUDIT-001). Scoped server-side. */
+interface SupplierPurchaseOrder {
+  id: string
+  poNumber: string
+  totalAmount: number
+  items: Array<{
+    id: string
+    itemDescription: string
+    quantity: number
+    unitPrice: number
+    lineTotal: number
+  }>
+}
+
 interface OcrResult {
   invoiceNumber?: string
   invoiceDate?: string
@@ -25,6 +39,7 @@ interface OcrResult {
 
 const confirmSchema = z.object({
   departmentId: z.string().min(1, 'Required'),
+  purchaseOrderId: z.string().optional(),
   invoiceNumber: z.string().optional(),
   amount: z.coerce.number().positive(),
   currency: z.string().min(1),
@@ -98,8 +113,29 @@ export default function SupplierInvoiceSubmitPage() {
     },
   })
 
+  // AUDIT-001: purchase orders this supplier may invoice against. Without this selector the
+  // purchaseOrderId field was unreachable from the UI, so no portal invoice could ever trigger
+  // the three-way matching. The endpoint is scoped to the authenticated supplier server-side.
+  const { data: purchaseOrders } = useQuery({
+    queryKey: ['supplier-purchase-orders'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<{ data: SupplierPurchaseOrder[] }>('/supplier/purchase-orders')
+      return data.data ?? []
+    },
+  })
+
   const watchedDescription = watch('description')
   const watchedInvoiceNumber = watch('invoiceNumber')
+  const watchedPurchaseOrderId = watch('purchaseOrderId')
+  const selectedPo = (purchaseOrders ?? []).find((po) => po.id === watchedPurchaseOrderId)
+
+  // Selecting a PO prefills the amount so the invoice lines sent for matching stay consistent
+  // with the order. The supplier can still adjust the amount before submitting.
+  useEffect(() => {
+    if (selectedPo) {
+      setValue('amount', selectedPo.totalAmount)
+    }
+  }, [selectedPo, setValue])
 
   // Advisory duplicate pre-check: debounce description (falls back to the invoice number) then query.
   const [dupDescription, setDupDescription] = useState<string | null>(null)
@@ -123,13 +159,25 @@ export default function SupplierInvoiceSubmitPage() {
   const submitMutation = useMutation({
     mutationFn: async (formData: ConfirmData) => {
       // 1. Create the invoice draft
+      // When a PO is selected, its lines are sent as invoice lines: the three-way matching needs
+      // line-level data on both sides, otherwise submission is rejected (AUDIT-001 + AUDIT-031).
+      const po = (purchaseOrders ?? []).find((p) => p.id === formData.purchaseOrderId)
       const { data: createResp } = await apiClient.post('/supplier/invoices', {
         departmentId: formData.departmentId,
+        purchaseOrderId: formData.purchaseOrderId || undefined,
         amount: formData.amount,
         currency: formData.currency,
         issueDate: formData.issueDate,
         dueDate: formData.dueDate,
         description: formData.description || (formData.invoiceNumber ? `Invoice #${formData.invoiceNumber}` : undefined),
+        lineItems: po
+          ? po.items.map((item) => ({
+              description: item.itemDescription,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              totalPrice: item.lineTotal,
+            }))
+          : undefined,
       })
       const invoiceId = createResp.data?.id
 
@@ -208,6 +256,42 @@ export default function SupplierInvoiceSubmitPage() {
             )}
           />
           {errors.departmentId && <p className="text-xs text-crit mt-1">{t('validation.required')}</p>}
+        </div>
+
+        {/* Purchase Order (AUDIT-001) — optional, but required for three-way matching */}
+        <div className="md:col-span-2">
+          <label htmlFor="purchaseOrderId" className="block text-sm font-medium text-ink-soft mb-1">
+            {t('invoice.purchaseOrder')}
+          </label>
+          <select
+            id="purchaseOrderId"
+            {...register('purchaseOrderId')}
+            className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            <option value="">{t('invoice.noPO')}</option>
+            {(purchaseOrders ?? []).map((po) => (
+              <option key={po.id} value={po.id}>
+                {po.poNumber} — {po.totalAmount}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-ink-soft mt-1">
+            {t('invoice.poHint')}
+          </p>
+          {selectedPo && (
+            <div className="mt-2 border border-hairline rounded-[4px] p-3 bg-ground">
+              <p className="text-xs font-medium text-ink-soft mb-1">
+                {t('invoice.poLines', 'Lignes reprises de la commande')} ({selectedPo.items.length})
+              </p>
+              <ul className="text-xs text-ink-soft space-y-0.5">
+                {selectedPo.items.map((item) => (
+                  <li key={item.id}>
+                    {item.itemDescription} — {item.quantity} × {item.unitPrice} = {item.lineTotal}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         {/* Invoice Number (OCR-extracted, editable) */}
