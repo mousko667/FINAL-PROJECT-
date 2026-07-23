@@ -62,7 +62,7 @@ class RemittanceAdviceServiceTest {
                 .referenceNumber("FAC-2024-00001")
                 .supplierName("Test Supplier")
                 .amount(BigDecimal.valueOf(1000))
-                .currency("EUR")
+                .currency("XAF")
                 .build();
 
         generatedBy = User.builder()

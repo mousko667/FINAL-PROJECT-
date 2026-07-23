@@ -172,7 +172,7 @@ class ReportServiceTest {
                 .referenceNumber("FAC-2024-00001")
                 .supplierName("Supplier A")
                 .amount(BigDecimal.TEN)
-                .currency("EUR")
+                .currency("XAF")
                 .status(InvoiceStatus.SOUMIS)
                 .build();
         

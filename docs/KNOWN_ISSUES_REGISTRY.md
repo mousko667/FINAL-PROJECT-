@@ -1887,3 +1887,53 @@ l'etat intermediaire est expose a l'utilisateur (filtre, rapport, tableau de bor
 l'interface propose de filtrer doit etre un etat de repos, sans quoi le filtre est structurellement
 vide. Symptome revelateur a chercher : un `group by status` qui ne renvoie jamais la valeur
 concernee.
+
+
+---
+
+## PROB-135 — Aucune validation metier a la creation d'une facture, et liste blanche contournable par l'import (AUDIT-032 / AUDIT-033)
+
+**Date :** 2026-07-23 · **Phase :** P6 vague 1, lot V1-D · **Severite :** P1 (donnees financieres incoherentes acceptees)
+
+**Symptome (preuves runtime P3, via `POST /api/v1/invoices`) :** `amount = 0` -> **201** ·
+`amount = -50000` -> **201** · emission 2026-08-30 avec echeance 2026-07-01, soit **deux mois avant**
+-> **201** · `currency = "USD"` -> **201** · `currency = "XOF"` -> **201**. Le formulaire du portail
+fournisseur proposait de surcroit **EUR** et **USD** dans son selecteur.
+
+**Root cause :** `InvoiceCreateRequest` ne portait que des contraintes de PRESENCE (`@NotNull`,
+`@NotBlank`) : aucune sur la valeur. Le contraste avec `PaymentRequest`, qui porte bien `@Positive`,
+montre que la regle existait ailleurs dans le code — c'etait une omission, pas un choix. `XOF` est
+particulierement sensible : c'est la devise BCEAO (Afrique de l'Ouest), proscrite par la regle
+projet, et la migration `V45__normalize_currency_xof_to_xaf.sql` avait precisement servi a
+l'eliminer — elle se reintroduisait par l'API.
+
+**Solution (decision D4, mono-devise XAF stricte) :** deux niveaux, volontairement redondants.
+(1) **DTO** (`InvoiceCreateRequest`, `InvoiceUpdateRequest`) : `@Positive` sur `amount`,
+`@Pattern(regexp = "XAF")` sur `currency`, et une contrainte de CLASSE `@DueDateNotBeforeIssueDate`
+pour la validation croisee des dates — ce niveau produit un message par champ.
+(2) **SERVICE** (`InvoiceService.enforceFinancialInvariants`, appele par `createInvoice` ET
+`updateInvoice`) : les memes trois invariants, au point de passage commun a **tous** les chemins.
+Frontend : EUR/USD retires des selecteurs (portail ET bons de commande), schemas Zod alignes
+(`z.literal('XAF')` + `.refine` sur les dates) sur les deux formulaires. `PurchaseOrderCreateRequest`
+recoit aussi la liste blanche.
+
+**Le piege, revele en revue :** s'arreter aux DTO **n'aurait ferme qu'un chemin sur deux**.
+`InvoiceImportService` (import CSV/XML de masse) construit l'entite **directement avec le builder**,
+sans `InvoiceCreateRequest` et sans `@Valid` : les annotations du DTO y sont sans aucun effet. Une
+ligne CSV `currency=XOF` ou `amount=-50000` serait passee telle quelle. C'est pour cela que les
+invariants sont portes par le SERVICE et pas seulement par les DTO.
+
+**Preventive rule :** une regle metier posee uniquement sur un DTO ne protege que la voie HTTP qui
+utilise ce DTO. Avant de declarer une contrainte « appliquee », **enumerer tous les chemins
+d'admission** de l'entite (API classique, portail, import de masse, OCR, seed, jobs) et placer
+l'invariant au point de passage commun — le service. Le DTO reste utile pour la qualite du message
+d'erreur, pas comme unique ligne de defense. Corollaire de test : une liste blanche doit etre testee
+sur ses contournements evidents (casse differente, espaces autour de la valeur, chemin d'import) et
+pas seulement sur le cas nominal.
+
+**Piege de test secondaire :** une contrainte de CLASSE remonte par defaut en `ObjectError`, or
+`GlobalExceptionHandler.handleValidationException` n'itere que sur `getFieldErrors()` — le message
+aurait **disparu silencieusement** de la reponse. Le validateur rattache donc explicitement la
+violation au noeud `dueDate` (`addPropertyNode`), et un test assertant `$.errors[0]` contient
+« dueDate » verrouille ce contrat : sans lui, un futur retrait de `addPropertyNode` laisserait la
+suite verte alors que l'utilisateur ne verrait plus aucun motif de refus.

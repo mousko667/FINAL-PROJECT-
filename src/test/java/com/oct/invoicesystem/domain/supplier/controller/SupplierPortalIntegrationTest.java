@@ -150,7 +150,7 @@ class SupplierPortalIntegrationTest {
                 null, // supplierId will be overwritten by service
                 null, null, null, null, // supplier info fields
                 BigDecimal.valueOf(1500.50),
-                "EUR",
+                "XAF",
                 LocalDate.now(),
                 LocalDate.now().plusDays(30),
                 "Service delivery for March"

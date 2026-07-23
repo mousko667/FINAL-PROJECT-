@@ -138,14 +138,12 @@ export default function PurchaseOrdersPage() {
                 <input type="number" step="0.01" value={form.totalAmount} onChange={e => setForm(p => ({ ...p, totalAmount: e.target.value }))}
                   className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
               </div>
+              {/* AUDIT-033 (D4): single-currency system — XAF only. A purchase order in EUR/USD
+                  could never match an invoice, which the DTO now restricts to XAF. */}
               <div>
-                <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.currency', 'Currency')}</label>
-                <select value={form.currency} onChange={e => setForm(p => ({ ...p, currency: e.target.value }))}
-                  className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-                  <option value="XAF">XAF</option>
-                  <option value="EUR">EUR</option>
-                  <option value="USD">USD</option>
-                </select>
+                <label htmlFor="po-currency" className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.currency', 'Currency')}</label>
+                <input id="po-currency" type="text" value="XAF" readOnly
+                  className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-ground text-ink-soft focus:outline-none" />
               </div>
             </div>
             <div className="flex justify-end gap-3 pt-2 border-t">

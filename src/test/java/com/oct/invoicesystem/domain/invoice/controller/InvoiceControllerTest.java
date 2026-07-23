@@ -36,6 +36,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -84,6 +85,142 @@ class InvoiceControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.referenceNumber").value("FAC-2026-00001"));
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // AUDIT-032 / AUDIT-033 (D4) : validation metier a la creation d'une facture.
+    // Le systeme acceptait auparavant un montant nul ou negatif, une echeance anterieure a
+    // l'emission, et n'importe quelle devise — dont XOF, proscrite par la regle projet et que la
+    // migration V45 avait precisement servi a eliminer.
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /** Construit une requete valide dont un seul aspect est ensuite altere par les tests. */
+    private InvoiceCreateRequest validRequest(BigDecimal amount, String currency,
+                                              LocalDate issueDate, LocalDate dueDate) {
+        return new InvoiceCreateRequest(
+                UUID.randomUUID(), null, "ACME", "invoice@acme.com", "TAX-1", null,
+                amount, currency, issueDate, dueDate, "Test");
+    }
+
+    private void expectRejected(InvoiceCreateRequest request) throws Exception {
+        mockMvc.perform(post("/api/v1/invoices")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+        // La requete ne doit jamais atteindre la couche service : elle est refusee a la validation.
+        verify(invoiceService, never()).createInvoice(any(), any());
+    }
+
+    @Test
+    @WithMockUser(roles = "ASSISTANT_COMPTABLE", username = "assistant")
+    void createInvoice_RejectsZeroAmount() throws Exception {
+        expectRejected(validRequest(BigDecimal.ZERO, "XAF", LocalDate.now(), LocalDate.now().plusDays(30)));
+    }
+
+    @Test
+    @WithMockUser(roles = "ASSISTANT_COMPTABLE", username = "assistant")
+    void createInvoice_RejectsNegativeAmount() throws Exception {
+        expectRejected(validRequest(new BigDecimal("-50000"), "XAF", LocalDate.now(), LocalDate.now().plusDays(30)));
+    }
+
+    /**
+     * Scenario exact du finding : emission 30/08, echeance 01/07 — deux mois AVANT.
+     *
+     * <p>L'assertion sur `$.errors` n'est pas cosmetique : la contrainte est portee par une
+     * annotation de CLASSE, et `GlobalExceptionHandler` n'itere que sur `getFieldErrors()`. Si le
+     * validateur cessait de rattacher la violation au noeud `dueDate` (`addPropertyNode`), elle
+     * remonterait en `ObjectError` global et **disparaitrait silencieusement de la reponse** — le
+     * statut resterait 400 et un test qui ne verifie que le statut resterait vert. C'est ce
+     * contrat-la que ce test verrouille.</p>
+     */
+    @Test
+    @WithMockUser(roles = "ASSISTANT_COMPTABLE", username = "assistant")
+    void createInvoice_RejectsDueDateBeforeIssueDate() throws Exception {
+        mockMvc.perform(post("/api/v1/invoices")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validRequest(
+                                new BigDecimal("1000.00"), "XAF",
+                                LocalDate.of(2026, 8, 30), LocalDate.of(2026, 7, 1)))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0]",
+                        org.hamcrest.Matchers.containsString("dueDate")));
+        verify(invoiceService, never()).createInvoice(any(), any());
+    }
+
+    /** Une liste blanche insensible a la casse n'en serait pas une. */
+    @Test
+    @WithMockUser(roles = "ASSISTANT_COMPTABLE", username = "assistant")
+    void createInvoice_RejectsLowercaseXaf() throws Exception {
+        expectRejected(validRequest(new BigDecimal("1000.00"), "xaf", LocalDate.now(), LocalDate.now().plusDays(30)));
+    }
+
+    /** Ni une liste blanche que des espaces suffiraient a contourner. */
+    @Test
+    @WithMockUser(roles = "ASSISTANT_COMPTABLE", username = "assistant")
+    void createInvoice_RejectsPaddedCurrency() throws Exception {
+        expectRejected(validRequest(new BigDecimal("1000.00"), " XAF ", LocalDate.now(), LocalDate.now().plusDays(30)));
+    }
+
+    /** Les memes invariants valent a la mise a jour, pas seulement a la creation. */
+    @Test
+    @WithMockUser(roles = "ASSISTANT_COMPTABLE", username = "assistant")
+    void updateInvoice_RejectsInvalidAmountAndCurrency() throws Exception {
+        InvoiceUpdateRequest negativeAmount = new InvoiceUpdateRequest(
+                UUID.randomUUID(), null, "ACME", "invoice@acme.com", "TAX-1", null,
+                new BigDecimal("-50000"), "XAF", LocalDate.now(), LocalDate.now().plusDays(30), "Test");
+        mockMvc.perform(put("/api/v1/invoices/{id}", UUID.randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(negativeAmount)))
+                .andExpect(status().isBadRequest());
+
+        InvoiceUpdateRequest foreignCurrency = new InvoiceUpdateRequest(
+                UUID.randomUUID(), null, "ACME", "invoice@acme.com", "TAX-1", null,
+                new BigDecimal("1000.00"), "XOF", LocalDate.now(), LocalDate.now().plusDays(30), "Test");
+        mockMvc.perform(put("/api/v1/invoices/{id}", UUID.randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(foreignCurrency)))
+                .andExpect(status().isBadRequest());
+
+        verify(invoiceService, never()).updateInvoice(any(), any(), any());
+    }
+
+    /** Une echeance egale a l'emission reste licite : la contrainte est `dueDate >= issueDate`. */
+    @Test
+    @WithMockUser(roles = "ASSISTANT_COMPTABLE", username = "assistant")
+    void createInvoice_AcceptsDueDateEqualToIssueDate() throws Exception {
+        LocalDate sameDay = LocalDate.of(2026, 8, 30);
+        User user = new User();
+        user.setId(UUID.randomUUID());
+        user.setUsername("assistant");
+        user.setPassword("x");
+        user.setActive(true);
+        when(userRepository.findByUsername("assistant")).thenReturn(Optional.of(user));
+        when(invoiceService.createInvoice(any(), any())).thenReturn(sampleInvoice());
+
+        mockMvc.perform(post("/api/v1/invoices")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                validRequest(new BigDecimal("1000.00"), "XAF", sameDay, sameDay))))
+                .andExpect(status().isCreated());
+    }
+
+    /** XOF est la devise BCEAO (Afrique de l'Ouest) : hors perimetre, et deja eliminee par V45. */
+    @Test
+    @WithMockUser(roles = "ASSISTANT_COMPTABLE", username = "assistant")
+    void createInvoice_RejectsXofCurrency() throws Exception {
+        expectRejected(validRequest(new BigDecimal("1000.00"), "XOF", LocalDate.now(), LocalDate.now().plusDays(30)));
+    }
+
+    @Test
+    @WithMockUser(roles = "ASSISTANT_COMPTABLE", username = "assistant")
+    void createInvoice_RejectsUsdCurrency() throws Exception {
+        expectRejected(validRequest(new BigDecimal("1000.00"), "USD", LocalDate.now(), LocalDate.now().plusDays(30)));
+    }
+
+    @Test
+    @WithMockUser(roles = "ASSISTANT_COMPTABLE", username = "assistant")
+    void createInvoice_RejectsEurCurrency() throws Exception {
+        expectRejected(validRequest(new BigDecimal("1000.00"), "EUR", LocalDate.now(), LocalDate.now().plusDays(30)));
     }
 
     @Test

@@ -101,7 +101,7 @@ class ThreeWayMatchingServiceTest {
                 .id(UUID.randomUUID())
                 .referenceNumber("FAC-2026-00001")
                 .amount(new BigDecimal("5000.00"))
-                .currency("EUR")
+                .currency("XAF")
                 .items(List.of(invoiceItem))
                 .build();
 
@@ -161,7 +161,7 @@ class ThreeWayMatchingServiceTest {
                 .id(UUID.randomUUID())
                 .referenceNumber("FAC-2026-00002")
                 .amount(new BigDecimal("5050.00"))
-                .currency("EUR")
+                .currency("XAF")
                 .items(List.of(invoiceItem))
                 .build();
 
@@ -204,7 +204,7 @@ class ThreeWayMatchingServiceTest {
                 .id(UUID.randomUUID())
                 .referenceNumber("FAC-2026-00003")
                 .amount(new BigDecimal("7500.00"))
-                .currency("EUR")
+                .currency("XAF")
                 .items(List.of(invoiceItem))
                 .build();
 
@@ -259,7 +259,7 @@ class ThreeWayMatchingServiceTest {
                 .id(UUID.randomUUID())
                 .referenceNumber("FAC-2026-00004")
                 .amount(new BigDecimal("5000.00"))
-                .currency("EUR")
+                .currency("XAF")
                 .items(List.of(invoiceItem))
                 .build();
 
@@ -294,7 +294,7 @@ class ThreeWayMatchingServiceTest {
                 .id(UUID.randomUUID())
                 .referenceNumber("FAC-2026-00005")
                 .amount(BigDecimal.ZERO)
-                .currency("EUR")
+                .currency("XAF")
                 .items(new ArrayList<>())
                 .build();
 
@@ -404,7 +404,7 @@ class ThreeWayMatchingServiceTest {
                 .id(UUID.randomUUID())
                 .referenceNumber("FAC-2026-00006")
                 .amount(new BigDecimal("5000.00"))
-                .currency("EUR")
+                .currency("XAF")
                 .items(List.of(invoiceItem))
                 .build();
 

@@ -166,7 +166,7 @@ class ThreeWayMatchingIntegrationTest {
                 supplierId,
                 LocalDate.now(),
                 LocalDate.now().plusDays(30),
-                "EUR",
+                "XAF",
                 List.of(poItem)
         );
 
@@ -215,7 +215,7 @@ class ThreeWayMatchingIntegrationTest {
                 .supplierName("Test Supplier")
                 .supplierEmail("supplier@test.com")
                 .amount(new BigDecimal("7500.00"))
-                .currency("EUR")
+                .currency("XAF")
                 .issueDate(LocalDate.now())
                 .dueDate(LocalDate.now().plusDays(30))
                 .department(department)
@@ -283,7 +283,7 @@ class ThreeWayMatchingIntegrationTest {
                 supplierId,
                 LocalDate.now(),
                 LocalDate.now().plusDays(30),
-                "EUR",
+                "XAF",
                 List.of(poItem)
         );
 
@@ -326,7 +326,7 @@ class ThreeWayMatchingIntegrationTest {
                 .supplierName("Test Supplier")
                 .supplierEmail("supplier@test.com")
                 .amount(new BigDecimal("5000.00"))
-                .currency("EUR")
+                .currency("XAF")
                 .issueDate(LocalDate.now())
                 .dueDate(LocalDate.now().plusDays(30))
                 .department(department)
@@ -365,7 +365,7 @@ class ThreeWayMatchingIntegrationTest {
     void testExportMatchingReport() throws Exception {
         // Build a PO + GRN + invoice and submit it so a matching result is persisted.
         PurchaseOrderCreateRequest poRequest = new PurchaseOrderCreateRequest(
-                "PO-EXPORT-001", supplierId, LocalDate.now(), LocalDate.now().plusDays(30), "EUR",
+                "PO-EXPORT-001", supplierId, LocalDate.now(), LocalDate.now().plusDays(30), "XAF",
                 List.of(new PurchaseOrderItemCreateRequest("Widget X", new BigDecimal("100"), new BigDecimal("50.00"))));
 
         mockMvc.perform(post("/api/v1/purchase-orders")
@@ -388,7 +388,7 @@ class ThreeWayMatchingIntegrationTest {
                 .unitPrice(new BigDecimal("50.00")).totalPrice(new BigDecimal("5000.00")).build();
         Invoice invoice = Invoice.builder()
                 .referenceNumber("FAC-EXPORT-001").supplierName("Test Supplier")
-                .supplierEmail("supplier@test.com").amount(new BigDecimal("5000.00")).currency("EUR")
+                .supplierEmail("supplier@test.com").amount(new BigDecimal("5000.00")).currency("XAF")
                 .issueDate(LocalDate.now()).dueDate(LocalDate.now().plusDays(30))
                 .department(department).submittedBy(adminUser).purchaseOrderId(purchaseOrder.getId()).build();
         invoiceItem.setInvoice(invoice);
@@ -439,7 +439,7 @@ class ThreeWayMatchingIntegrationTest {
                 supplierId,
                 LocalDate.now(),
                 LocalDate.now().plusDays(30),
-                "EUR",
+                "XAF",
                 List.of(poItem1, poItem2)
         );
 

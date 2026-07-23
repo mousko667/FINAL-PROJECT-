@@ -406,7 +406,8 @@
     "stepApproved": "Approved",
     "stepPending": "Pending",
     "stepRejected": "Rejected",
-    "timelineTo": "to"
+    "timelineTo": "to",
+    "dueDateBeforeIssueDate": "The due date cannot be earlier than the issue date."
   },
   "status": {
     "BROUILLON": "Draft",

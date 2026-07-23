@@ -208,7 +208,7 @@ class PaymentControllerTest {
         invoice.setIssueDate(LocalDate.now());
         invoice.setDueDate(LocalDate.now().plusDays(30));
         invoice.setAmount(new BigDecimal("1500.00"));
-        invoice.setCurrency("EUR");
+        invoice.setCurrency("XAF");
         invoice.setDescription("Desc");
         invoice.setDepartment(dept);
         invoice.setSubmittedBy(assistant);

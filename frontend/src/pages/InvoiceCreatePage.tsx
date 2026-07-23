@@ -22,11 +22,18 @@ const detailsSchema = z.object({
   purchaseOrderId: z.string().optional(),
   departmentId: z.string().min(1, 'Select a department'),
   amount: z.coerce.number().positive(),
-  currency: z.string().min(1),
+  // AUDIT-033 (D4): single-currency system — XAF only.
+  currency: z.literal('XAF'),
   issueDate: z.string().min(1),
   dueDate: z.string().min(1),
   description: z.string().optional(),
 })
+  // AUDIT-032: mirrors the backend constraint so the assistant sees the refusal inline rather
+  // than as a raw 400 — this internal form is the nominal invoice-entry path.
+  .refine((d) => !d.issueDate || !d.dueDate || d.dueDate >= d.issueDate, {
+    path: ['dueDate'],
+    message: 'invoice.dueDateBeforeIssueDate',
+  })
 
 type DetailsFormData = z.infer<typeof detailsSchema>
 
@@ -272,6 +279,12 @@ function InvoiceCreatePageInner() {
             <div>
               <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.dueDate', 'Due Date')} *</label>
               <input type="date" {...register('dueDate')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              {/* AUDIT-032: without this the .refine would block submission silently. */}
+              {errors.dueDate && (
+                <p className="text-xs text-crit mt-1">
+                  {errors.dueDate.message ? t(errors.dueDate.message) : t('validation.required')}
+                </p>
+              )}
             </div>
           </div>
 

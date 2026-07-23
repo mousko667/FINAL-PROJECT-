@@ -61,6 +61,7 @@ public class InvoiceService {
     @Transactional
     public Invoice createInvoice(Invoice invoice, UUID actorId) {
         ensureAssistantComptable(actorId);
+        enforceFinancialInvariants(invoice);
 
         invoice.setDepartment(resolveDepartment(invoice.getDepartment()));
         populateSupplierFields(invoice);
@@ -106,7 +107,39 @@ public class InvoiceService {
         existing.setDueDate(updatedInvoice.getDueDate());
         existing.setDescription(updatedInvoice.getDescription());
 
+        enforceFinancialInvariants(existing);
         return invoiceRepository.save(existing);
+    }
+
+    /**
+     * Invariants financiers d'une facture, appliques au plus pres de la persistance (AUDIT-032 /
+     * AUDIT-033, decision D4) : montant strictement positif, devise XAF, echeance non anterieure
+     * a l'emission.
+     *
+     * <p>Ces regles sont volontairement portees par le SERVICE et non par les seuls DTO. Les DTO
+     * ({@code InvoiceCreateRequest}, {@code InvoiceUpdateRequest}) les declarent aussi, afin que
+     * l'API rende un message de validation par champ ; mais ils ne couvrent que la voie HTTP
+     * classique. L'import CSV/XML ({@code InvoiceImportService}) construit l'entite directement
+     * avec le builder et n'aurait ete soumis a aucun controle : une liste blanche contournable par
+     * un import de masse ne vaut rien. Ce point de passage-ci est commun a TOUS les chemins
+     * d'admission.</p>
+     *
+     * @throws ValidationException si un invariant est viole (cle i18n, resolue par le handler global)
+     */
+    private void enforceFinancialInvariants(Invoice invoice) {
+        if (invoice.getAmount() == null
+                || invoice.getAmount().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+            throw new ValidationException("validation.invoice.amount_positive");
+        }
+        // XAF seule : XOF (BCEAO, Afrique de l'Ouest) est hors perimetre et la migration V45 a
+        // precisement servi a l'eliminer — elle ne doit pas se reintroduire par l'API ni l'import.
+        if (!"XAF".equals(invoice.getCurrency())) {
+            throw new ValidationException("validation.invoice.currency_must_be_xaf");
+        }
+        if (invoice.getIssueDate() != null && invoice.getDueDate() != null
+                && invoice.getDueDate().isBefore(invoice.getIssueDate())) {
+            throw new ValidationException("validation.invoice.due_date_before_issue_date");
+        }
     }
 
     /**

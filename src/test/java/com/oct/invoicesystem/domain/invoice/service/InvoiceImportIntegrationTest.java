@@ -100,6 +100,44 @@ class InvoiceImportIntegrationTest {
                 .satisfies(r -> assertThat(r.success()).isFalse());
     }
 
+    /**
+     * AUDIT-032 / AUDIT-033 (D4) : l'import de masse ne doit PAS contourner les invariants
+     * financiers. C'est le point sensible du lot : l'import construit l'entite directement avec le
+     * builder, sans passer par {@code InvoiceCreateRequest} ni par aucun {@code @Valid}. Les
+     * annotations du DTO sont donc sans effet ici — seuls les invariants portes par
+     * {@code InvoiceService.createInvoice} ferment ce chemin. Une liste blanche de devise
+     * contournable par un fichier CSV ne vaudrait rien.
+     *
+     * <p>Les 4 lignes fautives reprennent les preuves runtime du finding : XOF (proscrite par la
+     * regle projet), USD, montant nul, montant negatif. Seule la ligne conforme doit passer.</p>
+     */
+    @Test
+    void csvImport_enforcesFinancialInvariants() {
+        String csv = """
+                departmentCode,supplierName,supplierEmail,supplierTaxId,amount,currency,issueDate,dueDate,description
+                IMP,Conforme,ok@x.test,NIF0,1000,XAF,2026-06-01,2026-07-01,Valide
+                IMP,DeviseXof,xof@x.test,NIF1,1000,XOF,2026-06-01,2026-07-01,Devise proscrite
+                IMP,DeviseUsd,usd@x.test,NIF2,1000,USD,2026-06-01,2026-07-01,Devise hors perimetre
+                IMP,MontantNul,zero@x.test,NIF3,0,XAF,2026-06-01,2026-07-01,Montant nul
+                IMP,MontantNegatif,neg@x.test,NIF4,-50000,XAF,2026-06-01,2026-07-01,Montant negatif
+                IMP,DatesIncoherentes,dates@x.test,NIF5,1000,XAF,2026-08-30,2026-07-01,Echeance avant emission
+                """;
+        MockMultipartFile file = new MockMultipartFile("file", "invoices.csv", "text/csv",
+                csv.getBytes(StandardCharsets.UTF_8));
+
+        InvoiceImportResultDTO result = importService.importInvoices(file, null, actor.getId());
+        track(result);
+
+        assertThat(result.total()).isEqualTo(6);
+        assertThat(result.created()).isEqualTo(1);
+        assertThat(result.failed()).isEqualTo(5);
+        // Ligne 2 = la seule conforme ; lignes 3 a 7 = les cinq refus.
+        assertThat(result.results()).filteredOn(r -> r.line() == 2).singleElement()
+                .satisfies(r -> assertThat(r.success()).isTrue());
+        assertThat(result.results()).filteredOn(r -> r.line() >= 3)
+                .allSatisfy(r -> assertThat(r.success()).isFalse());
+    }
+
     @Test
     void xmlImport_createsOneInvoicePerElement() {
         String xml = """

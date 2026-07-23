@@ -42,11 +42,18 @@ const confirmSchema = z.object({
   purchaseOrderId: z.string().optional(),
   invoiceNumber: z.string().optional(),
   amount: z.coerce.number().positive(),
-  currency: z.string().min(1),
+  // AUDIT-033 (D4): single-currency system — XAF only.
+  currency: z.literal('XAF'),
   issueDate: z.string().min(1),
   dueDate: z.string().min(1),
   description: z.string().optional(),
 })
+  // AUDIT-032: the due date cannot precede the issue date. Mirrors the backend constraint so the
+  // supplier gets the refusal in the form rather than as a server error after submitting.
+  .refine((d) => !d.issueDate || !d.dueDate || d.dueDate >= d.issueDate, {
+    path: ['dueDate'],
+    message: 'invoice.dueDateBeforeIssueDate',
+  })
 
 type ConfirmData = z.infer<typeof confirmSchema>
 
@@ -322,14 +329,18 @@ export default function SupplierInvoiceSubmitPage() {
           {errors.amount && <p className="text-xs text-crit mt-1">{t('validation.positiveNumber')}</p>}
         </div>
 
-        {/* Currency */}
+        {/* Currency — AUDIT-033 (D4): the system is single-currency XAF (Central African CFA
+            franc, BEAC). EUR and USD were removed: nothing validated them server-side and no
+            screen could convert them. A one-option dropdown would be a misleading affordance, so
+            the value is shown read-only. It is submitted from the form's `defaultValues`
+            (currency: 'XAF'), not from this input — a hidden `register()` field would suggest a
+            binding that react-hook-form does not actually perform for hidden inputs. */}
         <div>
-          <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.currency')} *</label>
-          <select {...register('currency')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-primary/30">
-            <option value="XAF">XAF (FCFA)</option>
-            <option value="EUR">EUR</option>
-            <option value="USD">USD</option>
-          </select>
+          <label htmlFor="invoice-currency" className="block text-sm font-medium text-ink-soft mb-1">
+            {t('invoice.currency')} *
+          </label>
+          <input id="invoice-currency" type="text" value="XAF (FCFA)" readOnly
+            className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-ground text-ink-soft focus:outline-none" />
         </div>
 
         {/* Issue Date */}
@@ -354,7 +365,15 @@ export default function SupplierInvoiceSubmitPage() {
             {...register('dueDate')}
             className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
-          {errors.dueDate && <p className="text-xs text-crit mt-1">{t('validation.required')}</p>}
+          {/* AUDIT-032: distinguish "missing" from "due date before issue date" — the schema puts
+              the i18n key in the message, so a blanket "required" would hide the real reason. */}
+          {errors.dueDate && (
+            <p className="text-xs text-crit mt-1">
+              {errors.dueDate.message
+                ? t(errors.dueDate.message)
+                : t('validation.required')}
+            </p>
+          )}
         </div>
 
         {/* Description */}
