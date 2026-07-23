@@ -1312,7 +1312,10 @@
     "qtyPlaceholder": "Qté",
     "details": "Détails du bon de réception",
     "items": "Articles",
-    "close": "Fermer"
+    "close": "Fermer",
+    "purchaseOrder": "Bon de commande",
+    "receivedBy": "Réceptionné par",
+    "lineCount": "Lignes"
   },
   "register": {
     "supplierOnly": {

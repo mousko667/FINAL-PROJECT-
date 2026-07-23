@@ -4,11 +4,14 @@ import com.oct.invoicesystem.domain.purchasing.dto.GoodsReceiptCreateRequest;
 import com.oct.invoicesystem.domain.purchasing.dto.GoodsReceiptDTO;
 import com.oct.invoicesystem.domain.purchasing.service.GoodsReceiptService;
 import com.oct.invoicesystem.shared.response.ApiResponse;
+import com.oct.invoicesystem.shared.response.PagedResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -48,14 +51,36 @@ public class GoodsReceiptController {
         return ResponseEntity.ok(ApiResponse.success(grnService.getGRN(id)));
     }
 
+    /**
+     * AUDIT-028 : la branche « sans filtre » n'existait pas — l'endpoint renvoyait litteralement
+     * {@code List.of()} quand {@code purchaseOrderId} etait absent, alors que la page « Bons de
+     * Reception » l'appelle sans aucun parametre. La liste etait donc structurellement toujours
+     * vide, bien que la base contienne des GRN. Implementee sur le modele de
+     * {@code PurchaseOrderController.listPurchaseOrders} : filtre -> liste complete non paginee,
+     * sans filtre -> page.
+     */
     @GetMapping
     @PreAuthorize("hasAnyRole('ASSISTANT_COMPTABLE', 'DAF')")
     @Operation(summary = "List GRNs", description = "Lists GRNs, optionally filtered by purchase order")
-    public ResponseEntity<ApiResponse<List<GoodsReceiptDTO>>> listGRNs(
-            @RequestParam(required = false) UUID purchaseOrderId) {
-        List<GoodsReceiptDTO> result = purchaseOrderId != null
-                ? grnService.getGRNsByPurchaseOrder(purchaseOrderId)
-                : List.of();
-        return ResponseEntity.ok(ApiResponse.success(result));
+    public ResponseEntity<ApiResponse<PagedResponse<GoodsReceiptDTO>>> listGRNs(
+            @RequestParam(required = false) UUID purchaseOrderId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        if (purchaseOrderId != null) {
+            List<GoodsReceiptDTO> dtos = grnService.getGRNsByPurchaseOrder(purchaseOrderId);
+            return ResponseEntity.ok(ApiResponse.success(
+                    PagedResponse.<GoodsReceiptDTO>builder()
+                            .content(dtos)
+                            .page(0)
+                            .size(dtos.size())
+                            .totalElements(dtos.size())
+                            .totalPages(1)
+                            .last(true)
+                            .build()
+            ));
+        }
+
+        Page<GoodsReceiptDTO> dtoPage = grnService.getAllGRNs(PageRequest.of(page, size));
+        return ResponseEntity.ok(ApiResponse.success(PagedResponse.of(dtoPage)));
     }
 }

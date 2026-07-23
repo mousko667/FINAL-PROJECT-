@@ -1312,7 +1312,10 @@
     "qtyPlaceholder": "Qty",
     "details": "Goods Receipt Details",
     "items": "Items",
-    "close": "Close"
+    "close": "Close",
+    "purchaseOrder": "Purchase order",
+    "receivedBy": "Received by",
+    "lineCount": "Lines"
   },
   "register": {
     "supplierOnly": {

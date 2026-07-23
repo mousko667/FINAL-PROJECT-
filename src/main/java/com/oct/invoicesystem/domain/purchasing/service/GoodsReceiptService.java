@@ -16,6 +16,8 @@ import com.oct.invoicesystem.shared.exception.ResourceNotFoundException;
 import com.oct.invoicesystem.shared.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -85,6 +87,23 @@ public class GoodsReceiptService {
         return grnRepository.findByPurchaseOrderId(purchaseOrderId).stream()
                 .map(this::toDTO)
                 .toList();
+    }
+
+    /**
+     * Liste paginee de tous les bons de reception (AUDIT-028).
+     *
+     * <p>Cette branche « sans filtre » n'existait pas : le controleur renvoyait litteralement
+     * {@code List.of()} quand le parametre facultatif {@code purchaseOrderId} etait absent, alors
+     * que la page « Bons de Reception » appelle l'endpoint sans aucun parametre — les deux moities
+     * etaient incompatibles par construction et la liste restait toujours vide.</p>
+     *
+     * @param pageable page demandee ; le tri est impose par la requete (reception la plus recente
+     *                 en premier)
+     * @return page de bons de reception non supprimes
+     */
+    @Transactional(readOnly = true)
+    public Page<GoodsReceiptDTO> getAllGRNs(Pageable pageable) {
+        return grnRepository.findAllActive(pageable).map(this::toDTO);
     }
 
     private GoodsReceiptDTO toDTO(GoodsReceiptNote grn) {

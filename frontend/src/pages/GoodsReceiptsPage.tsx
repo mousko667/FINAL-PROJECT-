@@ -3,19 +3,27 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
-import { Loader2, Plus, Package, CheckCircle, Calendar } from 'lucide-react'
+import { Loader2, Plus, Package, Calendar } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { formatDate } from '@/lib/format'
 
+// AUDIT-028: this type used to declare fields the backend never sent (`supplierName`,
+// `receivedDate`, `status`, `notes`). Nobody noticed because the list endpoint returned a
+// hardcoded empty array — no row was ever rendered. Now that the list fills up, it is aligned on
+// what `GoodsReceiptDTO` actually returns.
 interface GoodsReceipt {
   id: string
   grnNumber: string
   purchaseOrderId?: string
-  supplierName?: string
-  receivedDate: string
-  status: string
-  notes?: string
-  items?: Array<{ description: string; quantityReceived: number; unitPrice: number }>
+  purchaseOrderNumber?: string
+  receivedByUsername: string
+  receiptDate: string
+  items?: Array<{
+    id: string
+    purchaseOrderItemId?: string
+    itemDescription: string
+    receivedQuantity: number
+  }>
   createdAt: string
 }
 
@@ -37,13 +45,6 @@ interface GoodsReceiptDetail {
 
 interface PO { id: string; poNumber: string; supplierName?: string; totalAmount: number; currency?: string }
 
-const STATUS_COLORS: Record<string, string> = {
-  RECEIVED:         'bg-pos-bg text-pos',
-  PARTIALLY_RECEIVED:'bg-warn-bg text-warn',
-  PENDING:          'bg-ground text-ink-soft',
-  REJECTED:         'bg-crit-bg text-crit',
-}
-
 export default function GoodsReceiptsPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
@@ -60,8 +61,14 @@ export default function GoodsReceiptsPage() {
   const { data: grns, isLoading } = useQuery({
     queryKey: ['goods-receipts'],
     queryFn: async () => {
-      const { data } = await apiClient.get<{ data: GoodsReceipt[] }>('/goods-receipts')
-      return Array.isArray(data.data) ? data.data : []
+      // AUDIT-028: the unfiltered branch used to return a hardcoded empty list; it now returns a
+      // paginated payload, same shape as /purchase-orders. `size: 200` covers the expected volume
+      // without paging controls — see docs/TASKS.md for the real pagination follow-up.
+      const { data } = await apiClient.get<{ data: { content: GoodsReceipt[] } }>(
+        '/goods-receipts',
+        { params: { size: 200 } },
+      )
+      return data.data?.content ?? []
     },
   })
 
@@ -204,10 +211,10 @@ export default function GoodsReceiptsPage() {
               <thead className="bg-ground border-b">
                 <tr>
                   <th className="text-left px-4 py-3 font-medium text-ink-soft">{t('grn.grnNumber', 'N° GRN')}</th>
-                  <th className="text-left px-4 py-3 font-medium text-ink-soft">{t('invoice.supplier', 'Fournisseur')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-ink-soft">{t('grn.purchaseOrder', 'Bon de commande')}</th>
                   <th className="text-left px-4 py-3 font-medium text-ink-soft">{t('grn.receivedDate', 'Date de réception')}</th>
-                  <th className="text-left px-4 py-3 font-medium text-ink-soft">{t('invoice.status', 'Statut')}</th>
-                  <th className="text-left px-4 py-3 font-medium text-ink-soft">Notes</th>
+                  <th className="text-left px-4 py-3 font-medium text-ink-soft">{t('grn.receivedBy', 'Réceptionné par')}</th>
+                  <th className="text-right px-4 py-3 font-medium text-ink-soft">{t('grn.lineCount', 'Lignes')}</th>
                   <th className="text-right px-4 py-3 font-medium text-ink-soft">{t('app.actions', 'Actions')}</th>
                 </tr>
               </thead>
@@ -215,19 +222,15 @@ export default function GoodsReceiptsPage() {
                 {grns.map(grn => (
                   <tr key={grn.id} className="hover:bg-ground">
                     <td className="px-4 py-3 num text-xs font-semibold text-ink">{grn.grnNumber}</td>
-                    <td className="px-4 py-3 text-ink-soft">{grn.supplierName ?? '—'}</td>
+                    <td className="px-4 py-3 num text-xs text-ink-soft">{grn.purchaseOrderNumber ?? '—'}</td>
                     <td className="px-4 py-3 text-ink-soft text-xs">
                       <div className="flex items-center gap-1.5">
                         <Calendar className="w-3.5 h-3.5" />
-                        {formatDate(grn.receivedDate)}
+                        {formatDate(grn.receiptDate)}
                       </div>
                     </td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_COLORS[grn.status] ?? 'bg-ground text-ink-soft'}`}>
-                        {grn.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-ink-soft text-xs truncate max-w-xs">{grn.notes ?? '—'}</td>
+                    <td className="px-4 py-3 text-ink-soft text-xs">{grn.receivedByUsername}</td>
+                    <td className="px-4 py-3 text-right num text-xs text-ink-soft">{grn.items?.length ?? 0}</td>
                     <td className="px-4 py-3 text-right">
                       <button onClick={() => setSelectedGrnId(grn.id)} className="text-primary hover:underline text-xs font-medium">
                         {t('app.view', 'Voir')}

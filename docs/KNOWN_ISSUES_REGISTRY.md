@@ -1937,3 +1937,50 @@ aurait **disparu silencieusement** de la reponse. Le validateur rattache donc ex
 violation au noeud `dueDate` (`addPropertyNode`), et un test assertant `$.errors[0]` contient
 « dueDate » verrouille ce contrat : sans lui, un futur retrait de `addPropertyNode` laisserait la
 suite verte alors que l'utilisateur ne verrait plus aucun motif de refus.
+
+
+---
+
+## PROB-136 — Liste des bons de reception vide codee en dur (AUDIT-028)
+
+**Date :** 2026-07-23 · **Phase :** P6 vague 1, lot V1-E · **Severite :** P1 (fonctionnalite entiere inoperante)
+
+**Symptome :** la page « Bons de Reception » affichait toujours « Aucun bon de reception enregistre ».
+`GET /api/v1/goods-receipts` -> **200 `{"data":[]}`** avec les jetons `aa` **et** `daf`. Ce n'etait
+pas une base vide : `select count(*) from goods_receipt_notes` = **11**, aucun `deleted_at`, et
+`GET /api/v1/goods-receipts?purchaseOrderId=...` renvoyait bien le GRN complet.
+
+**Root cause :** le controleur contenait litteralement
+`purchaseOrderId != null ? grnService.getGRNsByPurchaseOrder(...) : List.of()`. La branche « lister
+tous les GRN » n'a **jamais ete ecrite**, alors que le frontend appelle l'endpoint **sans aucun
+parametre** : les deux moities du contrat etaient incompatibles par construction. Le service avait
+pourtant tout le necessaire (`grnRepository`). `GoodsReceiptController` faisait partie des 14
+controleurs non testes recenses par AUDIT-013 — un seul test l'aurait attrape.
+
+**Solution :** `findAllActive(Pageable)` au repository (filtre `deletedAt IS NULL`), `getAllGRNs`
+au service, et branche « sans filtre » paginee au controleur, sur le modele de
+`PurchaseOrderController.listPurchaseOrders`. Le type de retour passe a
+`PagedResponse<GoodsReceiptDTO>` sur les DEUX branches — verifie en revue : la branche filtree
+n'avait **aucun consommateur**, donc aucun contrat casse, et une forme unique vaut mieux qu'un
+retour polymorphe.
+
+**Deux defauts collateraux, revele par le correctif lui-meme :**
+(a) **N+1** : `toDTO` traverse les lignes, le bon de commande et le receptionnaire, tous LAZY —
+soit `1 + N x (3 + M)` requetes par page (~1000 requetes pour `size=200`). Ferme par un
+`@EntityGraph`, comme le fait deja `PurchaseOrderRepository`. Le tri recoit un depart par
+`createdAt` : `receiptDate` est un `LocalDate`, donc les receptions d'une meme journee n'avaient
+aucun ordre determine et la pagination aurait ete instable.
+(b) **Colonnes fantomes** : le type frontend de la liste declarait `supplierName`, `receivedDate`,
+`status` et `notes` — **quatre champs que `GoodsReceiptDTO` ne renvoie pas**. Tant que la liste
+etait vide, personne ne le voyait ; des qu'elle se remplit, la page aurait affiche une date vide et
+trois colonnes a « — ». Le type et les colonnes sont realignes sur le DTO reel (bon de commande,
+date de reception, receptionnaire, nombre de lignes).
+
+**Preventive rule :** un `return List.of()` ou tout autre valeur vide **codee en dur** sur un chemin
+nominal est un bug, pas un defaut de donnees. Quand une liste s'affiche vide, verifier le contrat de
+l'endpoint AVANT de suspecter la base (rappel de PROB-005). Corollaire : un ecran qui n'a jamais
+affiche la moindre ligne n'a jamais valide son mapping — **le jour ou on repare la source de
+donnees, il faut relire le rendu**, car ses champs n'ont jamais ete confrontes a la reponse reelle.
+Corollaire de test : un mock de test qui sert une forme de payload que le backend ne produit pas
+rend le test vert sans rien prouver — ici l'unique test frontend de la page passait a l'identique
+avant et apres le correctif.
