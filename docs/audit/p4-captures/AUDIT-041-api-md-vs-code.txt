@@ -1,0 +1,61 @@
+PREUVE AUDIT-041 — docs/API.md diverge du code reel
+Date : 2026-07-23
+
+--- 1. volumetrie (extraction automatique) ---
+  endpoints REELS (annotations @*Mapping des 40 controleurs) : 219
+  endpoints DOCUMENTES dans docs/API.md                      : 86
+  non documentes (code sans doc) : 152
+  fantomes (doc sans code)       : 19
+
+--- 2. les 19 endpoints documentes qui n'existent pas dans le code ---
+    DELETE /api/v1/invoices/{}/documents/{}
+    GET /api/v1/audit-logs?action=APPROVE
+    GET /api/v1/audit-logs?entityId={}
+    GET /api/v1/audit-logs?userId={}
+    GET /api/v1/auth/me
+    GET /api/v1/invoices/{}/export?format=pdf
+    GET /api/v1/invoices/{}/payment
+    GET /api/v1/reports/export?format=pdf
+    GET /api/v1/reports/export?format=xlsx
+    GET /api/v1/reports/kpi
+    POST /api/v1/auth/logout
+    POST /api/v1/invoices/{}/assign-reviewer
+    POST /api/v1/invoices/{}/assign-reviewer-n2
+    POST /api/v1/invoices/{}/bon-a-payer
+    POST /api/v1/invoices/{}/payment
+    POST /api/v1/invoices/{}/reject
+    POST /api/v1/invoices/{}/validate-n1
+    POST /api/v1/invoices/{}/validate-n2
+    PUT /api/v1/matching-config
+
+--- 3. verification RUNTIME des endpoints fantomes (404 = doc fausse) ---
+   GET  /auth/me                                       -> 404
+   GET  /reports/kpi                                   -> 404
+   GET  /invoices/f7ca02fe-67df-4518-9f47-62d005138dbc/payment -> 404
+   GET  /invoices/f7ca02fe-67df-4518-9f47-62d005138dbc/export?format=pdf -> 404
+   GET  /reports/export?format=pdf                     -> 404
+   POST /auth/logout                                   -> 404
+   POST /invoices/{id}/validate-n1 (chemin API.md)     -> 404
+   POST /invoices/{id}/workflow/validate-n1            -> 400  (le VRAI chemin existe)
+
+--- 4. ecart de ROLES : API.md accorde ADMIN sur des surfaces financieres ---
+    (le CODE fait foi : il exclut ADMIN. La doc est fausse ; l'aligner sur le code,
+     surtout PAS l'inverse, qui serait une regression SoD.)
+    API.md:48:| POST | `/invoices` | ASSISTANT_COMPTABLE, ADMIN | Create draft invoice |
+    API.md:50:| PUT | `/invoices/{id}` | ASSISTANT_COMPTABLE, ADMIN | Update (BROUILLON or REJETE only) |
+    API.md:51:| DELETE | `/invoices/{id}` | ASSISTANT_COMPTABLE, ADMIN | Soft delete (BROUILLON only) |
+    API.md:101:| POST | `/invoices/{id}/bon-a-payer` | DAF, ADMIN | Status = VALIDE | VALIDE → BON_A_PAYER |
+    API.md:102:| POST | `/invoices/{id}/reject` | N1, N2, DAF, ADMIN | Reason required | Any review state → REJETE |
+    API.md:125:| POST | `/invoices/{id}/documents` | ASSISTANT_COMPTABLE, ADMIN | Upload file (multipart, max 10MB) |
+    API.md:128:| DELETE | `/invoices/{id}/documents/{docId}` | ASSISTANT_COMPTABLE, ADMIN | Remove document (BROUILLON only) |
+    API.md:139:| POST | `/invoices/{id}/payment` | ASSISTANT_COMPTABLE, ADMIN | Record payment (BON_A_PAYER only) |
+    API.md:141:| GET | `/payments` | DAF, ADMIN, ASSISTANT_COMPTABLE | List all payments (paginated) |
+    API.md:184:| GET | `/audit-logs?entityId={invoiceId}` | DAF, ADMIN | All actions on one invoice |
+    API.md:193:| GET | `/reports/kpi` | DAF, ADMIN, ASSISTANT_COMPTABLE | KPI dashboard data |
+    API.md:194:| GET | `/reports/export?format=xlsx` | DAF, ADMIN, ASSISTANT_COMPTABLE | Export filtered invoices to Excel |
+
+    code reel (InvoiceController) :
+    77:    @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER') and !hasRole('ADMIN')")
+    99:    @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER') and !hasRole('ADMIN')")
+    141:    @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER') and !hasRole('ADMIN')")
+    195:    @PreAuthorize("isAuthenticated() and !hasRole('SUPPLIER') and !hasRole('ADMIN')")

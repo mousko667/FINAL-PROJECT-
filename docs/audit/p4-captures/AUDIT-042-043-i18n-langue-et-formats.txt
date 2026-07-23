@@ -1,0 +1,51 @@
+PREUVES AUDIT-042 (langue non persistee) et AUDIT-043 (3 regimes de formatage)
+Date : 2026-07-23 | session Playwright, compte daf
+
+--- AUDIT-042 : lng:'fr' force court-circuite le LanguageDetector ---
+  frontend/src/i18n/index.ts :
+    i18n
+      .use(LanguageDetector)
+      .use(initReactI18next)
+      .init({
+        resources: {
+          fr: { translation: fr },
+          en: { translation: en },
+        },
+        // French is the default language
+        lng: 'fr',
+        fallbackLng: 'fr',
+        interpolation: {
+          escapeValue: false,
+        },
+        detection: {
+          order: ['localStorage', 'navigator'],
+          caches: ['localStorage'],
+          lookupLocalStorage: 'i18nextLng',
+        },
+      })
+
+  Mesure runtime :
+    1. clic sur #btn-language-switcher   -> i18nextLng='en', UI anglaise ('Purchase Orders','Payments')
+    2. navigation/rechargement de la page -> i18nextLng='fr', UI FRANCAISE ('Bons de Commande')
+    Reproduit 2 fois. La preference de langue de l'utilisateur est perdue a chaque rechargement.
+
+--- AUDIT-043 : trois regimes de formatage concurrents ---
+  A. helper central frontend/src/lib/format.ts : locale FR forcee, ignore la langue
+    const FR = 'fr-FR'
+    
+    /** Montant numérique en séparateurs FR (espace insécable), sans devise. */
+    export const formatAmount = (n: number | string | null | undefined): string =>
+      n == null || n === '' || isNaN(Number(n)) ? '—' : new Intl.NumberFormat(FR).format(Number(n))
+  B. ternaire duplique a la main dans les pages : 7 occurrences
+  C. toLocale* SANS locale (suit le navigateur) :
+    frontend/src/pages/ReportsPage.tsx:479:                      <td className="px-3 py-2 text-ink-soft">{new Date(p.paymentDate).toLocaleDateString()}</td>
+    frontend/src/pages/ReportsPage.tsx:513:                      <td className="px-3 py-2 text-ink-soft">{new Date(a.changedAt).toLocaleString()}</td>
+  D. locale 'fr-FR' en dur hors du helper :
+    frontend/src/pages/admin/AdminBackupsPage.tsx:91:                {new Date(status.lastBackupAt).toLocaleString('fr-FR', {
+    frontend/src/pages/admin/AdminBackupsPage.tsx:172:                        {new Date(log.createdAt).toLocaleString('fr-FR', {
+
+  Mesure runtime dans UNE SEULE session en anglais :
+    /payments  (regime B) -> dates '7/22/2026'      + separateur VIRGULE (5 occurrences) = format US correct
+    /invoices  (regime A) -> montants '1 500 000 XAF' separateur ESPACE (20 occurrences, 0 virgule)
+                             + dates '2026-06-01' en ISO brut (ni FR ni EN)
+    -> capture : AUDIT-format-invoices-EN-montants-FR-dates-ISO.png

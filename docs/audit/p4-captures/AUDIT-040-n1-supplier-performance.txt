@@ -1,0 +1,12 @@
+PREUVE AUDIT-040 — N+1 sur GET /reports/supplier/{id}/performance
+Date : 2026-07-23 | mesure par compteur seq_scan PostgreSQL (pg_stat_force_next_flush)
+
+Code : ReportServiceImpl.java:675 -> historyRepository.findAll() DANS la boucle ligne 674.
+Attendu si N+1 : +1 lecture complete de invoice_status_history par facture du fournisseur.
+
+  fournisseur teste : 40433645-5d4e-44a1-b985-9732454d986a
+  nombre de factures de ce fournisseur : 25
+  seq_scan(invoice_status_history) AVANT = 378
+  appel HTTP -> 200 en 0.113892s
+  seq_scan(invoice_status_history) APRES = 403
+  DELTA = 25   (attendu ~25 = 1 lecture par facture)

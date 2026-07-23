@@ -1,0 +1,21 @@
+PREUVE AUDIT-039 — exports HTTP 500 par cle i18n manquante
+Date : 2026-07-23 | branche audit/exhaustif-p4-transverse
+
+--- 1. la cle manque dans les DEUX catalogues (9 statuts pour 10 dans l'enum) ---
+  cles invoice.status FR = 9
+  cles invoice.status EN = 9
+  grep en_controle_aa dans les catalogues :
+src/main/resources/i18n/messages_fr.properties:0
+src/main/resources/i18n/messages_en.properties:0
+
+--- 2. reponses HTTP mesurees (jeton daf) ---
+  GET /invoices/export?format=csv                         -> 500
+  GET /invoices/export?format=xlsx                        -> 500
+  GET /invoices/export?format=csv&status=BROUILLON        -> 200
+  GET /invoices/export?format=csv&status=ARCHIVE          -> 200
+  GET /invoices/export?format=csv&status=EN_CONTROLE_AA   -> 500
+  GET /reports/export/excel                                  -> 500
+
+--- 3. cause exacte, journal backend ---
+org.springframework.context.NoSuchMessageException: No message found under code 'invoice.status.en_controle_aa' for locale 'fr'.
+org.springframework.context.NoSuchMessageException: No message found under code 'invoice.status.en_controle_aa' for locale 'fr'.
