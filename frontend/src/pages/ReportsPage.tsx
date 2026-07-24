@@ -292,6 +292,7 @@ export default function ReportsPage() {
           ) : !bottlenecks?.length ? (
             <p className="text-sm text-center text-ink-soft py-4">{t('reports.noBottlenecks')}</p>
           ) : (
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs text-ink-soft border-b border-hairline">
@@ -314,6 +315,7 @@ export default function ReportsPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </Section>
 

@@ -169,6 +169,7 @@ export default function AdminDelegationsPage() {
                   {t('admin.delegations.empty', 'No active delegations for this department.')}
                 </div>
               ) : (
+                <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-ink-faint text-xs font-medium uppercase tracking-wide bg-ground">
@@ -203,6 +204,7 @@ export default function AdminDelegationsPage() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               )}
             </Panel>
 

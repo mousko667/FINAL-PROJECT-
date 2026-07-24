@@ -351,6 +351,7 @@ export default function PaymentsPage() {
             ) : pendingInvoices.length === 0 ? (
               <div className="py-8 text-center text-sm text-ink-faint">{t('payments.noPending', 'Aucune facture en attente de paiement')}</div>
             ) : (
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-ground">
                   <tr>
@@ -401,6 +402,7 @@ export default function PaymentsPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </Panel>
         )}
@@ -463,6 +465,7 @@ export default function PaymentsPage() {
             </div>
           ) : (
             <>
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-ground">
                   <tr>
@@ -541,6 +544,7 @@ export default function PaymentsPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
 
               {payments && payments.totalPages > 1 && (
                 <div className="flex items-center justify-between px-4 py-3 border-t border-hairline bg-ground">

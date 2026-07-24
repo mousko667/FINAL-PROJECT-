@@ -2,6 +2,8 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAppSelector } from '@/store/hooks'
 import Header from '@/components/layout/Header'
+import { SidebarShell } from '@/components/layout/SidebarShell'
+import { SidebarDrawerProvider } from '@/components/layout/SidebarDrawerContext'
 import { useAuth } from '@/hooks/useAuth'
 import {
   LayoutDashboard,
@@ -40,9 +42,10 @@ export default function SupplierLayout() {
   const initials = user?.username ? user.username.slice(0, 2).toUpperCase() : '?'
 
   return (
+    <SidebarDrawerProvider>
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-64 flex flex-col shrink-0 bg-oct-navy text-white shadow-xl">
+      <SidebarShell>
         {/* Logo */}
         <div className="px-5 py-5 border-b border-white/10">
           <div className="flex items-center gap-2.5">
@@ -84,15 +87,16 @@ export default function SupplierLayout() {
             {t('auth.logout')}
           </button>
         </div>
-      </aside>
+      </SidebarShell>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <Header />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
           <Outlet />
         </main>
       </div>
     </div>
+    </SidebarDrawerProvider>
   )
 }

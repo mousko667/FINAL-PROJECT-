@@ -34,6 +34,7 @@ import {
   HardDrive,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { SidebarShell } from './SidebarShell'
 
 function NavItem({
   to,
@@ -90,7 +91,7 @@ export default function Sidebar() {
   })()
 
   return (
-    <aside className="w-64 flex flex-col shrink-0 bg-oct-navy text-white shadow-xl">
+    <SidebarShell>
       {/* Logo */}
       <div className="px-5 py-5 border-b border-white/10">
         <div className="flex items-center gap-2.5">
@@ -220,6 +221,6 @@ export default function Sidebar() {
         <span className="text-[10px] text-slate-400">v1.0.0 · OCT</span>
         <div className="w-1.5 h-1.5 rounded-full bg-pos" title={t('sidebar.systemOperational')} />
       </div>
-    </aside>
+    </SidebarShell>
   )
 }

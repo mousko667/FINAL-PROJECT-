@@ -308,6 +308,7 @@ export default function SupplierInvoicesPage() {
           </div>
         ) : (
           <>
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-ground">
                 <tr>
@@ -342,6 +343,7 @@ export default function SupplierInvoicesPage() {
                 ))}
               </tbody>
             </table>
+            </div>
 
             {data && data.totalPages > 1 && (
               <div className="flex items-center justify-between px-4 py-3 border-t border-hairline bg-ground">

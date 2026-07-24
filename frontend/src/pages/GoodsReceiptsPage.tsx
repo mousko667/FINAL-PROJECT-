@@ -279,7 +279,9 @@ export default function GoodsReceiptsPage() {
                     </div>
                     <div>
                       <h4 className="font-medium text-ink mb-3">{t('grn.items', 'Articles')}</h4>
-                      <div className="border border-hairline rounded-[4px] overflow-hidden">
+                      {/* AUDIT-019: overflow-x-auto, sinon overflow-hidden coupe les
+                          colonnes sur mobile sans permettre de les atteindre. */}
+                      <div className="border border-hairline rounded-[4px] overflow-x-auto">
                         <table className="w-full text-sm">
                           <thead className="bg-ground border-b border-hairline">
                             <tr>

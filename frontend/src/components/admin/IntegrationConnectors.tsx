@@ -83,6 +83,7 @@ export function IntegrationConnectors() {
       ) : connectors.length === 0 ? (
         <p className="text-sm text-ink-faint py-2">{t('admin.connectors.none', 'Aucun connecteur.')}</p>
       ) : (
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead><tr className="border-b text-left text-ink-soft">
             <th className="px-3 py-2 font-medium">{t('admin.connectors.name', 'Nom')}</th>
@@ -142,6 +143,7 @@ export function IntegrationConnectors() {
             ))}
           </tbody>
         </table>
+        </div>
       )}
 
       <ConfirmDialog

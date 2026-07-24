@@ -2,9 +2,10 @@ import { useTranslation } from 'react-i18next'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { logout } from '@/store/slices/authSlice'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
-import { LogOut, Globe, ChevronRight, Sun, Moon } from 'lucide-react'
+import { LogOut, Globe, ChevronRight, Sun, Moon, Menu } from 'lucide-react'
 import { NotificationDropdown } from './NotificationDropdown'
 import { useTheme } from '@/hooks/useTheme'
+import { useSidebarDrawer } from './SidebarDrawerContext'
 
 const BREADCRUMB_MAP: Record<string, string> = {
   '/dashboard':              'nav.dashboard',
@@ -56,6 +57,7 @@ export default function Header() {
   const { user } = useAppSelector((s) => s.auth)
   const { theme, toggleTheme } = useTheme()
   const breadcrumbs = useBreadcrumb()
+  const { isOpen, toggle } = useSidebarDrawer()
 
   const handleLogout = () => {
     dispatch(logout())
@@ -71,9 +73,22 @@ export default function Header() {
     : '??'
 
   return (
-    <header className="h-14 border-b border-hairline bg-surface flex items-center justify-between px-6 shrink-0">
+    <header className="h-14 border-b border-hairline bg-surface flex items-center justify-between px-4 md:px-6 shrink-0 gap-2">
+      {/* Hamburger — mobile only (AUDIT-019) */}
+      <button
+        id="btn-sidebar-toggle"
+        type="button"
+        onClick={toggle}
+        aria-label={t('nav.openMenu', 'Ouvrir le menu')}
+        aria-expanded={isOpen}
+        aria-controls="app-sidebar"
+        className="md:hidden p-2 -ml-1 text-ink-soft hover:bg-ground rounded-[4px] transition-colors shrink-0"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
+
       {/* Breadcrumb */}
-      <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+      <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-faint min-w-0 overflow-hidden">
         <Link to="/dashboard" className="hover:text-ink transition-colors">
           {t('nav.dashboard')}
         </Link>
@@ -92,7 +107,7 @@ export default function Header() {
       </div>
 
       {/* Right actions */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 md:gap-2 shrink-0">
         <button
           id="btn-language-switcher"
           onClick={toggleLanguage}

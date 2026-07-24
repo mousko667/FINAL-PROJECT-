@@ -88,7 +88,9 @@
     "archive": "Archive",
     "goodsReceipts": "Bons de Réception",
     "payments": "Paiements",
-    "departmentAccess": "Accès par département"
+    "departmentAccess": "Accès par département",
+    "openMenu": "Ouvrir le menu",
+    "closeMenu": "Fermer le menu"
   },
   "departmentAccess": {
     "title": "Accès par département",

@@ -337,6 +337,7 @@ function InvoiceCreatePageInner() {
             </form>
 
             {lineItems.length > 0 && (
+              <div className="overflow-x-auto">
               <table className="w-full text-sm mt-2">
                 <thead><tr className="border-b text-left text-ink-soft text-xs">
                   <th className="py-2">{t('invoice.description', 'Description')}</th>
@@ -364,6 +365,7 @@ function InvoiceCreatePageInner() {
                   </tr>
                 </tbody>
               </table>
+              </div>
             )}
           </div>
           <div className="flex justify-between">

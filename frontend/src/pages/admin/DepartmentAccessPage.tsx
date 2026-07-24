@@ -52,8 +52,10 @@ function DepartmentAccessPage() {
                 </span>
               </summary>
 
-              <div className="px-4 pb-4">
-                <table className="w-full text-sm">
+              {/* AUDIT-019: overflow-x-auto, sinon les colonnes débordent hors du
+                  viewport mobile sans aucun conteneur défilable pour les rattraper. */}
+              <div className="px-4 pb-4 overflow-x-auto">
+                <table className="w-full text-sm min-w-[34rem]">
                   <thead>
                     <tr className="text-left text-ink-soft border-b">
                       <th className="py-2">{t('departmentAccess.colName')}</th>

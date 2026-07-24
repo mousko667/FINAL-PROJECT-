@@ -209,6 +209,7 @@ function InvoiceListPage() {
 
         {!isLoading && !isError && (
           <>
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-ground">
                 <tr>
@@ -264,6 +265,7 @@ function InvoiceListPage() {
                 )}
               </tbody>
             </table>
+            </div>
 
             {/* Pagination */}
             {totalPages > 1 && (

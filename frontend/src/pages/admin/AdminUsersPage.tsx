@@ -86,6 +86,7 @@ function CsvToolbar({ from, to }: { from?: string, to?: string }) {
                 </span>
               </div>
               {report.errors.length > 0 && (
+                <div className="overflow-x-auto">
                 <table className="w-full text-xs border-collapse">
                   <thead>
                     <tr className="text-left text-ink-soft border-b">
@@ -104,6 +105,7 @@ function CsvToolbar({ from, to }: { from?: string, to?: string }) {
                     ))}
                   </tbody>
                 </table>
+                </div>
               )}
             </div>
           </div>
