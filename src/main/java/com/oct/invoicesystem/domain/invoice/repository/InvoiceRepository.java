@@ -91,6 +91,12 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
             """)
     Page<Invoice> findPendingValidationQueue(Pageable pageable);
 
+    // AUDIT-040: supplier-scoped fetch used by getSupplierPerformance. Replaces a findAll() +
+    // in-memory filter that read every invoice in the system on each performance report.
+    @EntityGraph(attributePaths = {"department", "supplier"})
+    @Query("SELECT i FROM Invoice i WHERE i.deletedAt IS NULL AND i.supplier IS NOT NULL AND i.supplier.id = :supplierId")
+    List<Invoice> findBySupplierIdActive(@Param("supplierId") UUID supplierId);
+
     @Query("SELECT i.supplierName, SUM(i.amount) FROM Invoice i WHERE i.deletedAt IS NULL GROUP BY i.supplierName ORDER BY SUM(i.amount) DESC")
     Page<Object[]> findTopSuppliersByAmount(Pageable pageable);
 

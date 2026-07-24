@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.Query;
@@ -22,6 +23,10 @@ public interface InvoiceStatusHistoryRepository extends JpaRepository<InvoiceSta
     List<InvoiceStatusHistory> findRelevantHistoryForProcessingTime();
 
     List<InvoiceStatusHistory> findByInvoiceIdOrderByChangedAtAsc(UUID invoiceId);
+
+    // AUDIT-040: single bulk load of history for a set of invoices, indexed in a Map by the caller.
+    // Replaces a findAll() executed once per invoice inside a loop (O(invoices x history), quadratic).
+    List<InvoiceStatusHistory> findByInvoiceIdIn(Collection<UUID> invoiceIds);
 
     // DTO projection avoids LazyInitializationException — joins invoice and user inside the query
     @Query("SELECT new com.oct.invoicesystem.domain.workflow.dto.InvoiceHistoryDTO(" +

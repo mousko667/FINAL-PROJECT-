@@ -639,11 +639,9 @@ public class ReportServiceImpl implements ReportService {
     public SupplierPerformanceDTO getSupplierPerformance(UUID supplierId) {
         log.info("Calculating performance metrics for supplier {}", supplierId);
 
-        // Get all invoices from this supplier that have been submitted (status SOUMIS or later)
-        List<Invoice> allInvoices = invoiceRepository.findAll();
-        List<Invoice> supplierInvoices = allInvoices.stream()
-                .filter(inv -> inv.getSupplier() != null && inv.getSupplier().getId().equals(supplierId))
-                .toList();
+        // AUDIT-040: fetch only this supplier's invoices in SQL, instead of findAll() + in-memory
+        // filter over every invoice in the system. Same result set (supplier non-null and equal).
+        List<Invoice> supplierInvoices = invoiceRepository.findBySupplierIdActive(supplierId);
 
         if (supplierInvoices.isEmpty()) {
             throw new ResourceNotFoundException("Supplier not found or has no invoices: " + supplierId);
@@ -674,11 +672,19 @@ public class ReportServiceImpl implements ReportService {
         double rejectionRate = totalCount > 0 ? (double) rejectedCount / totalCount : 0.0;
 
         // Calculate average payment time (SOUMIS -> PAYE)
+        // AUDIT-040: load the history for ALL of the supplier's invoices in ONE query, indexed by
+        // invoice id, instead of calling findAll() (a full table read) once per invoice inside the
+        // loop below — which was O(invoices x history), i.e. quadratic. The result is unchanged.
+        List<UUID> invoiceIds = supplierInvoices.stream().map(Invoice::getId).toList();
+        Map<UUID, List<InvoiceStatusHistory>> historyByInvoice = historyRepository.findByInvoiceIdIn(invoiceIds)
+                .stream()
+                .collect(Collectors.groupingBy(h -> h.getInvoice().getId()));
+
         double averagePaymentDays = 0.0;
         List<Long> paymentDurations = new ArrayList<>();
         for (Invoice inv : supplierInvoices) {
-            List<InvoiceStatusHistory> history = historyRepository.findAll().stream()
-                    .filter(h -> h.getInvoice().getId().equals(inv.getId()))
+            List<InvoiceStatusHistory> history = historyByInvoice.getOrDefault(inv.getId(), List.of())
+                    .stream()
                     .sorted(Comparator.comparing(InvoiceStatusHistory::getChangedAt))
                     .toList();
 

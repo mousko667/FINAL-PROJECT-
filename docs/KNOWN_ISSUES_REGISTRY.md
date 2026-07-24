@@ -2331,3 +2331,32 @@ triggers de retention (V33) et confirmer qu'il s'agit d'un UPDATE, pas d'un DELE
 (APPROVED avec action_at), jamais en PENDING "a cloturer plus tard" si rien ne la cloture. Une etape
 PENDING sans transition de fermeture produit une donnee d'audit fausse qu'aucun test ne detecte tant
 qu'on n'inspecte pas l'etat REEL en base (regle verify-runtime-not-snapshot).
+
+## PROB-150 -- N+1 quadratique : findAll() de l'historique DANS une boucle par facture
+
+**Date :** 2026-07-24 | **Contexte :** P6 vague 4, lot V4-C bis (AUDIT-040)
+
+**Symptome :** GET /reports/supplier/{id}/performance relisait TOUTE la table invoice_status_history
+une fois PAR facture du fournisseur (historyRepository.findAll() a l'interieur de la boucle for), et
+relisait aussi toute la table invoices puis filtrait en memoire. Cout O(factures x historique),
+quadratique. Mesure : fournisseur a 25 factures -> seq_scan(invoice_status_history) delta = 25.
+Indolore au volume de demo (114 ms) mais degenere en production.
+
+**Cause racine :** filtrage fait en Java au lieu de SQL. findAll() dans une boucle est le pire des
+anti-patterns N+1 : chaque iteration recharge l'integralite de la table.
+
+**Solution :** (a) invoiceRepository.findBySupplierIdActive(id) (requete scopee + @EntityGraph)
+remplace findAll()+filtre memoire. (b) historyRepository.findByInvoiceIdIn(ids) charge l'historique
+de TOUTES les factures en UN seul appel, hors boucle, indexe en Map<UUID,List>. Mesure apres
+redeploiement : delta seq_scan 25 -> 1, latence 114 ms -> 56 ms, valeur retournee identique.
+
+**Piege de mesure (herite de P4) :** le collecteur de stats PostgreSQL est ASYNCHRONE. Un releve de
+seq_scan immediatement apres l'appel HTTP renvoie 0 (les stats des backends du pool ne sont pas
+encore agregees). Il faut pg_stat_clear_snapshot() + une attente (~3 s) avant de relire, sinon on
+conclut faussement "aucune lecture". Ne jamais mesurer un compteur pg_stat sans laisser le collecteur
+s'agreger.
+
+**Preventive rule :** jamais de findAll() (ni de repository call) a l'interieur d'une boucle --
+charger en lot hors boucle (findByXIn) et indexer en Map. Un test de non-regression doit poser
+verify(never()).findAll() pour empecher le retour de l'anti-pattern, en plus de verifier que la
+valeur retournee est inchangee.

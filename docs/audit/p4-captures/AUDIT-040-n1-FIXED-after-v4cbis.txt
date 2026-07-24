@@ -1,0 +1,29 @@
+PREUVE AUDIT-040 (CORRIGE) — N+1 supprime sur GET /reports/supplier/{id}/performance
+Date : 2026-07-24 | P6 vague 4, lot V4-C bis | mesure seq_scan (pg_stat_clear_snapshot + attente)
+
+Correction : ReportServiceImpl.getSupplierPerformance
+  - invoiceRepository.findAll() + filtre en memoire  ->  invoiceRepository.findBySupplierIdActive(id)
+  - historyRepository.findAll() DANS la boucle par facture
+        ->  historyRepository.findByInvoiceIdIn(ids) UNE fois hors boucle, indexe en Map<UUID,List>
+
+Meme fournisseur qu'en P4 : 40433645-5d4e-44a1-b985-9732454d986a (25 factures).
+
+  --- AVANT (backend N+1, code d'origine, re-mesure du 2026-07-24) ---
+  seq_scan(invoice_status_history) AVANT = 570
+  appel HTTP -> 200
+  seq_scan(invoice_status_history) APRES = 595
+  DELTA = 25   (1 lecture complete de la table par facture — reproduit la preuve P4)
+
+  --- APRES (backend redeploye avec la correction) ---
+  HTTP: 200 en 0.055759s   (contre ~0.114s avant)
+  payload inchange : total=25 matched=1 mismatched=0 accuracy=1.0 avgDays=4.0
+  seq_scan AVANT=596 APRES=597
+  DELTA = 1    <-- objectif du finding atteint (le delta tombe de 25 a ~1)
+
+Non-regression sur la VALEUR : ReportServiceTest.getSupplierPerformance_CalculatesCorrectMetrics
+conserve exactement les memes assertions (accuracy 0.67, avgDays 10.0, total 3, matched 1,
+mismatched 1) apres migration des mocks vers findBySupplierIdActive / findByInvoiceIdIn, plus
+verify(never()).findAll() sur les deux repositories et verify(times(1)).findByInvoiceIdIn.
+
+Flyway au redeploiement : "Migrating schema public to version 49 ... Successfully applied 1
+migration, now at version v49" (V49 de V4-C, idempotente, no-op car deja appliquee a la main).

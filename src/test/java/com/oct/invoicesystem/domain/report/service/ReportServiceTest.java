@@ -45,7 +45,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ReportServiceTest {
@@ -520,8 +520,10 @@ class ReportServiceTest {
                 .matchingStatus("MISMATCH")
                 .build();
         
-        when(invoiceRepository.findAll()).thenReturn(List.of(matchedInvoice, pendingInvoice, mismatchInvoice));
-        
+        // AUDIT-040: the service now fetches the supplier's invoices directly, not findAll().
+        when(invoiceRepository.findBySupplierIdActive(supplierId))
+                .thenReturn(List.of(matchedInvoice, pendingInvoice, mismatchInvoice));
+
         // Mock payment history for average payment time
         Instant now = Instant.now();
         List<InvoiceStatusHistory> paymentHistories = List.of(
@@ -536,18 +538,25 @@ class ReportServiceTest {
                 .changedAt(now)
                 .build()
         );
-        when(historyRepository.findAll()).thenReturn(paymentHistories);
+        // AUDIT-040: history is now loaded once for all invoices via findByInvoiceIdIn, not findAll().
+        when(historyRepository.findByInvoiceIdIn(anyCollection())).thenReturn(paymentHistories);
 
         // Act
         SupplierPerformanceDTO result = reportService.getSupplierPerformance(supplierId);
 
-        // Assert
+        // Assert — values are UNCHANGED from before the N+1 fix (non-regression on the returned value).
         assertEquals(supplierId.toString(), result.getSupplierId());
         assertEquals(0.67, result.getInvoiceAccuracyRate(), 0.01); // 2/3
         assertEquals(10.0, result.getAveragePaymentDays(), 0.01); // 10 days
         assertEquals(3, result.getTotalInvoicesSubmitted());
         assertEquals(1, result.getMatchedInvoices());
         assertEquals(1, result.getMismatchedInvoices());
+
+        // AUDIT-040: the quadratic pattern is gone — no full-table read of invoices or history.
+        verify(invoiceRepository, never()).findAll();
+        verify(historyRepository, never()).findAll();
+        // The bulk history load happens exactly once, outside the per-invoice loop.
+        verify(historyRepository, times(1)).findByInvoiceIdIn(anyCollection());
     }
 
     @Test
