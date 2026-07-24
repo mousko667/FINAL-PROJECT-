@@ -12,6 +12,8 @@ import { DocumentViewerModal } from '@/components/invoice/DocumentViewerModal'
 import { ExportMenu } from '@/components/ui/ExportMenu'
 import { Panel } from '@/components/ui/Panel'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { PageRoleGuard } from '@/components/auth/RoleGuard'
+import { INVOICE_VIEW_ROLES } from '@/constants/invoiceRoles'
 import { ValidationChecklist } from '@/components/invoice/ValidationChecklist'
 import { useAppSelector } from '@/store/hooks'
 import { Loader2, ArrowLeft, Download, CheckCircle, XCircle, AlertTriangle, MinusCircle, Clock, User, FileDown, Lock, Eye } from 'lucide-react'
@@ -73,7 +75,7 @@ function SensitivityBadge({ level }: { level: string }) {
   )
 }
 
-export default function InvoiceDetailPage() {
+function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
@@ -523,5 +525,18 @@ export default function InvoiceDetailPage() {
         />
       )}
     </div>
+  )
+}
+
+/**
+ * AUDIT-003: same guard as InvoiceListPage. Without it, a refused role (ADMIN) got
+ * the generic "Une erreur est survenue" screen off the backend 403 instead of the
+ * explicit "Acces non autorise" the other 18 financial pages show.
+ */
+export default function InvoiceDetailPageWrapper() {
+  return (
+    <PageRoleGuard allowedRoles={INVOICE_VIEW_ROLES}>
+      <InvoiceDetailPage />
+    </PageRoleGuard>
   )
 }

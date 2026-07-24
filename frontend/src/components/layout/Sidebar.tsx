@@ -206,13 +206,20 @@ export default function Sidebar() {
           <NavItem to="/admin/archive-compliance" icon={ShieldCheck} label={t('archiveCompliance.navTitle', 'Conformité archives')} />
           <NavItem to="/admin/retention-disposition" icon={Trash2} label={t('retentionDisposition.navTitle', 'Purge')} />
           <NavItem to="/admin/checklist-templates" icon={ListChecks} label={t('checklist.navTitle', 'Checklists')} />
-          <RoleGuard allowedRoles={['ROLE_ADMIN', 'ROLE_DAF']} fallback={null}>
-            <NavItem to="/admin/escalation-rules" icon={AlarmClock} label={t('escalationRules.navTitle', 'Escalades')} />
-          </RoleGuard>
+          {/* AUDIT-005: the "Escalades" entry used to sit HERE, inside the ADMIN block —
+              its own ROLE_DAF guard was dead code, so the DAF held the right (page and
+              backend both allow it) with no way to navigate to it. Moved out below. */}
           <NavItem to="/admin/security" icon={Shield} label={t('admin.security.title', 'Sécurité')} />
           <NavItem to="/admin/compliance" icon={ShieldAlert} label={t('admin.compliance.navTitle', 'Conformité')} />
           <NavItem to="/admin/backups" icon={HardDrive} label={t('admin.backups.navTitle', 'Sauvegardes')} />
           <NavItem to="/admin/integrations" icon={Zap} label={t('admin.integrations.title', 'Intégrations')} />
+        </RoleGuard>
+
+        {/* AUDIT-005: escalation rules are open to ADMIN *and* DAF (EscalationRulesPage:57
+            and EscalationRuleController agree). At the top level, the guard is effective
+            for both — nested inside the ADMIN block, the DAF branch could never match. */}
+        <RoleGuard allowedRoles={['ROLE_ADMIN', 'ROLE_DAF']} fallback={null}>
+          <NavItem to="/admin/escalation-rules" icon={AlarmClock} label={t('escalationRules.navTitle', 'Escalades')} />
         </RoleGuard>
       </nav>
 

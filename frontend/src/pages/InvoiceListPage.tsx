@@ -13,22 +13,8 @@ import { Plus, Upload, Search, ChevronLeft, ChevronRight, Loader2, Archive, Lock
 import { PageHeader } from '@/components/ui/PageHeader'
 import { formatAmount, formatDate } from '@/lib/format'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
+import { INVOICE_VIEW_ROLES } from '@/constants/invoiceRoles'
 
-const ALLOWED_ROLES = [
-  'ROLE_ASSISTANT_COMPTABLE',
-  'ROLE_DAF',
-  'ROLE_VALIDATEUR_N1_DRH',
-  'ROLE_VALIDATEUR_N1_DG',
-  'ROLE_VALIDATEUR_N1_INFO',
-  'ROLE_VALIDATEUR_N2_INFO',
-  'ROLE_VALIDATEUR_N1_TERM',
-  'ROLE_VALIDATEUR_N1_COM',
-  'ROLE_VALIDATEUR_N1_QHSSE',
-  'ROLE_VALIDATEUR_N1_INFRA',
-  'ROLE_VALIDATEUR_N2_INFRA',
-  'ROLE_VALIDATEUR_N1_TECH',
-  'ROLE_VALIDATEUR_N2_TECH'
-]
 
 const ALL_STATUSES: InvoiceStatus[] = [
   'BROUILLON', 'SOUMIS', 'EN_CONTROLE_AA', 'EN_VALIDATION_N1', 'EN_VALIDATION_N2',
@@ -312,7 +298,7 @@ function InvoiceListPage() {
 
 export default function InvoiceListPageWrapper() {
   return (
-    <PageRoleGuard allowedRoles={ALLOWED_ROLES}>
+    <PageRoleGuard allowedRoles={INVOICE_VIEW_ROLES}>
       <InvoiceListPage />
     </PageRoleGuard>
   )

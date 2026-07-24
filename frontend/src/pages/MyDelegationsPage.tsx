@@ -5,6 +5,7 @@ import apiClient from '@/services/apiClient'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { UserCheck, Loader2, Trash2, Plus, AlertCircle } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { PageRoleGuard } from '@/components/auth/RoleGuard'
 
 interface Delegation {
   id: string
@@ -18,7 +19,24 @@ interface Delegation {
 
 interface Delegatee { id: string; username: string; fullName: string }
 
-/** M6 — self-service: an approver delegates their own approvals while absent. */
+/**
+ * M6 — self-service: an approver delegates their own approvals while absent.
+ *
+ * AUDIT-004: the page had no guard while the sidebar reserved its entry to approvers,
+ * so an ADMIN or ASSISTANT_COMPTABLE typing the URL reached it. This list mirrors
+ * Sidebar.tsx and the backend's APPROVER_ROLES (DelegationController:64-70) exactly —
+ * DAF plus the 11 validators, ADMIN excluded (SoD).
+ */
+const DELEGATION_ROLES = [
+  'ROLE_DAF',
+  'ROLE_VALIDATEUR_N1_DRH', 'ROLE_VALIDATEUR_N1_DG',
+  'ROLE_VALIDATEUR_N1_INFO', 'ROLE_VALIDATEUR_N2_INFO',
+  'ROLE_VALIDATEUR_N1_TERM', 'ROLE_VALIDATEUR_N1_COM',
+  'ROLE_VALIDATEUR_N1_QHSSE', 'ROLE_VALIDATEUR_N1_INFRA',
+  'ROLE_VALIDATEUR_N2_INFRA', 'ROLE_VALIDATEUR_N1_TECH',
+  'ROLE_VALIDATEUR_N2_TECH',
+]
+
 export default function MyDelegationsPage() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
@@ -70,7 +88,8 @@ export default function MyDelegationsPage() {
   const isActive = (d: Delegation) => d.fromDate <= today && d.toDate >= today
 
   return (
-    <div className="space-y-6">
+    <PageRoleGuard allowedRoles={DELEGATION_ROLES}>
+      <div className="space-y-6">
       <PageHeader
         title={
           <span className="flex items-center gap-2">
@@ -157,5 +176,6 @@ export default function MyDelegationsPage() {
         onCancel={() => setRevokeTargetId(null)}
       />
     </div>
+    </PageRoleGuard>
   )
 }
