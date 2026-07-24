@@ -7,6 +7,9 @@ import { setCredentials, logout } from '@/store/slices/authSlice'
 import AppRoutes from './AppRoutes'
 import '@/i18n'
 import apiClient from '@/services/apiClient'
+import { isNetworkError } from '@/lib/apiError'
+import { OfflineBanner } from '@/components/OfflineBanner'
+import { ErrorToaster } from '@/components/ErrorToaster'
 import { useSessionTimeout } from '@/hooks/useSessionTimeout'
 import { useTheme } from '@/hooks/useTheme'
 
@@ -24,6 +27,9 @@ const queryClient = new QueryClient({
 // breaking role-based routing, sidebar, and action buttons.
 function AuthRehydrator({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false)
+  const [offline, setOffline] = useState(false)
+  // Bumped by the retry button to re-run the effect after an outage.
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken')
@@ -31,6 +37,7 @@ function AuthRehydrator({ children }: { children: React.ReactNode }) {
       setReady(true)
       return
     }
+    setOffline(false)
     apiClient
       .get('/profile')
       .then((res) => {
@@ -50,14 +57,21 @@ function AuthRehydrator({ children }: { children: React.ReactNode }) {
           })
         )
       })
-      .catch(() => {
+      .catch((err) => {
+        // AUDIT-014: a backend outage rejects with NO response at all. Wiping the
+        // session here turned every server outage into a silent logout. Only an
+        // actual authentication rejection may clear the token.
+        if (isNetworkError(err)) {
+          setOffline(true)
+          return
+        }
         // Token invalid or expired — clear and send to login
         store.dispatch(logout())
         localStorage.removeItem('accessToken')
         localStorage.removeItem('refreshToken')
       })
       .finally(() => setReady(true))
-  }, [])
+  }, [attempt])
 
   if (!ready) {
     return (
@@ -65,6 +79,11 @@ function AuthRehydrator({ children }: { children: React.ReactNode }) {
         <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     )
+  }
+
+  // AUDIT-014: the session is kept intact — the user is not signed out by an outage.
+  if (offline) {
+    return <OfflineBanner onRetry={() => setAttempt((n) => n + 1)} />
   }
 
   return <>{children}</>
@@ -92,6 +111,8 @@ function App() {
             <ThemeManager />
             <SessionTimeoutManager />
             <AppRoutes />
+            {/* AUDIT-014: single mount point for mutation failure notices. */}
+            <ErrorToaster />
           </AuthRehydrator>
         </BrowserRouter>
       </QueryClientProvider>

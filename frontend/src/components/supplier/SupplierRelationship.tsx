@@ -5,6 +5,7 @@ import apiClient from '@/services/apiClient'
 import { FileText, MessageSquare, Plus, Trash2, Loader2 } from 'lucide-react'
 import { formatDateTime } from '@/lib/format'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { notifyApiError } from '@/components/ErrorToaster'
 
 interface Contract {
   id: string; reference: string; title: string
@@ -35,11 +36,13 @@ export function SupplierRelationship({ supplierId, canEdit }: { supplierId: stri
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
 
   const addContract = useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: () => apiClient.post(`/suppliers/${supplierId}/contracts`, {
       reference: cRef, title: cTitle, startDate: cStart || null, endDate: cEnd || null, status: 'ACTIVE' }),
     onSuccess: () => { setCRef(''); setCTitle(''); setCStart(''); setCEnd(''); queryClient.invalidateQueries({ queryKey: ['supplier-contracts', supplierId] }) },
   })
   const delContract = useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: (id: string) => apiClient.delete(`/suppliers/${supplierId}/contracts/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['supplier-contracts', supplierId] })
@@ -47,6 +50,7 @@ export function SupplierRelationship({ supplierId, canEdit }: { supplierId: stri
     },
   })
   const addComm = useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: () => apiClient.post(`/suppliers/${supplierId}/communications`, { channel: mChannel, subject: mSubject, body: mBody }),
     onSuccess: () => { setMSubject(''); setMBody(''); setMChannel('NOTE'); queryClient.invalidateQueries({ queryKey: ['supplier-comms', supplierId] }) },
   })

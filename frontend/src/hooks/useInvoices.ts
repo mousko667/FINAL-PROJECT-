@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { invoiceService, type InvoiceFilters } from '@/services/invoiceService'
 import type { Invoice } from '@/types/invoice'
+import { notifyApiError } from '@/components/ErrorToaster'
 
 /**
  * useInvoices — fetches paginated invoice list.
@@ -30,6 +31,7 @@ export function useInvoice(id: string | undefined) {
 export function useUpdateInvoiceStatus(invoiceId: string) {
   const qc = useQueryClient()
   return useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: ({ action, reason }: { action: string; reason?: string }) =>
       invoiceService.updateStatus(invoiceId, action, reason),
     onSuccess: () => {
@@ -45,6 +47,7 @@ export function useUpdateInvoiceStatus(invoiceId: string) {
 export function useCreateInvoice() {
   const qc = useQueryClient()
   return useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: (payload: Partial<Invoice>) => invoiceService.create(payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['invoices'] })

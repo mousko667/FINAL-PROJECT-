@@ -8,6 +8,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useAppDispatch } from '@/store/hooks'
 import { setCredentials } from '@/store/slices/authSlice'
 import apiClient from '@/services/apiClient'
+import { isNetworkError, hasStatus } from '@/lib/apiError'
 import { AlertCircle, Loader2, Globe, ShieldCheck, ArrowLeft, KeyRound } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 
@@ -249,7 +250,9 @@ export default function LoginPage() {
                   {setupConfirmMutation.isError && (
                     <div className="flex items-center gap-2 bg-crit-bg border border-crit/30 text-crit rounded-[4px] px-4 py-3 text-sm">
                       <AlertCircle className="w-4 h-4 shrink-0" />
-                      {t('mfa.invalidOtp', 'Code invalide. Vérifiez votre application et réessayez.')}
+                      {isNetworkError(setupConfirmMutation.error)
+                        ? t('error.network')
+                        : t('mfa.invalidOtp', 'Code invalide. Vérifiez votre application et réessayez.')}
                     </div>
                   )}
 
@@ -314,7 +317,9 @@ export default function LoginPage() {
               {mfaMutation.isError && (
                 <div className="flex items-center gap-2 bg-crit-bg border border-crit/30 text-crit rounded-[4px] px-4 py-3 mb-6 text-sm">
                   <AlertCircle className="w-4 h-4 shrink-0" />
-                  {t('mfa.invalidOtp')}
+                  {isNetworkError(mfaMutation.error)
+                    ? t('error.network')
+                    : t('mfa.invalidOtp')}
                 </div>
               )}
 
@@ -378,9 +383,16 @@ export default function LoginPage() {
               {loginMutation.isError && (
                 <div className="flex items-center gap-2 bg-crit-bg border border-crit/30 text-crit rounded-[4px] px-4 py-3 mb-6 text-sm">
                   <AlertCircle className="w-4 h-4 shrink-0" />
-                  {(loginMutation.error as { response?: { status?: number } })?.response?.status === 423
-                    ? t('auth.accountLocked', 'Your account is locked after too many failed attempts. Please contact an administrator.')
-                    : t('auth.loginError')}
+                  {/* AUDIT-035: an unreachable backend rejects with NO response —
+                      claiming "wrong credentials" made users retry passwords and
+                      risk locking their own account. Only a real 401 says that. */}
+                  {isNetworkError(loginMutation.error)
+                    ? t('error.network')
+                    : hasStatus(loginMutation.error, 423)
+                      ? t('auth.accountLocked', 'Your account is locked after too many failed attempts. Please contact an administrator.')
+                      : hasStatus(loginMutation.error, 401)
+                        ? t('auth.loginError')
+                        : t('error.server')}
                 </div>
               )}
 

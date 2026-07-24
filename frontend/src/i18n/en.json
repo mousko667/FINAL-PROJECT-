@@ -985,7 +985,9 @@
       "PARTIAL": "Partial",
       "MISMATCH": "Mismatch",
       "OVERRIDDEN": "Overridden"
-    }
+    },
+    "emptyTitle": "No matching for this invoice",
+    "emptyHint": "This invoice is not linked to a purchase order, so there is nothing to match."
   },
   "approvals": {
     "title": "Approval Queue",
@@ -1008,7 +1010,12 @@
   "error": {
     "invoice": {
       "no_document": "Please attach at least one document before submitting the invoice."
-    }
+    },
+    "network": "Service unavailable — the server could not be reached. Check your connection or try again shortly.",
+    "unauthorized": "Session expired. Please sign in again.",
+    "forbidden": "You do not have the required permissions for this action.",
+    "notFound": "Item not found.",
+    "server": "An error occurred. The action was not saved."
   },
   "validation": {
     "required": "This field is required",

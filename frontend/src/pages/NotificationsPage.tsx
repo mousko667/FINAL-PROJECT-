@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { formatDateTime } from '@/lib/format'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { notifyApiError } from '@/components/ErrorToaster'
 
 interface ApiNotification {
   id: string
@@ -47,11 +48,13 @@ export default function NotificationsPage() {
   })
 
   const markReadMutation = useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: (id: string) => apiClient.patch(`/notifications/${id}/read`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications-page'] }),
   })
 
   const markAllMutation = useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: () => apiClient.patch('/notifications/read-all'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications-page'] })

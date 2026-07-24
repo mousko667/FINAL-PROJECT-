@@ -5,6 +5,7 @@ import type { ArchiveFolder, ArchiveFolderCreateRequest, ArchiveFolderUpdateRequ
 import apiClient from '@/services/apiClient'
 import { Folder, FolderOpen, MoreVertical, Plus, Edit2, Trash2, ChevronRight, ChevronDown, Loader2 } from 'lucide-react'
 import { useAppSelector } from '@/store/hooks'
+import { notifyApiError } from '@/components/ErrorToaster'
 
 interface ArchiveFolderTreeProps {
   selectedFolderId: string | null
@@ -31,6 +32,7 @@ export default function ArchiveFolderTree({ selectedFolderId, onSelectFolder }: 
   })
 
   const createMutation = useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: (data: ArchiveFolderCreateRequest) => apiClient.post('/archive/folders', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['archive-folders'] })
@@ -40,6 +42,7 @@ export default function ArchiveFolderTree({ selectedFolderId, onSelectFolder }: 
   })
 
   const updateMutation = useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: ({ id, data }: { id: string; data: ArchiveFolderUpdateRequest }) => apiClient.put(`/archive/folders/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['archive-folders'] })
@@ -48,6 +51,7 @@ export default function ArchiveFolderTree({ selectedFolderId, onSelectFolder }: 
   })
 
   const deleteMutation = useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: (id: string) => apiClient.delete(`/archive/folders/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['archive-folders'] })

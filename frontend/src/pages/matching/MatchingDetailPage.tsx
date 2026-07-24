@@ -2,7 +2,8 @@ import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Loader2 } from 'lucide-react'
+import { Loader2, FileSearch } from 'lucide-react'
+import { hasStatus } from '@/lib/apiError'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { Panel } from '@/components/ui/Panel'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -24,11 +25,19 @@ export default function MatchingDetailPage() {
   const { t } = useTranslation()
   const { invoiceId } = useParams<{ invoiceId: string }>()
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['matching-lines', invoiceId],
     queryFn: () => getMatchingLines(invoiceId!),
     enabled: !!invoiceId,
+    // A 404 is the backend's normal answer for an invoice with no purchase order —
+    // retrying it would only delay the empty state (AUDIT-025). This page reads a
+    // single resource, so no failure here is worth a retry.
+    retry: false,
   })
+
+  // AUDIT-025: 404 means "no matching for this invoice", not "the system is down".
+  // Only a real failure (5xx, network) may show the error screen.
+  const isEmpty = hasStatus(error, 404) || (!isError && !data)
 
   const [resolvingLine, setResolvingLine] = useState<{ poLineId: string; description: string } | null>(null)
 
@@ -61,6 +70,12 @@ export default function MatchingDetailPage() {
         {isLoading ? (
           <div className="flex justify-center py-20">
             <Loader2 className="w-6 h-6 animate-spin text-ink-faint" />
+          </div>
+        ) : isEmpty ? (
+          <div data-testid="matching-empty" className="py-16 text-center">
+            <FileSearch className="w-8 h-8 mx-auto mb-3 text-ink-faint" />
+            <p className="text-sm font-medium text-ink">{t('matching.emptyTitle')}</p>
+            <p className="mt-1 text-sm text-ink-soft">{t('matching.emptyHint')}</p>
           </div>
         ) : isError || !data ? (
           <p className="text-sm text-crit">{t('matching.error')}</p>

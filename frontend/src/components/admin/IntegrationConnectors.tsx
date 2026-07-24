@@ -5,6 +5,7 @@ import apiClient from '@/services/apiClient'
 import { Plug, Plus, Trash2, Loader2, Wifi, RefreshCw, Clock } from 'lucide-react'
 import { formatDateTime } from '@/lib/format'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { notifyApiError } from '@/components/ErrorToaster'
 
 interface Connector {
   id: string; name: string; type: string; endpoint: string | null; enabled: boolean
@@ -33,22 +34,27 @@ export function IntegrationConnectors() {
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['integration-connectors'] })
 
   const create = useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: () => apiClient.post('/integrations/connectors', { name, type, endpoint: endpoint || null }),
     onSuccess: () => { setName(''); setEndpoint(''); setType('MOCK'); invalidate() },
   })
   const test = useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: (id: string) => apiClient.post(`/integrations/connectors/${id}/test`),
     onSettled: () => { setTesting(null); invalidate() },
   })
   const del = useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: (id: string) => apiClient.delete(`/integrations/connectors/${id}`),
     onSuccess: () => { invalidate(); setDeleteTargetId(null) },
   })
   const syncNow = useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: (id: string) => apiClient.post(`/integrations/connectors/${id}/sync`),
     onSettled: () => { setSyncing(null); invalidate() },
   })
   const updateSchedule = useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: ({ id, minutes }: { id: string; minutes: number | null }) =>
       apiClient.put(`/integrations/connectors/${id}/sync-schedule`, { syncIntervalMinutes: minutes }),
     onSuccess: invalidate,

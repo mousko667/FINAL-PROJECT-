@@ -8,6 +8,7 @@ import { ShieldCheck, Loader2, Check, X } from 'lucide-react'
 import { Panel } from '@/components/ui/Panel'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
+import { notifyApiError } from '@/components/ErrorToaster'
 
 const ADMIN_ROLES = ['ROLE_ADMIN']
 
@@ -37,6 +38,7 @@ function AdminAccessRequestsPage() {
   })
 
   const review = useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: ({ id, approve }: { id: string; approve: boolean }) =>
       apiClient.patch(`/access-requests/${id}`, { approve, comment: comment[id] || null }),
     onSettled: () => {

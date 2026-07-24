@@ -5,6 +5,7 @@ import apiClient from '@/services/apiClient'
 import { Loader2, CheckCircle, Save } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
+import { notifyApiError } from '@/components/ErrorToaster'
 
 const ADMIN_ROLES = ['ROLE_ADMIN']
 
@@ -54,6 +55,7 @@ function ApprovalMatrixPage() {
   })
 
   const updateMutation = useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: ({ id, body }: { id: string; body: Partial<Department> }) =>
       apiClient.put(`/departments/${id}`, body),
     onSuccess: () => {

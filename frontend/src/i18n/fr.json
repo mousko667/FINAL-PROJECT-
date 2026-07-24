@@ -985,7 +985,9 @@
       "PARTIAL": "Partiel",
       "MISMATCH": "Écart",
       "OVERRIDDEN": "Forcé"
-    }
+    },
+    "emptyTitle": "Aucun rapprochement pour cette facture",
+    "emptyHint": "Cette facture n’est pas rattachée à un bon de commande : il n’y a donc rien à rapprocher."
   },
   "approvals": {
     "title": "File d'approbation",
@@ -1008,7 +1010,12 @@
   "error": {
     "invoice": {
       "no_document": "Veuillez joindre au moins un document avant de soumettre la facture."
-    }
+    },
+    "network": "Service indisponible — impossible de joindre le serveur. Vérifiez votre connexion ou réessayez dans un instant.",
+    "unauthorized": "Session expirée. Veuillez vous reconnecter.",
+    "forbidden": "Vous n’avez pas les droits nécessaires pour cette action.",
+    "notFound": "Élément introuvable.",
+    "server": "Une erreur est survenue. L’action n’a pas été enregistrée."
   },
   "validation": {
     "required": "Ce champ est obligatoire",

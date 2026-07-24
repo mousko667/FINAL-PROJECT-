@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import apiClient from '@/services/apiClient'
+import { notifyApiError } from '@/components/ErrorToaster'
 
 export interface Supplier {
   id: string
@@ -79,6 +80,7 @@ export function useSupplier(id: string | undefined) {
 export function useCreateSupplier() {
   const qc = useQueryClient()
   return useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: async (payload: Partial<Supplier> & { bankDetails?: string }) => {
       const { data } = await apiClient.post<{ data: Supplier }>('/suppliers', payload)
       return data.data
@@ -92,6 +94,7 @@ export function useCreateSupplier() {
 export function useUpdateSupplier(id: string | undefined) {
   const qc = useQueryClient()
   return useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: async (payload: Partial<Supplier> & { bankDetails?: string }) => {
       const { data } = await apiClient.put<{ data: Supplier }>(`/suppliers/${id}`, payload)
       return data.data
@@ -106,6 +109,7 @@ export function useUpdateSupplier(id: string | undefined) {
 export function useActivateSupplier() {
   const qc = useQueryClient()
   return useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: async (id: string) => {
       const { data } = await apiClient.patch<{ data: Supplier }>(`/suppliers/${id}/activate`)
       return data.data
@@ -120,6 +124,7 @@ export function useActivateSupplier() {
 export function useSuspendSupplier() {
   const qc = useQueryClient()
   return useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
       const { data } = await apiClient.patch<{ data: Supplier }>(`/suppliers/${id}/suspend`, { suspensionReason: reason })
       return data.data
@@ -134,6 +139,7 @@ export function useSuspendSupplier() {
 export function useDeleteSupplier() {
   const qc = useQueryClient()
   return useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: async (id: string) => {
       await apiClient.delete(`/suppliers/${id}`)
     },
@@ -158,6 +164,7 @@ export function useSupplierDocuments(id: string | undefined) {
 export function useUploadSupplierDocument() {
   const qc = useQueryClient()
   return useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: async ({ id, formData }: { id: string; formData: FormData }) => {
       const { data } = await apiClient.post<{ data: SupplierDocument }>(`/suppliers/${id}/documents`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import apiClient from '@/services/apiClient'
 import { Loader2, ListChecks, Save, CheckCircle } from 'lucide-react'
+import { notifyApiError } from '@/components/ErrorToaster'
 
 interface ChecklistItem {
   templateItemId: string
@@ -44,6 +45,7 @@ export function ValidationChecklist({ invoiceId }: { invoiceId: string }) {
   }, [data])
 
   const saveMutation = useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: () => apiClient.post(`/invoices/${invoiceId}/checklist`, {
       templateId: data!.templateId,
       items: items.map(i => ({ templateItemId: i.templateItemId, checked: i.checked, note: i.note || null })),

@@ -5,6 +5,7 @@ import apiClient from '@/services/apiClient'
 import { Loader2, CheckCircle, Building2, Lock } from 'lucide-react'
 import { Panel } from '@/components/ui/Panel'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { notifyApiError } from '@/components/ErrorToaster'
 
 interface SupplierProfile {
   companyName: string
@@ -30,6 +31,7 @@ export default function SupplierProfilePage() {
   })
 
   const mutation = useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: async (payload: SupplierProfile) => apiClient.put('/supplier/profile', payload),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['supplier-profile'] }),
   })

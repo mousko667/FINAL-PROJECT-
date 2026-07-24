@@ -16,6 +16,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import { formatAmount } from '@/lib/format'
+import { notifyApiError } from '@/components/ErrorToaster'
 
 function KpiCard({ title, value, sub, icon }: { title: string; value: string | number; sub?: string; icon: React.ReactNode; color?: string }) {
   return (
@@ -138,7 +139,10 @@ export default function ReportsPage() {
       )
       return data.data
     },
-    enabled: canView,
+    // AUDIT-022: `from` and `to` are mandatory @RequestParam on the backend. Firing
+    // this on `canView` alone sent both as undefined and produced a systematic 400
+    // on every single load of /reports. Same guard as the other date-driven sections.
+    enabled: canView && !!fromDateCycle && !!toDateCycle,
   })
 
   const { data: supplierHistory, isLoading: supplierHistoryLoading } = useQuery({
@@ -162,10 +166,12 @@ export default function ReportsPage() {
   })
 
   const excelMutation = useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: () => reportService.exportExcel({ fromDate: fromDate || undefined, toDate: toDate || undefined }),
   })
 
   const complianceMutation = useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: () => reportService.exportCompliancePdf(fromDate, toDate),
   })
 

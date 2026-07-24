@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Megaphone, AlertTriangle, Info, AlertOctagon, ShieldCheck } from 'lucide-react'
+import { notifyApiError } from '@/components/ErrorToaster'
 
 interface Announcement {
   id: string
@@ -69,6 +70,7 @@ export function PrivacyPolicyBanner() {
     retry: false,
   })
   const accept = useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: () => apiClient.post('/compliance/privacy-acceptance'),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['privacy-acceptance'] }),
   })

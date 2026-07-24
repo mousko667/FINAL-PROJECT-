@@ -6,6 +6,7 @@ import { listBackups, createBackup, restoreBackup, getBackupStatus, getAuditLogs
 import { Loader2, HardDrive, Download, RotateCcw, Plus, AlertTriangle, Activity, CheckCircle2, XCircle } from 'lucide-react'
 import { Panel } from '@/components/ui/Panel'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { notifyApiError } from '@/components/ErrorToaster'
 
 export default function AdminBackupsPage() {
   const { t } = useTranslation()
@@ -28,6 +29,7 @@ export default function AdminBackupsPage() {
   })
 
   const createMutation = useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: createBackup,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['backups'] })
@@ -37,6 +39,7 @@ export default function AdminBackupsPage() {
   })
 
   const restoreMutation = useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: restoreBackup,
     onSuccess: () => {
       setRestoringFile(null)

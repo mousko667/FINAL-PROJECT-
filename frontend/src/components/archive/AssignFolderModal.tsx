@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
 import type { ArchiveFolder } from '@/types/archive'
 import { X, Folder, Check, Loader2 } from 'lucide-react'
+import { notifyApiError } from '@/components/ErrorToaster'
 
 interface AssignFolderModalProps {
   invoiceId: string
@@ -25,6 +26,7 @@ export default function AssignFolderModal({ invoiceId, currentFolderId, onClose 
   })
 
   const assignMutation = useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: () => apiClient.patch(`/archive/invoices/${invoiceId}/folder${selectedFolderId ? `?folderId=${selectedFolderId}` : ''}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['archive'] })

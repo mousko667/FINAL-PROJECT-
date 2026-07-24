@@ -8,6 +8,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { formatDateTime } from '@/lib/format'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
+import { notifyApiError } from '@/components/ErrorToaster'
 
 const ADMIN_ROLES = ['ROLE_ADMIN']
 
@@ -81,6 +82,7 @@ function IntegrationsPage() {
   })
 
   const createMutation = useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: () => apiClient.post('/integrations/webhooks', { url, eventType: event }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['webhooks'] })
@@ -91,6 +93,7 @@ function IntegrationsPage() {
   })
 
   const deleteMutation = useMutation({
+    onError: (e) => notifyApiError(e),
     mutationFn: (id: string) => apiClient.delete(`/integrations/webhooks/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['webhooks'] })
