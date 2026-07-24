@@ -91,9 +91,13 @@
     --ink-soft: 40 11% 38%;
     --ink-faint: 43 11% 37%;
 
-    --pos: 147 33% 36%;
+    /* V5-B (recalibrage contraste, AUDIT-020 famille) — pos/warn/gold-deep
+     * abaissés en clair : axe-core mesurait pos 4.41, warn 2.83, gold-deep 3.94
+     * comme TEXTE sur leur *-bg / sur blanc (< 4.5:1 AA). Teinte inchangée,
+     * seule la luminance descend juste assez pour franchir 4.5:1 (mesuré). */
+    --pos: 147 34% 34%;        /* #3B7554 -> 4.80:1 sur --pos-bg */
     --pos-bg: 135 24% 93%;
-    --warn: 39 62% 44%;
+    --warn: 39 72% 31%;        /* #977011 -> 4.84:1 sur --warn-bg */
     --warn-bg: 42 59% 91%;
     --hot: 21 62% 47%;
     --hot-bg: 27 60% 92%;
@@ -102,7 +106,7 @@
     --info: 206 51% 37%;
     --info-bg: 204 38% 92%;
 
-    --gold-deep: 44 54% 39%;
+    --gold-deep: 44 56% 34%;   /* #8C7124 -> 4.95:1 sur blanc, 4.67:1 sur --ground */
 
     /* ===================================================================
      * Application tokens (Lot couleur "Soutenu") — ZÉRO couleur nouvelle :
@@ -154,7 +158,9 @@
     --hairline-strong: 217 15% 24%;
     --ink: 43 13% 90%;
     --ink-soft: 41 9% 63%;
-    --ink-faint: 39 8% 53%;
+    /* V5-B : #918A7E (53%) mesuré à 4.09:1 sur --hairline-strong dark (labels KPI
+     * sur .bg-kpi-info) ; relevé à 58% -> 4.83:1, et 6.31:1 sur le ground. */
+    --ink-faint: 39 9% 58%;
 
     --pos: 147 38% 59%;
     --pos-bg: 154 23% 12%;
@@ -184,7 +190,34 @@
     --accent: 43 62% 61%;
     --accent-foreground: 218 18% 9%;
     --ring: 213 45% 55%;
+
+    /* V5-B — --primary (#3B669B, L42%) est calibré comme REMPLISSAGE (bouton/entête,
+     * texte clair par-dessus) : impossible de le remonter pour qu'il passe aussi
+     * comme TEXTE sur fond sombre sans casser le remplissage (mesuré : L>=54%
+     * fait tomber le remplissage sous 4.5:1). On introduit donc un navy éclairci
+     * DÉDIÉ au texte/bordure d'accent en sombre — le remplissage reste inchangé.
+     * L60% -> 4.61:1 sur la ligne survolée (#242A30, teinte gold 5%), 4.9:1 sur
+     * la teinte 10% et 5.8:1 sur le ground : franchit 4.5:1 sur TOUS les fonds
+     * sombres réels mesurés. */
+    --primary-accent: 213 45% 60%;
   }
+
+  /* V5-B — en clair, --primary (#0F2540) passe déjà comme texte sur fonds clairs ;
+   * l'accent = le token lui-même. En sombre, on retarge SEULEMENT la couleur de
+   * texte/bordure vers --primary-accent (remplissage .bg-primary intact). Cible
+   * les utilitaires réellement en échec : .text-primary, .border-primary, les
+   * liens hérités, et le texte des puces .bg-oct-navy/10 (#0F2540 mesuré 1.1:1). */
+  .dark .text-primary { color: hsl(var(--primary-accent)); }
+  .dark .border-primary { border-color: hsl(var(--primary-accent)); }
+  /* V5-B — les boutons d'action `bg-pos text-white` (Payer / Traiter, PaymentsPage)
+   * utilisent en sombre le --pos *rehaussé pour le TEXTE* (#6FBE92) comme
+   * REMPLISSAGE : blanc dessus = 2.22:1. On assombrit le seul remplissage
+   * .bg-pos en sombre vers un vert plein (#378158, blanc 4.73:1) ; le token --pos
+   * (texte des puces bg-pos-bg/text-pos) et les bordures bg-pos/30 sont intacts. */
+  .dark .bg-pos { background-color: hsl(147 40% 36%); }
+  /* La puce .bg-oct-navy/10 de /profile porte son texte en --oct-navy brut
+   * (#0F2540, mesuré 1.1:1 sur le ground sombre) sans passer par .text-primary. */
+  .dark .bg-oct-navy\/10 { color: hsl(var(--primary-accent)); }
 }
 
 @layer base {
