@@ -2218,3 +2218,57 @@ etait touche. Et epinglage de la langue de test via `localStorage.setItem('i18ne
 rougissent apres une telle suppression, chercher d'abord le **defaut applicatif** ainsi expose avant
 de conclure a un probleme de test. Et une configuration i18n doit toujours declarer
 `supportedLngs` + `load: 'languageOnly'` si elle ne fournit que des catalogues de langue de base.
+
+
+## PROB-146 -- Un test i18n a singleton partage rougit par intermittence en suite complete
+
+**Date :** 2026-07-24 | **Contexte :** P6 vague 4, lot V4-A
+
+**Symptome :** en suite complete (`npm run test`), `InvoiceCreateDepartmentLocale.test.tsx`
+echoue de facon intermittente sur le cas `fr` (~1 run sur 5) : l'assertion attend l'option
+"Informatique (INFO)" mais l'interface est encore en anglais. Le test passe systematiquement en
+isolation (2/2, verifie 3 fois) et la suite complete est verte 4 runs sur 5.
+
+**Cause racine :** l'instance i18next est un singleton de module partage par tous les fichiers de
+test, et `changeLanguage` est asynchrone. Un `afterEach` d'un autre fichier qui bascule la langue
+sans que la resolution soit terminee laisse l'etat "fuir" sur le test suivant. Le fichier documente
+deja ce risque en commentaire (lignes 58-60). Ce n'est PAS un defaut applicatif : l'application
+positionne correctement la langue, c'est l'ordonnancement des tests entre fichiers qui est fragile.
+
+**Solution :** aucune modification faite en V4-A -- l'assertion est correcte et ne doit pas etre
+touchee. Consigne comme dette de robustesse des tests. Piste (vague 5) : isoler l'instance i18n
+par fichier de test, ou forcer un `await i18n.changeLanguage('fr')` synchronise en `beforeEach`
+de chaque fichier qui depend de la langue.
+
+**Preventive rule :** un singleton mutable partage entre fichiers de test (i18n, store, horloge)
+doit etre reinitialise en `beforeEach` du fichier consommateur, pas seulement en `afterEach` du
+fichier qui l'a modifie -- un `afterEach` asynchrone non attendu ne protege pas le fichier suivant.
+
+---
+
+## PROB-147 -- CSS de token corrige mais nginx servait l'ancien asset (hash change, ancien fichier conserve)
+
+**Date :** 2026-07-24 | **Contexte :** P6 vague 4, lot V4-A (balayage axe-core)
+
+**Symptome :** apres `docker cp dist/. oct_frontend:...` + `nginx -s reload`, le CSS servi portait
+encore l'ANCIENNE valeur de `--ink-faint` (42%/50% au lieu de 37%/53%) -- le balayage axe-core
+aurait mesure l'ancien theme et conclu faux.
+
+**Cause racine :** deux pieges cumules. (1) Le build genere un NOUVEAU nom hashe a chaque changement
+(`index-C4LrN7F-.css` -> `index-Ds7TCdN-.css`) ; `docker cp` ajoute le nouveau fichier mais ne
+supprime pas l'ancien, et un `grep` sur le premier `index-*.css` liste tombait sur le perime.
+(2) Piege connexe rencontre juste avant : le theme sombre se stocke sous la clef `oct-theme`, pas
+`theme` -- un script de balayage qui posait `localStorage.theme='dark'` mesurait en fait le theme
+clair sur 114 observations (0/114 en ecart apres correction, contre 57/57 avant).
+
+**Solution :** vider le dossier des assets avant la copie
+(`docker exec oct_frontend sh -c 'rm -rf /usr/share/nginx/html/assets/*'` puis `docker cp` puis
+`nginx -s reload`), et VERIFIER la valeur reellement servie
+(`docker exec ... grep -o 'ink-faint:[^;]*' <css>`) avant toute mesure runtime. Pour le theme,
+lire la clef reelle dans `useTheme.ts` (`STORAGE_KEY = 'oct-theme'`) et poser aussi `colorScheme`
+sur le contexte Playwright.
+
+**Preventive rule :** un correctif CSS/JS n'est verifie que si l'on a confirme la valeur SERVIE,
+pas la valeur du `dist/` local (regle verify-runtime-not-snapshot). Vider les assets hashes avant
+redeploiement pour ne pas laisser nginx servir un fichier perime. Et ne jamais deviner une clef de
+localStorage : la lire dans le code applicatif.
