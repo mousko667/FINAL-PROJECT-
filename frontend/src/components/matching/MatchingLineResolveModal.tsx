@@ -47,10 +47,11 @@ export default function MatchingLineResolveModal({ isOpen, onClose, onResolve, p
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label htmlFor="matchingResolveReason" className="block text-sm font-medium mb-1">
               {t('matching.resolve.reasonLabel')}
             </label>
             <textarea
+              id="matchingResolveReason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               className="w-full border border-hairline rounded p-2 text-sm"

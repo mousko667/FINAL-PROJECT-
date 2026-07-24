@@ -120,22 +120,22 @@ export default function PurchaseOrdersPage() {
             <h2 className="font-semibold text-ink">{t('po.create', 'New Purchase Order')}</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-ink-soft mb-1">{t('po.poNumber', 'PO Number')} *</label>
-                <input value={form.poNumber} onChange={e => setForm(p => ({ ...p, poNumber: e.target.value }))}
+                <label htmlFor="poNumber" className="block text-sm font-medium text-ink-soft mb-1">{t('po.poNumber', 'PO Number')} *</label>
+                <input id="poNumber" value={form.poNumber} onChange={e => setForm(p => ({ ...p, poNumber: e.target.value }))}
                   className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                   placeholder="BC-2026-001" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.supplier', 'Supplier')}</label>
-                <select value={form.supplierId} onChange={e => setForm(p => ({ ...p, supplierId: e.target.value }))}
+                <label htmlFor="poSupplierId" className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.supplier', 'Supplier')}</label>
+                <select id="poSupplierId" value={form.supplierId} onChange={e => setForm(p => ({ ...p, supplierId: e.target.value }))}
                   className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
                   <option value="">{t('invoice.selectSupplier', '— Select supplier —')}</option>
                   {(suppliers ?? []).map(s => <option key={s.id} value={s.id}>{s.companyName}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.amount', 'Total Amount')} *</label>
-                <input type="number" step="0.01" value={form.totalAmount} onChange={e => setForm(p => ({ ...p, totalAmount: e.target.value }))}
+                <label htmlFor="poTotalAmount" className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.amount', 'Total Amount')} *</label>
+                <input id="poTotalAmount" type="number" step="0.01" value={form.totalAmount} onChange={e => setForm(p => ({ ...p, totalAmount: e.target.value }))}
                   className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
               </div>
               {/* AUDIT-033 (D4): single-currency system — XAF only. A purchase order in EUR/USD

@@ -98,13 +98,13 @@ export default function ReportBuilderPage() {
 
         <form onSubmit={e => { e.preventDefault(); if (name.trim()) create.mutate() }} className="bg-surface rounded-[4px] border p-5 grid grid-cols-1 md:grid-cols-2 gap-3">
           <input value={name} onChange={e => setName(e.target.value)} placeholder={t('reportBuilder.name', 'Nom du rapport')} className={`${inputCls} md:col-span-2`} />
-          <select value={dataset} onChange={e => setDataset(e.target.value)} className={inputCls}>
+          <select value={dataset} onChange={e => setDataset(e.target.value)} aria-label={t('reportBuilder.datasetLabel', 'Dataset')} className={inputCls}>
             {DATASETS.map(d => <option key={d} value={d}>{t(`reportBuilder.dataset.${d}`, d)}</option>)}
           </select>
-          <select value={format} onChange={e => setFormat(e.target.value)} className={inputCls}>
+          <select value={format} onChange={e => setFormat(e.target.value)} aria-label={t('reportBuilder.formatLabel', 'Format')} className={inputCls}>
             {FORMATS.map(f => <option key={f} value={f}>{f}</option>)}
           </select>
-          <select value={frequency} onChange={e => setFrequency(e.target.value)} className={inputCls}>
+          <select value={frequency} onChange={e => setFrequency(e.target.value)} aria-label={t('reportBuilder.frequencyLabel', 'Frequency')} className={inputCls}>
             {FREQUENCIES.map(f => <option key={f} value={f}>{t(`reportBuilder.frequency.${f}`, f)}</option>)}
           </select>
           <input value={recipients} onChange={e => setRecipients(e.target.value)} placeholder={t('reportBuilder.recipients', 'Destinataires (e-mails séparés par des virgules)')} className={inputCls} />

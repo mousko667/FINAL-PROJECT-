@@ -87,6 +87,7 @@ function AdminUserFormPage() {
           <span className="flex items-center gap-4">
             <button
               onClick={() => navigate('/admin/users')}
+              aria-label={t('app.back', 'Go back')}
               className="p-2 hover:bg-white/10 rounded-full transition-colors"
             >
               <ArrowLeft className="w-5 h-5 text-white" aria-hidden />
@@ -101,10 +102,11 @@ function AdminUserFormPage() {
 
           {/* First Name */}
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">
+            <label htmlFor="firstName" className="block text-sm font-medium text-ink-soft mb-1">
               {t('admin.users.firstName', 'First Name')} *
             </label>
             <input
+              id="firstName"
               {...register('firstName')}
               className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
@@ -113,10 +115,11 @@ function AdminUserFormPage() {
 
           {/* Last Name */}
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">
+            <label htmlFor="lastName" className="block text-sm font-medium text-ink-soft mb-1">
               {t('admin.users.lastName', 'Last Name')} *
             </label>
             <input
+              id="lastName"
               {...register('lastName')}
               className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
@@ -125,10 +128,11 @@ function AdminUserFormPage() {
 
           {/* Username */}
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">
+            <label htmlFor="username" className="block text-sm font-medium text-ink-soft mb-1">
               {t('admin.users.username', 'Username')} *
             </label>
             <input
+              id="username"
               {...register('username')}
               className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
@@ -137,10 +141,11 @@ function AdminUserFormPage() {
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">
+            <label htmlFor="email" className="block text-sm font-medium text-ink-soft mb-1">
               {t('admin.users.email', 'Email')} *
             </label>
             <input
+              id="email"
               type="email"
               {...register('email')}
               className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -150,10 +155,11 @@ function AdminUserFormPage() {
 
           {/* Password */}
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">
+            <label htmlFor="password" className="block text-sm font-medium text-ink-soft mb-1">
               {t('admin.users.password', 'Password')} *
             </label>
             <input
+              id="password"
               type="password"
               {...register('password')}
               className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -163,10 +169,11 @@ function AdminUserFormPage() {
 
           {/* Preferred Language */}
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">
+            <label htmlFor="preferredLang" className="block text-sm font-medium text-ink-soft mb-1">
               {t('admin.users.preferredLang', 'Preferred Language')}
             </label>
             <select
+              id="preferredLang"
               {...register('preferredLang')}
               className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             >
@@ -177,7 +184,7 @@ function AdminUserFormPage() {
 
           {/* Role — dropdown, not free text */}
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-ink-soft mb-1">
+            <label htmlFor="role" className="block text-sm font-medium text-ink-soft mb-1">
               {t('admin.users.role', 'Role')} *
             </label>
             <Controller
@@ -185,6 +192,7 @@ function AdminUserFormPage() {
               control={control}
               render={({ field }) => (
                 <select
+                  id="role"
                   {...field}
                   className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                 >
@@ -201,7 +209,7 @@ function AdminUserFormPage() {
           {/* Department — only shown for department-specific roles */}
           {needsDepartment && (
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-ink-soft mb-1">
+              <label htmlFor="departmentId" className="block text-sm font-medium text-ink-soft mb-1">
                 {t('admin.users.department', 'Department')} *
               </label>
               <Controller
@@ -209,6 +217,7 @@ function AdminUserFormPage() {
                 control={control}
                 render={({ field }) => (
                   <select
+                    id="departmentId"
                     {...field}
                     className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                   >
@@ -229,10 +238,11 @@ function AdminUserFormPage() {
 
           {/* Employee ID */}
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">
+            <label htmlFor="employeeId" className="block text-sm font-medium text-ink-soft mb-1">
               {t('admin.users.employeeId', 'Employee ID')}
             </label>
             <input
+              id="employeeId"
               {...register('employeeId')}
               placeholder={t('admin.users.employeeIdPlaceholder', 'e.g. EMP-0042')}
               className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -242,10 +252,11 @@ function AdminUserFormPage() {
 
           {/* Approval Limit */}
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">
+            <label htmlFor="approvalLimit" className="block text-sm font-medium text-ink-soft mb-1">
               {t('admin.users.approvalLimit', 'Approval Limit')}
             </label>
             <input
+              id="approvalLimit"
               type="number"
               step="0.01"
               min="0"

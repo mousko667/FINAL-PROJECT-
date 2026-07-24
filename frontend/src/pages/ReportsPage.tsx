@@ -403,13 +403,13 @@ export default function ReportsPage() {
           <p className="text-sm text-ink-soft mb-4">{t('reports.paymentCycle.desc')}</p>
           <div className="flex flex-wrap items-end gap-4 mb-6">
             <div>
-              <label className="block text-xs font-medium text-ink-soft uppercase tracking-wide mb-1">{t('reports.startDate')}</label>
-              <input type="date" value={fromDateCycle} onChange={e => setFromDateCycle(e.target.value)}
+              <label htmlFor="cycleFromDate" className="block text-xs font-medium text-ink-soft uppercase tracking-wide mb-1">{t('reports.startDate')}</label>
+              <input id="cycleFromDate" type="date" value={fromDateCycle} onChange={e => setFromDateCycle(e.target.value)}
                 className="border rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-ink-soft uppercase tracking-wide mb-1">{t('reports.endDate')}</label>
-              <input type="date" value={toDateCycle} onChange={e => setToDateCycle(e.target.value)}
+              <label htmlFor="cycleToDate" className="block text-xs font-medium text-ink-soft uppercase tracking-wide mb-1">{t('reports.endDate')}</label>
+              <input id="cycleToDate" type="date" value={toDateCycle} onChange={e => setToDateCycle(e.target.value)}
                 className="border rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
             </div>
           </div>
@@ -448,10 +448,11 @@ export default function ReportsPage() {
         <Section title={t('reports.supplierHistory.title')} defaultOpen={false}>
           <p className="text-sm text-ink-soft mb-4">{t('reports.supplierHistory.desc')}</p>
           <div className="mb-4 max-w-md">
-            <label className="block text-xs font-medium text-ink-soft uppercase tracking-wide mb-1">
+            <label htmlFor="supplierHistoryId" className="block text-xs font-medium text-ink-soft uppercase tracking-wide mb-1">
               {t('reports.supplierHistory.selectLabel')}
             </label>
             <select
+              id="supplierHistoryId"
               value={supplierHistoryId}
               onChange={e => setSupplierHistoryId(e.target.value)}
               className="w-full border rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"

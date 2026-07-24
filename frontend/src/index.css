@@ -62,7 +62,7 @@
      *   --hairline-strong #DAD3C4 -> 41 23% 81%
      *   --ink             #23201A -> 40 15% 12%
      *   --ink-soft        #6B6456 -> 40 11% 38%
-     *   --ink-faint       #98917F -> 43 11% 55%
+     *   --ink-faint       #696354 -> 43 11% 37%   (>= 4.62:1 sur TOUS les fonds clairs reels)
      *
      *   Semantic states (light) + *-bg
      *   --pos      #3E7C5A -> 147 33% 36%   --pos-bg  #EAF2EC -> 135 24% 93%
@@ -89,7 +89,7 @@
     --hairline-strong: 41 23% 81%;
     --ink: 40 15% 12%;
     --ink-soft: 40 11% 38%;
-    --ink-faint: 43 11% 55%;
+    --ink-faint: 43 11% 37%;
 
     --pos: 147 33% 36%;
     --pos-bg: 135 24% 93%;
@@ -135,7 +135,7 @@
    *   Ink (raised for AA on #12151A; contrast checked against ground)
    *   --ink       #E8E6E1 -> 43 13% 90%   (14.7:1 AA)
    *   --ink-soft  #A9A499 -> 41 9%  63%   (7.4:1 AA)
-   *   --ink-faint #767065 -> 39 8%  43%   (3.7:1 AA-large, tertiary/decorative use)
+   *   --ink-faint #918A7E -> 39 8%  53%   (>= 4.62:1 sur TOUS les fonds sombres reels)
    *
    *   Semantics (raised text) + *-bg (desaturated near-black tints)
    *   --pos  #6FBE93 -> 147 38% 59%  (8.2:1)   --pos-bg  #182620 -> 154 23% 12%
@@ -154,7 +154,7 @@
     --hairline-strong: 217 15% 24%;
     --ink: 43 13% 90%;
     --ink-soft: 41 9% 63%;
-    --ink-faint: 39 8% 43%;
+    --ink-faint: 39 8% 53%;
 
     --pos: 147 38% 59%;
     --pos-bg: 154 23% 12%;
@@ -194,6 +194,26 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* AUDIT-046 — Les champs natifs n'heritent PAS du fond de la page : sans
+   * classe `bg-*` explicite ils gardent le blanc par defaut du navigateur,
+   * tandis que leur texte suit `--ink`. En theme sombre cela donnait une encre
+   * claire (#E9E7E2) sur blanc, soit 1,23:1 — le texte saisi etait illisible,
+   * y compris sur /login. Mesure axe-core : 49 noeuds sur 178 champs concernes
+   * dans 49 fichiers. La primitive `ui/Input.tsx` posait deja `bg-surface` ;
+   * cette regle de base etend le meme defaut a tous les champs natifs, et
+   * reste surchargeable par n'importe quelle classe utilitaire.
+   * `:not([type='checkbox']):not([type='radio'])` preserve les controles dont
+   * l'apparence est rendue par le systeme. */
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+  select,
+  textarea {
+    @apply bg-surface text-ink;
+  }
+  input::placeholder,
+  textarea::placeholder {
+    @apply text-ink-faint;
   }
 }
 

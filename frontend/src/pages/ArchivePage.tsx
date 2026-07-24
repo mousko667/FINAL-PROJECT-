@@ -111,6 +111,7 @@ export default function ArchivePage() {
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-ink-faint" />
               <select value={deptFilter} onChange={e => { setDeptFilter(e.target.value); setPage(0) }}
+                aria-label={t('archive.filterDepartment', 'Filter by department')}
                 className="text-sm border border-hairline rounded-[4px] px-3 py-1.5 bg-surface focus:outline-none focus:ring-2 focus:ring-primary/20">
                 <option value="">{t('archive.allDepartments')}</option>
                 {['DRH','DG','FIN','INFO','TERM','COM','QHSSE','INFRA','TECH'].map(d => (
@@ -121,9 +122,11 @@ export default function ArchivePage() {
             <div className="flex items-center gap-2">
               <span className="text-xs text-ink-soft">Du</span>
               <input type="date" value={fromDate} onChange={e => { setFromDate(e.target.value); setPage(0) }}
+                aria-label={t('invoice.filterFromDate')}
                 className="text-sm border border-hairline rounded-[4px] px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/20" />
               <span className="text-xs text-ink-soft">au</span>
               <input type="date" value={toDate} onChange={e => { setToDate(e.target.value); setPage(0) }}
+                aria-label={t('invoice.filterToDate')}
                 className="text-sm border border-hairline rounded-[4px] px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/20" />
             </div>
             {(search || deptFilter || fromDate || toDate) && (

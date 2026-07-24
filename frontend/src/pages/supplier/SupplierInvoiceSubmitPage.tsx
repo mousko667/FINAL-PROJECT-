@@ -250,12 +250,12 @@ export default function SupplierInvoiceSubmitPage() {
 
         {/* Department */}
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.department')} *</label>
+          <label htmlFor="departmentId" className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.department')} *</label>
           <Controller
             name="departmentId"
             control={control}
             render={({ field }) => (
-              <select {...field} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-primary/30">
+              <select id="departmentId" {...field} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-primary/30">
                 <option value="">{t('invoice.selectDept', '— Select department —')}</option>
                 {(departments ?? []).map((d) => (
                   <option key={d.id} value={d.id}>{i18n.language === 'fr' ? d.nameFr : d.nameEn} ({d.code})</option>
@@ -304,11 +304,12 @@ export default function SupplierInvoiceSubmitPage() {
 
         {/* Invoice Number (OCR-extracted, editable) */}
         <div>
-          <label className="block text-sm font-medium text-ink-soft mb-1">
+          <label htmlFor="invoiceNumber" className="block text-sm font-medium text-ink-soft mb-1">
             {t('invoice.invoiceNumber', 'Invoice Number (your ref.)')}
             {ocrResult?.invoiceNumber && <span className="ml-2 text-xs text-pos">✓ {t('ocr.extracted', 'auto-filled')}</span>}
           </label>
           <input
+            id="invoiceNumber"
             {...register('invoiceNumber')}
             defaultValue={ocrResult?.invoiceNumber ?? ''}
             className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -318,11 +319,12 @@ export default function SupplierInvoiceSubmitPage() {
 
         {/* Amount */}
         <div>
-          <label className="block text-sm font-medium text-ink-soft mb-1">
+          <label htmlFor="amount" className="block text-sm font-medium text-ink-soft mb-1">
             {t('invoice.amount')} *
             {ocrResult?.totalAmount && <span className="ml-2 text-xs text-pos">✓ {t('ocr.extracted', 'auto-filled')}</span>}
           </label>
           <input
+            id="amount"
             type="number" step="0.01"
             {...register('amount')}
             className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -346,11 +348,12 @@ export default function SupplierInvoiceSubmitPage() {
 
         {/* Issue Date */}
         <div>
-          <label className="block text-sm font-medium text-ink-soft mb-1">
+          <label htmlFor="issueDate" className="block text-sm font-medium text-ink-soft mb-1">
             {t('invoice.issueDate')} *
             {ocrResult?.invoiceDate && <span className="ml-2 text-xs text-pos">✓ {t('ocr.extracted', 'auto-filled')}</span>}
           </label>
           <input
+            id="issueDate"
             type="date"
             {...register('issueDate')}
             className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -360,8 +363,9 @@ export default function SupplierInvoiceSubmitPage() {
 
         {/* Due Date */}
         <div>
-          <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.dueDate')} *</label>
+          <label htmlFor="dueDate" className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.dueDate')} *</label>
           <input
+            id="dueDate"
             type="date"
             {...register('dueDate')}
             className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -379,8 +383,9 @@ export default function SupplierInvoiceSubmitPage() {
 
         {/* Description */}
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.description')}</label>
+          <label htmlFor="description" className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.description')}</label>
           <textarea
+            id="description"
             {...register('description')}
             rows={2}
             className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"

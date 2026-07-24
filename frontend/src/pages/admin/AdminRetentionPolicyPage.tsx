@@ -61,10 +61,10 @@ export default function AdminRetentionPolicyPage() {
         ) : (
           <div className="bg-surface rounded-[4px] border border-hairline p-6 space-y-5">
             <div>
-              <label className="block text-sm font-medium text-ink-soft mb-1">
+              <label htmlFor="retentionYears" className="block text-sm font-medium text-ink-soft mb-1">
                 {t('retentionPolicy.years', 'Durée de rétention (années)')} *
               </label>
-              <input type="number" min={1} max={100} value={retentionYears}
+              <input id="retentionYears" type="number" min={1} max={100} value={retentionYears}
                 onChange={e => setRetentionYears(Number(e.target.value))}
                 className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
               <p className="text-xs text-ink-faint mt-1">

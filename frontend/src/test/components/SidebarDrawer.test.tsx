@@ -106,3 +106,29 @@ describe('AUDIT-019 — responsive sidebar drawer', () => {
     expect(screen.getByTestId('sidebar-scrim').className).toContain('block')
   })
 })
+
+describe('AUDIT-023 — le tiroir fermé sort de l ordre de tabulation', () => {
+  afterEach(async () => {
+    cleanup()
+    await i18n.changeLanguage('fr')
+  })
+
+  // Dette relevée en V3-A : `-translate-x-full` masque le tiroir à l'oeil mais
+  // laisse ses liens focalisables. Au clavier, l'utilisateur mobile traversait
+  // toute la navigation invisible avant d'atteindre le contenu de la page.
+  it('marks the closed drawer inert so its links leave the tab order', () => {
+    renderLayout()
+    const aside = screen.getByTestId('sidebar')
+    expect(aside).toHaveAttribute('inert')
+    expect(aside).toHaveAttribute('aria-hidden', 'true')
+  })
+
+  it('clears inert as soon as the drawer is opened', () => {
+    renderLayout()
+    fireEvent.click(screen.getByRole('button', { name: 'Ouvrir le menu' }))
+
+    const aside = screen.getByTestId('sidebar')
+    expect(aside).not.toHaveAttribute('inert')
+    expect(aside).not.toHaveAttribute('aria-hidden')
+  })
+})

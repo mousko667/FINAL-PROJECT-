@@ -103,23 +103,23 @@ export default function MyDelegationsPage() {
       <form onSubmit={onSubmit} className="bg-surface rounded-[4px] border border-hairline p-5 space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-ink-soft mb-1">{t('delegations.delegatee', 'Délégataire')}</label>
-            <select value={delegateeId} onChange={e => { setDelegateeId(e.target.value); setFormError(null) }} className={inputCls}>
+            <label htmlFor="delegateeId" className="block text-sm font-medium text-ink-soft mb-1">{t('delegations.delegatee', 'Délégataire')}</label>
+            <select id="delegateeId" value={delegateeId} onChange={e => { setDelegateeId(e.target.value); setFormError(null) }} className={inputCls}>
               <option value="">{t('delegations.selectDelegatee', '— Sélectionner —')}</option>
               {delegatees.map(d => <option key={d.id} value={d.id}>{d.fullName || d.username} ({d.username})</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">{t('delegations.fromDate', 'Du')}</label>
-            <input type="date" value={fromDate} onChange={e => { setFromDate(e.target.value); setFormError(null) }} className={inputCls} />
+            <label htmlFor="delegationFromDate" className="block text-sm font-medium text-ink-soft mb-1">{t('delegations.fromDate', 'Du')}</label>
+            <input id="delegationFromDate" type="date" value={fromDate} onChange={e => { setFromDate(e.target.value); setFormError(null) }} className={inputCls} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">{t('delegations.toDate', 'Au')}</label>
-            <input type="date" value={toDate} onChange={e => { setToDate(e.target.value); setFormError(null) }} className={inputCls} />
+            <label htmlFor="delegationToDate" className="block text-sm font-medium text-ink-soft mb-1">{t('delegations.toDate', 'Au')}</label>
+            <input id="delegationToDate" type="date" value={toDate} onChange={e => { setToDate(e.target.value); setFormError(null) }} className={inputCls} />
           </div>
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-ink-soft mb-1">{t('delegations.reason', 'Motif (facultatif)')}</label>
-            <input value={reason} onChange={e => setReason(e.target.value)} className={inputCls} maxLength={255} />
+            <label htmlFor="delegationReason" className="block text-sm font-medium text-ink-soft mb-1">{t('delegations.reason', 'Motif (facultatif)')}</label>
+            <input id="delegationReason" value={reason} onChange={e => setReason(e.target.value)} className={inputCls} maxLength={255} />
           </div>
         </div>
         {formError && <p className="flex items-center gap-1.5 text-sm text-crit"><AlertCircle className="w-4 h-4" />{formError}</p>}

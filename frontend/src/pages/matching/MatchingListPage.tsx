@@ -38,6 +38,7 @@ export default function MatchingListPage() {
             onChange={(e) => setSearch(e.target.value)}
           />
           <select
+            aria-label={t('matching.filterStatus', 'Filter by matching status')}
             className="border border-hairline rounded-[4px] px-3 py-1.5 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-gold-deep/30"
             value={status}
             onChange={(e) => setStatus(e.target.value)}

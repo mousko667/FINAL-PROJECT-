@@ -112,16 +112,18 @@ function AdminChecklistTemplatesPage() {
         <Panel className="p-6 space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
-              <label className="block text-sm font-medium text-ink-soft mb-1">{t('checklist.name', 'Name')} *</label>
+              <label htmlFor="checklistTemplateName" className="block text-sm font-medium text-ink-soft mb-1">{t('checklist.name', 'Name')} *</label>
               <input
+                id="checklistTemplateName"
                 value={editor.name}
                 onChange={e => setEditor({ ...editor, name: e.target.value })}
                 className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-ink-soft mb-1">{t('checklist.department', 'Department')}</label>
+              <label htmlFor="checklistTemplateDepartment" className="block text-sm font-medium text-ink-soft mb-1">{t('checklist.department', 'Department')}</label>
               <select
+                id="checklistTemplateDepartment"
                 value={editor.departmentId}
                 onChange={e => setEditor({ ...editor, departmentId: e.target.value })}
                 className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"

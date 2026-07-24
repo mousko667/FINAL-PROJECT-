@@ -138,7 +138,10 @@
       "DAILY": "Daily",
       "WEEKLY": "Weekly",
       "MONTHLY": "Monthly"
-    }
+    },
+    "datasetLabel": "Dataset",
+    "formatLabel": "Format",
+    "frequencyLabel": "Frequency"
   },
   "privacy": {
     "prompt": "Please accept the privacy policy (v{{version}}).",
@@ -350,6 +353,7 @@
     },
     "viewer": {
       "view": "Preview",
+      "download": "Download",
       "noPreview": "No preview available for this file type.",
       "zoomIn": "Zoom in",
       "zoomOut": "Zoom out",
@@ -649,7 +653,10 @@
       "save": "Save Changes",
       "saved": "Approval matrix updated successfully.",
       "noneN2": "— None (single-level) —",
-      "hint": "Changes take effect immediately. The routing engine reads this matrix on every invoice submission."
+      "hint": "Changes take effect immediately. The routing engine reads this matrix on every invoice submission.",
+      "n1RoleFor": "N1 approver role for {{dept}}",
+      "n2RoleFor": "N2 approver role for {{dept}}",
+      "requiresN2For": "Requires N2 approval for {{dept}}"
     },
     "security": {
       "title": "Security Settings",
@@ -752,7 +759,11 @@
         "nextDeadlinesTitle": "Next compliance deadlines",
         "noUpcoming": "No upcoming deadlines.",
         "allClear": "No open incidents — all clear."
-      }
+      },
+      "incidentSeverity": "Incident severity",
+      "incidentStatusFor": "Status of {{title}}",
+      "framework": "Compliance framework",
+      "calendarDue": "Due date"
     },
     "connectors": {
       "title": "Integration connectors",
@@ -769,7 +780,8 @@
       "syncOk": "Last sync OK",
       "syncFail": "Sync failed",
       "deleteConfirmTitle": "Delete this connector?",
-      "deleteConfirmBody": "Scheduled synchronisation for this connector will stop immediately."
+      "deleteConfirmBody": "Scheduled synchronisation for this connector will stop immediately.",
+      "type": "Connector type"
     },
     "integrations": {
       "title": "Integrations & Webhooks",
@@ -987,7 +999,8 @@
       "OVERRIDDEN": "Overridden"
     },
     "emptyTitle": "No matching for this invoice",
-    "emptyHint": "This invoice is not linked to a purchase order, so there is nothing to match."
+    "emptyHint": "This invoice is not linked to a purchase order, so there is nothing to match.",
+    "filterStatus": "Filter by matching status"
   },
   "approvals": {
     "title": "Approval Queue",
@@ -1226,7 +1239,9 @@
       "previous": "Previous",
       "next": "Next",
       "finish": "Create supplier"
-    }
+    },
+    "filterStatus": "Filter by status",
+    "filterCategory": "Filter by category"
   },
   "mfa": {
     "invalidOtp": "Invalid code. Check your app and try again.",
@@ -1275,7 +1290,9 @@
       "processed": "Processed"
     },
     "notesPlaceholder": "Additional notes about the payment...",
-    "fullAmountRequired": "The amount must match the full invoice amount."
+    "fullAmountRequired": "The amount must match the full invoice amount.",
+    "batchMethod": "Payment method for batch",
+    "filterStatus": "Filter by payment status"
   },
   "paymentAlerts": {
     "title": "Payment Alert Rules",
@@ -1300,7 +1317,8 @@
     "empty": "No archived invoices yet.",
     "retentionNote": "A SHA-256 checksum is computed and stored when each document is uploaded (integrity reference). The OCT retention policy targets a 10-year retention period.",
     "allDepartments": "All departments",
-    "resetFilters": "Reset filters"
+    "resetFilters": "Reset filters",
+    "filterDepartment": "Filter by department"
   },
   "archiveFolders": {
     "title": "Archive folders",

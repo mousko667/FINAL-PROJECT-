@@ -147,6 +147,7 @@ function InvoiceDetailView({ invoice, onBack }: { invoice: SupplierInvoice; onBa
       <div className="flex items-center gap-3">
         <button
           onClick={onBack}
+          aria-label={t('app.back', 'Go back')}
           className="flex items-center justify-center w-9 h-9 border border-hairline rounded-[4px] hover:bg-ground text-ink-soft transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />

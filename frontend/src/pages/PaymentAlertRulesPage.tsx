@@ -60,7 +60,7 @@ export default function PaymentAlertRulesPage() {
         <PageHeader
           title={
             <span className="flex items-center gap-3">
-              <Link to="/payments" className="p-2 -ml-2 hover:bg-white/10 rounded-full transition-colors shrink-0">
+              <Link to="/payments" aria-label={t('app.back', 'Go back')} className="p-2 -ml-2 hover:bg-white/10 rounded-full transition-colors shrink-0">
                 <ArrowLeft className="w-5 h-5 text-white/80" />
               </Link>
               {t('paymentAlerts.title', 'Payment Alert Rules')}
@@ -82,8 +82,9 @@ export default function PaymentAlertRulesPage() {
           <div className="bg-surface rounded-[4px] border border-hairline p-6 space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <label className="block text-sm font-medium text-ink-soft mb-1">{t('paymentAlerts.daysBeforeDue', 'Days before due date')} *</label>
+                <label htmlFor="daysBeforeDue" className="block text-sm font-medium text-ink-soft mb-1">{t('paymentAlerts.daysBeforeDue', 'Days before due date')} *</label>
                 <input
+                  id="daysBeforeDue"
                   type="number"
                   min={0}
                   max={365}
@@ -94,8 +95,9 @@ export default function PaymentAlertRulesPage() {
                 <p className="text-xs text-ink-faint mt-1">{t('paymentAlerts.daysHint', 'Alert is sent when an invoice is this many days from its due date.')}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink-soft mb-1">{t('paymentAlerts.label', 'Label')}</label>
+                <label htmlFor="alertRuleLabel" className="block text-sm font-medium text-ink-soft mb-1">{t('paymentAlerts.label', 'Label')}</label>
                 <input
+                  id="alertRuleLabel"
                   value={editor.label}
                   onChange={e => setEditor({ ...editor, label: e.target.value })}
                   placeholder={t('paymentAlerts.labelPlaceholder', 'e.g. Final reminder')}

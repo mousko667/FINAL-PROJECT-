@@ -54,4 +54,24 @@ describe('Table', () => {
     expect(table?.className).toMatch(/table-cls/)
     expect(wrapper?.className).not.toMatch(/table-cls/)
   })
+
+  // AUDIT-023 : un conteneur qui défile doit être atteignable au clavier, sinon
+  // les colonnes hors cadre ne sont accessibles qu'à la souris (axe-core
+  // `scrollable-region-focusable`). La primitive porte la correction pour tous
+  // les tableaux du design system.
+  it('rend le conteneur défilable focalisable au clavier', () => {
+    const { container } = render(<Table><TBody><TR><TD>x</TD></TR></TBody></Table>)
+    const wrapper = container.firstElementChild as HTMLElement
+    expect(wrapper).toHaveAttribute('tabindex', '0')
+    expect(wrapper).toHaveAttribute('role', 'region')
+  })
+
+  it('nomme la région défilable via containerLabel', () => {
+    const { container } = render(
+      <Table containerLabel="Factures en attente">
+        <TBody><TR><TD>x</TD></TR></TBody>
+      </Table>
+    )
+    expect(container.firstElementChild).toHaveAttribute('aria-label', 'Factures en attente')
+  })
 })

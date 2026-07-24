@@ -83,16 +83,16 @@ function AdminAnnouncementsPage() {
       <Panel className="p-5">
         <form onSubmit={onSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-ink-soft mb-1">{t('admin.announcements.titleField', 'Titre')}</label>
-          <input value={title} onChange={e => { setTitle(e.target.value); setFormError(null) }} className={inputCls} maxLength={200} />
+          <label htmlFor="announcementTitle" className="block text-sm font-medium text-ink-soft mb-1">{t('admin.announcements.titleField', 'Titre')}</label>
+          <input id="announcementTitle" value={title} onChange={e => { setTitle(e.target.value); setFormError(null) }} className={inputCls} maxLength={200} />
         </div>
         <div>
-          <label className="block text-sm font-medium text-ink-soft mb-1">{t('admin.announcements.body', 'Message')}</label>
-          <textarea value={body} onChange={e => { setBody(e.target.value); setFormError(null) }} rows={3} className={inputCls} maxLength={2000} />
+          <label htmlFor="announcementBody" className="block text-sm font-medium text-ink-soft mb-1">{t('admin.announcements.body', 'Message')}</label>
+          <textarea id="announcementBody" value={body} onChange={e => { setBody(e.target.value); setFormError(null) }} rows={3} className={inputCls} maxLength={2000} />
         </div>
         <div>
-          <label className="block text-sm font-medium text-ink-soft mb-1">{t('admin.announcements.severity', 'Niveau')}</label>
-          <select value={severity} onChange={e => setSeverity(e.target.value)} className={inputCls}>
+          <label htmlFor="announcementSeverity" className="block text-sm font-medium text-ink-soft mb-1">{t('admin.announcements.severity', 'Niveau')}</label>
+          <select id="announcementSeverity" value={severity} onChange={e => setSeverity(e.target.value)} className={inputCls}>
             <option value="INFO">INFO</option>
             <option value="WARNING">WARNING</option>
             <option value="CRITICAL">CRITICAL</option>

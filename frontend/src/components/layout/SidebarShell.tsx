@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
 import { useSidebarDrawer } from './SidebarDrawerContext'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { cn } from '@/lib/utils'
 
 /**
@@ -9,10 +10,18 @@ import { cn } from '@/lib/utils'
  * AUDIT-019: below `md` the aside used to keep its 256 px and squeezed `main` down to
  * 134 px on a 390 px viewport. It is now hidden off-canvas and slides in as a drawer.
  * From `md` up the previous static column is preserved exactly.
+ *
+ * AUDIT-023 (dette a11y relevée en V3-A) : `-translate-x-full` sort le tiroir de
+ * l'écran mais le laisse dans l'ordre de tabulation — au clavier, un utilisateur
+ * mobile traversait une vingtaine de liens invisibles avant d'atteindre le contenu.
+ * `inert` neutralise le sous-arbre, mais uniquement sous `md` : au-dessus la barre
+ * est une colonne statique visible, qui doit rester navigable.
  */
 export function SidebarShell({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation()
   const { isOpen, close } = useSidebarDrawer()
+  const isDesktop = useMediaQuery('(min-width: 768px)')
+  const isHiddenDrawer = !isDesktop && !isOpen
 
   return (
     <>
@@ -30,6 +39,8 @@ export function SidebarShell({ children }: { children: React.ReactNode }) {
       <aside
         id="app-sidebar"
         data-testid="sidebar"
+        inert={isHiddenDrawer || undefined}
+        aria-hidden={isHiddenDrawer || undefined}
         className={cn(
           'w-64 flex flex-col shrink-0 bg-oct-navy text-white shadow-xl',
           // Mobile: off-canvas drawer.

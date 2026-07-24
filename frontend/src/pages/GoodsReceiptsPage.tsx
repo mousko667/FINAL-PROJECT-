@@ -133,18 +133,18 @@ export default function GoodsReceiptsPage() {
             <h2 className="font-semibold text-ink">{t('grn.create', 'Nouveau bon de réception')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-ink-soft mb-1">{t('grn.grnNumber', 'N° GRN')} *</label>
-                <input value={form.grnNumber} onChange={e => setForm(f => ({ ...f, grnNumber: e.target.value }))}
+                <label htmlFor="grnNumber" className="block text-sm font-medium text-ink-soft mb-1">{t('grn.grnNumber', 'N° GRN')} *</label>
+                <input id="grnNumber" value={form.grnNumber} onChange={e => setForm(f => ({ ...f, grnNumber: e.target.value }))}
                   className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink-soft mb-1">{t('grn.receivedDate', 'Date de réception')} *</label>
-                <input type="date" value={form.receivedDate} onChange={e => setForm(f => ({ ...f, receivedDate: e.target.value }))}
+                <label htmlFor="receivedDate" className="block text-sm font-medium text-ink-soft mb-1">{t('grn.receivedDate', 'Date de réception')} *</label>
+                <input id="receivedDate" type="date" value={form.receivedDate} onChange={e => setForm(f => ({ ...f, receivedDate: e.target.value }))}
                   className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-ink-soft mb-1">{t('nav.purchaseOrders', 'Bon de commande lié')}</label>
-                <select value={form.purchaseOrderId} onChange={e => setForm(f => ({ ...f, purchaseOrderId: e.target.value }))}
+                <label htmlFor="grnPurchaseOrderId" className="block text-sm font-medium text-ink-soft mb-1">{t('nav.purchaseOrders', 'Bon de commande lié')}</label>
+                <select id="grnPurchaseOrderId" value={form.purchaseOrderId} onChange={e => setForm(f => ({ ...f, purchaseOrderId: e.target.value }))}
                   className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
                   <option value="">— Sans bon de commande —</option>
                   {(purchaseOrders ?? []).map(po => (
@@ -153,8 +153,8 @@ export default function GoodsReceiptsPage() {
                 </select>
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-ink-soft mb-1">Notes</label>
-                <textarea rows={2} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                <label htmlFor="grnNotes" className="block text-sm font-medium text-ink-soft mb-1">Notes</label>
+                <textarea id="grnNotes" rows={2} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
                   className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
               </div>
             </div>

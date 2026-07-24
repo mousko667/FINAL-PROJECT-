@@ -109,6 +109,7 @@ function ApprovalMatrixPage() {
                     <select
                       value={dept.n1Role}
                       onChange={e => handleUpdate(dept, 'n1Role', e.target.value)}
+                      aria-label={t('admin.approvalMatrix.n1RoleFor', 'N1 approver role for {{dept}}', { dept: i18n.language === 'fr' ? dept.nameFr : dept.nameEn })}
                       className="border border-hairline rounded-[4px] px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 w-full max-w-[220px]"
                     >
                       {ROLE_VALUES_N1.map(v => <option key={v} value={v}>{t(`roles.${v}`, v)}</option>)}
@@ -119,6 +120,7 @@ function ApprovalMatrixPage() {
                       type="checkbox"
                       checked={dept.requiresN2}
                       onChange={e => handleUpdate(dept, 'requiresN2', e.target.checked)}
+                      aria-label={t('admin.approvalMatrix.requiresN2For', 'Requires N2 approval for {{dept}}', { dept: i18n.language === 'fr' ? dept.nameFr : dept.nameEn })}
                       className="w-4 h-4 accent-primary cursor-pointer"
                     />
                   </td>
@@ -127,6 +129,7 @@ function ApprovalMatrixPage() {
                       <select
                         value={dept.n2Role ?? ''}
                         onChange={e => handleUpdate(dept, 'n2Role', e.target.value)}
+                        aria-label={t('admin.approvalMatrix.n2RoleFor', 'N2 approver role for {{dept}}', { dept: i18n.language === 'fr' ? dept.nameFr : dept.nameEn })}
                         className="border border-hairline rounded-[4px] px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 w-full max-w-[220px]"
                       >
                         <option value="">{t('admin.approvalMatrix.noneN2')}</option>

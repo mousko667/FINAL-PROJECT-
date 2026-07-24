@@ -105,26 +105,26 @@ export default function SupplierRegisterPage() {
               <p className="text-xs font-semibold text-ink-faint uppercase tracking-wider mb-3">{t('supplier.register.companySection', 'Company Information')}</p>
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-ink-soft mb-1">{t('supplier.fields.companyName')} *</label>
-              <input {...register('companyName')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              <label htmlFor="companyName" className="block text-sm font-medium text-ink-soft mb-1">{t('supplier.fields.companyName')} *</label>
+              <input id="companyName" {...register('companyName')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
               {errors.companyName && <p className="text-xs text-crit mt-1">{t('validation.required')}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-ink-soft mb-1">{t('supplier.fields.taxId')} *</label>
-              <input {...register('taxId')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              <label htmlFor="taxId" className="block text-sm font-medium text-ink-soft mb-1">{t('supplier.fields.taxId')} *</label>
+              <input id="taxId" {...register('taxId')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
               {errors.taxId && <p className="text-xs text-crit mt-1">{t('validation.required')}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-ink-soft mb-1">{t('supplier.fields.contactPhone')}</label>
-              <input {...register('contactPhone')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              <label htmlFor="contactPhone" className="block text-sm font-medium text-ink-soft mb-1">{t('supplier.fields.contactPhone')}</label>
+              <input id="contactPhone" {...register('contactPhone')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-ink-soft mb-1">{t('supplier.fields.address')}</label>
-              <input {...register('address')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              <label htmlFor="address" className="block text-sm font-medium text-ink-soft mb-1">{t('supplier.fields.address')}</label>
+              <input id="address" {...register('address')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-ink-soft mb-1">{t('supplier.fields.bankDetails')}</label>
-              <input type="password" autoComplete="new-password" {...register('bankDetails')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              <label htmlFor="bankDetails" className="block text-sm font-medium text-ink-soft mb-1">{t('supplier.fields.bankDetails')}</label>
+              <input id="bankDetails" type="password" autoComplete="new-password" {...register('bankDetails')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
             </div>
 
             {/* Account Info */}
@@ -132,23 +132,23 @@ export default function SupplierRegisterPage() {
               <p className="text-xs font-semibold text-ink-faint uppercase tracking-wider mb-3">{t('supplier.register.accountSection', 'Account Credentials')}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-ink-soft mb-1">{t('supplier.register.firstName', 'First Name')} *</label>
-              <input {...register('firstName')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              <label htmlFor="firstName" className="block text-sm font-medium text-ink-soft mb-1">{t('supplier.register.firstName', 'First Name')} *</label>
+              <input id="firstName" {...register('firstName')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
               {errors.firstName && <p className="text-xs text-crit mt-1">{t('validation.required')}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-ink-soft mb-1">{t('supplier.register.lastName', 'Last Name')} *</label>
-              <input {...register('lastName')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              <label htmlFor="lastName" className="block text-sm font-medium text-ink-soft mb-1">{t('supplier.register.lastName', 'Last Name')} *</label>
+              <input id="lastName" {...register('lastName')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
               {errors.lastName && <p className="text-xs text-crit mt-1">{t('validation.required')}</p>}
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-ink-soft mb-1">{t('auth.email', 'Email')} *</label>
-              <input type="email" {...register('email')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              <label htmlFor="email" className="block text-sm font-medium text-ink-soft mb-1">{t('auth.email', 'Email')} *</label>
+              <input id="email" type="email" {...register('email')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
               {errors.email && <p className="text-xs text-crit mt-1">{t('validation.invalidEmail')}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-ink-soft mb-1">{t('auth.password')} *</label>
-              <input type="password" autoComplete="new-password" {...register('password')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              <label htmlFor="password" className="block text-sm font-medium text-ink-soft mb-1">{t('auth.password')} *</label>
+              <input id="password" type="password" autoComplete="new-password" {...register('password')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
               {password.length > 0 && (
                 <>
                   <div className="mt-2 grid grid-cols-4 gap-1" aria-label="Password strength">
@@ -173,8 +173,8 @@ export default function SupplierRegisterPage() {
               {errors.password && <p className="text-xs text-crit mt-1">{t('supplier.register.passwordMin', 'Minimum 8 characters')}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-ink-soft mb-1">{t('supplier.register.confirmPassword', 'Confirm Password')} *</label>
-              <input type="password" autoComplete="new-password" {...register('confirmPassword')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-ink-soft mb-1">{t('supplier.register.confirmPassword', 'Confirm Password')} *</label>
+              <input id="confirmPassword" type="password" autoComplete="new-password" {...register('confirmPassword')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
               {errors.confirmPassword && <p className="text-xs text-crit mt-1">{t(errors.confirmPassword.message ?? 'validation.passwordMismatch')}</p>}
             </div>
           </div>

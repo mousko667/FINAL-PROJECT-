@@ -127,7 +127,12 @@ function AdminPermissionMatrixPage() {
       {isLoading ? (
         <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-ink-faint" /></div>
       ) : (
-        <Panel className="overflow-x-auto">
+        <Panel
+          className="overflow-x-auto"
+          tabIndex={0}
+          role="region"
+          aria-label={t('admin.permissions.title')}
+        >
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="bg-ground">

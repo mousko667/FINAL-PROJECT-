@@ -74,6 +74,7 @@ function AdminDepartmentFormPage() {
           <span className="flex items-center gap-4">
             <button
               onClick={() => navigate('/admin/departments')}
+              aria-label={t('app.back', 'Go back')}
               className="p-2 hover:bg-white/10 rounded-full transition-colors"
             >
               <ArrowLeft className="w-5 h-5 text-white" aria-hidden />
@@ -87,41 +88,41 @@ function AdminDepartmentFormPage() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">
+            <label htmlFor="departmentCode" className="block text-sm font-medium text-ink-soft mb-1">
               {t('admin.departments.code', 'Code')} *
             </label>
-            <input {...register('code')} placeholder="ex. FIN" className={inputCls} />
+            <input id="departmentCode" {...register('code')} placeholder="ex. FIN" className={inputCls} />
             {errors.code && <p className="text-xs text-crit mt-1">{t('validation.required', 'Requis')}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">
+            <label htmlFor="departmentBudget" className="block text-sm font-medium text-ink-soft mb-1">
               {t('admin.departments.budget', 'Budget annuel')}
             </label>
-            <input type="number" step="0.01" {...register('budget')} placeholder="0" className={inputCls} />
+            <input id="departmentBudget" type="number" step="0.01" {...register('budget')} placeholder="0" className={inputCls} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">
+            <label htmlFor="departmentNameFr" className="block text-sm font-medium text-ink-soft mb-1">
               {t('admin.departments.nameFr', 'Nom (FR)')} *
             </label>
-            <input {...register('nameFr')} className={inputCls} />
+            <input id="departmentNameFr" {...register('nameFr')} className={inputCls} />
             {errors.nameFr && <p className="text-xs text-crit mt-1">{t('validation.required', 'Requis')}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">
+            <label htmlFor="departmentNameEn" className="block text-sm font-medium text-ink-soft mb-1">
               {t('admin.departments.nameEn', 'Nom (EN)')} *
             </label>
-            <input {...register('nameEn')} className={inputCls} />
+            <input id="departmentNameEn" {...register('nameEn')} className={inputCls} />
             {errors.nameEn && <p className="text-xs text-crit mt-1">{t('validation.required', 'Requis')}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">
+            <label htmlFor="n1Role" className="block text-sm font-medium text-ink-soft mb-1">
               {t('admin.departments.n1Role', 'Rôle Validateur N1')} *
             </label>
-            <select {...register('n1Role')} className={inputCls}>
+            <select id="n1Role" {...register('n1Role')} className={inputCls}>
               <option value="">{t('admin.departments.selectRole', '— Sélectionner —')}</option>
               {ROLE_OPTIONS.filter(r => r.value.startsWith('ROLE_VALIDATEUR_N1_')).map(r => (
                 <option key={r.value} value={r.value}>{r.label}</option>
@@ -139,10 +140,10 @@ function AdminDepartmentFormPage() {
 
           {requiresN2 && (
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-ink-soft mb-1">
+              <label htmlFor="n2Role" className="block text-sm font-medium text-ink-soft mb-1">
                 {t('admin.departments.n2Role', 'Rôle Validateur N2')}
               </label>
-              <select {...register('n2Role')} className={inputCls}>
+              <select id="n2Role" {...register('n2Role')} className={inputCls}>
                 <option value="">{t('admin.departments.selectRole', '— Sélectionner —')}</option>
                 {ROLE_OPTIONS.filter(r => r.value.startsWith('ROLE_VALIDATEUR_N2_')).map(r => (
                   <option key={r.value} value={r.value}>{r.label}</option>

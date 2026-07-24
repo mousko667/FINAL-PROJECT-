@@ -69,8 +69,9 @@ export default function SupplierDocumentsPage() {
 
         <div className="flex flex-wrap gap-3 items-end">
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">{t('supplier.documents.type')}</label>
+            <label htmlFor="supplierDocType" className="block text-sm font-medium text-ink-soft mb-1">{t('supplier.documents.type')}</label>
             <select
+              id="supplierDocType"
               value={docType}
               onChange={e => setDocType(e.target.value as DocType)}
               className="border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-surface text-ink"

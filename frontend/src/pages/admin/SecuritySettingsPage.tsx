@@ -189,6 +189,7 @@ function SecuritySettingsPage() {
                 type="number"
                 value={sessionTimeout}
                 onChange={e => setSessionTimeout(Number(e.target.value))}
+                aria-label={t('admin.security.sessionTimeout')}
                 min={5} max={480}
                 className="mt-2 w-32 border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
@@ -211,6 +212,7 @@ function SecuritySettingsPage() {
                 type="number"
                 value={maxAttempts}
                 onChange={e => setMaxAttempts(Number(e.target.value))}
+                aria-label={t('admin.security.maxLoginAttempts')}
                 min={3} max={10}
                 className="mt-2 w-24 border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
@@ -230,6 +232,7 @@ function SecuritySettingsPage() {
                 type="number"
                 value={minPassword}
                 onChange={e => setMinPassword(Number(e.target.value))}
+                aria-label={t('admin.security.passwordMinLength')}
                 min={8} max={32}
                 className="mt-2 w-24 border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />

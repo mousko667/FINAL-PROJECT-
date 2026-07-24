@@ -152,8 +152,9 @@ function IntegrationsPage() {
         <div className="bg-surface rounded-[4px] border border-hairline p-5 space-y-4">
           <h2 className="font-semibold text-ink">{t('admin.integrations.addWebhook')}</h2>
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">{t('admin.integrations.webhookUrl')}</label>
+            <label htmlFor="webhookUrl" className="block text-sm font-medium text-ink-soft mb-1">{t('admin.integrations.webhookUrl')}</label>
             <input
+              id="webhookUrl"
               type="url"
               value={url}
               onChange={e => setUrl(e.target.value)}
@@ -162,8 +163,9 @@ function IntegrationsPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">{t('admin.integrations.webhookEvent')}</label>
+            <label htmlFor="webhookEvent" className="block text-sm font-medium text-ink-soft mb-1">{t('admin.integrations.webhookEvent')}</label>
             <select
+              id="webhookEvent"
               value={event}
               onChange={e => setEvent(e.target.value)}
               className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"

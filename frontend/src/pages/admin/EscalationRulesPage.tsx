@@ -75,15 +75,15 @@ export default function EscalationRulesPage() {
           <div className="bg-surface rounded-[4px] border border-hairline p-6 space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <label className="block text-sm font-medium text-ink-soft mb-1">{t('escalationRules.hoursAfter', 'Hours after deadline')} *</label>
-                <input type="number" min={0} max={720} value={editor.hoursAfterDeadline}
+                <label htmlFor="hoursAfterDeadline" className="block text-sm font-medium text-ink-soft mb-1">{t('escalationRules.hoursAfter', 'Hours after deadline')} *</label>
+                <input id="hoursAfterDeadline" type="number" min={0} max={720} value={editor.hoursAfterDeadline}
                   onChange={e => setEditor({ ...editor, hoursAfterDeadline: Number(e.target.value) })}
                   className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
                 <p className="text-xs text-ink-faint mt-1">{t('escalationRules.hoursHint', 'Escalation is sent once an approval is overdue by this many hours (0 = immediately).')}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink-soft mb-1">{t('escalationRules.label', 'Label')}</label>
-                <input value={editor.label} onChange={e => setEditor({ ...editor, label: e.target.value })}
+                <label htmlFor="escalationRuleLabel" className="block text-sm font-medium text-ink-soft mb-1">{t('escalationRules.label', 'Label')}</label>
+                <input id="escalationRuleLabel" value={editor.label} onChange={e => setEditor({ ...editor, label: e.target.value })}
                   placeholder={t('escalationRules.labelPlaceholder', 'e.g. Escalate after 1 day')}
                   className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
               </div>

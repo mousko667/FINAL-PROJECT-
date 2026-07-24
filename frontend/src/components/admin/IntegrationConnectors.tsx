@@ -74,7 +74,7 @@ export function IntegrationConnectors() {
 
       <div className="flex flex-wrap items-end gap-2 mb-4">
         <input value={name} onChange={e => setName(e.target.value)} placeholder={t('admin.connectors.name', 'Nom')} className={`${inputCls} flex-1 min-w-[140px]`} />
-        <select value={type} onChange={e => setType(e.target.value)} className={inputCls}>
+        <select value={type} onChange={e => setType(e.target.value)} aria-label={t('admin.connectors.type', 'Connector type')} className={inputCls}>
           {TYPES.map(ty => <option key={ty} value={ty}>{ty}</option>)}
         </select>
         <input value={endpoint} onChange={e => setEndpoint(e.target.value)} placeholder={t('admin.connectors.endpoint', 'Endpoint (URL, optionnel pour MOCK)')} className={`${inputCls} flex-1 min-w-[180px]`} />

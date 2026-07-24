@@ -138,10 +138,11 @@ export default function AdminDelegationsPage() {
 
         {/* Department selector */}
         <Panel className="p-5">
-          <label className="block text-sm font-medium text-ink-soft mb-1">
+          <label htmlFor="delegationsDepartment" className="block text-sm font-medium text-ink-soft mb-1">
             {t('admin.delegations.department', 'Department')}
           </label>
           <select
+            id="delegationsDepartment"
             value={dept}
             onChange={(e) => setDept(e.target.value)}
             className="w-full sm:w-80 border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -213,34 +214,34 @@ export default function AdminDelegationsPage() {
               <h2 className="font-semibold text-ink">{t('admin.delegations.createTitle', 'Create a delegation')}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-ink-soft mb-1">{t('admin.delegations.delegator', 'Delegator')} *</label>
-                  <select value={delegatorId} onChange={(e) => setDelegatorId(e.target.value)}
+                  <label htmlFor="delegatorId" className="block text-sm font-medium text-ink-soft mb-1">{t('admin.delegations.delegator', 'Delegator')} *</label>
+                  <select id="delegatorId" value={delegatorId} onChange={(e) => setDelegatorId(e.target.value)}
                     className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
                     <option value="">{t('admin.delegations.selectUser', '— Select a user —')}</option>
                     {(users ?? []).map((u) => <option key={u.id} value={u.id}>{userLabel(u)}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-ink-soft mb-1">{t('admin.delegations.delegatee', 'Delegatee')} *</label>
-                  <select value={delegateeId} onChange={(e) => setDelegateeId(e.target.value)}
+                  <label htmlFor="delegateeId" className="block text-sm font-medium text-ink-soft mb-1">{t('admin.delegations.delegatee', 'Delegatee')} *</label>
+                  <select id="delegateeId" value={delegateeId} onChange={(e) => setDelegateeId(e.target.value)}
                     className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
                     <option value="">{t('admin.delegations.selectUser', '— Select a user —')}</option>
                     {(users ?? []).map((u) => <option key={u.id} value={u.id}>{userLabel(u)}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-ink-soft mb-1">{t('admin.delegations.fromDate', 'From')} *</label>
-                  <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)}
+                  <label htmlFor="adminDelegationFromDate" className="block text-sm font-medium text-ink-soft mb-1">{t('admin.delegations.fromDate', 'From')} *</label>
+                  <input id="adminDelegationFromDate" type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)}
                     className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-ink-soft mb-1">{t('admin.delegations.toDate', 'To')} *</label>
-                  <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)}
+                  <label htmlFor="adminDelegationToDate" className="block text-sm font-medium text-ink-soft mb-1">{t('admin.delegations.toDate', 'To')} *</label>
+                  <input id="adminDelegationToDate" type="date" value={toDate} onChange={(e) => setToDate(e.target.value)}
                     className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-ink-soft mb-1">{t('admin.delegations.reason', 'Reason')}</label>
-                  <input type="text" value={reason} onChange={(e) => setReason(e.target.value)}
+                  <label htmlFor="adminDelegationReason" className="block text-sm font-medium text-ink-soft mb-1">{t('admin.delegations.reason', 'Reason')}</label>
+                  <input id="adminDelegationReason" type="text" value={reason} onChange={(e) => setReason(e.target.value)}
                     placeholder={t('admin.delegations.reasonPlaceholder', 'e.g. annual leave')}
                     className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
                 </div>

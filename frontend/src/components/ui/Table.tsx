@@ -6,12 +6,26 @@ import { cn } from '@/lib/utils'
  * métier. En-tête ink-soft uppercase fin ; lignes séparées border-hairline,
  * hover hairline/40. Montants monétaires : ajouter className="num" sur le TD.
  * Le conteneur overflow-x-auto évite tout scroll horizontal de page.
+ *
+ * a11y (AUDIT-023) : le conteneur défilable est focalisable au clavier
+ * (`tabIndex=0` + `role="region"`), sans quoi son contenu débordant est
+ * atteignable à la souris seulement — axe-core `scrollable-region-focusable`.
+ * `containerLabel` nomme la région ; à renseigner dès que la page porte
+ * plusieurs tableaux.
  */
 export const Table = React.forwardRef<
   HTMLTableElement,
-  React.TableHTMLAttributes<HTMLTableElement> & { containerClassName?: string }
->(({ className, containerClassName, ...props }, ref) => (
-  <div className={cn('w-full overflow-x-auto', containerClassName)}>
+  React.TableHTMLAttributes<HTMLTableElement> & {
+    containerClassName?: string
+    containerLabel?: string
+  }
+>(({ className, containerClassName, containerLabel, ...props }, ref) => (
+  <div
+    className={cn('w-full overflow-x-auto', containerClassName)}
+    tabIndex={0}
+    role="region"
+    aria-label={containerLabel}
+  >
     <table ref={ref} className={cn('w-full border-collapse text-sm', className)} {...props} />
   </div>
 ))

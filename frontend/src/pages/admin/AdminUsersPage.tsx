@@ -194,23 +194,23 @@ function EditUserModal({ user, onClose }: EditUserModalProps) {
 
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">{t('admin.users.firstName')}</label>
-            <input value={firstName} onChange={e => setFirstName(e.target.value)}
+            <label htmlFor="editUserFirstName" className="block text-sm font-medium text-ink-soft mb-1">{t('admin.users.firstName')}</label>
+            <input id="editUserFirstName" value={firstName} onChange={e => setFirstName(e.target.value)}
               className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">{t('admin.users.lastName')}</label>
-            <input value={lastName} onChange={e => setLastName(e.target.value)}
+            <label htmlFor="editUserLastName" className="block text-sm font-medium text-ink-soft mb-1">{t('admin.users.lastName')}</label>
+            <input id="editUserLastName" value={lastName} onChange={e => setLastName(e.target.value)}
               className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">{t('admin.users.email')}</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+            <label htmlFor="editUserEmail" className="block text-sm font-medium text-ink-soft mb-1">{t('admin.users.email')}</label>
+            <input id="editUserEmail" type="email" value={email} onChange={e => setEmail(e.target.value)}
               className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">{t('admin.users.username')}</label>
-            <input value={user.username} disabled className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-ground text-ink-faint" />
+            <label htmlFor="editUserUsername" className="block text-sm font-medium text-ink-soft mb-1">{t('admin.users.username')}</label>
+            <input id="editUserUsername" value={user.username} disabled className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-ground text-ink-faint" />
           </div>
         </div>
 

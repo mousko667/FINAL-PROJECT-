@@ -76,10 +76,11 @@ export function ImportInvoicesModal({ onClose, onImported }: ImportInvoicesModal
               />
 
               <div>
-                <label className="block text-xs font-medium text-ink-soft mb-1">
+                <label htmlFor="importDepartmentCode" className="block text-xs font-medium text-ink-soft mb-1">
                   {t('invoice.import.department_code', 'Code département (optionnel)')}
                 </label>
                 <input
+                  id="importDepartmentCode"
                   type="text"
                   value={departmentCode}
                   onChange={(e) => setDepartmentCode(e.target.value)}

@@ -94,22 +94,22 @@ function RecordPaymentModal({ invoice, onClose, onSuccess }: {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.paymentMethod', 'Mode de paiement')} *</label>
-              <select value={form.paymentMethod} onChange={e => setForm(p => ({ ...p, paymentMethod: e.target.value }))}
+              <label htmlFor="paymentMethod" className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.paymentMethod', 'Mode de paiement')} *</label>
+              <select id="paymentMethod" value={form.paymentMethod} onChange={e => setForm(p => ({ ...p, paymentMethod: e.target.value }))}
                 className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-gold-deep/30">
                 {PAYMENT_METHODS.map(m => <option key={m} value={m}>{t(`invoice.paymentMethods.${m}`, m)}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.paymentDate', 'Date de paiement')} *</label>
-              <input type="date" value={form.paymentDate} onChange={e => setForm(p => ({ ...p, paymentDate: e.target.value }))}
+              <label htmlFor="paymentDate" className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.paymentDate', 'Date de paiement')} *</label>
+              <input id="paymentDate" type="date" value={form.paymentDate} onChange={e => setForm(p => ({ ...p, paymentDate: e.target.value }))}
                 className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-gold-deep/30" />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.paymentReference', 'Référence de paiement')} *</label>
-            <input value={form.reference} onChange={e => setForm(p => ({ ...p, reference: e.target.value }))}
+            <label htmlFor="paymentReference" className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.paymentReference', 'Référence de paiement')} *</label>
+            <input id="paymentReference" value={form.reference} onChange={e => setForm(p => ({ ...p, reference: e.target.value }))}
               placeholder="ex. VIR-2026-001"
               className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-gold-deep/30" />
           </div>
@@ -130,8 +130,8 @@ function RecordPaymentModal({ invoice, onClose, onSuccess }: {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">Notes (optionnel)</label>
-            <textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
+            <label htmlFor="paymentNotes" className="block text-sm font-medium text-ink-soft mb-1">Notes (optionnel)</label>
+            <textarea id="paymentNotes" rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
               className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-gold-deep/30 resize-none"
               placeholder={t('payments.notesPlaceholder')} />
           </div>
@@ -323,6 +323,7 @@ export default function PaymentsPage() {
                 <select
                   value={batchMethod}
                   onChange={e => setBatchMethod(e.target.value)}
+                  aria-label={t('payments.batchMethod', 'Payment method for batch')}
                   className="border border-hairline rounded-[4px] px-2 py-1.5 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-gold-deep/30"
                 >
                   {PAYMENT_METHODS.map(m => <option key={m} value={m}>{t(`invoice.paymentMethods.${m}`, m)}</option>)}
@@ -432,6 +433,7 @@ export default function PaymentsPage() {
               <select
                 value={statusFilter}
                 onChange={e => { setStatusFilter(e.target.value); setPage(0) }}
+                aria-label={t('payments.filterStatus', 'Filter by payment status')}
                 className="border border-hairline rounded-[4px] px-2 py-1.5 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-gold-deep/30"
               >
                 <option value="ALL">{t('matching.all', 'Tous')}</option>

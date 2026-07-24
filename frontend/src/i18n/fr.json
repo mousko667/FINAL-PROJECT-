@@ -138,7 +138,10 @@
       "DAILY": "Quotidien",
       "WEEKLY": "Hebdomadaire",
       "MONTHLY": "Mensuel"
-    }
+    },
+    "datasetLabel": "Jeu de donnees",
+    "formatLabel": "Format",
+    "frequencyLabel": "Frequence"
   },
   "privacy": {
     "prompt": "Veuillez accepter la politique de confidentialité (v{{version}}).",
@@ -350,6 +353,7 @@
     },
     "viewer": {
       "view": "Aperçu",
+      "download": "Télécharger",
       "noPreview": "Aperçu non disponible pour ce type de fichier.",
       "zoomIn": "Zoom avant",
       "zoomOut": "Zoom arrière",
@@ -649,7 +653,10 @@
       "save": "Enregistrer les modifications",
       "saved": "Matrice d'approbation mise à jour avec succès.",
       "noneN2": "— Aucun (niveau unique) —",
-      "hint": "Les modifications prennent effet immédiatement. Le moteur de routage lit cette matrice à chaque soumission de facture."
+      "hint": "Les modifications prennent effet immédiatement. Le moteur de routage lit cette matrice à chaque soumission de facture.",
+      "n1RoleFor": "Role approbateur N1 pour {{dept}}",
+      "n2RoleFor": "Role approbateur N2 pour {{dept}}",
+      "requiresN2For": "Requiert une approbation N2 pour {{dept}}"
     },
     "security": {
       "title": "Paramètres de sécurité",
@@ -752,7 +759,11 @@
         "nextDeadlinesTitle": "Prochaines échéances de conformité",
         "noUpcoming": "Aucune échéance à venir.",
         "allClear": "Aucun incident ouvert — tout est en ordre."
-      }
+      },
+      "incidentSeverity": "Gravite de l'incident",
+      "incidentStatusFor": "Statut de {{title}}",
+      "framework": "Referentiel de conformite",
+      "calendarDue": "Date d'echeance"
     },
     "connectors": {
       "title": "Connecteurs d'intégration",
@@ -769,7 +780,8 @@
       "syncOk": "Dernière synchro OK",
       "syncFail": "Échec synchro",
       "deleteConfirmTitle": "Supprimer ce connecteur ?",
-      "deleteConfirmBody": "La synchronisation planifiée de ce connecteur sera arrêtée immédiatement."
+      "deleteConfirmBody": "La synchronisation planifiée de ce connecteur sera arrêtée immédiatement.",
+      "type": "Type de connecteur"
     },
     "integrations": {
       "title": "Intégrations & Webhooks",
@@ -987,7 +999,8 @@
       "OVERRIDDEN": "Forcé"
     },
     "emptyTitle": "Aucun rapprochement pour cette facture",
-    "emptyHint": "Cette facture n’est pas rattachée à un bon de commande : il n’y a donc rien à rapprocher."
+    "emptyHint": "Cette facture n’est pas rattachée à un bon de commande : il n’y a donc rien à rapprocher.",
+    "filterStatus": "Filtrer par statut de rapprochement"
   },
   "approvals": {
     "title": "File d'approbation",
@@ -1226,7 +1239,9 @@
       "previous": "Précédent",
       "next": "Suivant",
       "finish": "Créer le fournisseur"
-    }
+    },
+    "filterStatus": "Filtrer par statut",
+    "filterCategory": "Filtrer par categorie"
   },
   "mfa": {
     "invalidOtp": "Code invalide. Vérifiez votre application et réessayez.",
@@ -1275,7 +1290,9 @@
       "processed": "Exécuté"
     },
     "notesPlaceholder": "Informations complémentaires sur le paiement...",
-    "fullAmountRequired": "Le montant doit correspondre au montant total de la facture."
+    "fullAmountRequired": "Le montant doit correspondre au montant total de la facture.",
+    "batchMethod": "Mode de paiement du lot",
+    "filterStatus": "Filtrer par statut de paiement"
   },
   "paymentAlerts": {
     "title": "Règles d'alerte de paiement",
@@ -1300,7 +1317,8 @@
     "empty": "Aucune facture archivée pour le moment.",
     "retentionNote": "Une empreinte SHA-256 est calculée et enregistrée au téléversement de chaque document (référence d'intégrité). La politique de rétention OCT vise une conservation de 10 ans.",
     "allDepartments": "Tous les départements",
-    "resetFilters": "Réinitialiser les filtres"
+    "resetFilters": "Réinitialiser les filtres",
+    "filterDepartment": "Filtrer par departement"
   },
   "archiveFolders": {
     "title": "Dossiers d'archive",

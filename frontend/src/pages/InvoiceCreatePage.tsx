@@ -191,14 +191,14 @@ function InvoiceCreatePageInner() {
 
             {/* Supplier dropdown */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-ink-soft mb-1">
+              <label htmlFor="supplierId" className="block text-sm font-medium text-ink-soft mb-1">
                 {t('invoice.supplier', 'Supplier')} *
               </label>
               <Controller
                 name="supplierId"
                 control={control}
                 render={({ field }) => (
-                  <select {...field} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  <select id="supplierId" {...field} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
                     <option value="">{t('invoice.selectSupplier', '— Select supplier —')}</option>
                     {(suppliers ?? []).map((s) => (
                       <option key={s.id} value={s.id}>{s.companyName} ({s.taxId})</option>
@@ -212,14 +212,14 @@ function InvoiceCreatePageInner() {
             {/* PO Reference — only shown when supplier selected */}
             {watchedSupplierId && (
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-ink-soft mb-1">
+                <label htmlFor="purchaseOrderId" className="block text-sm font-medium text-ink-soft mb-1">
                   {t('invoice.purchaseOrder', 'Purchase Order (optional)')}
                 </label>
                 <Controller
                   name="purchaseOrderId"
                   control={control}
                   render={({ field }) => (
-                    <select {...field} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+                    <select id="purchaseOrderId" {...field} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
                       <option value="">{t('invoice.noPO', '— No linked PO —')}</option>
                       {(supplierPOs ?? []).map((po) => (
                         <option key={po.id} value={po.id}>
@@ -237,14 +237,14 @@ function InvoiceCreatePageInner() {
 
             {/* Department */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-ink-soft mb-1">
+              <label htmlFor="departmentId" className="block text-sm font-medium text-ink-soft mb-1">
                 {t('invoice.department', 'Department')} *
               </label>
               <Controller
                 name="departmentId"
                 control={control}
                 render={({ field }) => (
-                  <select {...field} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  <select id="departmentId" {...field} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
                     <option value="">{t('invoice.selectDept', '— Select department —')}</option>
                     {(departments ?? []).map((d) => (
                       <option key={d.id} value={d.id}>{i18n.language === 'fr' ? d.nameFr : d.nameEn} ({d.code})</option>
@@ -257,29 +257,29 @@ function InvoiceCreatePageInner() {
 
             {/* Amount */}
             <div>
-              <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.amount', 'Amount')} *</label>
-              <input type="number" step="0.01" {...register('amount')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              <label htmlFor="amount" className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.amount', 'Amount')} *</label>
+              <input id="amount" type="number" step="0.01" {...register('amount')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
               {errors.amount && <p className="text-xs text-crit mt-1">{t('validation.positiveNumber')}</p>}
             </div>
 
             {/* Currency */}
             <div>
-              <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.currency', 'Currency')} *</label>
-              <select {...register('currency')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+              <label htmlFor="currency" className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.currency', 'Currency')} *</label>
+              <select id="currency" {...register('currency')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
                 <option value="XAF">XAF (Franc CFA)</option>
               </select>
             </div>
 
             {/* Issue Date */}
             <div>
-              <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.issueDate', 'Issue Date')} *</label>
-              <input type="date" {...register('issueDate')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              <label htmlFor="issueDate" className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.issueDate', 'Issue Date')} *</label>
+              <input id="issueDate" type="date" {...register('issueDate')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
             </div>
 
             {/* Due Date */}
             <div>
-              <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.dueDate', 'Due Date')} *</label>
-              <input type="date" {...register('dueDate')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              <label htmlFor="dueDate" className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.dueDate', 'Due Date')} *</label>
+              <input id="dueDate" type="date" {...register('dueDate')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
               {/* AUDIT-032: without this the .refine would block submission silently. */}
               {errors.dueDate && (
                 <p className="text-xs text-crit mt-1">
@@ -291,8 +291,8 @@ function InvoiceCreatePageInner() {
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.description', 'Description')}</label>
-            <textarea {...register('description')} rows={3} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+            <label htmlFor="description" className="block text-sm font-medium text-ink-soft mb-1">{t('invoice.description', 'Description')}</label>
+            <textarea id="description" {...register('description')} rows={3} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
           </div>
 
           {duplicateCheck?.duplicate && (
@@ -318,16 +318,16 @@ function InvoiceCreatePageInner() {
             <p className="text-xs text-ink-faint">{t('invoice.lineItemsHint', 'Add invoice line items. These are compared against the PO during matching.')}</p>
             <form onSubmit={liForm.handleSubmit(addLineItem)} className="grid grid-cols-4 gap-3 items-end">
               <div className="col-span-2">
-                <label className="block text-xs font-medium text-ink-soft mb-1">{t('invoice.description', 'Description')}</label>
-                <input {...liForm.register('description')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none" />
+                <label htmlFor="lineItemDescription" className="block text-xs font-medium text-ink-soft mb-1">{t('invoice.description', 'Description')}</label>
+                <input id="lineItemDescription" {...liForm.register('description')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-ink-soft mb-1">{t('invoice.quantity', 'Qty')}</label>
-                <input type="number" step="0.001" {...liForm.register('quantity')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none" />
+                <label htmlFor="lineItemQuantity" className="block text-xs font-medium text-ink-soft mb-1">{t('invoice.quantity', 'Qty')}</label>
+                <input id="lineItemQuantity" type="number" step="0.001" {...liForm.register('quantity')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-ink-soft mb-1">{t('invoice.unitPrice', 'Unit Price')}</label>
-                <input type="number" step="0.01" {...liForm.register('unitPrice')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none" />
+                <label htmlFor="lineItemUnitPrice" className="block text-xs font-medium text-ink-soft mb-1">{t('invoice.unitPrice', 'Unit Price')}</label>
+                <input id="lineItemUnitPrice" type="number" step="0.01" {...liForm.register('unitPrice')} className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none" />
               </div>
               <div className="col-span-4 flex justify-end">
                 <button type="submit" className="flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded-[4px] text-sm hover:bg-primary/90">

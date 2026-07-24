@@ -87,13 +87,14 @@ export function ValidationChecklist({ invoiceId }: { invoiceId: string }) {
         {items.map((it, idx) => (
           <div key={it.templateItemId} className="flex items-start gap-3">
             <input
+              id={`checklist-item-${it.templateItemId}`}
               type="checkbox"
               checked={it.checked}
               onChange={e => setItem(idx, { checked: e.target.checked })}
               className="mt-1"
             />
             <div className="flex-1">
-              <label className="text-sm text-ink">
+              <label htmlFor={`checklist-item-${it.templateItemId}`} className="text-sm text-ink">
                 {it.label}
                 {it.required && <span className="ml-1 text-crit" title={t('checklist.required', 'Required')}>*</span>}
               </label>

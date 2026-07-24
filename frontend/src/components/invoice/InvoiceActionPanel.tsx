@@ -198,7 +198,7 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
           <div className="bg-surface rounded-[4px] p-6 shadow-2xl w-full max-w-md space-y-4">
             <h3 className="font-semibold text-ink">{t('invoice.confirmReject', 'Confirm rejection')}</h3>
             <div>
-              <label className="block text-sm text-ink-soft mb-1">
+              <label htmlFor="reject-reason-code" className="block text-sm text-ink-soft mb-1">
                 {t('invoice.rejectReasonCode', 'Rejection reason')} *
               </label>
               <select
@@ -214,7 +214,7 @@ export function InvoiceActionPanel({ invoice }: InvoiceActionPanelProps) {
               </select>
             </div>
             <div>
-              <label className="block text-sm text-ink-soft mb-1">
+              <label htmlFor="reject-reason-input" className="block text-sm text-ink-soft mb-1">
                 {t('invoice.rejectReasonDetail', 'Detail (optional)')}{reasonCode === 'AUTRE' ? ' *' : ''}
               </label>
               <textarea

@@ -215,10 +215,11 @@ function SupplierDetailPageInner() {
         <div className="space-y-4">
           <div className="bg-surface rounded-[4px] border border-hairline p-5 flex flex-col sm:flex-row items-start sm:items-end gap-4">
             <div className="flex-1 w-full">
-              <label className="block text-sm font-medium text-ink-soft mb-1">
+              <label htmlFor="supplierDocumentType" className="block text-sm font-medium text-ink-soft mb-1">
                 {t('supplier.document.type.label', 'Document Type')}
               </label>
               <select
+                id="supplierDocumentType"
                 value={docType}
                 onChange={(e) => setDocType(e.target.value as typeof docType)}
                 className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"

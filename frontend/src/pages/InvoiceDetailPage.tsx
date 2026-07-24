@@ -299,10 +299,11 @@ function InvoiceDetailPage() {
                         </button>
                       ) : (
                         <div className="space-y-2">
-                          <label className="block text-sm font-medium text-ink-soft">
+                          <label htmlFor="overrideReason" className="block text-sm font-medium text-ink-soft">
                             {t('matching.overrideReason', 'Override justification')} * ({t('matching.minChars', 'min. 10 characters')})
                           </label>
                           <textarea
+                            id="overrideReason"
                             value={overrideReason}
                             onChange={(e) => setOverrideReason(e.target.value)}
                             rows={3}
@@ -491,7 +492,7 @@ function InvoiceDetailPage() {
                         </button>
                       )}
                       {doc.downloadUrl && (
-                        <a href={doc.downloadUrl} download className="text-gold-deep hover:opacity-80">
+                        <a href={doc.downloadUrl} download aria-label={t('invoice.viewer.download', 'Download')} className="text-gold-deep hover:opacity-80">
                           <Download className="w-4 h-4" />
                         </a>
                       )}

@@ -90,10 +90,11 @@ export default function AdminMatchingConfigPage() {
         ) : (
           <Panel className="p-5 space-y-5">
             <div>
-              <label className="block text-sm font-medium text-ink-soft mb-1">
+              <label htmlFor="tolerancePercentage" className="block text-sm font-medium text-ink-soft mb-1">
                 {t('admin.matchingConfig.tolerancePercentage', 'Tolerance (%)')}
               </label>
               <input
+                id="tolerancePercentage"
                 type="number" min="0" max="100" step="0.01"
                 value={tolerancePercentage}
                 onChange={(e) => setTolerancePercentage(e.target.value)}
@@ -105,10 +106,11 @@ export default function AdminMatchingConfigPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-ink-soft mb-1">
+              <label htmlFor="toleranceAmount" className="block text-sm font-medium text-ink-soft mb-1">
                 {t('admin.matchingConfig.toleranceAmount', 'Tolerance (amount)')}
               </label>
               <input
+                id="toleranceAmount"
                 type="number" min="0" step="0.01"
                 value={toleranceAmount}
                 onChange={(e) => setToleranceAmount(e.target.value)}

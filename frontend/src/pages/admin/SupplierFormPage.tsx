@@ -93,10 +93,11 @@ function SupplierFormPageInner() {
       <form onSubmit={handleSubmit(onSubmit)} className="bg-surface rounded-[4px] border border-hairline p-6 space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-ink-soft mb-1">
+            <label htmlFor="companyName" className="block text-sm font-medium text-ink-soft mb-1">
               {t('supplier.fields.companyName', 'Company Name')} *
             </label>
             <input
+              id="companyName"
               {...register('companyName')}
               className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
@@ -104,10 +105,11 @@ function SupplierFormPageInner() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">
+            <label htmlFor="taxId" className="block text-sm font-medium text-ink-soft mb-1">
               {t('supplier.fields.taxId', 'Tax ID')} *
             </label>
             <input
+              id="taxId"
               {...register('taxId')}
               className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
@@ -115,10 +117,11 @@ function SupplierFormPageInner() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">
+            <label htmlFor="contactEmail" className="block text-sm font-medium text-ink-soft mb-1">
               {t('supplier.fields.contactEmail', 'Contact Email')} *
             </label>
             <input
+              id="contactEmail"
               type="email"
               {...register('contactEmail')}
               className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -127,30 +130,33 @@ function SupplierFormPageInner() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">
+            <label htmlFor="contactPhone" className="block text-sm font-medium text-ink-soft mb-1">
               {t('supplier.fields.contactPhone', 'Phone')}
             </label>
             <input
+              id="contactPhone"
               {...register('contactPhone')}
               className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">
+            <label htmlFor="address" className="block text-sm font-medium text-ink-soft mb-1">
               {t('supplier.fields.address', 'Address')}
             </label>
             <input
+              id="address"
               {...register('address')}
               className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-1">
+            <label htmlFor="category" className="block text-sm font-medium text-ink-soft mb-1">
               {t('supplier.fields.category', 'Category')}
             </label>
             <select
+              id="category"
               {...register('category')}
               className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             >
@@ -162,11 +168,12 @@ function SupplierFormPageInner() {
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-ink-soft mb-1">
+            <label htmlFor="bankDetails" className="block text-sm font-medium text-ink-soft mb-1">
               {t('supplier.fields.bankDetails', 'Bank Details')}
               <span className="ml-2 text-xs text-ink-faint font-normal">({t('supplier.fields.bankDetailsHint', 'write-only, stored encrypted')})</span>
             </label>
             <input
+              id="bankDetails"
               type="password"
               autoComplete="new-password"
               {...register('bankDetails')}

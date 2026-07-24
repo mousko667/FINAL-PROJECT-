@@ -108,6 +108,7 @@ function SuppliersPageInner() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
+            aria-label={t('supplier.filterStatus', 'Filter by status')}
             className="w-full pl-9 pr-4 py-2 text-sm border border-hairline rounded-[4px] focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none bg-surface"
           >
             <option value="">{t('app.allStatus', 'All Statuses')}</option>
@@ -121,6 +122,7 @@ function SuppliersPageInner() {
           <select
             value={categoryFilter}
             onChange={(e) => { setCategoryFilter(e.target.value); setPage(0) }}
+            aria-label={t('supplier.filterCategory', 'Filter by category')}
             className="w-full pl-9 pr-4 py-2 text-sm border border-hairline rounded-[4px] focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none bg-surface"
           >
             <option value="">{t('supplier.category.all', 'All Categories')}</option>

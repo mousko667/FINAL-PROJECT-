@@ -112,7 +112,7 @@ function AdminCompliancePage() {
         <div className="flex items-center gap-2 mb-3"><ShieldAlert className="w-5 h-5 text-primary" /><h2 className="font-semibold text-ink">{t('admin.compliance.incidents', 'Incidents de sécurité')}</h2></div>
         <div className="flex flex-wrap gap-2 mb-3">
           <input value={incTitle} onChange={e => setIncTitle(e.target.value)} placeholder={t('admin.compliance.incidentTitle', 'Titre de l\'incident')} className={`${inputCls} flex-1 min-w-[180px]`} />
-          <select value={incSev} onChange={e => setIncSev(e.target.value)} className={inputCls}>{['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map(s => <option key={s}>{s}</option>)}</select>
+          <select value={incSev} onChange={e => setIncSev(e.target.value)} aria-label={t('admin.compliance.incidentSeverity', 'Incident severity')} className={inputCls}>{['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map(s => <option key={s}>{s}</option>)}</select>
           <button onClick={() => addIncident.mutate()} disabled={!incTitle.trim() || addIncident.isPending} className="inline-flex items-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90 disabled:opacity-50"><Plus className="w-4 h-4" />{t('app.add', 'Ajouter')}</button>
         </div>
         {(incidents.data ?? []).length === 0 ? <p className="text-sm text-ink-faint">{t('admin.compliance.noIncidents', 'Aucun incident.')}</p> : (
@@ -120,7 +120,7 @@ function AdminCompliancePage() {
             {incidents.data!.map(i => (
               <li key={i.id} className="flex items-center justify-between py-2 text-sm">
                 <span><span className="font-medium text-ink">{i.title}</span> <span className="text-xs text-ink-faint">({i.severity})</span></span>
-                <select value={i.status} onChange={e => setIncStatus.mutate({ id: i.id, status: e.target.value })} className="text-xs border border-hairline rounded-[4px] px-2 py-1">
+                <select value={i.status} onChange={e => setIncStatus.mutate({ id: i.id, status: e.target.value })} aria-label={t('admin.compliance.incidentStatusFor', 'Status of {{title}}', { title: i.title })} className="text-xs border border-hairline rounded-[4px] px-2 py-1">
                   {['OPEN', 'INVESTIGATING', 'RESOLVED', 'CLOSED'].map(s => <option key={s}>{s}</option>)}
                 </select>
               </li>
@@ -133,7 +133,7 @@ function AdminCompliancePage() {
       <Panel className="p-5">
         <div className="flex items-center gap-2 mb-3"><ListChecks className="w-5 h-5 text-primary" /><h2 className="font-semibold text-ink">{t('admin.compliance.checklist', 'Checklist de conformité (SOX/IFRS)')}</h2></div>
         <div className="flex flex-wrap gap-2 mb-3">
-          <select value={clFw} onChange={e => setClFw(e.target.value)} className={inputCls}>{['SOX', 'IFRS', 'LOCAL'].map(f => <option key={f}>{f}</option>)}</select>
+          <select value={clFw} onChange={e => setClFw(e.target.value)} aria-label={t('admin.compliance.framework', 'Compliance framework')} className={inputCls}>{['SOX', 'IFRS', 'LOCAL'].map(f => <option key={f}>{f}</option>)}</select>
           <input value={clLabel} onChange={e => setClLabel(e.target.value)} placeholder={t('admin.compliance.checklistLabel', 'Élément de contrôle')} className={`${inputCls} flex-1 min-w-[180px]`} />
           <button onClick={() => addChecklist.mutate()} disabled={!clLabel.trim() || addChecklist.isPending} className="inline-flex items-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90 disabled:opacity-50"><Plus className="w-4 h-4" />{t('app.add', 'Ajouter')}</button>
         </div>
@@ -158,7 +158,7 @@ function AdminCompliancePage() {
         <div className="flex items-center gap-2 mb-3"><CalendarClock className="w-5 h-5 text-primary" /><h2 className="font-semibold text-ink">{t('admin.compliance.calendar', 'Calendrier de conformité')}</h2></div>
         <div className="flex flex-wrap gap-2 mb-3">
           <input value={calTitle} onChange={e => setCalTitle(e.target.value)} placeholder={t('admin.compliance.calendarTitle', 'Échéance')} className={`${inputCls} flex-1 min-w-[160px]`} />
-          <input type="date" value={calDue} onChange={e => setCalDue(e.target.value)} className={inputCls} />
+          <input type="date" value={calDue} onChange={e => setCalDue(e.target.value)} aria-label={t('admin.compliance.calendarDue', 'Due date')} className={inputCls} />
           <button onClick={() => addCalendar.mutate()} disabled={!calTitle.trim() || !calDue || addCalendar.isPending} className="inline-flex items-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-[4px] text-sm font-medium hover:bg-primary/90 disabled:opacity-50"><Plus className="w-4 h-4" />{t('app.add', 'Ajouter')}</button>
         </div>
         {(calendar.data ?? []).length === 0 ? <p className="text-sm text-ink-faint">{t('admin.compliance.noCalendar', 'Aucune échéance.')}</p> : (
