@@ -325,7 +325,7 @@ public class InvoiceController {
     @PostMapping("/{id}/matching/override")
     @PreAuthorize("hasRole('DAF')")
     @Operation(summary = "Override three-way matching mismatch",
-               description = "DAF or Admin can force an invoice through despite matching discrepancies")
+               description = "Only the DAF can force an invoice through despite matching discrepancies (ADMIN has no financial access)")
     public ResponseEntity<ApiResponse<Void>> overrideMatchingMismatch(
             @PathVariable UUID id,
             @Valid @RequestBody MatchingOverrideRequest request,

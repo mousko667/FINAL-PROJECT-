@@ -2272,3 +2272,30 @@ sur le contexte Playwright.
 pas la valeur du `dist/` local (regle verify-runtime-not-snapshot). Vider les assets hashes avant
 redeploiement pour ne pas laisser nginx servir un fichier perime. Et ne jamais deviner une clef de
 localStorage : la lire dans le code applicatif.
+
+## PROB-148 -- docs/API.md avait derive du code (39% de couverture, 19 chemins fantomes, ADMIN sur du financier)
+
+**Date :** 2026-07-24 | **Contexte :** P6 vague 4, lot V4-B (AUDIT-041 / AUDIT-017)
+
+**Symptome :** docs/API.md ne decrivait que 86 des 219 endpoints reels, documentait 19 chemins
+renvoyant 404 (ex. POST /invoices/{id}/validate-n1 alors que le vrai est .../workflow/validate-n1,
+GET /auth/me, GET /reports/kpi), et -- le plus grave -- accordait ROLE_ADMIN sur 15 surfaces
+financieres (creer/modifier/supprimer facture, bon-a-payer, paiements, rapports) que le code ferme
+explicitement par !hasRole('ADMIN'). Un integrateur qui aurait "aligne le code sur la doc" aurait
+rouvert un acces financier a l'ADMIN : regression SoD directe.
+
+**Cause racine :** API.md etait maintenu a la main et n'a pas suivi les refontes (introduction du
+sous-chemin /workflow, renommage kpi->kpis, fermetures SoD des vagues V2). Un document de contrat
+ecrit a la main derive mecaniquement du code des qu'une seule refonte n'est pas propagee.
+
+**Solution :** regenerer API.md DEPUIS le code (les annotations @*Mapping + @PreAuthorize des 40
+controleurs = source de verite, decision D6), pas depuis une intention. Les colonnes "Roles"
+refletent desormais l'autorisation reellement appliquee. Garde-fou permanent : ApiDocConsistencyTest
+(test unitaire, pas de contexte Spring) qui echoue si un chemin back-tique d'API.md ne correspond a
+aucun @*Mapping reel (documented subset of real) -- contre-preuve : un chemin fantome injecte fait
+rougir le test.
+
+**Preventive rule :** ne jamais editer un contrat d'API a la main pour "coller a une intention" --
+corriger l'annotation du controleur puis regenerer. Un document de reference sans test de coherence
+en CI rederive en quelques mois. Et regle SoD absolue : le CODE fait foi contre la doc ; ROLE_ADMIN
+n'a aucun acces financier -- on ferme la doc sur le code, jamais l'inverse.

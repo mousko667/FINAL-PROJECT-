@@ -1,493 +1,413 @@
-# API — Complete Endpoint Contract
+# API — Endpoint Contract
 
-**Base URL:** `/api/v1`  
-**Auth header:** `Authorization: Bearer {jwt_token}`  
-**Language header:** `Accept-Language: fr` or `Accept-Language: en`  
+> **Generated from the source code** (the `@*Mapping` + `@PreAuthorize` annotations of the 40
+> controllers) — the code is the single source of truth (P6 decision **D6**, finding
+> **AUDIT-041**). Do **not** hand-edit the tables below to match an intention: fix the controller
+> and regenerate. The generator lives in the audit tooling; a CI-style consistency test
+> (`ApiDocConsistencyTest`) fails if a path documented here no longer exists in the code.
+
+**Base URL:** `/api/v1` &nbsp;·&nbsp; **Auth header:** `Authorization: Bearer {jwt}` &nbsp;·&nbsp; **Language:** `Accept-Language: fr|en`
+
+All responses are wrapped in `ApiResponse<T>` (`{success, message, data, timestamp}`); error
+messages are localized via `Accept-Language`.
+
+## Roles & separation of duties (SoD)
+
+The **Roles** column is the authorization actually enforced by `@PreAuthorize`. Read it literally:
+
+- `Public` — no authentication. `Authenticated` — any logged-in user.
+- `ROLE_X` — that role is granted access.
+- _not ADMIN_, _not SUPPLIER_ — the endpoint is open to authenticated users **except** that role
+  (e.g. `Authenticated, not SUPPLIER, not ADMIN` = every internal staff role).
+
+> ⚠ **`ROLE_ADMIN` has NO financial access.** This is an audit criterion, not an oversight: the
+> ADMIN is a *technical* administrator. Any endpoint carrying invoice, payment, matching, report or
+> audit data excludes ADMIN (`not ADMIN`). A previous revision of this document wrongly granted
+> ADMIN 15 financial surfaces — **the document was wrong, the code was right**. Never "align the
+> code on the doc" by opening ADMIN access: that is a SoD regression (AUDIT-041, AUDIT-017).
 
 ---
 
 ## Authentication
 
-| Method | Path | Body | Roles | Response |
-|---|---|---|---|---|
-| POST | `/auth/login` | `{username, password}` | Public | `{accessToken, refreshToken, expiresIn, user}` |
-| POST | `/auth/refresh` | `{refreshToken}` | Public | `{accessToken, expiresIn}` |
-| POST | `/auth/logout` | `{refreshToken}` | Authenticated | 200 |
-| GET | `/auth/me` | — | Authenticated | `UserDTO` |
-
----
-
-## Users (Admin only)
-
-| Method | Path | Description |
+| Method | Path | Roles |
 |---|---|---|
-| GET | `/users` | List all users (paginated) |
-| POST | `/users` | Create user |
-| GET | `/users/{id}` | Get user detail |
-| PUT | `/users/{id}` | Update user |
-| PATCH | `/users/{id}/activate` | Activate/deactivate user |
-| PUT | `/users/{id}/roles` | Assign roles to user |
+| POST | `/api/v1/auth/forgot-password` | Public |
+| POST | `/api/v1/auth/login` | Public |
+| POST | `/api/v1/auth/mfa/confirm` | Authenticated |
+| POST | `/api/v1/auth/mfa/setup` | Authenticated |
+| POST | `/api/v1/auth/mfa/validate` | Public |
+| POST | `/api/v1/auth/refresh` | Public |
+| POST | `/api/v1/auth/register/supplier` | Public |
+| POST | `/api/v1/auth/reset-password` | Public |
+| GET | `/api/v1/auth/verify-email` | Public |
 
 ---
 
-## Departments (Admin only for write)
+## User profile (self-service)
 
-| Method | Path | Roles | Description |
-|---|---|---|---|
-| GET | `/departments` | All authenticated | List all OCT departments |
-| GET | `/departments/{id}` | All authenticated | Get department detail + approval chain |
-| PUT | `/departments/{id}` | ADMIN | Update approval config |
+| Method | Path | Roles |
+|---|---|---|
+| GET | `/api/v1/profile` | Authenticated |
+| PUT | `/api/v1/profile` | Authenticated |
+
+---
+
+## Users (administration)
+
+| Method | Path | Roles |
+|---|---|---|
+| GET | `/api/v1/admin/sessions` | `ROLE_ADMIN` |
+| DELETE | `/api/v1/admin/sessions/user/{userId}` | `ROLE_ADMIN` |
+| GET | `/api/v1/roles` | `ROLE_ADMIN` |
+| GET | `/api/v1/users` | `ROLE_ADMIN` |
+| POST | `/api/v1/users` | `ROLE_ADMIN` |
+| GET | `/api/v1/users/export` | `ROLE_ADMIN` |
+| GET | `/api/v1/users/export/csv` | `ROLE_ADMIN` |
+| POST | `/api/v1/users/import/csv` | `ROLE_ADMIN` |
+| GET | `/api/v1/users/{id}` | `ROLE_ADMIN` |
+| PUT | `/api/v1/users/{id}` | `ROLE_ADMIN` |
+| PATCH | `/api/v1/users/{id}/activate` | `ROLE_ADMIN` |
+| POST | `/api/v1/users/{id}/mfa/reset` | `ROLE_ADMIN` |
+| PUT | `/api/v1/users/{id}/roles` | `ROLE_ADMIN` |
+| POST | `/api/v1/users/{id}/unlock` | `ROLE_ADMIN` |
+
+---
+
+## Departments
+
+| Method | Path | Roles |
+|---|---|---|
+| GET | `/api/v1/admin/department-access` | `ROLE_ADMIN` |
+| GET | `/api/v1/departments` | Authenticated |
+| POST | `/api/v1/departments` | `ROLE_ADMIN` |
+| GET | `/api/v1/departments/{id}` | Authenticated |
+| PUT | `/api/v1/departments/{id}` | `ROLE_ADMIN` |
+| PATCH | `/api/v1/departments/{id}/activate` | `ROLE_ADMIN` |
 
 ---
 
 ## Invoices
 
-| Method | Path | Roles | Description |
-|---|---|---|---|
-| GET | `/invoices` | All | List (paginated, filtered) |
-| POST | `/invoices` | ASSISTANT_COMPTABLE, ADMIN | Create draft invoice |
-| GET | `/invoices/{id}` | All | Full invoice detail |
-| PUT | `/invoices/{id}` | ASSISTANT_COMPTABLE, ADMIN | Update (BROUILLON or REJETE only) |
-| DELETE | `/invoices/{id}` | ASSISTANT_COMPTABLE, ADMIN | Soft delete (BROUILLON only) |
-| GET | `/invoices/{id}/history` | All except supplier | Status transition history |
-
-### Invoice Filters (GET /invoices)
-```
-?status=SOUMIS
-?department=INFO
-?from=2026-01-01&to=2026-03-31
-?reference=FAC-2026
-?page=0&size=20&sort=createdAt,desc
-```
-
-### InvoiceCreateRequest body
-```json
-{
-  "supplierName": "ACME Gabon",
-  "supplierEmail": "factures@acme-gabon.com",
-  "supplierTaxId": "GA-12345",
-  "departmentId": "uuid-of-department",
-  "amount": 450000.00,
-  "currency": "XAF",
-  "issueDate": "2026-03-15",
-  "dueDate": "2026-04-15",
-  "description": "Fournitures informatiques - Mars 2026",
-  "items": [
-    {
-      "description": "Écran 27 pouces",
-      "quantity": 2,
-      "unitPrice": 175000.00
-    },
-    {
-      "description": "Clavier + Souris",
-      "quantity": 5,
-      "unitPrice": 20000.00
-    }
-  ]
-}
-```
+| Method | Path | Roles |
+|---|---|---|
+| GET | `/api/v1/invoices` | Authenticated, _not SUPPLIER, not ADMIN_ |
+| POST | `/api/v1/invoices` | `ROLE_ASSISTANT_COMPTABLE` |
+| GET | `/api/v1/invoices/archive` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| GET | `/api/v1/invoices/duplicate-check` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_SUPPLIER` |
+| GET | `/api/v1/invoices/export` | Authenticated, _not SUPPLIER, not ADMIN_ |
+| POST | `/api/v1/invoices/import` | `ROLE_ASSISTANT_COMPTABLE` |
+| GET | `/api/v1/invoices/pending-validation` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF`, `ROLE_VALIDATEUR_N1_COM`, `ROLE_VALIDATEUR_N1_DG`, `ROLE_VALIDATEUR_N1_DRH`, `ROLE_VALIDATEUR_N1_INFO`, `ROLE_VALIDATEUR_N1_INFRA`, `ROLE_VALIDATEUR_N1_QHSSE`, `ROLE_VALIDATEUR_N1_TECH`, `ROLE_VALIDATEUR_N1_TERM`, `ROLE_VALIDATEUR_N2_INFO`, `ROLE_VALIDATEUR_N2_INFRA`, `ROLE_VALIDATEUR_N2_TECH` |
+| GET | `/api/v1/invoices/{id}` | Authenticated, _not SUPPLIER, not ADMIN_ |
+| PUT | `/api/v1/invoices/{id}` | `ROLE_ASSISTANT_COMPTABLE` |
+| DELETE | `/api/v1/invoices/{id}` | `ROLE_ASSISTANT_COMPTABLE` |
+| GET | `/api/v1/invoices/{id}/export/pdf` | Authenticated, _not SUPPLIER, not ADMIN_ |
+| GET | `/api/v1/invoices/{id}/history` | Authenticated, _not SUPPLIER, not ADMIN_ |
+| GET | `/api/v1/invoices/{id}/matching` | Authenticated, _not SUPPLIER, not ADMIN_ |
+| GET | `/api/v1/invoices/{id}/matching/export` | Authenticated, _not SUPPLIER, not ADMIN_ |
+| POST | `/api/v1/invoices/{id}/matching/override` | `ROLE_DAF` |
+| POST | `/api/v1/invoices/{id}/resubmit` | `ROLE_ASSISTANT_COMPTABLE` |
+| PATCH | `/api/v1/invoices/{id}/sensitivity` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| POST | `/api/v1/invoices/{id}/submit` | `ROLE_ASSISTANT_COMPTABLE` |
 
 ---
 
-## Workflow Actions
+## Invoice workflow (approval circuit)
 
-| Method | Path | Actor Role | Guard | Description |
-|---|---|---|---|---|
-| POST | `/invoices/{id}/submit` | ASSISTANT_COMPTABLE | Has document + all fields | BROUILLON → SOUMIS |
-| POST | `/invoices/{id}/assign-reviewer` | VALIDATEUR_N1_{DEPT} | Dept matches | SOUMIS → EN_VALIDATION_N1 |
-| POST | `/invoices/{id}/validate-n1` | VALIDATEUR_N1_{DEPT} | Assigned as reviewer | EN_VALIDATION_N1 → EN_VALIDATION_N2 or VALIDE |
-| POST | `/invoices/{id}/assign-reviewer-n2` | VALIDATEUR_N2_{DEPT} | 2-level dept | EN_VALIDATION_N2 assignment |
-| POST | `/invoices/{id}/validate-n2` | VALIDATEUR_N2_{DEPT} | Assigned + 2-level dept | EN_VALIDATION_N2 → VALIDE |
-| POST | `/invoices/{id}/bon-a-payer` | DAF, ADMIN | Status = VALIDE | VALIDE → BON_A_PAYER |
-| POST | `/invoices/{id}/reject` | N1, N2, DAF, ADMIN | Reason required | Any review state → REJETE |
-| POST | `/invoices/{id}/resubmit` | ASSISTANT_COMPTABLE | Modified since rejection | REJETE → SOUMIS |
-| POST | `/invoices/{id}/workflow/archive` | ASSISTANT_COMPTABLE, DAF | Status = PAYE | PAYE → ARCHIVE |
-
-> Archiving is an **explicit** action since AUDIT-030: recording a payment leaves the invoice in
-> `PAYE`. ADMIN is deliberately excluded (no financial access).
-
-### Reject body (reason is mandatory)
-```json
-{
-  "reason": "Le montant ne correspond pas au bon de commande. Veuillez corriger."
-}
-```
-
-### Validate body (comment optional)
-```json
-{
-  "comment": "Facture conforme, approuvée."
-}
-```
+| Method | Path | Roles |
+|---|---|---|
+| POST | `/api/v1/invoices/{invoiceId}/workflow/archive` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| POST | `/api/v1/invoices/{invoiceId}/workflow/assign` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF`, `ROLE_VALIDATEUR_N1_COM`, `ROLE_VALIDATEUR_N1_DG`, `ROLE_VALIDATEUR_N1_DRH`, `ROLE_VALIDATEUR_N1_INFO`, `ROLE_VALIDATEUR_N1_INFRA`, `ROLE_VALIDATEUR_N1_QHSSE`, `ROLE_VALIDATEUR_N1_TECH`, `ROLE_VALIDATEUR_N1_TERM`, `ROLE_VALIDATEUR_N2_INFO`, `ROLE_VALIDATEUR_N2_INFRA`, `ROLE_VALIDATEUR_N2_TECH` |
+| POST | `/api/v1/invoices/{invoiceId}/workflow/assign-aa` | `ROLE_ASSISTANT_COMPTABLE` |
+| POST | `/api/v1/invoices/{invoiceId}/workflow/bon-a-payer` | `ROLE_DAF` |
+| POST | `/api/v1/invoices/{invoiceId}/workflow/reject` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF`, `ROLE_VALIDATEUR_N1_COM`, `ROLE_VALIDATEUR_N1_DG`, `ROLE_VALIDATEUR_N1_DRH`, `ROLE_VALIDATEUR_N1_INFO`, `ROLE_VALIDATEUR_N1_INFRA`, `ROLE_VALIDATEUR_N1_QHSSE`, `ROLE_VALIDATEUR_N1_TECH`, `ROLE_VALIDATEUR_N1_TERM`, `ROLE_VALIDATEUR_N2_INFO`, `ROLE_VALIDATEUR_N2_INFRA`, `ROLE_VALIDATEUR_N2_TECH` |
+| GET | `/api/v1/invoices/{invoiceId}/workflow/rejection-reasons` | Authenticated, _not SUPPLIER_ |
+| GET | `/api/v1/invoices/{invoiceId}/workflow/steps` | Authenticated, _not SUPPLIER, not ADMIN_ |
+| POST | `/api/v1/invoices/{invoiceId}/workflow/validate-n1` | `ROLE_DAF`, `ROLE_VALIDATEUR_N1_COM`, `ROLE_VALIDATEUR_N1_DG`, `ROLE_VALIDATEUR_N1_DRH`, `ROLE_VALIDATEUR_N1_INFO`, `ROLE_VALIDATEUR_N1_INFRA`, `ROLE_VALIDATEUR_N1_QHSSE`, `ROLE_VALIDATEUR_N1_TECH`, `ROLE_VALIDATEUR_N1_TERM` |
+| POST | `/api/v1/invoices/{invoiceId}/workflow/validate-n2` | `ROLE_VALIDATEUR_N2_INFO`, `ROLE_VALIDATEUR_N2_INFRA`, `ROLE_VALIDATEUR_N2_TECH` |
+| GET | `/api/v1/workflow/my-stats` | Authenticated, _not SUPPLIER_ |
 
 ---
 
-## Documents
+## Invoice documents
 
-| Method | Path | Roles | Description |
-|---|---|---|---|
-| POST | `/invoices/{id}/documents` | ASSISTANT_COMPTABLE, ADMIN | Upload file (multipart, max 10MB) |
-| GET | `/invoices/{id}/documents` | All | List attached documents |
-| GET | `/invoices/{id}/documents/{docId}/download` | All | Get pre-signed MinIO URL (15 min expiry) |
-| DELETE | `/invoices/{id}/documents/{docId}` | ASSISTANT_COMPTABLE, ADMIN | Remove document (BROUILLON only) |
+| Method | Path | Roles |
+|---|---|---|
+| GET | `/api/v1/invoices/{invoiceId}/documents` | Authenticated, _not SUPPLIER, not ADMIN_ |
+| POST | `/api/v1/invoices/{invoiceId}/documents` | `ROLE_ASSISTANT_COMPTABLE` |
+| POST | `/api/v1/invoices/{invoiceId}/documents/bulk` | `ROLE_ASSISTANT_COMPTABLE` |
+| GET | `/api/v1/invoices/{invoiceId}/documents/{docId}/download` | Authenticated, _not SUPPLIER, not ADMIN_ |
 
-### Accepted MIME types
-`application/pdf`, `image/png`, `image/jpeg`, `image/tiff`
+---
+
+## Invoice checklist
+
+| Method | Path | Roles |
+|---|---|---|
+| GET | `/api/v1/checklist-templates` | `ROLE_ADMIN` |
+| POST | `/api/v1/checklist-templates` | `ROLE_ADMIN` |
+| GET | `/api/v1/checklist-templates/{id}` | `ROLE_ADMIN` |
+| PUT | `/api/v1/checklist-templates/{id}` | `ROLE_ADMIN` |
+| DELETE | `/api/v1/checklist-templates/{id}` | `ROLE_ADMIN` |
+| GET | `/api/v1/invoices/{invoiceId}/checklist` | Authenticated, _not SUPPLIER, not ADMIN_ |
+| POST | `/api/v1/invoices/{invoiceId}/checklist` | Authenticated, _not SUPPLIER, not ADMIN_ |
+
+---
+
+## Purchasing & three-way matching
+
+| Method | Path | Roles |
+|---|---|---|
+| GET | `/api/v1/goods-receipts` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| POST | `/api/v1/goods-receipts` | `ROLE_ASSISTANT_COMPTABLE` |
+| GET | `/api/v1/goods-receipts/{id}` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| GET | `/api/v1/matching` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| GET | `/api/v1/matching-config` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| POST | `/api/v1/matching-config` | `ROLE_DAF` |
+| GET | `/api/v1/matching/{invoiceId}/lines` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| POST | `/api/v1/matching/{invoiceId}/lines/{poLineId}/resolve` | `ROLE_DAF` |
+| GET | `/api/v1/purchase-orders` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| POST | `/api/v1/purchase-orders` | `ROLE_ASSISTANT_COMPTABLE` |
+| GET | `/api/v1/purchase-orders/{id}` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| PUT | `/api/v1/purchase-orders/{id}` | `ROLE_ASSISTANT_COMPTABLE` |
+| DELETE | `/api/v1/purchase-orders/{id}` | `ROLE_ASSISTANT_COMPTABLE` |
 
 ---
 
 ## Payments
 
-| Method | Path | Roles | Description |
-|---|---|---|---|
-| POST | `/invoices/{id}/payment` | ASSISTANT_COMPTABLE, ADMIN | Record payment (BON_A_PAYER only) |
-| GET | `/invoices/{id}/payment` | All except N1/N2 | Get payment details |
-| GET | `/payments` | DAF, ADMIN, ASSISTANT_COMPTABLE | List all payments (paginated) |
-
-### PaymentRequest body
-```json
-{
-  "amount": 450000.00,
-  "currency": "XAF",
-  "paymentDate": "2026-03-21",
-  "paymentMethod": "VIREMENT",
-  "paymentReference": "VIR-2026-03-0041",
-  "notes": "Virement effectué via BGFI Bank"
-}
-```
-
----
-
-## Notifications
-
-| Method | Path | Roles | Description |
-|---|---|---|---|
-| GET | `/notifications` | Authenticated | List my notifications (paginated) |
-| PATCH | `/notifications/{id}/read` | Authenticated | Mark one as read |
-| PATCH | `/notifications/read-all` | Authenticated | Mark all as read |
-| GET | `/notifications/unread-count` | Authenticated | Count of unread |
-
-### WebSocket topic (STOMP)
-```
-Subscribe: /user/{userId}/notifications
-Message format: { "id": "...", "title": "...", "message": "...", "type": "...", "invoiceId": "..." }
-```
-
----
-
-## Audit
-
-The audit log is split by access level (see `OCT_System_Briefing.md §8 Module 10`):
-- **Financial audit trail** (invoices, approvals, payments) → CFO (DAF) only
-- **System/security audit trail** (logins, role changes, integrations) → Administrator only
-
-| Method | Path | Roles | Description |
-|---|---|---|---|
-| GET | `/audit-logs` | DAF, ADMIN | Paginated audit log (DAF sees financial events; ADMIN sees system/security events) |
-| GET | `/audit-logs?userId={id}` | DAF, ADMIN | Filter by user |
-| GET | `/audit-logs?entityId={invoiceId}` | DAF, ADMIN | All actions on one invoice |
-| GET | `/audit-logs?action=APPROVE` | DAF, ADMIN | Filter by action type |
+| Method | Path | Roles |
+|---|---|---|
+| GET | `/api/v1/payment-alert-rules` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| POST | `/api/v1/payment-alert-rules` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| PUT | `/api/v1/payment-alert-rules/{id}` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| DELETE | `/api/v1/payment-alert-rules/{id}` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| GET | `/api/v1/payments` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| POST | `/api/v1/payments/batch` | `ROLE_ASSISTANT_COMPTABLE` |
+| GET | `/api/v1/payments/export` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| GET | `/api/v1/payments/invoice/{invoiceId}` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| POST | `/api/v1/payments/invoice/{invoiceId}` | `ROLE_ASSISTANT_COMPTABLE` |
+| POST | `/api/v1/payments/{paymentId}/process` | `ROLE_ASSISTANT_COMPTABLE` |
+| GET | `/api/v1/payments/{paymentId}/remittance` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
 
 ---
 
 ## Reports
 
-| Method | Path | Roles | Description |
-|---|---|---|---|
-| GET | `/reports/kpi` | DAF, ADMIN, ASSISTANT_COMPTABLE | KPI dashboard data |
-| GET | `/reports/export?format=xlsx` | DAF, ADMIN, ASSISTANT_COMPTABLE | Export filtered invoices to Excel |
-| GET | `/reports/export?format=pdf` | DAF, ADMIN | Export compliance report PDF |
-| GET | `/invoices/{id}/export?format=pdf` | DAF, ADMIN | Export single invoice audit PDF |
-
-### KPI Response shape
-```json
-{
-  "totalInvoicesThisMonth": 148,
-  "totalValueProcessed": 42000000,
-  "currency": "XAF",
-  "avgProcessingDays": 3.2,
-  "pendingApproval": 17,
-  "rejectionRate": 0.081,
-  "overdueCount": 4,
-  "volumeByStatus": {
-    "BROUILLON": 5,
-    "SOUMIS": 8,
-    "EN_VALIDATION_N1": 7,
-    "EN_VALIDATION_N2": 2,
-    "VALIDE": 3,
-    "BON_A_PAYER": 4,
-    "PAYE": 112,
-    "ARCHIVE": 876,
-    "REJETE": 12
-  },
-  "topDepartmentsByVolume": [
-    { "department": "Terminal", "count": 45, "totalValue": 15000000 }
-  ]
-}
-```
-
----
-
-## Standard Error Codes
-
-| HTTP | Code | Message key |
+| Method | Path | Roles |
 |---|---|---|
-| 400 | VALIDATION_ERROR | `error.validation` |
-| 400 | DOCUMENT_REQUIRED | `error.invoice.document_required` |
-| 400 | REJECTION_REASON_REQUIRED | `error.workflow.rejection_reason_required` |
-| 401 | UNAUTHORIZED | `error.auth.unauthorized` |
-| 403 | FORBIDDEN | `error.auth.forbidden` |
-| 404 | INVOICE_NOT_FOUND | `error.invoice.not_found` |
-| 404 | USER_NOT_FOUND | `error.user.not_found` |
-| 409 | INVALID_TRANSITION | `error.workflow.invalid_transition` |
-| 409 | DUPLICATE_REFERENCE | `error.invoice.duplicate_reference` |
-| 409 | VERSION_CONFLICT | `error.invoice.version_conflict` |
-| 413 | FILE_TOO_LARGE | `error.document.file_too_large` |
-| 415 | UNSUPPORTED_MIME | `error.document.unsupported_mime` |
-| 500 | INTERNAL_ERROR | `error.internal` |
-
-
----
-
-## Supplier Management
-
-The Accounting Assistant manages the full supplier lifecycle (onboarding, updates, activation, deactivation) per `OCT_System_Briefing.md §5.2`.
-
-| Method | Path | Roles | Description |
-|---|---|---|---|
-| GET | `/suppliers` | All authenticated | List suppliers (paginated, filterable by name, taxId, status) |
-| POST | `/suppliers` | ASSISTANT_COMPTABLE, ADMIN | Create supplier profile (AA manages supplier onboarding) |
-| GET | `/suppliers/{id}` | All authenticated | Get supplier detail |
-| PUT | `/suppliers/{id}` | ASSISTANT_COMPTABLE, ADMIN | Update supplier info |
-| PATCH | `/suppliers/{id}/activate` | ASSISTANT_COMPTABLE, ADMIN | Activate supplier (PENDING_VERIFICATION → ACTIVE) |
-| PATCH | `/suppliers/{id}/suspend` | ASSISTANT_COMPTABLE, ADMIN | Suspend supplier (ACTIVE → SUSPENDED) |
-| DELETE | `/suppliers/{id}` | ASSISTANT_COMPTABLE, ADMIN | Soft delete supplier |
-| POST | `/suppliers/{id}/documents` | ASSISTANT_COMPTABLE, ADMIN | Upload supplier document (tax certificate, contract) |
-| GET | `/suppliers/{id}/documents` | ASSISTANT_COMPTABLE, ADMIN, DAF | List supplier documents |
+| GET | `/api/v1/reports/activity` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| GET | `/api/v1/reports/aging` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| GET | `/api/v1/reports/aging/buckets` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| GET | `/api/v1/reports/bottlenecks` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| GET | `/api/v1/reports/budget-alerts` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| GET | `/api/v1/reports/budget-vs-actual` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| GET | `/api/v1/reports/cash-flow` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| GET | `/api/v1/reports/definitions` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| POST | `/api/v1/reports/definitions` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| DELETE | `/api/v1/reports/definitions/{id}` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| GET | `/api/v1/reports/definitions/{id}/preview` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| GET | `/api/v1/reports/definitions/{id}/run` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| GET | `/api/v1/reports/executive-summary` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| GET | `/api/v1/reports/export/excel` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| GET | `/api/v1/reports/export/pdf/audit/{id}` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| GET | `/api/v1/reports/export/pdf/compliance` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| GET | `/api/v1/reports/kpis` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| GET | `/api/v1/reports/payment-cycle` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| GET | `/api/v1/reports/supplier/{supplierId}/payments` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| GET | `/api/v1/reports/supplier/{supplierId}/performance` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| GET | `/api/v1/reports/volume-trend` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
 
 ---
 
-## Supplier Portal (ROLE_SUPPLIER only)
+## Suppliers (internal referential)
 
-| Method | Path | Description |
+| Method | Path | Roles |
 |---|---|---|
-| GET | `/supplier/dashboard` | Counts by status, last payment date, pending actions |
-| GET | `/supplier/invoices` | Own invoices only (paginated) |
-| POST | `/supplier/invoices` | Submit new invoice |
-| GET | `/supplier/profile` | Own supplier profile |
-| PUT | `/supplier/profile` | Update own profile |
-| POST | `/supplier/documents` | Upload own tax certificate or contract |
+| GET | `/api/v1/suppliers` | `ROLE_ASSISTANT_COMPTABLE` |
+| POST | `/api/v1/suppliers` | `ROLE_ASSISTANT_COMPTABLE` |
+| GET | `/api/v1/suppliers/export` | `ROLE_ASSISTANT_COMPTABLE` |
+| GET | `/api/v1/suppliers/{id}` | `ROLE_ASSISTANT_COMPTABLE` |
+| PUT | `/api/v1/suppliers/{id}` | `ROLE_ASSISTANT_COMPTABLE` |
+| DELETE | `/api/v1/suppliers/{id}` | `ROLE_ASSISTANT_COMPTABLE` |
+| PATCH | `/api/v1/suppliers/{id}/activate` | `ROLE_ASSISTANT_COMPTABLE` |
+| GET | `/api/v1/suppliers/{id}/documents` | `ROLE_ASSISTANT_COMPTABLE` |
+| POST | `/api/v1/suppliers/{id}/documents` | `ROLE_ASSISTANT_COMPTABLE` |
+| GET | `/api/v1/suppliers/{id}/performance` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| PATCH | `/api/v1/suppliers/{id}/suspend` | `ROLE_ASSISTANT_COMPTABLE` |
+| GET | `/api/v1/suppliers/{supplierId}/communications` | `ROLE_ADMIN`, `ROLE_ASSISTANT_COMPTABLE` |
+| POST | `/api/v1/suppliers/{supplierId}/communications` | `ROLE_ADMIN`, `ROLE_ASSISTANT_COMPTABLE` |
+| GET | `/api/v1/suppliers/{supplierId}/contracts` | `ROLE_ADMIN`, `ROLE_ASSISTANT_COMPTABLE` |
+| POST | `/api/v1/suppliers/{supplierId}/contracts` | `ROLE_ADMIN`, `ROLE_ASSISTANT_COMPTABLE` |
+| DELETE | `/api/v1/suppliers/{supplierId}/contracts/{contractId}` | `ROLE_ADMIN`, `ROLE_ASSISTANT_COMPTABLE` |
 
 ---
 
-## Authentication Additions
+## Supplier portal (/supplier/*, ROLE_SUPPLIER)
 
-| Method | Path | Body | Roles | Description |
-|---|---|---|---|---|
-| POST | `/auth/register/supplier` | `{companyName, taxId, email, password}` | Public | Supplier self-registration |
-| GET | `/auth/verify-email` | `?token=` | Public | Email verification |
-| POST | `/auth/mfa/setup` | — | Authenticated | Generate TOTP secret + QR code URL |
-| POST | `/auth/mfa/confirm` | `{otp}` | Authenticated | Confirm MFA setup with first valid OTP |
-| POST | `/auth/mfa/validate` | `{preAuthToken, otp}` | Public | Complete MFA login, returns full JWT |
-| POST | `/users/{id}/unlock` | — | ADMIN | Reset failed attempts and clear account lock |
-
-### MFA setup response shape
-```json
-{
-  "qrCodeUrl": "otpauth://totp/OCT:username?secret=BASE32SECRET&issuer=OCT",
-  "secret": "BASE32SECRET"
-}
-```
-
-### Login response when MFA required
-```json
-{
-  "mfa_required": true,
-  "pre_auth_token": "eyJ..."
-}
-```
-
-### Login response when MFA setup required
-```json
-{
-  "mfa_setup_required": true
-}
-```
-
----
-
-## Purchase Orders
-
-| Method | Path | Roles | Description |
-|---|---|---|---|
-| GET | `/purchase-orders` | ADMIN, ASSISTANT_COMPTABLE, DAF | List POs (paginated) |
-| POST | `/purchase-orders` | ADMIN, ASSISTANT_COMPTABLE | Create PO with line items |
-| GET | `/purchase-orders/{id}` | All authenticated | PO detail with line items |
-| PUT | `/purchase-orders/{id}` | ADMIN, ASSISTANT_COMPTABLE | Update PO (OPEN status only) |
-
-### PurchaseOrderCreateRequest body
-```json
-{
-  "poNumber": "PO-2026-0041",
-  "supplierId": "uuid",
-  "departmentId": "uuid",
-  "currency": "XAF",
-  "issueDate": "2026-04-01",
-  "expiryDate": "2026-12-31",
-  "items": [
-    {
-      "description": "Serveur Dell PowerEdge",
-      "quantity": 2,
-      "unitPrice": 850000.00
-    }
-  ]
-}
-```
-
----
-
-## Three-Way Matching
-
-| Method | Path | Roles | Description |
-|---|---|---|---|
-| GET | `/invoices/{id}/matching` | All authenticated | Get matching result for invoice |
-| POST | `/invoices/{id}/matching/override` | ASSISTANT_COMPTABLE, DAF, ADMIN | Override MISMATCH with mandatory written justification (recorded permanently in audit trail) |
-| GET | `/matching-config` | ADMIN | Get current tolerance configuration |
-| PUT | `/matching-config` | ADMIN | Update tolerance thresholds |
-
-### Override body
-```json
-{
-  "reason": "Variance approved by procurement director per memo 2026-04-12"
-}
-```
-
-### MatchingConfig body
-```json
-{
-  "tolerancePercent": 2.00,
-  "toleranceAmount": 5000.00,
-  "requireGrn": true
-}
-```
-
----
-
-## Webhooks / Integration
-
-| Method | Path | Roles | Description |
-|---|---|---|---|
-| GET | `/integrations/webhooks` | ADMIN | List all webhooks |
-| POST | `/integrations/webhooks` | ADMIN | Register new webhook |
-| DELETE | `/integrations/webhooks/{id}` | ADMIN | Deactivate webhook (soft) |
-| GET | `/integrations/webhooks/{id}/deliveries` | ADMIN | Delivery log (paginated) |
-| GET | `/integrations/status` | ADMIN | All webhook health with last delivery status |
-
-### WebhookCreateRequest body
-```json
-{
-  "name": "SAP Integration",
-  "url": "https://erp.oct.ga/invoices/webhook",
-  "events": ["INVOICE_SUBMITTED", "INVOICE_APPROVED", "INVOICE_REJECTED", "INVOICE_PAID"]
-}
-```
-
-### WebhookCreateResponse (secret shown once only)
-```json
-{
-  "id": "uuid",
-  "name": "SAP Integration",
-  "url": "https://erp.oct.ga/invoices/webhook",
-  "secret": "raw-secret-shown-once",
-  "events": ["INVOICE_SUBMITTED", "INVOICE_APPROVED", "INVOICE_REJECTED", "INVOICE_PAID"],
-  "isActive": true
-}
-```
-
-### Webhook payload delivered to registered URL
-```json
-{
-  "event": "INVOICE_SUBMITTED",
-  "timestamp": "2026-04-13T10:30:00Z",
-  "invoiceId": "uuid",
-  "referenceNumber": "FAC-2026-00041",
-  "supplierId": "uuid",
-  "amount": 450000.00,
-  "currency": "XAF",
-  "status": "SOUMIS"
-}
-```
-
----
-
-## Payment Enhancements
-
-| Method | Path | Roles | Description |
-|---|---|---|---|
-| GET | `/payments/{id}/remittance` | ASSISTANT_COMPTABLE, DAF, ADMIN, SUPPLIER (own only) | Pre-signed URL for remittance advice PDF |
-| GET | `/reports/aging` | DAF, ADMIN, ASSISTANT_COMPTABLE | Aging analysis by overdue bucket |
-| GET | `/reports/cash-flow` | DAF, ADMIN, ASSISTANT_COMPTABLE | Cash flow projection (`?days=30`) |
-| GET | `/reports/supplier/{supplierId}/payments` | DAF, ADMIN, ASSISTANT_COMPTABLE | Full payment history per supplier |
-| GET | `/reports/supplier/{supplierId}/performance` | DAF, ADMIN, ASSISTANT_COMPTABLE | Invoice accuracy + rejection rate |
-| GET | `/reports/bottlenecks` | DAF, ADMIN, ASSISTANT_COMPTABLE | Average approval duration per step type and department |
-
-### Aging response shape
-```json
-{
-  "asOf": "2026-04-13",
-  "buckets": {
-    "0_30":   { "count": 5,  "totalValue": 2500000 },
-    "31_60":  { "count": 3,  "totalValue": 1800000 },
-    "61_90":  { "count": 1,  "totalValue": 450000  },
-    "90_plus":{ "count": 2,  "totalValue": 3200000 }
-  },
-  "currency": "XAF"
-}
-```
-
-### Cash flow response shape
-```json
-{
-  "projectionDays": 30,
-  "currency": "XAF",
-  "weeklyProjection": [
-    { "weekStart": "2026-04-14", "weekEnd": "2026-04-20", "totalDue": 1500000 },
-    { "weekStart": "2026-04-21", "weekEnd": "2026-04-27", "totalDue": 3200000 }
-  ]
-}
-```
-
-### Bottleneck response shape
-```json
-{
-  "steps": [
-    {
-      "departmentCode": "INFO",
-      "stepOrder": 1,
-      "stepType": "N1",
-      "averageDays": 4.2,
-      "slaThresholdDays": 3,
-      "isBottleneck": true,
-      "sampleSize": 14
-    }
-  ]
-}
-```
-
----
-
-## Standard Error Codes (additions)
-
-| HTTP | Code | Message key |
+| Method | Path | Roles |
 |---|---|---|
-| 409 | MATCHING_MISMATCH | `error.matching.mismatch` |
-| 409 | MATCHING_OVERRIDE_REQUIRED | `error.matching.override_required` |
-| 423 | ACCOUNT_LOCKED | `error.auth.account_locked` |
-| 401 | MFA_REQUIRED | `error.auth.mfa_required` |
-| 400 | MFA_SETUP_REQUIRED | `error.auth.mfa_setup_required` |
-| 400 | INVALID_OTP | `error.auth.invalid_otp` |
-| 400 | EMAIL_NOT_VERIFIED | `error.auth.email_not_verified` |
-| 404 | SUPPLIER_NOT_FOUND | `error.supplier.not_found` |
-| 409 | SUPPLIER_INACTIVE | `error.supplier.inactive` |
-| 404 | PURCHASE_ORDER_NOT_FOUND | `error.po.not_found` |
-| 409 | PO_NOT_OPEN | `error.po.not_open` |
+| GET | `/api/v1/supplier/dashboard` | `ROLE_SUPPLIER` |
+| GET | `/api/v1/supplier/documents` | `ROLE_SUPPLIER` |
+| POST | `/api/v1/supplier/documents` | `ROLE_SUPPLIER` |
+| GET | `/api/v1/supplier/invoices` | `ROLE_SUPPLIER` |
+| POST | `/api/v1/supplier/invoices` | `ROLE_SUPPLIER` |
+| POST | `/api/v1/supplier/invoices/{invoiceId}/documents` | `ROLE_SUPPLIER` |
+| POST | `/api/v1/supplier/invoices/{invoiceId}/resubmit` | `ROLE_SUPPLIER` |
+| POST | `/api/v1/supplier/invoices/{invoiceId}/submit` | `ROLE_SUPPLIER` |
+| GET | `/api/v1/supplier/profile` | `ROLE_SUPPLIER` |
+| PUT | `/api/v1/supplier/profile` | `ROLE_SUPPLIER` |
+| GET | `/api/v1/supplier/purchase-orders` | `ROLE_SUPPLIER` |
+
+---
+
+## Delegations & escalation
+
+| Method | Path | Roles |
+|---|---|---|
+| GET | `/api/v1/approvals/delegations` | `ROLE_ADMIN` |
+| POST | `/api/v1/approvals/delegations` | `ROLE_ADMIN` |
+| GET | `/api/v1/approvals/delegations/eligible-delegatees` | `ROLE_APPROVER_ROLES` |
+| GET | `/api/v1/approvals/delegations/mine` | `ROLE_APPROVER_ROLES` |
+| POST | `/api/v1/approvals/delegations/mine` | `ROLE_APPROVER_ROLES` |
+| DELETE | `/api/v1/approvals/delegations/mine/{id}` | `ROLE_APPROVER_ROLES` |
+| DELETE | `/api/v1/approvals/delegations/{id}` | `ROLE_ADMIN` |
+| GET | `/api/v1/escalation-rules` | `ROLE_ADMIN`, `ROLE_DAF` |
+| POST | `/api/v1/escalation-rules` | `ROLE_ADMIN`, `ROLE_DAF` |
+| PUT | `/api/v1/escalation-rules/{id}` | `ROLE_ADMIN`, `ROLE_DAF` |
+| DELETE | `/api/v1/escalation-rules/{id}` | `ROLE_ADMIN`, `ROLE_DAF` |
+
+---
+
+## Access requests
+
+| Method | Path | Roles |
+|---|---|---|
+| GET | `/api/v1/access-requests` | `ROLE_ADMIN` |
+| POST | `/api/v1/access-requests` | Authenticated, _not SUPPLIER_ |
+| GET | `/api/v1/access-requests/mine` | Authenticated, _not SUPPLIER_ |
+| PATCH | `/api/v1/access-requests/{id}` | `ROLE_ADMIN` |
+
+---
+
+## Announcements
+
+| Method | Path | Roles |
+|---|---|---|
+| GET | `/api/v1/announcements` | Authenticated |
+| POST | `/api/v1/announcements` | `ROLE_ADMIN` |
+| GET | `/api/v1/announcements/all` | `ROLE_ADMIN` |
+| PUT | `/api/v1/announcements/{id}` | `ROLE_ADMIN` |
+| DELETE | `/api/v1/announcements/{id}` | `ROLE_ADMIN` |
+| PATCH | `/api/v1/announcements/{id}/active` | `ROLE_ADMIN` |
+
+---
+
+## Notifications
+
+| Method | Path | Roles |
+|---|---|---|
+| GET | `/api/v1/notifications` | Authenticated |
+| PATCH | `/api/v1/notifications/read-all` | Authenticated |
+| GET | `/api/v1/notifications/unread-count` | Authenticated |
+| PATCH | `/api/v1/notifications/{id}/read` | Authenticated |
+
+---
+
+## Archiving & retention
+
+| Method | Path | Roles |
+|---|---|---|
+| GET | `/api/v1/archive/folders` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| POST | `/api/v1/archive/folders` | `ROLE_ADMIN` |
+| PUT | `/api/v1/archive/folders/{id}` | `ROLE_ADMIN` |
+| DELETE | `/api/v1/archive/folders/{id}` | `ROLE_ADMIN` |
+| PATCH | `/api/v1/archive/invoices/{invoiceId}/folder` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_DAF` |
+| GET | `/api/v1/retention-policy` | `ROLE_ADMIN` |
+| PUT | `/api/v1/retention-policy` | `ROLE_ADMIN` |
+| GET | `/api/v1/retention-policy/compliance` | `ROLE_ADMIN` |
+| PUT | `/api/v1/retention/documents/{id}/disposition` | `ROLE_ADMIN`, `ROLE_DAF` |
+| GET | `/api/v1/retention/pending-documents` | `ROLE_ADMIN`, `ROLE_DAF` |
+
+---
+
+## Compliance & backups
+
+| Method | Path | Roles |
+|---|---|---|
+| GET | `/api/v1/backups` | `ROLE_ADMIN` |
+| POST | `/api/v1/backups` | `ROLE_ADMIN` |
+| GET | `/api/v1/backups/audit-logs` | `ROLE_ADMIN` |
+| POST | `/api/v1/backups/{filename}/restore` | `ROLE_ADMIN` |
+| GET | `/api/v1/compliance/archive-report` | `ROLE_ADMIN` |
+| GET | `/api/v1/compliance/backup-status` | `ROLE_ADMIN` |
+| POST | `/api/v1/compliance/backup-status` | `ROLE_ADMIN` |
+| GET | `/api/v1/compliance/calendar` | `ROLE_ADMIN` |
+| POST | `/api/v1/compliance/calendar` | `ROLE_ADMIN` |
+| PATCH | `/api/v1/compliance/calendar/{id}` | `ROLE_ADMIN` |
+| DELETE | `/api/v1/compliance/calendar/{id}` | `ROLE_ADMIN` |
+| GET | `/api/v1/compliance/checklist` | `ROLE_ADMIN` |
+| POST | `/api/v1/compliance/checklist` | `ROLE_ADMIN` |
+| PATCH | `/api/v1/compliance/checklist/{id}` | `ROLE_ADMIN` |
+| DELETE | `/api/v1/compliance/checklist/{id}` | `ROLE_ADMIN` |
+| GET | `/api/v1/compliance/incidents` | `ROLE_ADMIN` |
+| POST | `/api/v1/compliance/incidents` | Authenticated, _not SUPPLIER_ |
+| PATCH | `/api/v1/compliance/incidents/{id}/status` | `ROLE_ADMIN` |
+| GET | `/api/v1/compliance/privacy-acceptance` | Authenticated |
+| POST | `/api/v1/compliance/privacy-acceptance` | Authenticated |
+
+---
+
+## Audit log
+
+| Method | Path | Roles |
+|---|---|---|
+| GET | `/api/v1/audit-logs` | `ROLE_ADMIN`, `ROLE_DAF` |
+| GET | `/api/v1/audit-logs/anomalies` | `ROLE_ADMIN` |
+| GET | `/api/v1/audit-logs/export` | `ROLE_ADMIN`, `ROLE_DAF` |
+| GET | `/api/v1/audit-logs/financial` | `ROLE_DAF` |
+| GET | `/api/v1/audit-logs/summary/export` | `ROLE_ADMIN`, `ROLE_DAF` |
+| GET | `/api/v1/audit-logs/summary/financial` | `ROLE_DAF` |
+| GET | `/api/v1/audit-logs/summary/system` | `ROLE_ADMIN` |
+| GET | `/api/v1/audit-logs/system` | `ROLE_ADMIN` |
+
+---
+
+## Integrations & webhooks
+
+| Method | Path | Roles |
+|---|---|---|
+| GET | `/api/v1/integrations/connectors` | `ROLE_ADMIN` |
+| POST | `/api/v1/integrations/connectors` | `ROLE_ADMIN` |
+| DELETE | `/api/v1/integrations/connectors/{id}` | `ROLE_ADMIN` |
+| PATCH | `/api/v1/integrations/connectors/{id}/enabled` | `ROLE_ADMIN` |
+| POST | `/api/v1/integrations/connectors/{id}/sync` | `ROLE_ADMIN` |
+| PUT | `/api/v1/integrations/connectors/{id}/sync-schedule` | `ROLE_ADMIN` |
+| POST | `/api/v1/integrations/connectors/{id}/test` | `ROLE_ADMIN` |
+| GET | `/api/v1/integrations/status` | `ROLE_ADMIN` |
+| GET | `/api/v1/integrations/webhooks` | `ROLE_ADMIN` |
+| POST | `/api/v1/integrations/webhooks` | `ROLE_ADMIN` |
+| DELETE | `/api/v1/integrations/webhooks/{id}` | `ROLE_ADMIN` |
+| GET | `/api/v1/integrations/webhooks/{id}/deliveries` | `ROLE_ADMIN` |
+
+---
+
+## Security (administration)
+
+| Method | Path | Roles |
+|---|---|---|
+| GET | `/api/v1/admin/security-health` | `ROLE_ADMIN` |
+| GET | `/api/v1/admin/security-policy` | `ROLE_ADMIN` |
+| PUT | `/api/v1/admin/security-policy` | `ROLE_ADMIN` |
+
+---
+
+## OCR
+
+| Method | Path | Roles |
+|---|---|---|
+| POST | `/api/v1/ocr/extract` | `ROLE_ASSISTANT_COMPTABLE`, `ROLE_SUPPLIER` |
+
+---
+
+_Total: **221** endpoints across 40 controllers. Regenerate after any controller change._

@@ -115,7 +115,9 @@ Assistant Comptable receives email, enters invoice in system
       BROUILLON (Draft)
       ↓ [submit]
       SOUMIS (Submitted)
-      ↓ [start review]
+      ↓ [assign_aa — AA control]
+      EN_CONTROLE_AA (Under AA Control)
+      ↓ [assign_reviewer]
       EN_VALIDATION_N1 (Under Review L1)
       ↓ [validate N1]
       ┌─────────────────────────────────┐
@@ -126,7 +128,8 @@ Assistant Comptable receives email, enters invoice in system
       │   → BON_A_PAYER → PAYE         │
       └─────────────────────────────────┘
       
-At any review stage: REJETE (Rejected) → back to SOUMIS for correction
+At any review stage (EN_CONTROLE_AA / EN_VALIDATION_N1 / EN_VALIDATION_N2):
+  REJETE (Rejected) → back to SOUMIS for correction
 Final: ARCHIVE
 ```
 
@@ -374,7 +377,9 @@ Rules:
 - Matching is triggered automatically when an invoice with a `purchaseOrderId`
   is submitted (BROUILLON → SOUMIS)
 - If matching status is `MISMATCH`, invoice cannot proceed past `SOUMIS`
-  without a manual override recorded by `ROLE_DAF` or `ROLE_ADMIN`
+  without a manual override recorded by `ROLE_DAF` **only** — `ROLE_ADMIN` has
+  no financial access and cannot override a matching mismatch (SoD, see
+  `InvoiceController.overrideMatchingMismatch`, `@PreAuthorize("hasRole('DAF')")`)
 - Tolerance thresholds are stored in DB (`matching_config` table), not hardcoded
 - `ThreeWayMatchingResult` is append-only — no updates, no deletes
 
