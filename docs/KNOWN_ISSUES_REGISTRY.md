@@ -2393,3 +2393,31 @@ Ne pas confondre les deux regimes.
 (message d'ApiResponse) doit etre ajoutee AUSSI aux catalogues frontend, et couverte par un test de
 presence par cle dans chaque catalogue. Ne jamais afficher un message backend sans le passer par un
 helper qui tente la traduction et retombe sur le brut.
+
+
+## PROB-152 -- RateLimitingFilter : cache de buckets partage entre tests (429 parasite inter-tests)
+
+**Date :** 2026-07-24 (V5-A, AUDIT-013)
+
+**Symptome :** en ajoutant AuthControllerIntegrationTest (login/MFA/verrouillage/reset), la suite
+backend complete tombe a 1 echec : SecurityPolicyIntegrationTest.refresh_isRejectedAfterSessionExpiry
+attend 401 mais recoit 429. En isolation, ce test passe. C'est donc une contamination inter-tests,
+pas un bug de production.
+
+**Cause racine :** RateLimitingFilter (config/security) est un singleton Spring dont le cache de
+buckets (Map<clientIp, Bucket>, 5 requetes/min/IP sur /auth/login et /auth/refresh) survit d'un test
+a l'autre dans le meme fork JVM. MockMvc presente toujours la MEME IP cliente (127.0.0.1). Une classe
+de test qui fait beaucoup de login epuise le bucket de cette IP, et le test suivant du meme fork qui
+touche /login ou /refresh recoit 429 au lieu du statut attendu. Le filtre n'a aucun garde de profil
+et n'est pas desactive sous 'test'.
+
+**Solution :** dans la classe de test intensive en login, injecter le bean RateLimitingFilter et vider
+son cache de buckets par reflexion en @BeforeEach ET @AfterEach (le @BeforeEach protege des
+predecesseurs, le @AfterEach protege les successeurs). Voir AuthControllerIntegrationTest.
+resetRateLimiterBuckets(). Aucune modification du filtre de production.
+
+**Regle preventive :** tout test d'integration qui exerce plusieurs fois /auth/login ou /auth/refresh
+via MockMvc DOIT reinitialiser le cache du RateLimitingFilter en @BeforeEach et @AfterEach ; sinon il
+draine le bucket de l'IP partagee et fait echouer les tests voisins de facon non deterministe (selon
+l'ordre d'execution du fork). Ne jamais relaxer l'assertion du test voisin : la cause est le bucket
+draine, pas un statut faux.
