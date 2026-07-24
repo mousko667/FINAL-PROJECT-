@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { translateApiMessage } from '@/types/apiError'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Shield, CheckCircle, Clock, Lock, Key, Users, Trash2, Loader2, AlertCircle } from 'lucide-react'
@@ -77,7 +78,7 @@ function SecuritySettingsPage() {
       setTimeout(() => setSaved(false), 3000)
     },
     onError: (err: { response?: { data?: { message?: string } } }) => {
-      setFormError(err?.response?.data?.message ?? t('admin.security.saveError', 'Could not save the security policy.'))
+      setFormError(translateApiMessage(err, t) ?? t('admin.security.saveError', 'Could not save the security policy.'))
     },
   })
 

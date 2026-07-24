@@ -1466,5 +1466,35 @@
   "theme": {
     "switchToDark": "Passer au thème sombre",
     "switchToLight": "Passer au thème clair"
+  },
+  "errorBoundary": {
+    "title": "Une erreur est survenue sur cette page",
+    "message": "Erreur inattendue",
+    "retry": "Réessayer"
+  },
+  "action": {
+    "submit": {
+      "success": "Facture soumise avec succès"
+    },
+    "assign": {
+      "success": "Réviseur assigné avec succès"
+    },
+    "validate": {
+      "success": "Validation enregistrée avec succès"
+    },
+    "bon_a_payer": {
+      "success": "Facture validée pour bon à payer"
+    },
+    "reject": {
+      "success": "Facture rejetée avec succès"
+    }
+  },
+  "payment": {
+    "recorded": {
+      "success": "Paiement enregistré avec succès"
+    },
+    "processed": {
+      "success": "Paiement marqué comme exécuté"
+    }
   }
 }

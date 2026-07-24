@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -8,7 +8,11 @@ import { StatusBadge } from '@/components/ui/StatusBadge'
 import { InvoiceTimeline } from '@/components/invoice/InvoiceTimeline'
 import { InvoiceActionPanel } from '@/components/invoice/InvoiceActionPanel'
 import { BulkDocumentUpload } from '@/components/invoice/BulkDocumentUpload'
-import { DocumentViewerModal } from '@/components/invoice/DocumentViewerModal'
+// AUDIT-045: react-pdf (~378 Ko / 110 Ko gzip) is only needed when a document is opened.
+// Load the viewer on demand instead of statically, exactly like the routes in AppRoutes.tsx.
+const DocumentViewerModal = lazy(() =>
+  import('@/components/invoice/DocumentViewerModal').then((m) => ({ default: m.DocumentViewerModal })),
+)
 import { ExportMenu } from '@/components/ui/ExportMenu'
 import { Panel } from '@/components/ui/Panel'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -516,14 +520,16 @@ function InvoiceDetailPage() {
         </div>
       </div>
 
-      {/* M9: in-app document viewer */}
+      {/* M9: in-app document viewer (AUDIT-045: lazy-loaded, react-pdf out of the page chunk) */}
       {viewerDoc?.downloadUrl && (
-        <DocumentViewerModal
-          url={viewerDoc.downloadUrl}
-          filename={viewerDoc.fileName}
-          fileType={viewerDoc.fileType}
-          onClose={() => setViewerDoc(null)}
-        />
+        <Suspense fallback={null}>
+          <DocumentViewerModal
+            url={viewerDoc.downloadUrl}
+            filename={viewerDoc.fileName}
+            fileType={viewerDoc.fileType}
+            onClose={() => setViewerDoc(null)}
+          />
+        </Suspense>
       )}
     </div>
   )

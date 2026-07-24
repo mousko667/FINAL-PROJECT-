@@ -1466,5 +1466,35 @@
   "theme": {
     "switchToDark": "Switch to dark theme",
     "switchToLight": "Switch to light theme"
+  },
+  "errorBoundary": {
+    "title": "An error occurred on this page",
+    "message": "Unexpected error",
+    "retry": "Retry"
+  },
+  "action": {
+    "submit": {
+      "success": "Invoice submitted successfully"
+    },
+    "assign": {
+      "success": "Reviewer assigned successfully"
+    },
+    "validate": {
+      "success": "Validation recorded successfully"
+    },
+    "bon_a_payer": {
+      "success": "Invoice approved for payment"
+    },
+    "reject": {
+      "success": "Invoice rejected successfully"
+    }
+  },
+  "payment": {
+    "recorded": {
+      "success": "Payment recorded successfully"
+    },
+    "processed": {
+      "success": "Payment marked as processed"
+    }
   }
 }

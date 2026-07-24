@@ -2360,3 +2360,36 @@ s'agreger.
 charger en lot hors boucle (findByXIn) et indexer en Map. Un test de non-regression doit poser
 verify(never()).findAll() pour empecher le retour de l'anti-pattern, en plus de verifier que la
 valeur retournee est inchangee.
+
+## PROB-151 -- 7 cles de succes backend absentes des catalogues frontend (message de succes affiche brut)
+
+**Date :** 2026-07-24 | **Contexte :** P6 vague 4, lot V4-D (AUDIT-015)
+
+**Symptome :** le backend renvoie des CLES i18n comme messages de succes dans ApiResponse.message
+(action.submit.success, action.assign.success, action.validate.success, action.bon_a_payer.success,
+action.reject.success, payment.recorded.success, payment.processed.success). Ces 7 cles existaient
+dans messages_fr/en.properties (backend) mais etaient ABSENTES de src/i18n/fr.json et en.json
+(frontend). Un site affichant la cle via t() aurait montre la cle brute a l'utilisateur.
+
+**Cause racine :** deux catalogues i18n distincts (backend .properties, frontend .json) qui ne sont
+pas synchronises automatiquement. Les cles de succes ont ete ajoutees cote backend sans etre
+propagees cote frontend -- meme famille de defaut qu'AUDIT-039 (cle absente d'un cote).
+
+**Solution :** (a) utilitaire partage translateApiMessage(error, t) dans types/apiError.ts qui
+applique le motif t(key)===key ? raw : translated (traduit la cle, retombe sur le brut si absente --
+un backend deja localise via Accept-Language survit). Applique aux 10 sites qui affichaient le
+message brut. (b) Les 7 cles de succes ajoutees a fr.json/en.json (UTF-8, structure imbriquee
+action.*.success / payment.*.success).
+
+**Piege de detection :** la PARITE FR<->EN ne detecte PAS une cle absente des DEUX cotes (exactement
+ce qui a produit AUDIT-039). Le test doit verifier la PRESENCE explicite de chaque cle dans CHAQUE
+catalogue, pas seulement fr==en.
+
+**Encodage :** les catalogues FRONTEND (src/i18n/*.json) sont en UTF-8, accents litteraux OK -- a la
+difference des messages_fr.properties BACKEND qui sont en ASCII pur avec des sequences unicode-escape.
+Ne pas confondre les deux regimes.
+
+**Preventive rule :** toute cle i18n ajoutee cote backend et destinee a etre affichee cote frontend
+(message d'ApiResponse) doit etre ajoutee AUSSI aux catalogues frontend, et couverte par un test de
+presence par cle dans chaque catalogue. Ne jamais afficher un message backend sans le passer par un
+helper qui tente la traduction et retombe sur le brut.

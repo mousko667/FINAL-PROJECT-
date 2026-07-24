@@ -218,31 +218,32 @@ public class SupplierPortalController {
             @RequestParam("file") MultipartFile file,
             @RequestParam("documentType") SupplierDocumentType documentType,
             Authentication authentication,
-            java.util.Locale locale) {
+            java.util.Locale locale) throws Exception {
+        // AUDIT-006: no raw try/catch here (CLAUDE.md §3). The former catch(Exception) rethrew as
+        // RuntimeException, which would requalify a business ValidationException (empty/oversized/
+        // wrong-MIME file) into a generic 500. Let checked exceptions propagate (throws Exception,
+        // like InvoiceDocumentController) so GlobalExceptionHandler maps each to its proper status —
+        // the same handler already turns oversized uploads into 413 and bad MIME into 400.
         User user = securityHelper.currentUser(authentication);
         UUID supplierId = getSupplierId(authentication);
 
-        try {
-            byte[] bytes = file.getBytes();
-            String checksum = HexFormat.of().formatHex(
-                    MessageDigest.getInstance("SHA-256").digest(bytes));
+        byte[] bytes = file.getBytes();
+        String checksum = HexFormat.of().formatHex(
+                MessageDigest.getInstance("SHA-256").digest(bytes));
 
-            String objectKey = "supplier-docs/" + supplierId + "/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
-            minioStorageService.upload(objectKey, bytes, file.getContentType());
+        String objectKey = "supplier-docs/" + supplierId + "/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
+        minioStorageService.upload(objectKey, bytes, file.getContentType());
 
-            SupplierDocument doc = supplierService.uploadDocument(
-                    supplierId, documentType, file.getOriginalFilename(),
-                    objectKey, file.getSize(), checksum, user);
+        SupplierDocument doc = supplierService.uploadDocument(
+                supplierId, documentType, file.getOriginalFilename(),
+                objectKey, file.getSize(), checksum, user);
 
-            Map<String, Object> result = new HashMap<>();
-            result.put("id", doc.getId());
-            result.put("filename", doc.getOriginalFilename());
-            result.put("documentType", documentType);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(ApiResponse.success(result, messageSource.getMessage("supplier.document.uploaded", null, locale)));
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to upload document: " + e.getMessage(), e);
-        }
+        Map<String, Object> result = new HashMap<>();
+        result.put("id", doc.getId());
+        result.put("filename", doc.getOriginalFilename());
+        result.put("documentType", documentType);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(result, messageSource.getMessage("supplier.document.uploaded", null, locale)));
     }
 
     /**

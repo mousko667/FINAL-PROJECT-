@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { apiErrorMessage } from '@/types/apiError'
+import { apiErrorMessage, translateApiMessage } from '@/types/apiError'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
@@ -145,7 +145,7 @@ function RecordPaymentModal({ invoice, onClose, onSuccess }: {
 
         {mutation.isError && (
           <p className="text-xs text-crit bg-crit-bg p-2 rounded border border-crit/30">
-            {apiErrorMessage(mutation.error) ?? t('app.error')}
+            {translateApiMessage(mutation.error, t) ?? t('app.error')}
           </p>
         )}
 

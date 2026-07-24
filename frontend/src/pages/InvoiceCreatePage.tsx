@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { apiErrorMessage } from '@/types/apiError'
+import { translateApiMessage } from '@/types/apiError'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -412,7 +412,7 @@ function InvoiceCreatePageInner() {
 
           {createMutation.isError && (
             <div className="text-sm text-crit bg-crit-bg p-3 rounded-[4px] border border-crit/30">
-              {apiErrorMessage(createMutation.error) ?? t('app.error', 'An error occurred. Check that all required fields are filled.')}
+              {translateApiMessage(createMutation.error, t) ?? t('app.error', 'An error occurred. Check that all required fields are filled.')}
             </div>
           )}
 

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { translateApiMessage } from '@/types/apiError'
 import { useTranslation } from 'react-i18next'
 import { Loader2 } from 'lucide-react'
 
@@ -30,8 +31,8 @@ export default function MatchingLineResolveModal({ isOpen, onClose, onResolve, p
       await onResolve(reason)
       setReason('')
       onClose()
-    } catch (err: any) {
-      setError(err.response?.data?.message || t('matching.resolve.errorGeneric'))
+    } catch (err) {
+      setError(translateApiMessage(err, t) ?? t('matching.resolve.errorGeneric'))
     } finally {
       setLoading(false)
     }

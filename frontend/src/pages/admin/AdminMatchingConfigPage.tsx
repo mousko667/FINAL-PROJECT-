@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { translateApiMessage } from '@/types/apiError'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
@@ -57,7 +58,7 @@ export default function AdminMatchingConfigPage() {
       setTimeout(() => setSaved(false), 3000)
     },
     onError: (err: { response?: { data?: { message?: string } } }) => {
-      setFormError(err?.response?.data?.message ?? t('admin.matchingConfig.saveError', 'Could not save the configuration.'))
+      setFormError(translateApiMessage(err, t) ?? t('admin.matchingConfig.saveError', 'Could not save the configuration.'))
     },
   })
 

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { translateApiMessage } from '@/types/apiError'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
@@ -99,7 +100,7 @@ export default function AdminDelegationsPage() {
       setFormError('')
     },
     onError: (err: { response?: { data?: { message?: string } } }) => {
-      setFormError(err?.response?.data?.message ?? t('admin.delegations.createError', 'Could not create the delegation.'))
+      setFormError(translateApiMessage(err, t) ?? t('admin.delegations.createError', 'Could not create the delegation.'))
     },
   })
 

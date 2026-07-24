@@ -64,6 +64,10 @@ function renderPage() {
 }
 
 describe('AdminCompliancePage audit-prep synthesis', () => {
+  // This test renders the whole compliance page (several queries + cascading waitFor) and
+  // occasionally exceeds the default 5s under full-suite CPU contention — a flaky timeout, not a
+  // wrong assertion (it passes every time in isolation). Give it a comfortable budget so the gate
+  // is deterministic (same remedy as PROB-146 for a shared-singleton flaky test).
   it('rolls up open incidents, checklist progress and upcoming deadlines', async () => {
     renderPage()
 
@@ -84,5 +88,5 @@ describe('AdminCompliancePage audit-prep synthesis', () => {
     expect(rows[0]).toHaveTextContent('Sooner deadline')
     expect(rows[1]).toHaveTextContent('Later deadline')
     expect(within(deadlinesList).queryByText('Done deadline')).not.toBeInTheDocument()
-  })
+  }, 15000)
 })

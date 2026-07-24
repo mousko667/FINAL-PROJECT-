@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { translateApiMessage } from '@/types/apiError'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
@@ -69,7 +70,7 @@ export default function MyDelegationsPage() {
     mutationFn: () => apiClient.post('/approvals/delegations/mine', { delegateeId, fromDate, toDate, reason }),
     onSuccess: () => { setDelegateeId(''); setFromDate(''); setToDate(''); setReason(''); setFormError(null); invalidate() },
     onError: (err: { response?: { data?: { message?: string } } }) =>
-      setFormError(err.response?.data?.message ?? t('delegations.createError', 'Échec de la création.')),
+      setFormError(translateApiMessage(err, t) ?? t('delegations.createError', 'Échec de la création.')),
   })
 
   const revoke = useMutation({

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { apiErrorMessage } from '@/types/apiError'
+import { translateApiMessage } from '@/types/apiError'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -395,7 +395,7 @@ export default function SupplierInvoiceSubmitPage() {
 
       {submitMutation.isError && (
         <p className="text-sm text-crit bg-crit-bg px-4 py-2 rounded-[4px]">
-          {apiErrorMessage(submitMutation.error) ?? t('app.error')}
+          {translateApiMessage(submitMutation.error, t) ?? t('app.error')}
         </p>
       )}
 

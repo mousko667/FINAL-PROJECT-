@@ -58,6 +58,11 @@ export default function Header() {
   const { theme, toggleTheme } = useTheme()
   const breadcrumbs = useBreadcrumb()
   const { isOpen, toggle } = useSidebarDrawer()
+  const { pathname } = useLocation()
+  // AUDIT-038: the Header is shared between the staff shell and the supplier portal. The
+  // breadcrumb root must follow the context — a supplier clicking it should land on the
+  // supplier dashboard, not the staff route (which the route guard would only bounce back).
+  const dashboardHref = pathname.startsWith('/supplier') ? '/supplier/dashboard' : '/dashboard'
 
   const handleLogout = () => {
     dispatch(logout())
@@ -89,7 +94,7 @@ export default function Header() {
 
       {/* Breadcrumb */}
       <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-faint min-w-0 overflow-hidden">
-        <Link to="/dashboard" className="hover:text-ink transition-colors">
+        <Link to={dashboardHref} className="hover:text-ink transition-colors">
           {t('nav.dashboard')}
         </Link>
         {breadcrumbs.map((crumb, i) => (
