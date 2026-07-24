@@ -2130,3 +2130,91 @@ racine traitee partout, pas seulement dans le fichier qui a rougi.
 (langue, horloge, store) doit etre `async` et `await`. Un test qui echoue une fois sur trois est un
 bug de test, pas du bruit : le corriger a la cause racine, et le corriger **dans tous les fichiers
 qui partagent le meme motif**, car ils sont tous des declencheurs potentiels.
+
+
+---
+
+## PROB-142 -- Le commentaire JSX insere avant un element casse une branche ternaire
+
+**Date :** 2026-07-24 | **Contexte :** P6 vague 3, lot V3-A (AUDIT-019)
+
+**Symptome :** apres avoir enveloppe 12 `<table>` dans un conteneur `overflow-x-auto` par script,
+7 fichiers de test echouaient avec une erreur de transformation `vite:oxc` :
+`` `,` or `)` expected `` sur `<div className="overflow-x-auto">`.
+
+**Cause racine :** le script inserait un commentaire `{/* AUDIT-019 */}` **puis** le `<div>`. Dans
+une branche de ternaire JSX (`) : (` suivi de l'element), un seul enfant est admis : le commentaire
+et le `div` formaient deux elements adjacents, ce que le parseur refuse.
+
+**Solution :** retirer les commentaires des sites inseres en ternaire ; documenter le lot dans le
+message de commit plutot que sur chaque site.
+
+**Preventive rule :** `tsc --noEmit` **ne detecte pas** cette faute -- seul le parseur JSX
+(`vite`/`oxc`) la voit. Apres toute insertion JSX par script, lancer `npm run build` en plus de
+`tsc`, avant de conclure que la modification est saine.
+
+---
+
+## PROB-143 -- L'insertion d'un import par "derniere ligne commencant par import" casse un import multi-lignes
+
+**Date :** 2026-07-24 | **Contexte :** P6 vague 3, lots V3-B et V3-C
+
+**Symptome :** `PaymentsPage.tsx` en erreur de parse :
+`Identifier expected. 'import' is a reserved word that cannot be used here.`
+
+**Cause racine :** l'heuristique `max(i for i, l in enumerate(lines) if l.startswith('import '))`
+designe la ligne d'ouverture d'un import **multi-lignes** (`import {` sur une ligne, les symboles
+en dessous). L'import ajoute atterrissait donc **a l'interieur** des accolades.
+
+**Solution :** deplacer l'import apres le `} from '...'` fermant. Verification faite ensuite sur
+**tous** les fichiers touches par les scripts de la vague (un balayage a confirme un seul cas).
+
+**Preventive rule :** pour inserer un import par script, viser la ligne qui **suit** le dernier
+`from '...'` (fin d'instruction), jamais le dernier `startswith('import ')`. Et apres toute
+insertion en lot, balayer l'ensemble des fichiers touches, pas seulement celui qui a rougi.
+
+---
+
+## PROB-144 -- Un helper qui importe le module d'init i18n casse les tests qui mockent react-i18next
+
+**Date :** 2026-07-24 | **Contexte :** P6 vague 3, lot V3-C (AUDIT-043)
+
+**Symptome :** 10 fichiers de test en echec avec
+`No "initReactI18next" export is defined on the "react-i18next" mock`, pointant `src/lib/format.ts:1:1`.
+
+**Cause racine :** pour suivre la langue active, `lib/format.ts` importait `@/i18n` -- le module
+d'**initialisation**, qui importe lui-meme `initReactI18next` et les deux catalogues. Les 29 fichiers
+consommateurs du helper tiraient donc toute la configuration i18n, y compris dans des tests qui
+mockent volontairement `react-i18next`.
+
+**Solution :** importer l'instance nue `i18next` au lieu de `@/i18n`. Les deux modules partagent le
+meme singleton : la langue lue est bien celle que l'application positionne, sans la dependance
+d'initialisation.
+
+**Preventive rule :** un utilitaire partage (`lib/`) importe la **bibliotheque**, jamais le module
+d'initialisation applicatif. Sinon chacun de ses consommateurs herite de tout le graphe d'init.
+
+---
+
+## PROB-145 -- Retirer `lng` d'i18next expose une resolution de langue regionale sans catalogue
+
+**Date :** 2026-07-24 | **Contexte :** P6 vague 3, lot V3-C (AUDIT-042)
+
+**Symptome :** apres suppression de `lng: 'fr'` (qui court-circuitait `LanguageDetector`), 45 tests
+frontend basculaient en anglais : jsdom annonce `navigator.language = 'en-US'`, et `i18n.language`
+valait `en-US`.
+
+**Cause racine :** deux defauts distincts que le `lng` code en dur **masquait**. (1) Seules les
+ressources `fr` et `en` existent : un navigateur annoncant un code **regional** (`en-US`, `en-GB`,
+`fr-CA`) resolvait vers une langue sans catalogue. (2) La langue des tests dependait de
+l'environnement du runner, donc n'etait pas deterministe.
+
+**Solution :** `load: 'languageOnly'` + `supportedLngs: ['fr','en']` dans la configuration i18next --
+c'est une correction **applicative**, pas un contournement de test : un vrai navigateur `en-GB`
+etait touche. Et epinglage de la langue de test via `localStorage.setItem('i18nextLng','fr')` dans
+`src/test/setup.ts`, au meme titre que le shim `matchMedia` deja present.
+
+**Preventive rule :** retirer une valeur codee en dur revele ce qu'elle masquait. Quand des tests
+rougissent apres une telle suppression, chercher d'abord le **defaut applicatif** ainsi expose avant
+de conclure a un probleme de test. Et une configuration i18n doit toujours declarer
+`supportedLngs` + `load: 'languageOnly'` si elle ne fournit que des catalogues de langue de base.
