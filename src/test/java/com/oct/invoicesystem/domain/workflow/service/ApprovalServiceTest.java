@@ -164,6 +164,30 @@ class ApprovalServiceTest {
         verify(invoiceStateMachineService).sendEvent(invoice.getId(), InvoiceEvent.ASSIGN_AA, null);
     }
 
+    /**
+     * AUDIT-036 — the AA control step must be created directly APPROVED with action_at set, exactly
+     * like validateN1/validateN2. It used to be created PENDING and never closed, leaving audit data
+     * that claimed a completed control was still "EN ATTENTE" (8 frozen rows in production).
+     */
+    @Test
+    void assignAA_createsAaControlStepApprovedWithActionAt() {
+        mockSecurityContext("ROLE_ASSISTANT_COMPTABLE");
+        when(invoiceRepository.findByIdAndDeletedAtIsNull(invoice.getId())).thenReturn(Optional.of(invoice));
+        when(approvalStepRepository.findByInvoiceIdAndStepOrder(invoice.getId(), 0)).thenReturn(Optional.empty());
+        when(approvalStepRepository.save(any(ApprovalStep.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        approvalService.assignAA(invoice.getId());
+
+        ArgumentCaptor<ApprovalStep> captor = ArgumentCaptor.forClass(ApprovalStep.class);
+        verify(approvalStepRepository).save(captor.capture());
+        ApprovalStep aaStep = captor.getValue();
+        assertEquals(0, aaStep.getStepOrder());
+        assertEquals("Controle AA", aaStep.getStepNameFr());
+        // The defect: this was PENDING with a null action_at, indefinitely.
+        assertEquals(ApprovalStepStatus.APPROVED, aaStep.getStatus());
+        assertNotNull(aaStep.getActionAt(), "the completed AA control must carry an action_at");
+    }
+
     @Test
     void assignAA_rejectsNonAssistantComptable() {
         mockSecurityContext("ROLE_VALIDATEUR_N1_INFO");

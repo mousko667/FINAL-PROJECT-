@@ -80,7 +80,11 @@ public class ApprovalServiceImpl implements ApprovalService {
         }
         checkRole(currentUser, "ROLE_ASSISTANT_COMPTABLE");
         ensureNotSubmitter(invoice, currentUser);
-        createOrUpdateStep(invoice, 0, currentUser, "Controle AA", null, null, ApprovalStepStatus.PENDING);
+        // AUDIT-036: the AA control is instantaneous, exactly like validateN1/validateN2. It must be
+        // created directly APPROVED (with action_at set by createOrUpdateStep) — creating it PENDING
+        // left the step frozen at "EN ATTENTE" forever, even on paid/archived invoices, since nothing
+        // ever closes it. That was audit data lying about a completed control.
+        createOrUpdateStep(invoice, 0, currentUser, "Controle AA", null, null, ApprovalStepStatus.APPROVED);
         invoiceStateMachineService.sendEvent(invoiceId, InvoiceEvent.ASSIGN_AA, null);
     }
 

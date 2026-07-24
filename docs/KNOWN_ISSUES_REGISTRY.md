@@ -2299,3 +2299,35 @@ rougir le test.
 corriger l'annotation du controleur puis regenerer. Un document de reference sans test de coherence
 en CI rederive en quelques mois. Et regle SoD absolue : le CODE fait foi contre la doc ; ROLE_ADMIN
 n'a aucun acces financier -- on ferme la doc sur le code, jamais l'inverse.
+
+## PROB-149 -- L'etape de controle AA restait figee a PENDING (jamais cloturee) -- donnee d'audit fausse
+
+**Date :** 2026-07-24 | **Contexte :** P6 vague 4, lot V4-C (AUDIT-036)
+
+**Symptome :** dans approval_steps, l'etape step_order=0 "Controle AA" restait a PENDING avec
+action_at NULL indefiniment, y compris sur des factures payees/archivees. En base de dev : 9 lignes
+PENDING, 0 APPROVED. L'ecran de detail affichait "Controle AA -- EN ATTENTE" sur une facture
+pourtant validee : l'historique d'approbation mentait sur un controle accompli.
+
+**Cause racine :** assignAA creait l'etape avec ApprovalStepStatus.PENDING puis declenchait la
+transition d'etat de la facture, mais RIEN ne cloturait ensuite l'etape -- alors que validateN1 et
+validateN2 creent la leur directement en APPROVED (createOrUpdateStep pose action_at des que le
+statut n'est pas PENDING). Le controle AA est pourtant instantane, comme N1/N2.
+
+**Solution :** (a) assignAA cree l'etape directement en APPROVED (action_at renseigne
+automatiquement). (b) Migration de rattrapage V49 pour les lignes existantes :
+UPDATE ... SET status='APPROVED', action_at=COALESCE(action_at, created_at)
+WHERE step_order=0 AND step_name_fr='Controle AA' AND status='PENDING'. Ciblage etroit : seules les
+PENDING basculent, les REJECTED (issue terminale reelle) sont laissees. Verifie en runtime sur la
+base de dev : 9 PENDING -> 9 APPROVED (action_at 9/9), 3 REJECTED intactes, aucune autre etape
+touchee.
+
+**Retention -- verifiee AVANT toute mise a jour :** les triggers de V33 sont BEFORE DELETE
+UNIQUEMENT et ne couvrent meme pas approval_steps. Une migration en UPDATE n'a donc aucun conflit
+avec la retention financiere. Regle : avant de modifier une table financiere en migration, LIRE les
+triggers de retention (V33) et confirmer qu'il s'agit d'un UPDATE, pas d'un DELETE.
+
+**Preventive rule :** toute etape de workflow instantanee doit etre creee dans son etat terminal
+(APPROVED avec action_at), jamais en PENDING "a cloturer plus tard" si rien ne la cloture. Une etape
+PENDING sans transition de fermeture produit une donnee d'audit fausse qu'aucun test ne detecte tant
+qu'on n'inspecte pas l'etat REEL en base (regle verify-runtime-not-snapshot).
