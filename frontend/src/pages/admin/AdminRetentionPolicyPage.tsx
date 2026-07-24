@@ -5,6 +5,7 @@ import apiClient from '@/services/apiClient'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { Loader2, Save, Archive } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { formatDate, formatDateTime } from '@/lib/format'
 
 interface RetentionPolicy {
   retentionYears: number
@@ -41,7 +42,7 @@ export default function AdminRetentionPolicyPage() {
   })
 
   const formatDate = (iso?: string | null) =>
-    iso ? new Date(iso).toLocaleString(i18n.language === 'en' ? 'en-US' : 'fr-FR') : t('retentionPolicy.never', 'Jamais')
+    iso ? formatDateTime(iso) : t('retentionPolicy.never', 'Jamais')
 
   return (
     <PageRoleGuard allowedRoles={['ROLE_ADMIN']}>

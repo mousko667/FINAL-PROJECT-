@@ -7,6 +7,7 @@ import { Loader2, HardDrive, Download, RotateCcw, Plus, AlertTriangle, Activity,
 import { Panel } from '@/components/ui/Panel'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { notifyApiError } from '@/components/ErrorToaster'
+import { currentLocale } from '@/lib/format'
 
 export default function AdminBackupsPage() {
   const { t } = useTranslation()
@@ -91,7 +92,7 @@ export default function AdminBackupsPage() {
             </div>
             {status.lastBackupAt && (
               <div className="text-right text-sm text-ink-soft num">
-                {new Date(status.lastBackupAt).toLocaleString('fr-FR', {
+                {new Date(status.lastBackupAt).toLocaleString(currentLocale(), {
                   day: '2-digit', month: 'short', year: 'numeric',
                   hour: '2-digit', minute: '2-digit'
                 })}
@@ -172,7 +173,7 @@ export default function AdminBackupsPage() {
                   {auditLogs.map((log) => (
                     <tr key={log.id} className="hover:bg-[color-mix(in_srgb,hsl(var(--gold-deep))_5%,transparent)]">
                       <td className="px-6 py-3 text-ink-soft num">
-                        {new Date(log.createdAt).toLocaleString('fr-FR', {
+                        {new Date(log.createdAt).toLocaleString(currentLocale(), {
                           day: '2-digit', month: '2-digit', year: 'numeric',
                           hour: '2-digit', minute: '2-digit', second: '2-digit'
                         })}

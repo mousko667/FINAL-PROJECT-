@@ -11,7 +11,7 @@ import { ImportInvoicesModal } from '@/components/invoice/ImportInvoicesModal'
 import type { InvoiceStatus } from '@/types/invoice'
 import { Plus, Upload, Search, ChevronLeft, ChevronRight, Loader2, Archive, Lock } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { formatAmount } from '@/lib/format'
+import { formatAmount, formatDate } from '@/lib/format'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
 
 const ALLOWED_ROLES = [
@@ -249,8 +249,8 @@ function InvoiceListPage() {
                         <span className="num text-ink">{formatAmount(invoice.amount)}</span>{' '}
                         <span className="text-ink-faint text-xs">{invoice.currency}</span>
                       </td>
-                      <td className="px-4 py-3 text-ink-soft">{invoice.issueDate}</td>
-                      <td className="px-4 py-3 text-ink-soft">{invoice.dueDate}</td>
+                      <td className="px-4 py-3 text-ink-soft">{formatDate(invoice.issueDate)}</td>
+                      <td className="px-4 py-3 text-ink-soft">{formatDate(invoice.dueDate)}</td>
                       <td className="px-4 py-3"><StatusBadge status={invoice.status} /></td>
                       <td className="px-4 py-3">
                         {invoice.matchingStatus ? (

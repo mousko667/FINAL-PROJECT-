@@ -15,7 +15,7 @@ import {
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
-import { formatAmount } from '@/lib/format'
+import { formatAmount, formatDate, formatDateTime } from '@/lib/format'
 import { notifyApiError } from '@/components/ErrorToaster'
 
 function KpiCard({ title, value, sub, icon }: { title: string; value: string | number; sub?: string; icon: React.ReactNode; color?: string }) {
@@ -484,7 +484,7 @@ export default function ReportsPage() {
                   {supplierHistory.map(p => (
                     <tr key={p.paymentId} className="hover:bg-ground">
                       <td className="px-3 py-2 font-medium text-ink">{p.invoiceReference}</td>
-                      <td className="px-3 py-2 text-ink-soft">{new Date(p.paymentDate).toLocaleDateString()}</td>
+                      <td className="px-3 py-2 text-ink-soft">{formatDate(p.paymentDate)}</td>
                       <td className="px-3 py-2 text-ink-soft">{t(`invoice.paymentMethods.${p.paymentMethod}`, p.paymentMethod)}</td>
                       <td className="px-3 py-2 text-ink-soft">{p.paymentReference}</td>
                       <td className="px-3 py-2 text-right num text-ink">{formatAmount(p.amountPaid)} XAF</td>
@@ -518,7 +518,7 @@ export default function ReportsPage() {
                 <tbody className="divide-y divide-hairline">
                   {recentActivity.map(a => (
                     <tr key={a.id} className="hover:bg-ground">
-                      <td className="px-3 py-2 text-ink-soft">{new Date(a.changedAt).toLocaleString()}</td>
+                      <td className="px-3 py-2 text-ink-soft">{formatDateTime(a.changedAt)}</td>
                       <td className="px-3 py-2 font-medium text-ink">{a.referenceNumber}</td>
                       <td className="px-3 py-2 text-ink-soft">
                         {t(`status.${a.fromStatus}`, a.fromStatus)} → <span className="font-medium text-ink">{t(`status.${a.toStatus}`, a.toStatus)}</span>

@@ -6,6 +6,7 @@ import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { Link } from 'react-router-dom'
 import { Loader2, CheckCircle, Trash2, ShieldCheck } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { formatDateTime } from '@/lib/format'
 
 interface PendingDocument {
   id: string
@@ -82,7 +83,7 @@ export default function AdminRetentionDispositionPage() {
                         ? <Link to={`/invoices/${doc.invoiceId}`} className="text-primary hover:underline">{doc.invoiceId.slice(0, 8)}</Link>
                         : <span className="text-ink-faint">—</span>}
                     </td>
-                    <td className="px-4 py-2 text-ink-soft">{new Date(doc.uploadedAt).toLocaleString(i18n.language === 'en' ? 'en-US' : 'fr-FR')}</td>
+                    <td className="px-4 py-2 text-ink-soft">{formatDateTime(doc.uploadedAt)}</td>
                     <td className="px-4 py-2">
                       <div className="flex items-center justify-end gap-2">
                         <button

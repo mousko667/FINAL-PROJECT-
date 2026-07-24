@@ -13,6 +13,7 @@ import {
   Loader2, DollarSign, ExternalLink, Download, CheckCircle,
   FileText, CreditCard, Calendar, Hash, BellRing,
 } from 'lucide-react'
+import { formatAmount, formatDate } from '@/lib/format'
 
 interface Payment {
   id: string
@@ -86,7 +87,7 @@ function RecordPaymentModal({ invoice, onClose, onSuccess }: {
           </div>
           <div className="text-right">
             <p className="text-xs font-medium text-ink-faint">{t('invoice.amount')}</p>
-            <p className="num font-bold text-lg text-pos">{Number(invoice.amount).toLocaleString(i18n.language === 'en' ? 'en-US' : 'fr-FR')} {invoice.currency}</p>
+            <p className="num font-bold text-lg text-pos">{formatAmount(invoice.amount)} {invoice.currency}</p>
           </div>
         </div>
 
@@ -383,7 +384,7 @@ export default function PaymentsPage() {
                       <td className="num px-4 py-3 text-xs font-semibold text-ink">{inv.referenceNumber}</td>
                       <td className="px-4 py-3 text-ink-soft">{inv.supplierName ?? '—'}</td>
                       <td className="px-4 py-3 text-right">
-                        <span className="num font-medium text-pos">{Number(inv.amount).toLocaleString(i18n.language === 'en' ? 'en-US' : 'fr-FR')}</span>{' '}
+                        <span className="num font-medium text-pos">{formatAmount(inv.amount)}</span>{' '}
                         <span className="text-ink-faint text-xs">{inv.currency}</span>
                       </td>
                       <td className="px-4 py-3 text-right flex items-center justify-end gap-2">
@@ -493,11 +494,11 @@ export default function PaymentsPage() {
                       </td>
                       <td className="num px-4 py-3 text-xs text-ink-soft">{p.reference}</td>
                       <td className="px-4 py-3 text-right">
-                        <span className="num font-medium text-pos">{Number(p.amountPaid).toLocaleString(i18n.language === 'en' ? 'en-US' : 'fr-FR')}</span>{' '}
+                        <span className="num font-medium text-pos">{formatAmount(p.amountPaid)}</span>{' '}
                         <span className="text-ink-faint text-xs">{p.currency}</span>
                       </td>
                       <td className="px-4 py-3 text-ink-faint text-xs">
-                        {new Date(p.paymentDate).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'fr-FR')}
+                        {formatDate(p.paymentDate)}
                       </td>
                       <td className="px-4 py-3">
                         {p.status === 'SCHEDULED' ? (

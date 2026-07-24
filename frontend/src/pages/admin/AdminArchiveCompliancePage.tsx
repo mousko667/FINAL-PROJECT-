@@ -5,6 +5,7 @@ import { PageRoleGuard } from '@/components/auth/RoleGuard'
 import { Loader2, ShieldCheck } from 'lucide-react'
 import { Panel } from '@/components/ui/Panel'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { formatDateTime } from '@/lib/format'
 
 interface CoverageSection {
   archivedInvoices: number
@@ -83,7 +84,7 @@ export default function AdminArchiveCompliancePage() {
           <>
             <p className="flex items-center gap-1.5 text-xs text-ink-faint">
               <ShieldCheck className="w-3.5 h-3.5" />
-              {t('archiveCompliance.generatedAt', 'Généré le')} {new Date(report.generatedAt).toLocaleString(i18n.language === 'en' ? 'en-US' : 'fr-FR')}
+              {t('archiveCompliance.generatedAt', 'Généré le')} {formatDateTime(report.generatedAt)}
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
