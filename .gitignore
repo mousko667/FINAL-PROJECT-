@@ -119,3 +119,6 @@ temp/
 
 # Git worktrees (isolation binome — non suivi)
 .worktrees/
+
+# Dossier de these — local uniquement, ne doit pas apparaitre sur le remote
+THESIS_SYSTEM_DOSSIER.md
