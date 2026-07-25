@@ -71,8 +71,18 @@ export default function ReportsPage() {
   const { data: aging, isLoading: agingLoading } = useQuery({
     queryKey: ['aging'],
     queryFn: async () => {
-      const { data } = await apiClient.get<{ data: { buckets: Array<{ label: string; count: number; totalAmount: number }> } }>('/reports/aging')
-      return data.data
+      // Backend returns `buckets` as an OBJECT keyed by bucket ("0_30", "31_60", …),
+      // each { bucketKey, displayName, invoiceCount, totalAmount }. Flatten to the
+      // array the view consumes, in a stable order.
+      const { data } = await apiClient.get<{
+        data: { buckets: Record<string, { bucketKey: string; displayName: string; invoiceCount: number; totalAmount: number }> }
+      }>('/reports/aging')
+      const order = ['0_30', '31_60', '61_90', '90_plus']
+      const raw = data.data?.buckets ?? {}
+      const buckets = Object.values(raw)
+        .sort((a, b) => order.indexOf(a.bucketKey) - order.indexOf(b.bucketKey))
+        .map(b => ({ label: b.displayName, count: b.invoiceCount, totalAmount: b.totalAmount }))
+      return { buckets }
     },
     enabled: canView,
     retry: false,
@@ -81,8 +91,17 @@ export default function ReportsPage() {
   const { data: bottlenecks, isLoading: bnLoading } = useQuery({
     queryKey: ['bottlenecks'],
     queryFn: async () => {
-      const { data } = await apiClient.get<{ data: Array<{ approverUsername: string; invoiceCount: number; averageDays: number }> }>('/reports/bottlenecks')
-      return data.data ?? []
+      // Backend returns per-step aggregates: { departmentCode, stepOrder, stepName,
+      // averageDays, stepCount, bottleneck }. Normalise to the label/count the table shows.
+      const { data } = await apiClient.get<{
+        data: Array<{ departmentCode: string; stepName: string; averageDays: number; stepCount: number; bottleneck: boolean }>
+      }>('/reports/bottlenecks')
+      return (data.data ?? []).map((b, i) => ({
+        key: `${b.departmentCode}-${b.stepName}-${i}`,
+        label: `${b.departmentCode} · ${b.stepName}`,
+        count: b.stepCount,
+        averageDays: b.averageDays,
+      }))
     },
     enabled: canView,
     retry: false,
@@ -302,16 +321,16 @@ export default function ReportsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs text-ink-soft border-b border-hairline">
-                  <th className="pb-2">{t('reports.approver')}</th>
-                  <th className="pb-2 text-right">{t('reports.invoiceCount')}</th>
+                  <th className="pb-2">{t('reports.step', 'Étape')}</th>
+                  <th className="pb-2 text-right">{t('reports.stepCount', 'Nb étapes')}</th>
                   <th className="pb-2 text-right">{t('reports.avgDays')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {bottlenecks.map(b => (
-                  <tr key={b.approverUsername} className="hover:bg-ground">
-                    <td className="py-2.5 font-medium text-ink-soft">{b.approverUsername}</td>
-                    <td className="py-2.5 text-right text-ink-soft">{b.invoiceCount}</td>
+                  <tr key={b.key} className="hover:bg-ground">
+                    <td className="py-2.5 font-medium text-ink-soft">{b.label}</td>
+                    <td className="py-2.5 text-right text-ink-soft">{b.count}</td>
                     <td className="py-2.5 text-right">
                       <span className={`font-medium ${b.averageDays > 5 ? 'text-crit' : b.averageDays > 3 ? 'text-warn' : 'text-pos'}`}>
                         {b.averageDays.toFixed(1)}d

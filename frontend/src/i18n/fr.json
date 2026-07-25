@@ -279,6 +279,7 @@
     "noItems": "Aucune ligne"
   },
   "audit": {
+    "systemActor": "Système",
     "financial": {
       "title": "Journal d'audit financier",
       "subtitle": "Enregistrement immuable de tous les événements financiers — soumissions, approbations, rejets, paiements.",
@@ -479,6 +480,8 @@
     "approver": "Approbateur",
     "avgDays": "Moy. jours",
     "invoiceCount": "Factures",
+    "step": "Étape",
+    "stepCount": "Nb étapes",
     "daysOverdue": "Jours de retard",
     "amountDue": "Montant dû (XAF)",
     "dataExports": "Exports de données",
@@ -893,6 +896,8 @@
     "markAllRead": "Tout marquer comme lu",
     "noNotifications": "Aucune notification",
     "unread": "non lu(s)",
+    "sectionUnread": "Non lues",
+    "sectionRead": "Lues",
     "hint": "Cliquez sur une notification pour la marquer comme lue."
   },
   "ocr": {

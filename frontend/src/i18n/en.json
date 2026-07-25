@@ -279,6 +279,7 @@
     "noItems": "No line items"
   },
   "audit": {
+    "systemActor": "System",
     "financial": {
       "title": "Financial Audit Trail",
       "subtitle": "Immutable record of all financial events — invoice submissions, approvals, rejections, payments.",
@@ -479,6 +480,8 @@
     "approver": "Approver",
     "avgDays": "Avg. Days",
     "invoiceCount": "Invoices",
+    "step": "Step",
+    "stepCount": "Steps",
     "daysOverdue": "Days Overdue",
     "amountDue": "Amount Due (XAF)",
     "dataExports": "Data Exports",
@@ -893,6 +896,8 @@
     "markAllRead": "Mark all as read",
     "noNotifications": "No notifications",
     "unread": "unread",
+    "sectionUnread": "Unread",
+    "sectionRead": "Read",
     "hint": "Click a notification to mark it as read."
   },
   "ocr": {

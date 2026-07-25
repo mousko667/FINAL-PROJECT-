@@ -15,8 +15,7 @@ interface AuditLog {
   action: string
   entityType: string
   entityId?: string
-  performedBy?: { username: string }
-  performedAt?: string
+  userId?: string
   createdAt?: string
   ipAddress?: string
   newValue?: string
@@ -48,12 +47,13 @@ export default function FinancialAuditPage() {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['audit-logs-financial', filters],
     queryFn: async () => {
-      // DAF sees financial logs only (invoices, approvals, rejections, payments)
-      // financial endpoint returns 0 entries because AuditLoggingFilter records all
-      // as HTTP_REQUEST type. Use main endpoint filtered by invoice/payment actions.
+      // Dedicated financial audit endpoint. It is already scoped to the DAF's allowed
+      // action set server-side (SoD), so no client-side entityType filter is needed —
+      // the previous /audit-logs?entityType=HTTP_REQUEST workaround returned 0 rows
+      // because HTTP_REQUEST logs are system-scoped (ADMIN), not financial.
       const { data } = await apiClient.get<ApiResponse<PagedResponse<AuditLog>>>(
-        '/audit-logs',
-        { params: { ...filters, entityType: 'HTTP_REQUEST' } }
+        '/audit-logs/financial',
+        { params: filters }
       )
       return data.data
     },
@@ -164,7 +164,7 @@ export default function FinancialAuditPage() {
                         })()}
                       </td>
                       <td className="px-4 py-3 font-medium text-ink-soft text-xs">
-                        <div>{log.performedBy?.username ?? '—'}</div>
+                        <div className="num">{log.userId ? `#${log.userId.slice(0, 8)}` : t('audit.systemActor', 'Système')}</div>
                         {log.ipAddress && <div className="text-ink-faint num">{log.ipAddress}</div>}
                       </td>
                       <td className="px-4 py-3">
