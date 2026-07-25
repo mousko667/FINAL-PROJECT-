@@ -40,9 +40,9 @@
 | Client | Owendo Container Terminal (OCT), Libreville, Gabon | `CLAUDE.md:11`, `README.md:125` |
 | Type | Final-year Bachelor project (enterprise-grade quality target) | `CLAUDE.md:12` |
 | GroupId / ArtifactId / Version | `com.oct.invoicesystem` / `invoice-system` / `1.0.0-SNAPSHOT` | `pom.xml:18-20` |
-| Current commit hash | `ca4eb3b2d9584334faa3d5d66cad19b072aeb7b2` | `git rev-parse HEAD` (working tree) |
-| Commit date | 2026-06-29 17:54:42 +0200 | `git log -1` |
-| Dossier date | 2026-06-29 | session context |
+| Current commit hash | `d359c47` (`main`, in sync with `origin/main`) | `git rev-parse HEAD` (working tree) |
+| Commit date | 2026-07-24 | `git log -1` |
+| Dossier date | 2026-07-25 (updated after the exhaustive audit was closed) | session context |
 
 **One-paragraph summary.** The OCT Invoice System is a web-based, secure, bilingual (French/English)
 platform that digitizes Owendo Container Terminal's supplier-invoice lifecycle — the *Bon à Payer*
@@ -276,7 +276,25 @@ WHERE `deleted_at IS NULL`, `approval_steps(approver/deadline)` WHERE `status='P
 > `DAF` accesses financial audit only. There is **no Auditor role**
 > (`README.md:197`, `docs/TESTING.md:187-189`, `AuditController.java:60-185`).
 > The concrete `@PreAuthorize` split: `GET /audit-logs/system` → `ADMIN`; `GET /audit-logs/financial`
-> → `DAF`; `GET /audit-logs` → `ADMIN or DAF` (`AuditController.java:60-102`).
+> → `DAF`; `GET /audit-logs` → `ADMIN or DAF` (`AuditController.java:60-102`) — the last one is *not*
+> a SoD leak: all three route through `allowedActionsForCurrentUser()`, which restricts each role to
+> its own action subset (ADMIN=system, DAF=financial).
+
+> **SoD hardening from the exhaustive audit (wave V2-A, 2026-07-23, decision D5 — §14.3).** Three
+> financial surfaces that `ADMIN` previously touched were **closed to ADMIN**, so that the "ADMIN has
+> zero financial access" rule now holds in code, not only in doctrine — the code is authoritative:
+> - **Three-way matching tolerances** are now writable by **DAF only** and readable by DAF +
+>   ASSISTANT_COMPTABLE; ADMIN has no surface at all
+>   (`MatchingConfigController.java:37,46` — `POST` = `hasRole('DAF')`, `GET` = `hasAnyRole('DAF','ASSISTANT_COMPTABLE')`).
+> - **Document purge** (retention disposition) now requires a **two-man rule**: ADMIN *proposes*
+>   (`RETAINED` or the new `PURGE_PROPOSED` state), **DAF alone confirms** `PURGED`, and only on a
+>   document already proposed — proposer and confirmer are always distinct roles
+>   (`RetentionDispositionController.java:32,40`, decision D5).
+> - **The supplier master data** (create / update / activate / suspend / delete / documents) is now
+>   **ASSISTANT_COMPTABLE only**; ADMIN was removed from every write and read on `SupplierController`
+>   (`SupplierController.java:61–193`, all `hasRole('ASSISTANT_COMPTABLE')`; `/{id}/performance` also
+>   allows DAF). *This supersedes the "ADMIN+ASSISTANT_COMPTABLE" entries shown for suppliers in §6.2,
+>   which predate wave V2-A.*
 
 ### 6.2 Endpoint inventory (method · path · controller:line · required role)
 
@@ -341,9 +359,9 @@ WHERE `deleted_at IS NULL`, `approval_steps(approver/deadline)` WHERE `status='P
 **Payments — `/api/v1/payments`** (`PaymentController.java`): POST `/invoice/{invoiceId}` (39) ASSISTANT_COMPTABLE; POST `/batch` (51) ASSISTANT_COMPTABLE; POST `/{paymentId}/process` (61) ASSISTANT_COMPTABLE; GET `/invoice/{invoiceId}` (71), GET `/` (79), GET `/{paymentId}/remittance` (90), GET `/export` (98) — ASSISTANT_COMPTABLE, DAF, ADMIN.
 **Payment alert rules — `/api/v1/payment-alert-rules`** (`PaymentAlertRuleController.java`): GET/POST/PUT/DELETE — DAF, ASSISTANT_COMPTABLE.
 
-**Purchasing**: `/api/v1/purchase-orders` (`PurchaseOrderController.java`): POST/PUT/DELETE ADMIN+ASSISTANT_COMPTABLE; GET `/` (94) ADMIN+ASSISTANT_COMPTABLE+DAF; GET `/{id}` (85) ADMIN+ASSISTANT_COMPTABLE. `/api/v1/goods-receipts` (`GoodsReceiptController.java`): POST (35) ADMIN+ASSISTANT_COMPTABLE; GET ADMIN+ASSISTANT_COMPTABLE+DAF. `/api/v1/matching` (`MatchingQueryController.java`): GET `/` (35), GET `/{invoiceId}/lines` (48) auth, not SUPPLIER, not ADMIN; POST `/{invoiceId}/lines/{poLineId}/resolve` (55) ADMIN or DAF. `/api/v1/matching-config` (`MatchingConfigController.java`): GET (36) ADMIN+ASSISTANT_COMPTABLE; POST (45) ADMIN.
+**Purchasing**: `/api/v1/purchase-orders` (`PurchaseOrderController.java`): POST/PUT/DELETE ADMIN+ASSISTANT_COMPTABLE; GET `/` (94) ADMIN+ASSISTANT_COMPTABLE+DAF; GET `/{id}` (85) ADMIN+ASSISTANT_COMPTABLE. `/api/v1/goods-receipts` (`GoodsReceiptController.java`): POST (35) ADMIN+ASSISTANT_COMPTABLE; GET ADMIN+ASSISTANT_COMPTABLE+DAF. `/api/v1/matching` (`MatchingQueryController.java`): GET `/` (35), GET `/{invoiceId}/lines` (48) auth, not SUPPLIER, not ADMIN; POST `/{invoiceId}/lines/{poLineId}/resolve` (55) ADMIN or DAF. `/api/v1/matching-config` (`MatchingConfigController.java`): GET (37) **DAF+ASSISTANT_COMPTABLE**; POST (46) **DAF** *(hardened in audit wave V2-A / decision D5 — ADMIN removed from this financial control; see §6.1)*.
 
-**Suppliers — `/api/v1/suppliers`** (`SupplierController.java`): POST (60), PUT `/{id}` (67) ADMIN+ASSISTANT_COMPTABLE; GET `/{id}` (75), GET `/` (81), GET `/export` (93), GET `/{id}/performance` (146), GET `/{id}/documents` (167) ADMIN+ASSISTANT_COMPTABLE+DAF; PATCH `/{id}/activate` (123), PATCH `/{id}/suspend` (131), POST `/{id}/documents` (188) ADMIN+ASSISTANT_COMPTABLE; DELETE `/{id}` (139) ADMIN. **Supplier relationship — `/api/v1/suppliers/{supplierId}`** (`SupplierRelationshipController.java`): contracts/communications GET (ADMIN+ASSISTANT_COMPTABLE+DAF), POST/DELETE (ADMIN+ASSISTANT_COMPTABLE).
+**Suppliers — `/api/v1/suppliers`** (`SupplierController.java`) — *supplier master data is **ASSISTANT_COMPTABLE only** after audit wave V2-A / decision D5; ADMIN was removed from every method (see §6.1):* POST (59), PUT `/{id}` (66), GET `/{id}` (74), GET `/` (80), GET `/export` (94), PATCH `/{id}/activate` (140), PATCH `/{id}/suspend` (148), DELETE `/{id}` (156), POST `/{id}/documents` (191), GET `/{id}/documents` (170) **ASSISTANT_COMPTABLE**; GET `/{id}/performance` (163) **ASSISTANT_COMPTABLE+DAF**. **Supplier relationship — `/api/v1/suppliers/{supplierId}`** (`SupplierRelationshipController.java`): contracts/communications GET (ADMIN+ASSISTANT_COMPTABLE+DAF), POST/DELETE (ADMIN+ASSISTANT_COMPTABLE).
 
 **Supplier portal — `/api/v1/supplier`** (`SupplierPortalController.java`, class-level `@PreAuthorize("hasRole('SUPPLIER')")` line 53): POST `/invoices` (73); GET `/invoices` (89); POST `/invoices/{id}/submit` (109); POST `/invoices/{id}/resubmit` (122); POST `/invoices/{id}/documents` (135); GET/PUT `/profile` (149/157); GET `/dashboard` (168); POST/GET `/documents` (209/242).
 
@@ -351,7 +369,7 @@ WHERE `deleted_at IS NULL`, `approval_steps(approver/deadline)` WHERE `status='P
 
 **Audit & reporting**: `/api/v1/audit-logs` (`AuditController.java`, see §6.1 SoD split); `/api/v1/reports` (`ReportController.java`) — **all 20+ endpoints `hasAnyRole('DAF','ASSISTANT_COMPTABLE')`** (kpis, summary, activity, export/excel, export/pdf/audit, export/pdf/compliance, aging, aging/buckets, cash-flow, payment-cycle, supplier payments/performance, bottlenecks, budget-vs-actual, budget-alerts, definitions CRUD, run/preview, volume-trend, executive-summary).
 
-**Compliance / governance (mostly ADMIN)**: `/api/v1/compliance` (`ComplianceController.java`) incidents/checklist/calendar/backup-status/archive-report (ADMIN; incident create = auth not SUPPLIER; privacy-acceptance = isAuthenticated); `/api/v1/backups` (`BackupController.java`, ADMIN); `/api/v1/retention-policy` & `/api/v1/retention` (ADMIN); `/api/v1/checklist-templates` (ADMIN); `/api/v1/announcements` (GET isAuthenticated; manage = ADMIN); `/api/v1/access-requests` (create/mine = auth not SUPPLIER; list/patch = ADMIN); `/api/v1/admin/security-policy` & `/api/v1/admin/security-health` (ADMIN).
+**Compliance / governance (mostly ADMIN)**: `/api/v1/compliance` (`ComplianceController.java`) incidents/checklist/calendar/backup-status/archive-report (ADMIN; incident create = auth not SUPPLIER; privacy-acceptance = isAuthenticated); `/api/v1/backups` (`BackupController.java`, ADMIN); `/api/v1/retention-policy` & `/api/v1/retention` (ADMIN) — but the **document-purge disposition** is a two-man rule: ADMIN proposes (`RETAINED`/`PURGE_PROPOSED`), **DAF alone confirms `PURGED`** (`RetentionDispositionController.java:32,40` = `hasAnyRole('ADMIN','DAF')` + service-side guard, audit wave V2-A / D5); `/api/v1/checklist-templates` (ADMIN); `/api/v1/announcements` (GET isAuthenticated; manage = ADMIN); `/api/v1/access-requests` (create/mine = auth not SUPPLIER; list/patch = ADMIN); `/api/v1/admin/security-policy` & `/api/v1/admin/security-health` (ADMIN).
 
 **Integrations**: `/api/v1/integrations/connectors`, `/api/v1/integrations/webhooks`, `/api/v1/integrations/status` (all `WebhookController`/`IntegrationConnectorController`/`IntegrationStatusController`, **ADMIN**).
 
@@ -473,6 +491,7 @@ The DAF issues the final *Bon à Payer* for **all** departments regardless of le
 | **Webhook signing** | HMAC-SHA256(payload, secret) in `X-OCT-Signature`; 3 retries backoff 5s/25s/125s; never blocks the invoice transaction | `docs/ARCHITECTURE.md:498-511`, `CLAUDE.md:362-368` |
 | **Secret management** | prod secrets from env only; `ProdSecretConfigValidator` fails fast if missing; test keys isolated in `application-test.yml`; `.env`/`*.p12`/`certs/` gitignored | `README.md:78-90` |
 | **Error hygiene** | `server.error.include-message/stacktrace/exception=never` | `application.yaml:69-72,316-317` |
+| **Security test coverage (added in audit wave V5-A, decision D8)** | `AuthControllerIntegrationTest` exercises the login path end-to-end: nominal login, wrong password → 401, the **full TOTP MFA round-trip** (setup → confirm → `mfa_required` + `pre_auth_token` → validate with a fresh OTP → full JWT, and a wrong-OTP → 401), **account lockout after 5 failed attempts** (5th → HTTP 423, the correct password still refused, `locked_until` persisted), and password reset (single-use token, old password refused, counter reset). `SupplierControllerIntegrationTest` asserts **`bank_details` is ciphertext at rest** (raw JDBC read is encrypted, no `IBAN` fragment, DTO never exposes it) and SoD (ADMIN/SUPPLIER → 403). `MatchingConfigControllerSodTest` proves ADMIN → 403 on read and write with `verify(never())`. | `AUDIT-013` (§14.3), `AuthControllerIntegrationTest`, `SupplierControllerIntegrationTest`, `MatchingConfigControllerSodTest` |
 
 ---
 
@@ -582,27 +601,33 @@ Each row is a **candidate screenshot** for a thesis figure.
 
 ## 13. Testing & Quality
 
-### 13.1 Real numbers (from existing artifacts — not re-run)
+### 13.1 Real numbers (current baseline — after the exhaustive audit, 2026-07-24)
+
+These are the numbers of record **after** the exhaustive audit was closed (see §14.3). They are the
+gate figures reported in the audit master register (`docs/AUDIT_MASTER.md`, wave V5 line); the two
+suites are run **separately** — never in parallel, because CPU contention between Maven and Vitest
+produces spurious worker-timeout failures (`docs/AUDIT_MASTER.md:92-95`).
 
 | Metric | Value | Source |
 |---|---|---|
-| Backend tests (aggregate) | **538 run, 0 failures, 0 errors, 0 skipped** | `target/surefire-reports/*.txt` (92 test classes, summed) |
-| Backend test classes | 92 `*.txt` surefire reports | `target/surefire-reports/` |
-| JaCoCo — instruction coverage (aggregate) | **66.31 %** (23 411 / 35 308) | `target/site/jacoco/jacoco.csv` |
-| JaCoCo — line coverage (aggregate) | **68.85 %** (4 609 / 6 694) | `target/site/jacoco/jacoco.csv` |
-| JaCoCo — branch coverage (aggregate) | **51.98 %** (1 210 / 2 328) | `target/site/jacoco/jacoco.csv` |
-| Frontend (Vitest) test files | 23 | `frontend/src/**/*.test.ts(x)` |
-| Frontend (Vitest) test cases | 80 `it()`/`test()` | `frontend/src/**/*.test.ts(x)` |
+| Backend tests | **734 run, 0 failures, 0 errors, 0 skipped** — `BUILD SUCCESS` | `./mvnw.cmd test`; `docs/AUDIT_MASTER.md` (V5-A gate) |
+| Frontend tests (Vitest) | **311 passed / 311** across **72 test files** | `npm run test`; `docs/AUDIT_MASTER.md` (V5-B gate) |
+| TypeScript type-check | `tsc` **0 errors**; production build green | `docs/AUDIT_MASTER.md` (V4-A / V5-B gate) |
+| **Accessibility (axe-core, WCAG 2.1 AA)** | **0 violations** for `color-contrast`, `label`, `select-name`, `button-name` across **51 pages × 2 themes** (114 observations, dark theme applied and verified on all 114) | `docs/AUDIT_MASTER.md` (V4-A + V5-B); AUDIT-020/024/046 |
 | E2E specs (Playwright) | 3 (`bap-single-level`, `bap-two-level`, `security-audit`) | `frontend/e2e/*.spec.ts` |
 
+> **How this grew from the earlier baseline.** The audit opened (2026-07-22) on a green baseline of
+> **628 backend / 237 frontend** tests (`docs/AUDIT_MASTER.md:82-98`). Closing the 46 findings —
+> notably the targeted controller test catch-up in wave V5-A (`AuthController`, `SupplierController`,
+> `MatchingConfigController`) — brought the backend to **734** and the frontend to **311**, all green.
+>
 > **Coverage gate (`pom.xml:309-358`).** The JaCoCo `check` goal enforces **LINE ≥ 0.65** and
 > **BRANCH ≥ 0.50** over business code (excluding `dto/`, `model/`, `config/`, `*Application`).
 > A comment (R5, 2026-06-26) records that the thresholds were lowered from the original 80 %/75 %
 > to the "real, defensible gated figure measured against host PostgreSQL — **68 % line / 53 % branch
 > over 144 business classes**", tracked as test-coverage debt (`pom.xml:336-356`, PROB-070).
 > `docs/TESTING.md:308-334` still shows the **original** 0.80/0.75 thresholds; the **enforced**
-> values are the `pom.xml` ones (0.65/0.50). The measured aggregate from the JaCoCo artifact is
-> 68.85 % line / 51.98 % branch (above), consistent with the R5 figure.
+> values are the `pom.xml` ones (0.65/0.50).
 
 ### 13.2 Strategy — test pyramid (`docs/TESTING.md:11-34`)
 - **Unit** (JUnit 5 + Mockito + AssertJ) — service & validation logic, all 10 workflow business rules, all state-machine transitions (valid + invalid + guard failures), `ApprovalService` chains for all 9 departments (`docs/TESTING.md:38-91`).
@@ -615,6 +640,18 @@ Each row is a **candidate screenshot** for a thesis figure.
 ### 13.3 Documented coverage gaps (`docs/TESTING.md:295-304`)
 `AuthRehydrator`, `SupplierRoute` guard, `StatusBadge` new variants, `InvoiceActionPanel` i18n
 fallback, and WebSocket-reconnection-on-401 were flagged as lacking tests at audit time.
+
+### 13.4 Accessibility (WCAG 2.1 AA, axe-core)
+The exhaustive audit ran **axe-core** as an instrumented Playwright sweep over **51 pages in both the
+light and dark theme** (114 observations). After waves V4-A and V5-B, the sweep reports **0 violations**
+on the checked rules — `color-contrast`, `label`, `select-name`, `button-name` (`docs/AUDIT_MASTER.md`,
+findings AUDIT-020/024/046). The contrast fixes were done at the **centralized CSS-token layer**
+(`frontend/src/index.css`) rather than per component, and by **re-running axe-core** (measurement, not
+by eye): several design-system tokens had their luminance lowered while keeping the Registre hue
+(e.g. light `--pos` 4.41→4.80, `--warn` 2.83→4.84, `--gold-deep` 3.94→4.95; dark `--ink-faint`
+4.09→4.83), plus a dedicated `--primary-accent` token for accent text/border so the `.bg-primary` fill
+(calibrated for light text) stayed intact. The number of contrast violations went from **369 → 0**
+across the two-theme sweep.
 
 ---
 
@@ -640,7 +677,7 @@ fallback, and WebSocket-reconnection-on-401 were flagged as lacking tests at aud
 ### 14.2 Remaining limitations / future work (open or partial in the registry)
 | ID | Status | Limitation → recommendation |
 |---|---|---|
-| PROB-049 | ⏳ Acknowledged (by design) | Validators can list/export invoices of **all** departments; dept filter is a UX default, not an authorization boundary. *Recommendation:* if a hard boundary is wanted, scope `departmentId` server-side on `GET /invoices` and `/invoices/export` + add a cross-department integration test. |
+| PROB-049 | ⏳ Acknowledged (by design) | Validators can list/export invoices of **all** departments; dept filter is a UX default, not an authorization boundary. *Recommendation:* if a hard boundary is wanted, scope `departmentId` server-side on `GET /invoices` and `/invoices/export` + add a cross-department integration test. **Note (audit V2-A):** the related cross-department **document + workflow-step** leak *was* closed (AUDIT-007/018, §14.3) — a validator of another department is now refused the attachments and approval chain of an invoice they cannot see; only the invoice **list/export** default remains assumed here. |
 | PROB-014 | ⏳ Historic note | JWT originally HS256; **now RS256/RSA-2048** (resolved per `ARCHITECTURE.md:214`, `JwtService.java`). |
 | PROB-016 | ✅ Resolved later | Approval delegation (now V19 entity + `DelegationController` + `AdminDelegationsPage`, GAP 6). |
 | PROB-043 | ❌ Partial | 10-year retention is a documented *policy*; automated lifecycle/purge/legal-hold job not fully implemented. *Recommendation:* `@Scheduled` retention sweep with legal-hold + audited transition. |
@@ -650,11 +687,70 @@ fallback, and WebSocket-reconnection-on-401 were flagged as lacking tests at aud
 | PROB-047 | ❌ Partial | Advanced report generator (REQ-21) only partially built. |
 | PROB-015 | ⏳ Workaround | Playwright `fullPage` screenshot truncates nested `overflow-y-auto`. |
 
-> The registry is large (1048 lines); the above is the representative set. For the thesis
+> The registry is large; the above is the representative set. For the thesis
 > "Recommendations" chapter, each open item is already phrased neutrally with a proposed solution.
 > A final QA pass (`docs/FINAL_QA_AUDIT_REPORT.md`, and memory note "final-qa-audit-v38-blocker")
 > records that a `V38`-era audit found a migration referencing a missing table that blocked boot,
 > which was corrected; treat any "100% PASS" claim cautiously and cite the measured figures here.
+
+### 14.3 Exhaustive audit (P0→P6, 2026-07-22 → 2026-07-24) — CLOSED
+
+An **exhaustive audit** of the whole system was conducted over three days following a documented
+7-phase method (registry: `docs/AUDIT_MASTER.md`; backlog & scoping decisions:
+`docs/AUDIT_BACKLOG.md`; system model: `docs/AUDIT_SYSTEM_MODEL.md`). Every finding lives in a single
+never-reused register (`AUDIT-001`…`AUDIT-046`), each with a probable cause, a **runtime proof**
+(Playwright capture, network trace, or console log — a purely static finding could not be closed),
+a proposed fix, and a status drawn from a fixed set (`OUVERT` · `EN COURS` · `CORRIGÉ` · `HORS-SCOPE`).
+
+**Method (7 phases).** P0 bootstrapping & comprehension (no findings emitted) · P1 static code audit ·
+P2 visual + responsive audit (Playwright) · P3 end-to-end functional audit · P4 cross-cutting audit
+(performance, i18n, a11y, consistency, error handling) · P5 consolidation + prioritized backlog
+(**8 scoping decisions D1–D8 taken with the user**, 2 severity revisions) · P6 correction in waves
+(V1→V5).
+
+**Result: 46 findings, 46 `CORRIGÉ` (100 %).** No line left `OUVERT` or `EN COURS`; **no finding was
+put `HORS-SCOPE`.** By severity: **0 P0**, **10 P1**, **24 P2**, **11 P3** (`docs/AUDIT_MASTER.md`
+synthesis). The whole chain was merged **fast-forward-only into `main`** (`d359c47`, in sync with
+`origin/main`). Gate at close: backend **734/0/0**, frontend **311/311**, `tsc` 0, and **0 axe-core
+violation** on 51 pages × 2 themes (§13). PROB numbers PROB-108→PROB-152 were logged along the way
+(next free: PROB-153); next free finding id: AUDIT-047.
+
+**Notable finding families and how they were closed:**
+- **Separation of duties — ADMIN closed on financial surfaces (wave V2-A, D5).** ADMIN was removed
+  from three financial controls: three-way-matching tolerances → **DAF** (AUDIT-008); document purge
+  → **two-man rule** ADMIN-proposes / **DAF-confirms** via a new `PURGE_PROPOSED` state (AUDIT-009);
+  supplier master data → **ASSISTANT_COMPTABLE** (D5). Cross-department invoice **documents and
+  approval workflow** were also scoped so that "if `GET /invoices/{id}` is refused, its documents and
+  its circuit are refused too" — closing a leak where a validator of another department could still
+  pull attachments and the nominative approval chain (AUDIT-007 / AUDIT-018).
+- **PO-ownership control (AUDIT-002, wave V2-B).** Three-way matching now checks
+  `po.getSupplier()` against the invoice's supplier **before** running, at both proven entry points
+  (portal creation and the matching check), with a generic i18n refusal that no longer leaks the
+  other supplier's PO total, GRN number or receipt date.
+- **Supplier portal ↔ PO (AUDIT-001 / AUDIT-031, wave V1-B, D1).** A **supplier-scoped**
+  `GET /api/v1/supplier/purchase-orders` endpoint + a PO selector on the submit form now let a
+  supplier bill against their own open PO and pass the PO lines as invoice line items, so the
+  three-way matching can actually run on the supplier channel (it structurally could not before).
+- **Full-payment + PAYE/ARCHIVE separation (AUDIT-029 / AUDIT-030, wave V1-C, D2/D3).** Payment now
+  requires `amountPaid == invoice.amount` (partial settlements rejected), and archiving became an
+  explicit action distinct from `PAYE`.
+- **Strict single-currency XAF (AUDIT-032/033, wave V1-D, D4).** DTO-side whitelist; EUR/USD removed
+  from the selector; the multi-currency effort is explicitly out of scope.
+- **Responsive layout (AUDIT-019).** Both authenticated layouts (staff + supplier) made responsive.
+- **Frontend error handling (AUDIT-014/015/035, wave V3-B).** A server outage no longer masquerades
+  as a logout or as "wrong credentials": only a genuine 401 clears the session; a network failure
+  shows an `OfflineBanner` and keeps the tokens. Every mutation now surfaces failures (95 mutations,
+  0 file left with no error handling at all).
+- **i18n (AUDIT-017/039/044).** Missing keys added (one missing key had made exports 500), the
+  `ErrorBoundary` translated, and API.md regenerated from OpenAPI (D6).
+- **Accessibility contrast (AUDIT-020/024/046, waves V4-A + V5-B).** See §13.4.
+
+**Remaining, explicitly-assumed debt after the audit:**
+- **Targeted controller test debt (decision D8).** The catch-up covered the three most sensitive
+  controllers (`AuthController`, `SupplierController`, `MatchingConfigController`); the **11 other
+  non-priority controllers remain an assumed test-coverage debt**, tracked in `docs/TASKS.md §A`.
+- **Testcontainers cannot run on this machine (PROB-115)** — the full-PostgreSQL SoD integration test
+  is out of the gate on the audit workstation; documented, not a code defect.
 
 ---
 
@@ -748,7 +844,10 @@ Standards and libraries actually used (cite alongside the implementation):
 
 ---
 
-*End of dossier. All quantitative claims (538 backend tests / 0 failures; 66.31% instruction,
-68.85% line, 51.98% branch coverage; 23 frontend test files / 80 cases; 3 e2e specs; library
-versions; migration list V1–V42) were verified against the cited repository files without executing
-anything. Items not recorded anywhere in the repository are marked "Not documented in repo".*
+*End of dossier. Quantitative claims were verified against the cited repository files and register.
+The current test baseline — **734 backend / 0 failures**, **311 frontend / 311**, `tsc` 0, and
+**0 axe-core violation** on 51 pages × 2 themes — is the gate figure of record after the exhaustive
+audit (`docs/AUDIT_MASTER.md`, waves V5-A/V5-B; §13). The exhaustive audit (P0→P6, 46/46 findings
+`CORRIGÉ`) is closed and merged fast-forward into `main` (`d359c47`); see §14.3. Library versions and
+the migration list (V1–V42) were read from the cited files. Items not recorded anywhere in the
+repository are marked "Not documented in repo".*
