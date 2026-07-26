@@ -165,4 +165,36 @@ class AuditServiceTest {
         // user null -> label fallback "—"
         assertEquals("—", dto.byUser().get(1).label());
     }
+
+    @Test
+    void toDTO_populatesActorDisplayNameAndRole() throws Exception {
+        UUID userId = UUID.randomUUID();
+        com.oct.invoicesystem.domain.user.model.Role role =
+                new com.oct.invoicesystem.domain.user.model.Role();
+        role.setName("ROLE_DAF");
+        com.oct.invoicesystem.domain.user.model.UserRole ur =
+                new com.oct.invoicesystem.domain.user.model.UserRole();
+        ur.setRole(role);
+        com.oct.invoicesystem.domain.user.model.User user =
+                com.oct.invoicesystem.domain.user.model.User.builder()
+                        .id(userId).firstName("Marie").lastName("Ndong").username("daf").build();
+        user.getUserRoles().add(ur);
+
+        com.oct.invoicesystem.domain.audit.model.AuditLog log =
+                com.oct.invoicesystem.domain.audit.model.AuditLog.builder()
+                        .id(UUID.randomUUID()).user(user)
+                        .entityType("INVOICE").entityId("FAC-2026-0042").action("BON_A_PAYER").build();
+
+        // toDTO is private; exercise it through the public search path with a mocked repo page.
+        PageRequest pr = PageRequest.of(0, 10);
+        when(auditLogRepository.findAll(any(Specification.class), eq(pr)))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(java.util.List.of(log)));
+
+        AuditLogDTO dto = auditService.searchLogsWithActionFilter(
+                null, null, null, null, java.util.List.of("BON_A_PAYER"), null, null, null, pr)
+                .getContent().get(0);
+
+        assertEquals("Ndong Marie", dto.userDisplayName());
+        assertEquals("DAF", dto.userRole());
+    }
 }

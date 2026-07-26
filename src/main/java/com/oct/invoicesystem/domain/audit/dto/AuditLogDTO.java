@@ -13,5 +13,7 @@ public record AuditLogDTO(
         String newValue,
         String ipAddress,
         String userAgent,
-        Instant createdAt
+        Instant createdAt,
+        String userDisplayName,
+        String userRole
 ) {}

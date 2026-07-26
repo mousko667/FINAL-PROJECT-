@@ -190,7 +190,26 @@ public class AuditServiceImpl implements AuditService {
                 log.getNewValue(),
                 log.getIpAddress(),
                 log.getUserAgent(),
-                log.getCreatedAt()
+                log.getCreatedAt(),
+                displayName(log.getUser()),
+                primaryRole(log.getUser())
         );
+    }
+
+    private static String displayName(User u) {
+        if (u == null) return null;
+        String ln = u.getLastName();
+        String fn = u.getFirstName();
+        String full = ((ln == null ? "" : ln) + " " + (fn == null ? "" : fn)).trim();
+        if (!full.isBlank()) return full;
+        return u.getUsername();
+    }
+
+    private static String primaryRole(User u) {
+        if (u == null || u.getUserRoles() == null) return null;
+        return u.getUserRoles().stream().findFirst()
+                .map(ur -> ur.getRole().getName())
+                .map(n -> n.startsWith("ROLE_") ? n.substring(5) : n)
+                .orElse(null);
     }
 }
