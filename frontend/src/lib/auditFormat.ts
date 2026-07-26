@@ -20,7 +20,7 @@ export function formatAuditActor(row: AuditRow, systemLabel: string): { name: st
 export function formatAuditEntity(row: AuditRow, invoiceLabel: (ref: string) => string): string {
   const id = row.entityId
   if (id && !id.startsWith('/')) return invoiceLabel(id)
-  if (id && id.startsWith('/')) return `${row.entityType ?? ''}#${id.slice(0, 8)}`
+  if (id && id.startsWith('/')) return row.entityType ?? '—'
   return row.entityType ?? '—'
 }
 
@@ -29,13 +29,24 @@ function tryParse(s?: string): any | null {
   try { return JSON.parse(s) } catch { return null }
 }
 
+/**
+ * Parses a value and, if the result is itself a string (double-encoded JSON,
+ * as produced by the legacy HTTP-telemetry audit rows), parses it once more.
+ * Defensive: never throws; an unparseable inner value yields null.
+ */
+function tryParseDeep(s?: string): any | null {
+  const first = tryParse(s)
+  if (typeof first === 'string') return tryParse(first)
+  return first
+}
+
 export function formatAuditDetails(row: AuditRow): string {
-  const biz = tryParse(row.newValue)
+  const biz = tryParseDeep(row.newValue)
   if (biz && (biz.amount != null || biz.currency || biz.supplier)) {
     const money = `${formatAmount(biz.amount)} ${biz.currency ?? ''}`.trim()
     return biz.supplier ? `${money} · ${biz.supplier}` : money
   }
-  const http = tryParse(row.details) ?? tryParse(row.newValue)
+  const http = tryParseDeep(row.details) ?? tryParseDeep(row.newValue)
   if (http && (http.method || http.status != null)) {
     return `${http.method ?? ''} · ${http.status ?? ''}`.replace(/^ · | · $/g, '').trim()
   }

@@ -23,7 +23,10 @@ describe('formatAuditEntity', () => {
     expect(formatAuditEntity({ entityType: 'INVOICE', entityId: 'FAC-2026-0042' }, inv)).toBe('Facture FAC-2026-0042')
   })
   it('falls back for legacy URL entity', () => {
-    expect(formatAuditEntity({ entityType: 'INVOICE', entityId: '/api/v1/invoices' }, inv)).toContain('INVOICE')
+    expect(formatAuditEntity({ entityType: 'INVOICE', entityId: '/api/v1/invoices' }, inv)).toBe('INVOICE')
+  })
+  it('renders just the entity type for a legacy URL entityId (no # fragment)', () => {
+    expect(formatAuditEntity({ entityType: 'PAYMENT', entityId: '/api/v1/payments/invoice/1eed8-xxx' }, inv)).toBe('PAYMENT')
   })
 })
 
@@ -35,8 +38,12 @@ describe('formatAuditDetails', () => {
     expect(out).toContain('SOGARA')
     expect(out).toContain('850')
   })
-  it('renders method and status for legacy HTTP rows', () => {
+  it('renders method and status for legacy HTTP rows (single-encoded details)', () => {
     const row = { details: JSON.stringify({ duration_ms: 83, method: 'POST', status: 200 }) }
+    expect(formatAuditDetails(row)).toBe('POST · 200')
+  })
+  it('renders method and status for double-encoded legacy HTTP newValue (real data shape)', () => {
+    const row = { newValue: JSON.stringify(JSON.stringify({ duration_ms: 759, method: 'POST', status: 200 })) }
     expect(formatAuditDetails(row)).toBe('POST · 200')
   })
 })
