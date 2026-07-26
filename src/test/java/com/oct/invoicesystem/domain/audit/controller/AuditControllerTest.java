@@ -37,7 +37,7 @@ class AuditControllerTest {
     void searchLogs_WithAdmin_ScopedToSystemActions() throws Exception {
         // N3: the combined /audit-logs endpoint must route ADMIN to the SYSTEM action set only,
         // never the unfiltered journal (which would leak financial events to the admin).
-        when(auditService.searchLogsWithActionFilter(any(), any(), any(), any(), any(), any(), any(), any()))
+        when(auditService.searchLogsWithActionFilter(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(Page.empty());
 
         mockMvc.perform(get("/api/v1/audit-logs"))
@@ -45,7 +45,7 @@ class AuditControllerTest {
 
         ArgumentCaptor<List<String>> actions = ArgumentCaptor.forClass(List.class);
         verify(auditService).searchLogsWithActionFilter(any(), any(), any(), any(),
-                actions.capture(), any(), any(), any());
+                actions.capture(), any(), any(), any(), any());
         assertThat(actions.getValue()).contains("LOGIN", "USER_CREATE", "SECURITY");
         assertThat(actions.getValue()).doesNotContain("PAYMENT", "BON_A_PAYER");
     }
@@ -53,7 +53,7 @@ class AuditControllerTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void testGetSystemLogs() throws Exception {
-        when(auditService.searchLogsWithActionFilter(any(), any(), any(), any(), any(), any(), any(), any()))
+        when(auditService.searchLogsWithActionFilter(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(Page.empty());
 
         mockMvc.perform(get("/api/v1/audit-logs/system"))
@@ -67,7 +67,7 @@ class AuditControllerTest {
     void searchLogs_WithDaf_ScopedToFinancialActions() throws Exception {
         // N3: the combined /audit-logs endpoint must route DAF to the FINANCIAL action set only,
         // never the system journal (login/user/security events are ADMIN-only).
-        when(auditService.searchLogsWithActionFilter(any(), any(), any(), any(), any(), any(), any(), any()))
+        when(auditService.searchLogsWithActionFilter(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(Page.empty());
 
         mockMvc.perform(get("/api/v1/audit-logs"))
@@ -76,7 +76,7 @@ class AuditControllerTest {
 
         ArgumentCaptor<List<String>> actions = ArgumentCaptor.forClass(List.class);
         verify(auditService).searchLogsWithActionFilter(any(), any(), any(), any(),
-                actions.capture(), any(), any(), any());
+                actions.capture(), any(), any(), any(), any());
         assertThat(actions.getValue()).contains("PAYMENT", "BON_A_PAYER", "APPROVE");
         assertThat(actions.getValue()).doesNotContain("LOGIN", "USER_CREATE");
     }
@@ -86,5 +86,22 @@ class AuditControllerTest {
     void searchLogs_WithUser_ReturnsForbidden() throws Exception {
         mockMvc.perform(get("/api/v1/audit-logs"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "DAF")
+    void financialLogs_WithExcludeAction_ForwardsItToService() throws Exception {
+        // Lot 9: the financial journal hides ACCESS_DENIED noise by default; the excludeAction
+        // query param must reach the service so the exclusion happens server-side (accurate paging).
+        when(auditService.searchLogsWithActionFilter(any(), any(), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(Page.empty());
+
+        mockMvc.perform(get("/api/v1/audit-logs/financial").param("excludeAction", "ACCESS_DENIED"))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<String> excludeAction = ArgumentCaptor.forClass(String.class);
+        verify(auditService).searchLogsWithActionFilter(any(), any(), any(), any(), any(),
+                excludeAction.capture(), any(), any(), any());
+        assertThat(excludeAction.getValue()).isEqualTo("ACCESS_DENIED");
     }
 }

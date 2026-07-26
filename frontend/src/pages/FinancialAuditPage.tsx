@@ -26,14 +26,33 @@ interface AuditFilters {
   username?: string
   entityType?: string
   action?: string
+  excludeAction?: string
   page: number
   size: number
 }
 
+/**
+ * Business financial events the DAF can filter on. Kept in sync with AuditController's
+ * FINANCIAL_ACTIONS allow-list (server-side SoD). ACCESS_DENIED is intentionally excluded here —
+ * it is the access-noise bucket toggled via the dedicated checkbox, not a business event.
+ */
+const FINANCIAL_EVENT_TYPES = [
+  'INVOICE_CREATE', 'INVOICE_SUBMIT', 'INVOICE_UPDATE', 'INVOICE_DELETE',
+  'APPROVE', 'REJECT', 'BON_A_PAYER', 'PAYMENT', 'MATCHING', 'MATCHING_OVERRIDE',
+  'RESUBMIT', 'ARCHIVE', 'RETENTION_FLAG',
+] as const
+
 export default function FinancialAuditPage() {
   const { t } = useTranslation()
   const [tab, setTab] = useState<'journal' | 'summary'>('journal')
-  const [filters, setFilters] = useState<AuditFilters>({ page: 0, size: 20 })
+  // Access-denied probe traffic dominates the journal (~85% of rows) and drowns business events,
+  // so it is hidden by default (excludeAction=ACCESS_DENIED) and re-shown via the checkbox.
+  const [showAccessDenied, setShowAccessDenied] = useState(false)
+  const [filters, setFilters] = useState<AuditFilters>({
+    page: 0,
+    size: 20,
+    excludeAction: 'ACCESS_DENIED',
+  })
 
   const exportMutation = useMutation({
     mutationFn: () => {
@@ -65,6 +84,12 @@ export default function FinancialAuditPage() {
 
   const handleFilter = (key: keyof AuditFilters, value: string) =>
     setFilters((prev) => ({ ...prev, [key]: value || undefined, page: 0 }))
+
+  const handleToggleAccessDenied = (show: boolean) => {
+    setShowAccessDenied(show)
+    // Showing the noise = drop the server-side exclusion; hiding it = re-apply excludeAction.
+    setFilters((prev) => ({ ...prev, excludeAction: show ? undefined : 'ACCESS_DENIED', page: 0 }))
+  }
 
   return (
     <PageRoleGuard allowedRoles={['ROLE_DAF']}>
@@ -115,11 +140,27 @@ export default function FinancialAuditPage() {
             placeholder={t('admin.audit.entity', 'Entity type (e.g. Invoice)')}
             onChange={(e) => handleFilter('entityType', e.target.value)}
           />
-          <input
+          <select
             className="border border-hairline rounded-[4px] px-3 py-2 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-primary/30"
-            placeholder={t('admin.audit.action', 'Action (e.g. APPROVE)')}
+            value={filters.action ?? ''}
             onChange={(e) => handleFilter('action', e.target.value)}
-          />
+          >
+            <option value="">{t('audit.financial.filter.allEvents', 'All event types')}</option>
+            {FINANCIAL_EVENT_TYPES.map((a) => (
+              <option key={a} value={a}>
+                {t(`audit.financial.event.${a}`, a)}
+              </option>
+            ))}
+          </select>
+          <label className="flex items-center gap-2 text-sm text-ink-soft select-none px-2">
+            <input
+              type="checkbox"
+              className="accent-primary"
+              checked={showAccessDenied}
+              onChange={(e) => handleToggleAccessDenied(e.target.checked)}
+            />
+            {t('audit.financial.filter.showAccessDenied', 'Show access-denied entries')}
+          </label>
         </div>
 
         {/* Table */}

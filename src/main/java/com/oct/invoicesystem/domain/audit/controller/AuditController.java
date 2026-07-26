@@ -71,7 +71,7 @@ public class AuditController {
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<AuditLogDTO> result = auditService.searchLogsWithActionFilter(
-                userId, entityType, null, action, SYSTEM_ACTIONS, null, null, pageable);
+                userId, entityType, null, action, SYSTEM_ACTIONS, null, null, null, pageable);
         return ApiResponse.success(PagedResponse.of(result), "audit.system.retrieved");
     }
 
@@ -87,12 +87,16 @@ public class AuditController {
             @RequestParam(required = false) String entityType,
             @RequestParam(required = false) String entityId,
             @RequestParam(required = false) String action,
+            @RequestParam(required = false) String excludeAction,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        // The DAF view hides the dominant ACCESS_DENIED probe noise by default by passing
+        // excludeAction=ACCESS_DENIED; omitting the param re-shows it. Kept server-side so
+        // pagination counts stay accurate (client-side row hiding would falsify page totals).
         Page<AuditLogDTO> result = auditService.searchLogsWithActionFilter(
-                userId, entityType, entityId, action, FINANCIAL_ACTIONS, null, null, pageable);
+                userId, entityType, entityId, action, FINANCIAL_ACTIONS, excludeAction, null, null, pageable);
         return ApiResponse.success(PagedResponse.of(result), "audit.financial.retrieved");
     }
 
@@ -130,7 +134,7 @@ public class AuditController {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         // N3: route to the role-scoped action set (like /summary/export) instead of the unfiltered search.
         Page<AuditLogDTO> result = auditService.searchLogsWithActionFilter(
-                userId, entityType, entityId, action, allowedActionsForCurrentUser(authentication), from, to, pageable);
+                userId, entityType, entityId, action, allowedActionsForCurrentUser(authentication), null, from, to, pageable);
         return ApiResponse.success(PagedResponse.of(result), "audit.retrieved");
     }
 
@@ -161,7 +165,7 @@ public class AuditController {
         // unfiltered journal — otherwise the export leaks the other role's journal to a file.
         java.util.List<AuditLogDTO> logs =
                 auditService.searchLogsWithActionFilter(null, entityType, null, action,
-                        allowedActionsForCurrentUser(authentication), from, to, pageable).getContent();
+                        allowedActionsForCurrentUser(authentication), null, from, to, pageable).getContent();
         java.util.List<String> headers = java.util.List.of(
                 messageSource.getMessage("export.header.audit.date", null, loc),
                 messageSource.getMessage("export.header.audit.user", null, loc),

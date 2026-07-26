@@ -306,7 +306,26 @@
       "subtitle": "Immutable record of all financial events — invoice submissions, approvals, rejections, payments.",
       "immutableNote": "This audit trail is immutable — records cannot be modified or deleted.",
       "exportPdf": "Export PDF",
-      "exportExcel": "Export Excel"
+      "exportExcel": "Export Excel",
+      "filter": {
+        "allEvents": "All event types",
+        "showAccessDenied": "Show access-denied entries"
+      },
+      "event": {
+        "INVOICE_CREATE": "Invoice created",
+        "INVOICE_SUBMIT": "Invoice submitted",
+        "INVOICE_UPDATE": "Invoice updated",
+        "INVOICE_DELETE": "Invoice deleted",
+        "APPROVE": "Approval",
+        "REJECT": "Rejection",
+        "BON_A_PAYER": "Approved for payment",
+        "PAYMENT": "Payment",
+        "MATCHING": "Matching",
+        "MATCHING_OVERRIDE": "Matching override",
+        "RESUBMIT": "Resubmission",
+        "ARCHIVE": "Archived",
+        "RETENTION_FLAG": "Retention flag"
+      }
     },
     "system": {
       "title": "System & Security Audit Log",

@@ -80,8 +80,14 @@ public class AuditLoggingFilter extends OncePerRequestFilter {
         if (uri.contains("/mfa/")) return "MFA";
         if (uri.contains("/auth")) return "SECURITY";
 
-        // Invoices & workflow
+        // Invoices & workflow.
+        // Order matters: the more specific submit / bon-à-payer cases must be tested BEFORE the
+        // generic /workflow (APPROVE) and /invoices (INVOICE_CREATE) blocks, because the BAP URI
+        // (/invoices/{id}/workflow/bon-a-payer) contains both "/workflow" and "/invoices" and the
+        // submit URI (/invoices/{id}/submit) is a POST that would otherwise read as INVOICE_CREATE.
         if (uri.contains("/resubmit")) return "RESUBMIT";
+        if (uri.endsWith("/submit")) return "INVOICE_SUBMIT";
+        if (uri.contains("/bon-a-payer")) return "BON_A_PAYER";
         if (uri.contains("/approvals") || uri.contains("/workflow")) {
             if (uri.contains("reject")) return "REJECT";
             return "APPROVE";

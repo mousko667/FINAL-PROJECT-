@@ -118,9 +118,12 @@ public class AuditServiceImpl implements AuditService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<AuditLogDTO> searchLogsWithActionFilter(UUID userId, String entityType, String entityId, String action, List<String> allowedActions, java.time.Instant from, java.time.Instant to, Pageable pageable) {
+    public Page<AuditLogDTO> searchLogsWithActionFilter(UUID userId, String entityType, String entityId, String action, List<String> allowedActions, String excludeAction, java.time.Instant from, java.time.Instant to, Pageable pageable) {
         Specification<AuditLog> spec = Specification.where((root, query, cb) -> root.get("action").in(allowedActions));
-        
+
+        if (excludeAction != null && !excludeAction.isBlank()) {
+            spec = spec.and((root, query, cb) -> cb.notEqual(root.get("action"), excludeAction));
+        }
         if (userId != null) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("user").get("id"), userId));
         }

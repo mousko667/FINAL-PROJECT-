@@ -306,7 +306,26 @@
       "subtitle": "Enregistrement immuable de tous les événements financiers — soumissions, approbations, rejets, paiements.",
       "immutableNote": "Ce journal d'audit est immuable — les enregistrements ne peuvent pas être modifiés ou supprimés.",
       "exportPdf": "Exporter en PDF",
-      "exportExcel": "Exporter en Excel"
+      "exportExcel": "Exporter en Excel",
+      "filter": {
+        "allEvents": "Tous les types d'événement",
+        "showAccessDenied": "Afficher les accès refusés"
+      },
+      "event": {
+        "INVOICE_CREATE": "Création de facture",
+        "INVOICE_SUBMIT": "Soumission de facture",
+        "INVOICE_UPDATE": "Modification de facture",
+        "INVOICE_DELETE": "Suppression de facture",
+        "APPROVE": "Validation",
+        "REJECT": "Rejet",
+        "BON_A_PAYER": "Bon à payer",
+        "PAYMENT": "Paiement",
+        "MATCHING": "Rapprochement",
+        "MATCHING_OVERRIDE": "Dérogation de rapprochement",
+        "RESUBMIT": "Nouvelle soumission",
+        "ARCHIVE": "Archivage",
+        "RETENTION_FLAG": "Marquage de rétention"
+      }
     },
     "system": {
       "title": "Journal d'audit système et sécurité",

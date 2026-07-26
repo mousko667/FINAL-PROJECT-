@@ -13,8 +13,15 @@ public interface AuditService {
 
     Page<AuditLogDTO> searchLogs(UUID userId, String entityType, String entityId, String action, java.time.Instant from, java.time.Instant to, Pageable pageable);
 
-    /** Filtered search restricted to a given set of allowed action types. */
-    Page<AuditLogDTO> searchLogsWithActionFilter(UUID userId, String entityType, String entityId, String action, List<String> allowedActions, java.time.Instant from, java.time.Instant to, Pageable pageable);
+    /**
+     * Filtered search restricted to a given set of allowed action types.
+     *
+     * @param excludeAction when non-blank, entries whose action equals this value are dropped from
+     *                      the result (used by the financial journal to hide the dominant
+     *                      ACCESS_DENIED probe noise by default while keeping server-side pagination
+     *                      counts accurate).
+     */
+    Page<AuditLogDTO> searchLogsWithActionFilter(UUID userId, String entityType, String entityId, String action, List<String> allowedActions, String excludeAction, java.time.Instant from, java.time.Instant to, Pageable pageable);
 
     /** Aggregated audit summary over [from, to], restricted to allowedActions (M10 #12). */
     com.oct.invoicesystem.domain.audit.dto.AuditSummaryDTO summarize(

@@ -75,6 +75,86 @@ class AuditLoggingFilterTest {
     }
 
     @Test
+    void doFilter_OnInvoiceSubmitPost_LogsInvoiceSubmitAction() throws Exception {
+        AuditLoggingFilter filter = new AuditLoggingFilter(auditService);
+
+        when(request.getMethod()).thenReturn("POST");
+        when(request.getRequestURI()).thenReturn("/api/v1/invoices/123e4567-e89b-12d3-a456-426614174000/submit");
+        when(request.getUserPrincipal()).thenReturn(null);
+        when(response.getStatus()).thenReturn(200);
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        ArgumentCaptor<String> entityTypeCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> actionCaptor = ArgumentCaptor.forClass(String.class);
+        verify(auditService).logAction(any(), entityTypeCaptor.capture(), any(),
+                actionCaptor.capture(), any(), any(), any(), any());
+
+        // Submitting an invoice must be distinguished from creating one (INVOICE_CREATE),
+        // otherwise the financial journal shows zero INVOICE_SUBMIT events.
+        assertEquals("INVOICE", entityTypeCaptor.getValue());
+        assertEquals("INVOICE_SUBMIT", actionCaptor.getValue());
+    }
+
+    @Test
+    void doFilter_OnSupplierInvoiceSubmitPost_LogsInvoiceSubmitAction() throws Exception {
+        AuditLoggingFilter filter = new AuditLoggingFilter(auditService);
+
+        when(request.getMethod()).thenReturn("POST");
+        when(request.getRequestURI()).thenReturn("/api/v1/supplier/invoices/123e4567-e89b-12d3-a456-426614174000/submit");
+        when(request.getUserPrincipal()).thenReturn(null);
+        when(response.getStatus()).thenReturn(200);
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        ArgumentCaptor<String> actionCaptor = ArgumentCaptor.forClass(String.class);
+        verify(auditService).logAction(any(), any(), any(),
+                actionCaptor.capture(), any(), any(), any(), any());
+
+        // The supplier portal submit endpoint must classify as INVOICE_SUBMIT too.
+        assertEquals("INVOICE_SUBMIT", actionCaptor.getValue());
+    }
+
+    @Test
+    void doFilter_OnBonAPayerPost_LogsBonAPayerAction() throws Exception {
+        AuditLoggingFilter filter = new AuditLoggingFilter(auditService);
+
+        when(request.getMethod()).thenReturn("POST");
+        when(request.getRequestURI()).thenReturn("/api/v1/invoices/123e4567-e89b-12d3-a456-426614174000/workflow/bon-a-payer");
+        when(request.getUserPrincipal()).thenReturn(null);
+        when(response.getStatus()).thenReturn(200);
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        ArgumentCaptor<String> actionCaptor = ArgumentCaptor.forClass(String.class);
+        verify(auditService).logAction(any(), any(), any(),
+                actionCaptor.capture(), any(), any(), any(), any());
+
+        // Marking an invoice "bon à payer" must be distinguished from a plain workflow APPROVE,
+        // otherwise the financial journal shows zero BON_A_PAYER events.
+        assertEquals("BON_A_PAYER", actionCaptor.getValue());
+    }
+
+    @Test
+    void doFilter_OnWorkflowValidatePost_StillLogsApprove() throws Exception {
+        AuditLoggingFilter filter = new AuditLoggingFilter(auditService);
+
+        when(request.getMethod()).thenReturn("POST");
+        when(request.getRequestURI()).thenReturn("/api/v1/invoices/123e4567-e89b-12d3-a456-426614174000/workflow/validate-n1");
+        when(request.getUserPrincipal()).thenReturn(null);
+        when(response.getStatus()).thenReturn(200);
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        ArgumentCaptor<String> actionCaptor = ArgumentCaptor.forClass(String.class);
+        verify(auditService).logAction(any(), any(), any(),
+                actionCaptor.capture(), any(), any(), any(), any());
+
+        // A non-BAP workflow validation must remain APPROVE (granularity change is scoped to BAP).
+        assertEquals("APPROVE", actionCaptor.getValue());
+    }
+
+    @Test
     void doFilter_OnUserAdminPost_LogsSystemAction() throws Exception {
         AuditLoggingFilter filter = new AuditLoggingFilter(auditService);
 

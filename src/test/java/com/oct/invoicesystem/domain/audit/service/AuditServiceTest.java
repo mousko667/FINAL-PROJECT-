@@ -135,7 +135,7 @@ class AuditServiceTest {
                 "MATCHING_OVERRIDE", "RESUBMIT");
 
         Page<AuditLogDTO> result = auditService.searchLogsWithActionFilter(
-                null, null, null, null, financialActions, null, null, pr);
+                null, null, null, null, financialActions, null, null, null, pr);
 
         assertEquals(1, result.getTotalElements());
         assertEquals("HTTP_REQUEST_FINANCIAL", result.getContent().get(0).action());
