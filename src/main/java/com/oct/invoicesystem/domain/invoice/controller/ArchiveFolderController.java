@@ -48,7 +48,7 @@ public class ArchiveFolderController {
     }
 
     @PostMapping("/folders")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DAF', 'ASSISTANT_COMPTABLE')")
     @Operation(summary = "Create folder", description = "Creates a new archive folder")
     public ResponseEntity<ApiResponse<ArchiveFolderDTO>> createFolder(
             @Valid @RequestBody ArchiveFolderCreateRequest request,
@@ -60,7 +60,7 @@ public class ArchiveFolderController {
     }
 
     @PutMapping("/folders/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DAF', 'ASSISTANT_COMPTABLE')")
     @Operation(summary = "Update folder", description = "Renames or moves an archive folder")
     public ResponseEntity<ApiResponse<ArchiveFolderDTO>> updateFolder(
             @PathVariable UUID id,
@@ -72,7 +72,7 @@ public class ArchiveFolderController {
     }
 
     @DeleteMapping("/folders/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DAF', 'ASSISTANT_COMPTABLE')")
     @Operation(summary = "Delete folder", description = "Deletes an archive folder, its invoices become unclassified")
     public ResponseEntity<Void> deleteFolder(@PathVariable UUID id) {
         archiveFolderService.deleteFolder(id);

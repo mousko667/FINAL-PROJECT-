@@ -15,7 +15,11 @@ interface ArchiveFolderTreeProps {
 export default function ArchiveFolderTree({ selectedFolderId, onSelectFolder }: ArchiveFolderTreeProps) {
   const { t } = useTranslation()
   const user = useAppSelector((state) => state.auth.user)
-  const isAdmin = user?.roles.includes('ROLE_ADMIN') ?? false
+  // Folder management (create / rename / delete) is open to the roles that classify
+  // archived invoices — ADMIN, DAF and ASSISTANT_COMPTABLE — matching the backend
+  // ArchiveFolderController (@PreAuthorize hasAnyRole ADMIN, DAF, ASSISTANT_COMPTABLE).
+  const canManageFolders =
+    user?.roles.some((r) => ['ROLE_ADMIN', 'ROLE_DAF', 'ROLE_ASSISTANT_COMPTABLE'].includes(r)) ?? false
   const queryClient = useQueryClient()
 
   const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({})
@@ -158,7 +162,7 @@ export default function ArchiveFolderTree({ selectedFolderId, onSelectFolder }: 
                     </span>
                   </div>
 
-                  {isAdmin && (
+                  {canManageFolders && (
                     <div className="hidden group-hover:flex items-center gap-1">
                       {depth === 0 && (
                         <button
@@ -208,7 +212,7 @@ export default function ArchiveFolderTree({ selectedFolderId, onSelectFolder }: 
     <div className="w-full md:w-64 shrink-0 border-b md:border-b-0 md:border-r bg-ground/50 flex flex-col max-h-[30vh] md:max-h-none md:h-full md:min-h-[500px]">
       <div className="p-4 border-b flex items-center justify-between bg-surface">
         <h2 className="font-semibold text-ink">{t('archiveFolders.title')}</h2>
-        {isAdmin && !isCreating && (
+        {canManageFolders && !isCreating && (
           <button
             onClick={() => {
               setFormData({ name: '', description: '', parentId: '' })
