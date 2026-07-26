@@ -6,6 +6,7 @@ import com.oct.invoicesystem.domain.invoice.repository.InvoiceRepository;
 import com.oct.invoicesystem.domain.invoice.statemachine.InvoiceEvent;
 import com.oct.invoicesystem.domain.invoice.statemachine.InvoiceStateChangeListener;
 import com.oct.invoicesystem.domain.invoice.statemachine.WorkflowExtendedStateKeys;
+import com.oct.invoicesystem.domain.audit.service.AuditService;
 import com.oct.invoicesystem.domain.notification.event.BonAPayerEvent;
 import com.oct.invoicesystem.domain.notification.event.InvoiceRejectedEvent;
 import com.oct.invoicesystem.domain.notification.event.InvoiceSubmittedEvent;
@@ -47,6 +48,7 @@ public class InvoiceStateMachineServiceImpl implements InvoiceStateMachineServic
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final GoodsReceiptNoteRepository goodsReceiptNoteRepository;
     private final ThreeWayMatchingResultRepository matchingResultRepository;
+    private final AuditService auditService;
 
     public InvoiceStateMachineServiceImpl(
             InvoiceRepository invoiceRepository,
@@ -56,7 +58,8 @@ public class InvoiceStateMachineServiceImpl implements InvoiceStateMachineServic
             ThreeWayMatchingService threeWayMatchingService,
             PurchaseOrderRepository purchaseOrderRepository,
             GoodsReceiptNoteRepository goodsReceiptNoteRepository,
-            ThreeWayMatchingResultRepository matchingResultRepository) {
+            ThreeWayMatchingResultRepository matchingResultRepository,
+            AuditService auditService) {
         this.invoiceRepository = invoiceRepository;
         this.stateMachineFactory = stateMachineFactory;
         this.invoiceStateChangeListener = invoiceStateChangeListener;
@@ -65,6 +68,7 @@ public class InvoiceStateMachineServiceImpl implements InvoiceStateMachineServic
         this.purchaseOrderRepository = purchaseOrderRepository;
         this.goodsReceiptNoteRepository = goodsReceiptNoteRepository;
         this.matchingResultRepository = matchingResultRepository;
+        this.auditService = auditService;
     }
 
     @Override
@@ -133,8 +137,64 @@ public class InvoiceStateMachineServiceImpl implements InvoiceStateMachineServic
             throw new WorkflowException("Transition denied for event " + event + " from state " + originalStatus);
         }
 
+        // Central business-audit logging: one row per financial workflow transition, so the DAF
+        // financial journal reflects real business events (submit/approve/BAP/reject/payment/
+        // archive) instead of raw HTTP access traces.
+        String businessAction = businessActionFor(event);
+        if (businessAction != null) {
+            try {
+                auditService.logAction(resolveActorId(sm), "INVOICE", invoice.getReferenceNumber(),
+                        businessAction, null, financialDetails(invoice), null, null);
+            } catch (Exception ex) {
+                log.warn("Failed to write business audit for invoice {} event {}: {}",
+                        invoiceId, event, ex.getMessage());
+            }
+        }
+
         // Publish domain notification events after successful state transition
         publishNotificationEvent(event, invoiceId, variables);
+    }
+
+    /**
+     * Maps a workflow event to the business audit action recorded for the financial journal.
+     * Returns {@code null} for events that are not financial business events (e.g. ASSIGN_AA,
+     * ASSIGN_REVIEWER), so no audit row is written for them here.
+     */
+    private String businessActionFor(InvoiceEvent event) {
+        return switch (event) {
+            case SUBMIT, RESUBMIT -> "INVOICE_SUBMIT";
+            case VALIDATE_N1, VALIDATE_N2 -> "APPROVE";
+            case BON_A_PAYER -> "BON_A_PAYER";
+            case REJECT -> "REJECT";
+            case RECORD_PAYMENT -> "PAYMENT";
+            case ARCHIVE -> "ARCHIVE";
+            default -> null;
+        };
+    }
+
+    /**
+     * Business details captured with each financial audit row: amount, currency and supplier
+     * display name (falls back to the free-text supplier name when no linked Supplier exists).
+     */
+    private Map<String, Object> financialDetails(Invoice invoice) {
+        Map<String, Object> d = new java.util.LinkedHashMap<>();
+        d.put("amount", invoice.getAmount());
+        d.put("currency", invoice.getCurrency());
+        String supplier = invoice.getSupplier() != null
+                ? invoice.getSupplier().getCompanyName()
+                : invoice.getSupplierName();
+        d.put("supplier", supplier);
+        return d;
+    }
+
+    /**
+     * Resolves the acting user id from the state machine extended state (already populated with
+     * {@link WorkflowExtendedStateKeys#USER_ID} earlier in {@link #sendEvent}, either from the
+     * caller-supplied variables or from the security context).
+     */
+    private UUID resolveActorId(StateMachine<InvoiceStatus, InvoiceEvent> sm) {
+        Object v = sm.getExtendedState().getVariables().get(WorkflowExtendedStateKeys.USER_ID);
+        return v instanceof UUID u ? u : null;
     }
 
     /**
