@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { invoiceService } from '@/services/invoiceService'
@@ -83,7 +83,17 @@ function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
+  const location = useLocation()
   const queryClient = useQueryClient()
+
+  // Contextual back: return to wherever the user came from (notifications, approval
+  // queue, invoice list…) rather than always forcing /invoices. When the page was
+  // opened directly (no in-app history — location.key is 'default'), fall back to the
+  // invoice list so the button never dead-ends.
+  const goBack = () => {
+    if (location.key !== 'default') navigate(-1)
+    else navigate('/invoices')
+  }
   const roles = useAppSelector((s) => s.auth.user?.roles ?? [])
   // Matching override is restricted to DAF on the backend (InvoiceController /matching/override
   // is @PreAuthorize hasRole('DAF')). ASSISTANT_COMPTABLE must NOT see this button.
@@ -150,7 +160,7 @@ function InvoiceDetailPage() {
   if (isError || !invoice) return (
     <div className="text-center py-20">
       <p className="text-crit mb-4">{t('app.error')}</p>
-      <button onClick={() => navigate('/invoices')} className="text-gold-deep underline text-sm">{t('app.back')}</button>
+      <button onClick={goBack} className="text-gold-deep underline text-sm">{t('app.back')}</button>
     </div>
   )
 
@@ -160,7 +170,7 @@ function InvoiceDetailPage() {
       <PageHeader
         title={
           <span className="flex items-center gap-3">
-            <button onClick={() => navigate('/invoices')} className="p-2 -ml-2 rounded-[4px] hover:bg-white/10 text-white/80 shrink-0">
+            <button onClick={goBack} className="p-2 -ml-2 rounded-[4px] hover:bg-white/10 text-white/80 shrink-0">
               <ArrowLeft className="w-5 h-5" />
             </button>
             <span className="num">{invoice.referenceNumber}</span>
