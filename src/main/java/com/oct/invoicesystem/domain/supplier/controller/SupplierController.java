@@ -77,6 +77,18 @@ public class SupplierController {
         return ApiResponse.success(supplierService.getSupplier(id));
     }
 
+    /**
+     * Lightweight id+name options for report/filter selectors. Readable by DAF as well as
+     * ASSISTANT_COMPTABLE: the DAF may consult supplier reports (payment cycle, performance) and needs
+     * these labels to drive the selector, but must NOT read the full supplier master data (bank
+     * details, contacts, status) exposed by the endpoints below — hence a dedicated, minimal surface.
+     */
+    @GetMapping("/options")
+    @PreAuthorize("hasAnyRole('ASSISTANT_COMPTABLE', 'DAF')")
+    public ApiResponse<java.util.List<com.oct.invoicesystem.domain.supplier.dto.SupplierOptionDTO>> listSupplierOptions() {
+        return ApiResponse.success(supplierService.listActiveOptions());
+    }
+
     @GetMapping
     @PreAuthorize("hasRole('ASSISTANT_COMPTABLE')")
     public ApiResponse<PagedResponse<SupplierResponse>> searchSuppliers(

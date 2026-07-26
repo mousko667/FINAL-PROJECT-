@@ -50,4 +50,14 @@ public interface SupplierRepository extends JpaRepository<Supplier, UUID> {
             Pageable pageable);
             
     boolean existsByTaxIdAndDeletedAtIsNull(String taxId);
+
+    /**
+     * Lightweight id+name projection of ACTIVE, non-deleted suppliers for report/filter selectors.
+     * Selects only the two columns the dropdown needs — never the encrypted bank_details — so it can
+     * be exposed to roles (DAF) that must not read the full supplier master data.
+     */
+    @Query(value = "SELECT new com.oct.invoicesystem.domain.supplier.dto.SupplierOptionDTO(s.id, s.companyName) "
+            + "FROM Supplier s WHERE s.deletedAt IS NULL AND s.status = "
+            + "com.oct.invoicesystem.domain.supplier.model.SupplierStatus.ACTIVE ORDER BY s.companyName ASC")
+    java.util.List<com.oct.invoicesystem.domain.supplier.dto.SupplierOptionDTO> findActiveOptions();
 }

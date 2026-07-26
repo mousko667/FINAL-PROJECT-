@@ -76,6 +76,12 @@ public class SupplierServiceImpl implements SupplierService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public java.util.List<com.oct.invoicesystem.domain.supplier.dto.SupplierOptionDTO> listActiveOptions() {
+        return supplierRepository.findActiveOptions();
+    }
+
+    @Override
     public void activateSupplier(UUID id, User activatedBy) {
         Supplier supplier = findEntityById(id);
         ensureOnboardingComplete(supplier);

@@ -22,6 +22,8 @@ public interface SupplierService {
     SupplierResponse getSupplier(UUID id);
     Page<SupplierResponse> searchSuppliers(String name, String taxId, SupplierStatus status,
                                            SupplierCategory category, java.time.Instant from, java.time.Instant to, Pageable pageable);
+    /** Lightweight id+name options for report/filter selectors (ACTIVE suppliers only). */
+    List<com.oct.invoicesystem.domain.supplier.dto.SupplierOptionDTO> listActiveOptions();
     void activateSupplier(UUID id, User activatedBy);
     void suspendSupplier(UUID id);
     void softDeleteSupplier(UUID id);

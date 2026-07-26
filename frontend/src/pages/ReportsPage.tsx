@@ -133,10 +133,12 @@ export default function ReportsPage() {
   const { data: perfSuppliers } = useQuery({
     queryKey: ['report-active-suppliers'],
     queryFn: async () => {
-      const { data } = await apiClient.get<{ data: { content: Array<{ id: string; companyName: string }> } }>(
-        '/suppliers', { params: { status: 'ACTIVE', size: 200 } }
+      // Lightweight id+name options endpoint, readable by DAF (unlike the full /suppliers
+      // master-data list, which is ASSISTANT_COMPTABLE-only since audit wave V2-A).
+      const { data } = await apiClient.get<{ data: Array<{ id: string; companyName: string }> }>(
+        '/suppliers/options'
       )
-      return data.data?.content ?? []
+      return data.data ?? []
     },
     enabled: canView,
     retry: false,

@@ -98,6 +98,44 @@ class SupplierControllerIntegrationTest {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // GET /options — lightweight selector source, DAF-readable, master data still closed
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("Options: DAF → 200 (may drive report selectors) returning only id + companyName")
+    @WithMockUser(roles = "DAF")
+    void options_asDaf_returns200_idAndNameOnly() throws Exception {
+        mockMvc.perform(get("/api/v1/suppliers/options"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").isArray());
+    }
+
+    @Test
+    @DisplayName("Options: AA → 200")
+    @WithMockUser(roles = "ASSISTANT_COMPTABLE")
+    void options_asAa_returns200() throws Exception {
+        mockMvc.perform(get("/api/v1/suppliers/options"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").isArray());
+    }
+
+    @Test
+    @DisplayName("Options: ADMIN → 403 — the DAF-readable selector must NOT reopen supplier data to ADMIN")
+    @WithMockUser(roles = "ADMIN")
+    void options_asAdmin_returns403() throws Exception {
+        mockMvc.perform(get("/api/v1/suppliers/options"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Options: SUPPLIER → 403")
+    @WithMockUser(roles = "SUPPLIER")
+    void options_asSupplier_returns403() throws Exception {
+        mockMvc.perform(get("/api/v1/suppliers/options"))
+                .andExpect(status().isForbidden());
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Nominal + AES-256 encryption at rest + no plaintext leak
     // ─────────────────────────────────────────────────────────────────────────
 

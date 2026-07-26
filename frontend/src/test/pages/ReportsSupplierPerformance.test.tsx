@@ -44,8 +44,8 @@ vi.mock('@/services/reportService', () => ({
 vi.mock('@/services/apiClient', () => ({
   default: {
     get: vi.fn((url: string) => {
-      if (url === '/suppliers') {
-        return Promise.resolve({ data: { data: { content: [{ id: 'sup-1', companyName: 'ACME Corp' }] } } })
+      if (url === '/suppliers/options') {
+        return Promise.resolve({ data: { data: [{ id: 'sup-1', companyName: 'ACME Corp' }] } })
       }
       return Promise.resolve({ data: { data: {} } })
     }),
