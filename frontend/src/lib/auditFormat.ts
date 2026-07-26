@@ -20,7 +20,6 @@ export function formatAuditActor(row: AuditRow, systemLabel: string): { name: st
 export function formatAuditEntity(row: AuditRow, invoiceLabel: (ref: string) => string): string {
   const id = row.entityId
   if (id && !id.startsWith('/')) return invoiceLabel(id)
-  if (id && id.startsWith('/')) return row.entityType ?? '—'
   return row.entityType ?? '—'
 }
 
