@@ -9,6 +9,7 @@ import { reportService } from '@/services/reportService'
 import AuditSummary from '@/components/audit/AuditSummary'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { formatDateTime } from '@/lib/format'
+import { formatAuditActor, formatAuditEntity, formatAuditDetails } from '@/lib/auditFormat'
 
 interface AuditLog {
   id: string
@@ -16,6 +17,8 @@ interface AuditLog {
   entityType: string
   entityId?: string
   userId?: string
+  userDisplayName?: string
+  userRole?: string
   createdAt?: string
   ipAddress?: string
   newValue?: string
@@ -205,19 +208,26 @@ export default function FinancialAuditPage() {
                         })()}
                       </td>
                       <td className="px-4 py-3 font-medium text-ink-soft text-xs">
-                        <div className="num">{log.userId ? `#${log.userId.slice(0, 8)}` : t('audit.systemActor', 'Système')}</div>
+                        {(() => {
+                          const actor = formatAuditActor(log, t('audit.systemActor', 'Système'))
+                          return (
+                            <>
+                              <div className="num">{actor.name}</div>
+                              {actor.role && <div className="text-ink-faint">{actor.role}</div>}
+                            </>
+                          )
+                        })()}
                         {log.ipAddress && <div className="text-ink-faint num">{log.ipAddress}</div>}
                       </td>
                       <td className="px-4 py-3">
                         <span className="text-xs num bg-ground text-ink-soft px-2 py-0.5 rounded border border-hairline">
-                          {log.action}
+                          {t('audit.financial.event.' + log.action, log.action)}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-ink-soft">
-                        {log.entityType}
-                        {log.entityId && <span className="ml-1 text-xs text-muted-foreground">#{log.entityId.slice(0, 8)}</span>}
+                        {formatAuditEntity(log, (ref) => t('audit.financial.entity.invoice', { ref, defaultValue: 'Facture {{ref}}' }))}
                       </td>
-                      <td className="px-4 py-3 text-xs text-ink-soft max-w-xs truncate">{log.details ?? log.newValue ?? '—'}</td>
+                      <td className="px-4 py-3 text-xs text-ink-soft max-w-xs truncate">{formatAuditDetails(log)}</td>
                     </tr>
                   ))}
                 </tbody>

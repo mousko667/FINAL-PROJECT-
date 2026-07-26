@@ -311,6 +311,9 @@
         "allEvents": "All event types",
         "showAccessDenied": "Show access-denied entries"
       },
+      "entity": {
+        "invoice": "Invoice {{ref}}"
+      },
       "event": {
         "INVOICE_CREATE": "Invoice created",
         "INVOICE_SUBMIT": "Invoice submitted",

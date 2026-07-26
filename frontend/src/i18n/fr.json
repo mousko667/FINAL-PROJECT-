@@ -311,6 +311,9 @@
         "allEvents": "Tous les types d'événement",
         "showAccessDenied": "Afficher les accès refusés"
       },
+      "entity": {
+        "invoice": "Facture {{ref}}"
+      },
       "event": {
         "INVOICE_CREATE": "Création de facture",
         "INVOICE_SUBMIT": "Soumission de facture",
