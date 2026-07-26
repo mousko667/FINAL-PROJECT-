@@ -278,7 +278,26 @@
     "status": "Status",
     "createdAt": "Created",
     "items": "Line Items",
-    "noItems": "No line items"
+    "noItems": "No line items",
+    "portalSubtitle": "The purchase orders OCT has issued to you",
+    "number": "PO number",
+    "total": "Amount",
+    "empty": "No purchase orders",
+    "statusLabel": "Status",
+    "statusValue": {
+      "OPEN": "Open",
+      "CLOSED": "Closed",
+      "CANCELLED": "Cancelled"
+    },
+    "detail": {
+      "title": "Purchase order details"
+    },
+    "item": {
+      "description": "Description",
+      "quantity": "Qty",
+      "unitPrice": "Unit price",
+      "lineTotal": "Total"
+    }
   },
   "audit": {
     "systemActor": "System",
@@ -1107,6 +1126,8 @@
       "pendingActions": "Actions Required",
       "submitInvoice": "Submit Invoice",
       "viewInvoices": "My Invoices",
+      "purchaseOrders": "My Purchase Orders",
+      "notifications": "Notifications",
       "myDocuments": "My Documents",
       "myProfile": "My Profile",
       "invoices": "My Invoices",

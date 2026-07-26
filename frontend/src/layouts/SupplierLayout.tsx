@@ -12,6 +12,8 @@ import {
   FolderOpen,
   Container,
   LogOut,
+  Package,
+  Bell,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -74,6 +76,8 @@ export default function SupplierLayout() {
         <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
           <SupplierNavItem to="/supplier/dashboard" icon={LayoutDashboard} label={t('supplier.portal.dashboard', 'Mon tableau de bord')} />
           <SupplierNavItem to="/supplier/invoices" icon={FileText} label={t('supplier.portal.invoices', 'Mes Factures')} />
+          <SupplierNavItem to="/supplier/purchase-orders" icon={Package} label={t('supplier.portal.purchaseOrders', 'Mes commandes')} />
+          <SupplierNavItem to="/supplier/notifications" icon={Bell} label={t('supplier.portal.notifications', 'Notifications')} />
           <SupplierNavItem to="/supplier/profile" icon={User} label={t('supplier.portal.profile', 'Mon Profil')} />
           <SupplierNavItem to="/supplier/documents" icon={FolderOpen} label={t('supplier.portal.documents', 'Mes Documents')} />
         </nav>

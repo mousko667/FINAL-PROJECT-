@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import apiClient from '@/services/apiClient'
@@ -23,6 +24,7 @@ interface Supplier { id: string; companyName: string }
 
 export default function PurchaseOrdersPage() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const roles = useAppSelector((s) => s.auth.user?.roles ?? [])
   const isAA = roles.includes('ROLE_ASSISTANT_COMPTABLE')
@@ -182,7 +184,8 @@ export default function PurchaseOrdersPage() {
                   {orders.length === 0 ? (
                     <tr><td colSpan={5} className="text-center py-16 text-muted-foreground">{t('app.noData')}</td></tr>
                   ) : orders.map(po => (
-                    <tr key={po.id} className="hover:bg-ground">
+                    <tr key={po.id} onClick={() => navigate(`/purchase-orders/${po.id}`)}
+                        className="hover:bg-ground cursor-pointer">
                       <td className="px-4 py-3 num text-xs font-medium text-ink">{po.poNumber}</td>
                       <td className="px-4 py-3 text-ink-soft">{po.supplierName ?? '—'}</td>
                       <td className="px-4 py-3 text-right num">{formatAmount(po.totalAmount)} {po.currency ?? 'XAF'}</td>

@@ -27,6 +27,7 @@ public class PersistNotificationListener {
     private final NotificationRepository notificationRepository;
     private final InvoiceRepository invoiceRepository;
     private final UserRepository userRepository;
+    private final com.oct.invoicesystem.domain.purchasing.repository.PurchaseOrderRepository purchaseOrderRepository;
 
     /**
      * Persist a notification record for every N1 approver when an invoice is submitted.
@@ -197,6 +198,57 @@ public class PersistNotificationListener {
                         "La facture " + invoice.getReferenceNumber() + " a dépassé son délai d'approbation et vous est escaladée. Action requise.",
                         "Invoice " + invoice.getReferenceNumber() + " has exceeded its approval deadline and has been escalated to you. Action required.",
                         NotificationType.DEADLINE)));
+    }
+
+    /**
+     * Persist an in-app notification for the supplier when a purchase order is created for them (B3).
+     */
+    // AFTER_COMMIT: the PO is created inside a @Transactional service method and this listener runs
+    // @Async in another thread. With a plain @EventListener it could fire before the creating
+    // transaction commits, so findById would see nothing. Wait for commit so the PO is visible.
+    @Async
+    @org.springframework.transaction.annotation.Transactional(
+            propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    @org.springframework.transaction.event.TransactionalEventListener(
+            phase = org.springframework.transaction.event.TransactionPhase.AFTER_COMMIT)
+    public void onPurchaseOrderCreated(com.oct.invoicesystem.domain.notification.event.PurchaseOrderCreatedEvent event) {
+        log.info("Persisting supplier notification for PurchaseOrderCreatedEvent {}", event.getPurchaseOrderId());
+        purchaseOrderRepository.findById(event.getPurchaseOrderId()).ifPresent(po -> {
+            if (po.getSupplier() == null) {
+                log.warn("PO {} has no supplier — no notification", po.getPoNumber());
+                return;
+            }
+            List<User> recipients = userRepository.findActiveUsersBySupplierId(po.getSupplier().getId());
+            log.info("PO {} → notifying {} supplier user(s) for supplier {}",
+                    po.getPoNumber(), recipients.size(), po.getSupplier().getId());
+            recipients.forEach(user ->
+                    saveForPo(user,
+                            "Nouveau bon de commande",
+                            "New purchase order",
+                            "Un nouveau bon de commande " + po.getPoNumber() + " vous a été adressé. Consultez-le dans votre portail.",
+                            "A new purchase order " + po.getPoNumber() + " has been issued to you. View it in your portal.",
+                            NotificationType.SUBMISSION));
+        });
+    }
+
+    /** Persist a notification not tied to an invoice (e.g. a purchase-order event). */
+    private void saveForPo(User user, String titleFr, String titleEn, String messageFr, String messageEn,
+                           NotificationType type) {
+        try {
+            Notification notification = Notification.builder()
+                    .user(user)
+                    .invoice(null)
+                    .titleFr(titleFr)
+                    .titleEn(titleEn)
+                    .messageFr(messageFr)
+                    .messageEn(messageEn)
+                    .type(type)
+                    .isRead(false)
+                    .build();
+            notificationRepository.save(notification);
+        } catch (Exception e) {
+            log.error("Failed to persist PO notification for user {}: {}", user.getId(), e.getMessage());
+        }
     }
 
     /**

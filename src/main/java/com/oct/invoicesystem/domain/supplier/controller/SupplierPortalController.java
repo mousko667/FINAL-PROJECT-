@@ -16,6 +16,7 @@ import com.oct.invoicesystem.domain.invoice.statemachine.WorkflowExtendedStateKe
 import com.oct.invoicesystem.domain.purchasing.dto.PurchaseOrderItemDTO;
 import com.oct.invoicesystem.domain.purchasing.service.PurchaseOrderService;
 import com.oct.invoicesystem.domain.supplier.dto.SupplierPurchaseOrderDTO;
+import com.oct.invoicesystem.domain.supplier.dto.SupplierPurchaseOrderDetailDTO;
 import com.oct.invoicesystem.domain.supplier.dto.SupplierUpdateRequest;
 import com.oct.invoicesystem.domain.supplier.dto.SupplierResponse;
 import com.oct.invoicesystem.domain.supplier.model.Supplier;
@@ -265,6 +266,37 @@ public class SupplierPortalController {
                         po.getId(),
                         po.getPoNumber(),
                         po.getTotalAmount(),
+                        po.getItems().stream()
+                                .map(i -> new PurchaseOrderItemDTO(
+                                        i.getId(),
+                                        i.getItemDescription(),
+                                        i.getQuantity(),
+                                        i.getUnitPrice(),
+                                        i.getLineTotal()))
+                                .toList()))
+                .toList();
+        return ResponseEntity.ok(ApiResponse.success(result));
+    }
+
+    /**
+     * Lists ALL of this supplier's purchase orders (OPEN, CLOSED, CANCELLED) for the dedicated
+     * "My purchase orders" portal page (B1). Scoped to the authenticated supplier's own id.
+     * Unlike {@link #listMyPurchaseOrders}, it is not limited to OPEN orders and carries the status
+     * and creation date so the supplier can browse and sort their order history.
+     */
+    @GetMapping("/purchase-orders/all")
+    @Operation(summary = "List all own purchase orders",
+            description = "All purchase orders issued to this supplier, any status, for the portal PO page")
+    public ResponseEntity<ApiResponse<List<SupplierPurchaseOrderDetailDTO>>> listAllMyPurchaseOrders(
+            Authentication authentication) {
+        UUID supplierId = getSupplierId(authentication);
+        List<SupplierPurchaseOrderDetailDTO> result = purchaseOrderService.listBySupplier(supplierId).stream()
+                .map(po -> new SupplierPurchaseOrderDetailDTO(
+                        po.getId(),
+                        po.getPoNumber(),
+                        po.getTotalAmount(),
+                        po.getStatus().name(),
+                        po.getCreatedAt(),
                         po.getItems().stream()
                                 .map(i -> new PurchaseOrderItemDTO(
                                         i.getId(),

@@ -77,6 +77,9 @@ class SupplierPortalIntegrationTest {
     @org.springframework.boot.test.mock.mockito.MockBean
     private com.oct.invoicesystem.domain.storage.service.MinioStorageService minioStorageService;
 
+    @Autowired
+    private com.oct.invoicesystem.config.security.RateLimitingFilter rateLimitingFilter;
+
     @BeforeEach
     void setUp() {
         if (roleRepository.findByName("ROLE_SUPPLIER").isEmpty()) {
@@ -84,6 +87,28 @@ class SupplierPortalIntegrationTest {
                     .name("ROLE_SUPPLIER")
                     .description("Supplier Portal User")
                     .build());
+        }
+        // This class registers+logs in several suppliers per test; the RateLimitingFilter
+        // (5 login+refresh/min/IP) is a singleton whose per-IP bucket cache survives across tests
+        // and MockMvc always presents the same IP, so without a reset the buckets bleed and yield
+        // spurious 429s (PROB-152). Reset before and after each test.
+        resetRateLimiterBuckets();
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void clearRateLimiterAfter() {
+        resetRateLimiterBuckets();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void resetRateLimiterBuckets() {
+        try {
+            java.lang.reflect.Field cache =
+                    com.oct.invoicesystem.config.security.RateLimitingFilter.class.getDeclaredField("cache");
+            cache.setAccessible(true);
+            ((java.util.Map<String, ?>) cache.get(rateLimitingFilter)).clear();
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Could not reset the rate-limiter bucket cache", e);
         }
     }
 
@@ -374,6 +399,33 @@ class SupplierPortalIntegrationTest {
                 .andExpect(jsonPath("$.data[0].poNumber").value(org.hamcrest.Matchers.startsWith("PO-MINE-")))
                 .andExpect(jsonPath("$.data[0].items.length()").value(1))
                 // internal OCT data must not leak to the supplier
+                .andExpect(jsonPath("$.data[0].createdBy").doesNotExist())
+                .andExpect(jsonPath("$.data[0].supplierId").doesNotExist());
+    }
+
+    @Test
+    void allPurchaseOrders_returnsEveryStatusForOwnSupplierWithStatusField() throws Exception {
+        // B1: the dedicated portal PO page lists ALL of the supplier's orders (any status),
+        // still scoped to them, and carries the status the OPEN-only selector omits.
+        String mineHeader = registerAndLogin("History Supplier Co");
+        String otherHeader = registerAndLogin("Other History Co");
+        var mine = supplierOf(mineHeader);
+        var other = supplierOf(otherHeader);
+
+        openPurchaseOrder(mine, "PO-HOPEN-" + UUID.randomUUID().toString().substring(0, 8));
+        var closed = openPurchaseOrder(mine, "PO-HCLOSED-" + UUID.randomUUID().toString().substring(0, 8));
+        closed.setStatus(com.oct.invoicesystem.domain.purchasing.model.PurchaseOrderStatus.CLOSED);
+        purchaseOrderRepository.save(closed);
+        openPurchaseOrder(other, "PO-HOTHER-" + UUID.randomUUID().toString().substring(0, 8));
+
+        mockMvc.perform(get("/api/v1/supplier/purchase-orders/all").header("Authorization", mineHeader))
+                .andExpect(status().isOk())
+                // both of this supplier's orders (OPEN + CLOSED), never the other supplier's
+                .andExpect(jsonPath("$.data.length()").value(2))
+                .andExpect(jsonPath("$.data[*].poNumber", org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.startsWith("PO-H"))))
+                .andExpect(jsonPath("$.data[*].status",
+                        org.hamcrest.Matchers.containsInAnyOrder("OPEN", "CLOSED")))
+                // internal OCT data must not leak
                 .andExpect(jsonPath("$.data[0].createdBy").doesNotExist())
                 .andExpect(jsonPath("$.data[0].supplierId").doesNotExist());
     }

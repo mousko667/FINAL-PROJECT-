@@ -33,6 +33,7 @@ public class EmailNotificationListener {
     private final InvoiceRepository invoiceRepository;
     private final UserRepository userRepository;
     private final SupplierRepository supplierRepository;
+    private final com.oct.invoicesystem.domain.purchasing.repository.PurchaseOrderRepository purchaseOrderRepository;
 
     @Value("${app.frontend-url:http://localhost:3000}")
     private String frontendUrl;
@@ -156,6 +157,38 @@ public class EmailNotificationListener {
             if (!approvers.isEmpty()) {
                 Map<String, Object> vars = buildCommonVariables(invoice);
                 notifyUsers(approvers, "URGENT — Délai d'approbation dépassé / Approval SLA breached", "invoice-submitted", vars);
+            }
+        });
+    }
+
+    // ── Purchase order created → email the supplier ──
+
+    // AFTER_COMMIT so the PO row is committed and visible when this async listener reads it back.
+    @Async
+    @org.springframework.transaction.annotation.Transactional(
+            propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    @org.springframework.transaction.event.TransactionalEventListener(
+            phase = org.springframework.transaction.event.TransactionPhase.AFTER_COMMIT)
+    public void onPurchaseOrderCreated(com.oct.invoicesystem.domain.notification.event.PurchaseOrderCreatedEvent event) {
+        log.info("Handling PurchaseOrderCreatedEvent for PO {}", event.getPurchaseOrderId());
+        purchaseOrderRepository.findById(event.getPurchaseOrderId()).ifPresent(po -> {
+            if (po.getSupplier() == null) return;
+            Supplier supplier = supplierRepository.findByIdAndDeletedAtIsNull(po.getSupplier().getId()).orElse(null);
+            String email = supplier != null ? supplier.getContactEmail() : null;
+            if (email == null || email.isBlank()) {
+                log.debug("No supplier email for PO {} — skipping email notification", po.getPoNumber());
+                return;
+            }
+            Map<String, Object> vars = new HashMap<>();
+            vars.put("poNumber", po.getPoNumber());
+            // System is single-currency XAF (audit decision D4); PurchaseOrder has no currency field.
+            vars.put("amount", po.getTotalAmount() + " XAF");
+            vars.put("frontendUrl", frontendUrl);
+            try {
+                emailService.sendEmailToUsers(List.of(email),
+                        "Nouveau bon de commande / New purchase order", "purchase-order-created", vars);
+            } catch (Exception e) {
+                log.error("Failed to send PO email for {}: {}", po.getPoNumber(), e.getMessage());
             }
         });
     }

@@ -276,9 +276,28 @@
     "supplier": "Fournisseur",
     "totalAmount": "Montant total",
     "status": "Statut",
-    "createdAt": "Créé le",
+    "createdAt": "Date de création",
     "items": "Lignes",
-    "noItems": "Aucune ligne"
+    "noItems": "Aucune ligne",
+    "portalSubtitle": "Les bons de commande qui vous ont été adressés par OCT",
+    "number": "N° commande",
+    "total": "Montant",
+    "empty": "Aucun bon de commande",
+    "statusLabel": "Statut",
+    "statusValue": {
+      "OPEN": "Ouvert",
+      "CLOSED": "Clôturé",
+      "CANCELLED": "Annulé"
+    },
+    "detail": {
+      "title": "Détail du bon de commande"
+    },
+    "item": {
+      "description": "Désignation",
+      "quantity": "Qté",
+      "unitPrice": "PU",
+      "lineTotal": "Total"
+    }
   },
   "audit": {
     "systemActor": "Système",
@@ -1107,6 +1126,8 @@
       "pendingActions": "Actions requises",
       "submitInvoice": "Soumettre une facture",
       "viewInvoices": "Mes factures",
+      "purchaseOrders": "Mes commandes",
+      "notifications": "Notifications",
       "myDocuments": "Mes documents",
       "myProfile": "Mon profil",
       "invoices": "Mes Factures",

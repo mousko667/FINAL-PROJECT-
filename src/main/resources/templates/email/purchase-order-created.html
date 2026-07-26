@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Nouveau bon de commande / New Purchase Order</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 32px auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+        .header { background: #1a3a5c; padding: 24px; text-align: center; }
+        .header h1 { color: #fff; font-size: 20px; margin: 0; }
+        .body { padding: 32px; color: #333; }
+        .body p { line-height: 1.6; }
+        .po-box { background: #f0f4fa; border-left: 4px solid #1a3a5c; padding: 16px 20px; border-radius: 4px; margin: 20px 0; }
+        .po-box p { margin: 6px 0; }
+        .label { font-weight: bold; color: #1a3a5c; }
+        .badge { display: inline-block; background: #e0e7ff; color: #3730a3; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; margin-bottom: 12px; }
+        .btn { display: inline-block; margin-top: 24px; padding: 12px 28px; background: #1a3a5c; color: #fff; text-decoration: none; border-radius: 6px; font-weight: bold; }
+        .divider { border: none; border-top: 1px solid #e0e0e0; margin: 24px 0; }
+        .footer { background: #f9f9f9; padding: 16px 32px; font-size: 12px; color: #888; text-align: center; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>OCT — Portail Fournisseurs</h1>
+    </div>
+    <div class="body">
+        <div class="badge">Nouveau bon de commande / New purchase order</div>
+
+        <!-- FR -->
+        <p>Bonjour,</p>
+        <p>OCT (Owendo Container Terminal) vous a adressé un nouveau bon de commande.</p>
+        <div class="po-box">
+            <p><span class="label">N° de commande :</span> <span th:text="${poNumber}">PO-2026-0001</span></p>
+            <p><span class="label">Montant :</span> <span th:text="${amount}">0 XAF</span></p>
+        </div>
+        <p>Consultez le détail de la commande et facturez contre celle-ci depuis votre portail fournisseur.</p>
+
+        <hr class="divider"/>
+
+        <!-- EN -->
+        <p>Hello,</p>
+        <p>OCT (Owendo Container Terminal) has issued a new purchase order to you.</p>
+        <div class="po-box">
+            <p><span class="label">PO number:</span> <span th:text="${poNumber}">PO-2026-0001</span></p>
+            <p><span class="label">Amount:</span> <span th:text="${amount}">0 XAF</span></p>
+        </div>
+        <p>Review the order and invoice against it from your supplier portal.</p>
+        <a th:href="${frontendUrl + '/supplier/purchase-orders'}" class="btn">View purchase orders →</a>
+    </div>
+    <div class="footer">
+        OCT — Owendo Container Terminal, Libreville, Gabon · Ne pas répondre à cet email / Do not reply to this email.
+    </div>
+</div>
+</body>
+</html>

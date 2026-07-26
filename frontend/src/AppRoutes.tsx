@@ -53,6 +53,8 @@ const SupplierInvoicesPage = lazy(() => import('@/pages/supplier/SupplierInvoice
 const SupplierInvoiceSubmitPage = lazy(() => import('@/pages/supplier/SupplierInvoiceSubmitPage'))
 const SupplierProfilePage = lazy(() => import('@/pages/supplier/SupplierProfilePage'))
 const SupplierDocumentsPage = lazy(() => import('@/pages/supplier/SupplierDocumentsPage'))
+const SupplierPurchaseOrdersPage = lazy(() => import('@/pages/supplier/SupplierPurchaseOrdersPage'))
+const PurchaseOrderDetailPage = lazy(() => import('@/pages/PurchaseOrderDetailPage'))
 const ApprovalQueuePage = lazy(() => import('@/pages/ApprovalQueuePage'))
 const FinancialAuditPage = lazy(() => import('@/pages/FinancialAuditPage'))
 const PurchaseOrdersPage = lazy(() => import('@/pages/PurchaseOrdersPage'))
@@ -93,6 +95,7 @@ function AppRoutes() {
             <Route path="/approvals" element={<ApprovalQueuePage />} />
             <Route path="/financial-audit" element={<FinancialAuditPage />} />
             <Route path="/purchase-orders" element={<PurchaseOrdersPage />} />
+            <Route path="/purchase-orders/:id" element={<PurchaseOrderDetailPage />} />
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/reports/builder" element={<ReportBuilderPage />} />
             <Route path="/payments" element={<PaymentsPage />} />
@@ -136,8 +139,10 @@ function AppRoutes() {
             <Route path="dashboard" element={<SupplierDashboardPage />} />
             <Route path="invoices" element={<SupplierInvoicesPage />} />
             <Route path="invoices/new" element={<SupplierInvoiceSubmitPage />} />
+            <Route path="purchase-orders" element={<SupplierPurchaseOrdersPage />} />
             <Route path="profile" element={<SupplierProfilePage />} />
             <Route path="documents" element={<SupplierDocumentsPage />} />
+            <Route path="notifications" element={<NotificationsPage />} />
           </Route>
         </Route>
 

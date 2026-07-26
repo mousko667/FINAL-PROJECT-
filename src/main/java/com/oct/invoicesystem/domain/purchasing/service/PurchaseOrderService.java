@@ -32,6 +32,7 @@ public class PurchaseOrderService {
 
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final SupplierRepository supplierRepository;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     /**
      * Create a new purchase order with items.
@@ -72,7 +73,13 @@ public class PurchaseOrderService {
         items.forEach(item -> item.setPurchaseOrder(po));
 
         log.info("Creating purchase order {} for supplier {}", poNumber, supplierId);
-        return purchaseOrderRepository.save(po);
+        PurchaseOrder saved = purchaseOrderRepository.save(po);
+
+        // Notify the supplier (in-app + email) that a new order awaits them on the portal.
+        eventPublisher.publishEvent(
+                new com.oct.invoicesystem.domain.notification.event.PurchaseOrderCreatedEvent(this, saved.getId()));
+
+        return saved;
     }
 
     /**
