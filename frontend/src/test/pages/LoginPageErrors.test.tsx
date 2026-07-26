@@ -57,7 +57,7 @@ function networkError() {
 
 async function submitLogin() {
   fireEvent.change(screen.getByLabelText(/utilisateur/i), { target: { value: 'aa' } })
-  fireEvent.change(screen.getByLabelText(/mot de passe/i), { target: { value: 'Test1234!' } })
+  fireEvent.change(screen.getByLabelText(/mot de passe/i, { selector: 'input' }), { target: { value: 'Test1234!' } })
   fireEvent.click(screen.getByRole('button', { name: /se connecter/i }))
 }
 

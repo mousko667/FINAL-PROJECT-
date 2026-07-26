@@ -41,6 +41,8 @@
     "logout": "Logout",
     "username": "Username",
     "password": "Password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
     "loginButton": "Sign In",
     "loginError": "Invalid credentials",
     "forgotPasswordLink": "Forgot password?",

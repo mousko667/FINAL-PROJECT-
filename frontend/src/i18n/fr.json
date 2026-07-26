@@ -41,6 +41,8 @@
     "logout": "Déconnexion",
     "username": "Nom d'utilisateur",
     "password": "Mot de passe",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe",
     "loginButton": "Se connecter",
     "loginError": "Identifiants incorrects",
     "forgotPasswordLink": "Mot de passe oublié ?",

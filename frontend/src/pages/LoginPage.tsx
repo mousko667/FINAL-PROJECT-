@@ -9,7 +9,7 @@ import { useAppDispatch } from '@/store/hooks'
 import { setCredentials } from '@/store/slices/authSlice'
 import apiClient from '@/services/apiClient'
 import { isNetworkError, hasStatus } from '@/lib/apiError'
-import { AlertCircle, Loader2, Globe, ShieldCheck, ArrowLeft, KeyRound } from 'lucide-react'
+import { AlertCircle, Loader2, Globe, ShieldCheck, ArrowLeft, KeyRound, Eye, EyeOff } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 
 const loginSchema = z.object({
@@ -45,6 +45,7 @@ export default function LoginPage() {
   // and switch the card to the OTP-entry step.
   const [preAuthToken, setPreAuthToken] = useState<string | null>(null)
   const [otp, setOtp] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
 
   // When the backend returns mfa_setup_required, the enforcement filter only lets
   // /auth/mfa/setup and /auth/mfa/confirm through, so the whole first-time setup
@@ -424,14 +425,27 @@ export default function LoginPage() {
                   >
                     {t('auth.password')}
                   </label>
-                  <input
-                    id="password"
-                    type="password"
-                    autoComplete="current-password"
-                    {...register('password')}
-                    className="w-full px-3 py-2.5 border border-hairline-strong rounded-[4px] text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
-                    placeholder="••••••••"
-                  />
+                  <div className="relative">
+                    <input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete="current-password"
+                      {...register('password')}
+                      className="w-full px-3 py-2.5 pr-10 border border-hairline-strong rounded-[4px] text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(v => !v)}
+                      aria-label={showPassword
+                        ? t('auth.hidePassword', 'Masquer le mot de passe')
+                        : t('auth.showPassword', 'Afficher le mot de passe')}
+                      aria-pressed={showPassword}
+                      className="absolute inset-y-0 right-0 flex items-center px-3 text-ink-faint hover:text-ink focus:outline-none focus:text-primary"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                   {errors.password && (
                     <p className="mt-1 text-xs text-crit">{t(errors.password.message as string)}</p>
                   )}
