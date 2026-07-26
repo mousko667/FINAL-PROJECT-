@@ -9,6 +9,7 @@ import { ExportMenu } from '@/components/ui/ExportMenu'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { PageRoleGuard } from '@/components/auth/RoleGuard'
+import { notifyApiError } from '@/components/ErrorToaster'
 
 const ADMIN_ROLES = ['ROLE_ADMIN']
 
@@ -148,10 +149,17 @@ function EditUserModal({ user, onClose }: EditUserModalProps) {
   const [firstName, setFirstName] = useState(user.firstName ?? '')
   const [lastName, setLastName]  = useState(user.lastName ?? '')
   const [email, setEmail]        = useState(user.email ?? '')
+  const [username, setUsername]  = useState(user.username ?? '')
   const [confirmAction, setConfirmAction] = useState<'toggleActive' | 'resetMfa' | null>(null)
 
   const updateMutation = useMutation({
-    mutationFn: () => apiClient.put(`/users/${user.id}`, { firstName, lastName, email }),
+    onError: (e) => notifyApiError(e),
+    // Only send username when it actually changed — the backend then enforces uniqueness and
+    // revokes the user's active sessions (they must sign in again under the new name).
+    mutationFn: () => apiClient.put(`/users/${user.id}`, {
+      firstName, lastName, email,
+      ...(username !== user.username ? { username } : {}),
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] })
       onClose()
@@ -210,7 +218,13 @@ function EditUserModal({ user, onClose }: EditUserModalProps) {
           </div>
           <div>
             <label htmlFor="editUserUsername" className="block text-sm font-medium text-ink-soft mb-1">{t('admin.users.username')}</label>
-            <input id="editUserUsername" value={user.username} disabled className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm bg-ground text-ink-faint" />
+            <input id="editUserUsername" value={username} onChange={e => setUsername(e.target.value)}
+              className="w-full border border-hairline rounded-[4px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+            {username !== user.username && (
+              <p className="text-xs text-warn mt-1">
+                {t('admin.users.usernameChangeWarning', 'Changer le nom d’utilisateur déconnectera cet utilisateur ; il devra se reconnecter avec le nouveau nom.')}
+              </p>
+            )}
           </div>
         </div>
 

@@ -550,6 +550,7 @@
       "lastName": "Nom",
       "fullName": "Nom complet",
       "username": "Nom d'utilisateur",
+      "usernameChangeWarning": "Changer le nom d'utilisateur déconnectera cet utilisateur ; il devra se reconnecter avec le nouveau nom.",
       "email": "Email",
       "password": "Mot de passe",
       "role": "Rôle",

@@ -40,6 +40,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final AuditService auditService;
     private final SecurityPolicyService securityPolicyService;
+    private final com.oct.invoicesystem.domain.auth.repository.ActiveSessionRepository activeSessionRepository;
 
     @Transactional(readOnly = true)
     public PagedResponse<UserDTO> getUsers(int page, int size, String sort, java.time.Instant from, java.time.Instant to) {
@@ -123,6 +124,21 @@ public class UserService {
     public UserDTO updateUser(UUID id, UserUpdateRequest request) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
+        // Username is the login identifier. When an admin changes it we enforce uniqueness and
+        // revoke the user's active sessions so their old-username tokens can no longer be used —
+        // they must sign in again under the new name. Audit rows already written keep the old
+        // username (they are immutable), which is correct for traceability.
+        if (request.username() != null && !request.username().equals(user.getUsername())) {
+            if (userRepository.existsByUsername(request.username())) {
+                throw new ValidationException("Username already exists: " + request.username());
+            }
+            String oldUsername = user.getUsername();
+            user.setUsername(request.username());
+            activeSessionRepository.revokeAllForUser(user.getId(), Instant.now());
+            auditService.logAction(user.getId(), "USER", user.getId().toString(), "USERNAME_CHANGE",
+                    oldUsername, request.username(), null, null);
+        }
 
         if (request.email() != null && !request.email().equals(user.getEmail())) {
             if (userRepository.existsByEmail(request.email())) {

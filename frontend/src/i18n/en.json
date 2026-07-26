@@ -550,6 +550,7 @@
       "lastName": "Last Name",
       "fullName": "Full Name",
       "username": "Username",
+      "usernameChangeWarning": "Changing the username will sign this user out; they must sign in again with the new name.",
       "email": "Email",
       "password": "Password",
       "role": "Role",

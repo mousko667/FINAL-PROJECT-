@@ -51,6 +51,12 @@ class UserServiceTest {
     @Mock
     private SecurityPolicyService securityPolicyService;
 
+    @Mock
+    private com.oct.invoicesystem.domain.audit.service.AuditService auditService;
+
+    @Mock
+    private com.oct.invoicesystem.domain.auth.repository.ActiveSessionRepository activeSessionRepository;
+
     @InjectMocks
     private UserService userService;
 
@@ -117,6 +123,43 @@ class UserServiceTest {
         verify(userRepository).save(user);
         assertEquals("new@ex.com", user.getEmail());
         assertEquals("NewFirst", user.getFirstName());
+    }
+
+    @Test
+    @DisplayName("updateUser: changing the username sets it, revokes the user's sessions, and audits the change")
+    void updateUser_UsernameChange_RevokesSessionsAndAudits() {
+        UUID id = user.getId();
+        UserUpdateRequest req = new UserUpdateRequest("newlogin", null, null, null, null, null, null, null, null);
+
+        when(userRepository.findById(id)).thenReturn(Optional.of(user));
+        when(userRepository.existsByUsername("newlogin")).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenReturn(user);
+        when(userMapper.toDto(any())).thenReturn(mock(UserDTO.class));
+
+        userService.updateUser(id, req);
+
+        assertEquals("newlogin", user.getUsername());
+        // Old-username tokens must be invalidated: the user re-authenticates under the new name.
+        verify(activeSessionRepository).revokeAllForUser(eq(id), any(Instant.class));
+        // The change is audited with the old → new username (existing rows keep the old name).
+        verify(auditService).logAction(eq(id), eq("USER"), eq(id.toString()), eq("USERNAME_CHANGE"),
+                eq("testuser"), eq("newlogin"), isNull(), isNull());
+    }
+
+    @Test
+    @DisplayName("updateUser: a taken username is rejected — no save, no session revocation")
+    void updateUser_UsernameTaken_ThrowsAndDoesNotRevoke() {
+        UUID id = user.getId();
+        UserUpdateRequest req = new UserUpdateRequest("taken", null, null, null, null, null, null, null, null);
+
+        when(userRepository.findById(id)).thenReturn(Optional.of(user));
+        when(userRepository.existsByUsername("taken")).thenReturn(true);
+
+        ValidationException ex = assertThrows(ValidationException.class, () -> userService.updateUser(id, req));
+        assertTrue(ex.getMessage().contains("Username already exists"));
+        assertEquals("testuser", user.getUsername());
+        verify(userRepository, never()).save(any());
+        verify(activeSessionRepository, never()).revokeAllForUser(any(), any());
     }
 
     @Test
