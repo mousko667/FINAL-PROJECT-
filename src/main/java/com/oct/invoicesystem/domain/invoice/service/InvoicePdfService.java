@@ -101,11 +101,20 @@ public class InvoicePdfService {
         Table header = new Table(UnitValue.createPercentArray(new float[]{60, 40}))
                 .setWidth(UnitValue.createPercentValue(100));
 
-        Cell left = new Cell()
-                .add(new Paragraph("OCT").setFont(bold).setFontSize(20).setFontColor(OCT_NAVY))
-                .add(new Paragraph("Owendo Container Terminal").setFont(regular).setFontSize(9).setFontColor(ColorConstants.GRAY))
-                .add(new Paragraph("Système de Gestion des Factures Fournisseurs").setFont(regular).setFontSize(8).setFontColor(ColorConstants.GRAY))
-                .setBorder(null).setPadding(0);
+        Cell left = new Cell().setBorder(null).setPadding(0);
+        // Use the real OCT logo image (same source as report PDFs, classpath
+        // /branding/oct-logo.png) instead of the plain "OCT" text, so the invoice
+        // letterhead matches the reports. Fall back to the text mark if the resource
+        // is missing, so PDF generation never fails on a branding asset.
+        com.itextpdf.layout.element.Image logo = com.oct.invoicesystem.shared.export.PdfBranding.getLogoImage();
+        if (logo != null) {
+            logo.setWidth(120f).setMarginBottom(2f);
+            left.add(logo);
+        } else {
+            left.add(new Paragraph("OCT").setFont(bold).setFontSize(20).setFontColor(OCT_NAVY));
+        }
+        left.add(new Paragraph("Owendo Container Terminal").setFont(regular).setFontSize(9).setFontColor(ColorConstants.GRAY))
+                .add(new Paragraph("Système de Gestion des Factures Fournisseurs").setFont(regular).setFontSize(8).setFontColor(ColorConstants.GRAY));
 
         Cell right = new Cell()
                 .add(new Paragraph("BON À PAYER").setFont(bold).setFontSize(11).setFontColor(OCT_NAVY)
